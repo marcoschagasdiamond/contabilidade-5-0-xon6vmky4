@@ -1,0 +1,236 @@
+import React from 'react'
+import {
+  Calculator,
+  Receipt,
+  Users,
+  PieChart,
+  FolderOpen,
+  ShieldAlert,
+  CheckCircle2,
+  ArrowRight,
+  FileCheck,
+  TrendingUp,
+} from 'lucide-react'
+
+export default function Servicos() {
+  const serviceDetails = [
+    {
+      id: 'contabilidade-digital',
+      icon: Calculator,
+      title: 'Contabilidade Digital',
+      subtitle: 'Escrituração contábil inteligente e relatórios em tempo real',
+      description:
+        'A escrituração contábil moderna vai muito além do cumprimento de obrigações legais. Nossa equipe processa seus dados com inteligência analítica, entregando balanços, DREs e relatórios de fluxo de caixa que oferecem clareza imediata sobre a saúde financeira do seu negócio.',
+      features: [
+        'Balanço Patrimonial e DRE mensais digitalizados',
+        'Conciliação bancária automatizada e sem papéis',
+        'Dashboard gerencial com indicadores-chave (KPIs)',
+        'Controle patrimonial e depreciação de ativos',
+        'Emissão de relatórios em conformidade com as normas IFRS',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=digital%20accounting%20dashboard%20laptop&color=emerald',
+      reverse: false,
+    },
+    {
+      id: 'gestao-fiscal',
+      icon: Receipt,
+      title: 'Gestão Fiscal & Tributária',
+      subtitle: 'Conformidade absoluta com eSocial, SPED e planejamento tributário',
+      description:
+        'O sistema tributário nacional é dinâmico e complexo. Cuidamos de toda a apuração de tributos diretos e indiretos (Simples Nacional, Lucro Presumido e Lucro Real), mantendo sua empresa protegida contra multas e selecionando o regime com menor custo fiscal legal.',
+      features: [
+        'Apuração rigorosa de tributos federais, estaduais e municipais',
+        'Planejamento tributário anual para redução lícita de impostos',
+        'Transmissão ágil do SPED Fiscal, EFD-Contribuições e DCTFWeb',
+        'Monitoramento de certidões negativas (CND) de forma contínua',
+        'Adequação preventiva à Reforma Tributária',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=tax%20compliance%20documents%20calculator&color=emerald',
+      reverse: true,
+    },
+    {
+      id: 'departamento-pessoal',
+      icon: Users,
+      title: 'Departamento Pessoal',
+      subtitle: 'Gestão de folha, eSocial e conformidade trabalhista com pontualidade',
+      description:
+        'Gerenciamos toda a rotina de recursos humanos e departamento pessoal com precisão cirúrgica: admissões, rescisões, férias, folhas de pagamento, encargos sociais e cálculo de benefícios, tudo em perfeita integração com o eSocial.',
+      features: [
+        'Processamento pontual da folha de pagamento e pró-labore',
+        'Cálculo e emissão de guias de FGTS, INSS e IRRF',
+        'Gestão de admissões, rescisões e homologações',
+        'Controle de férias, afastamentos e atestados médicos',
+        'Atendimento dedicado a dúvidas de colaboradores e RH',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=human%20resources%20team%20payroll&color=emerald',
+      reverse: false,
+    },
+    {
+      id: 'consultoria-financeira',
+      icon: PieChart,
+      title: 'Consultoria Financeira Estratégica',
+      subtitle: 'BPO Financeiro e análises de fluxo de caixa para decisões seguras',
+      description:
+        'Não tome decisões às cegas. Com a nossa consultoria financeira e BPO, você terceiriza o contas a pagar e receber, tem controle total sobre o ciclo financeiro e projeta cenários de investimento para expandir o seu negócio com sustentabilidade.',
+      features: [
+        'BPO Financeiro completo: contas a pagar, a receber e conciliação',
+        'Projeções orçamentárias e análise de fluxo de caixa projetado',
+        'Cálculo de margem de contribuição e ponto de equilíbrio',
+        'Orientação para captação de recursos e crédito bancário',
+        'Reuniões mensais com consultor sênior para alinhamento estratégico',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=financial%20chart%20growth%20graph&color=emerald',
+      reverse: true,
+    },
+    {
+      id: 'abertura-de-empresa',
+      icon: FolderOpen,
+      title: 'Abertura, Alteração & Regularização',
+      subtitle: 'Seu CNPJ ativo em tempo recorde com enquadramento correto',
+      description:
+        'Abrir ou reestruturar uma empresa não precisa ser um pesadelo burocrático. Cuidamos de todo o processo junto à Junta Comercial, Receita Federal, Prefeituras e órgãos de classe, definindo a melhor natureza jurídica e CNAE para economizar impostos desde o dia 1.',
+      features: [
+        'Abertura de empresas ágil e 100% digital',
+        'Estudo prévio de viabilidade e enquadramento de CNAEs',
+        'Alterações contratuais, entrada de sócios e mudança de endereço',
+        'Regularização de pendências cadastrais e fiscais',
+        'Emissão de Alvarás, Inscrição Estadual e Licenças',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=business%20registration%20contract%20signature&color=emerald',
+      reverse: false,
+    },
+    {
+      id: 'assessoria-tributaria',
+      icon: ShieldAlert,
+      title: 'Assessoria Tributária Especializada',
+      subtitle: 'Recuperação de créditos, defesa fiscal e auditoria preventiva',
+      description:
+        'Identificamos oportunidades de recuperação de impostos pagos indevidamente ou a maior nos últimos 5 anos, além de defender sua empresa em autos de infração e realizar auditorias fiscais para blindar a sua operação contra fiscalizações.',
+      features: [
+        'Levantamento e recuperação de créditos de PIS, COFINS, ICMS e IPI',
+        'Revisão fiscal dos últimos 60 meses com cruzamento eletrônico',
+        'Elaboração de defesas e recursos administrativos fiscais',
+        'Auditoria preventiva de arquivos SPED antes do envio ao Fisco',
+        'Regimes tributários especiais e benefícios fiscais setoriais',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=legal%20tax%20audit%20compliance&color=emerald',
+      reverse: true,
+    },
+  ]
+
+  return (
+    <div className="pt-24 pb-20">
+      {/* 1. HEADER COM GRADIENTE VERDE */}
+      <section className="bg-gradient-to-r from-[#0A1A13] via-[#0E3520] to-[#145A32] text-white py-20 px-4 sm:px-6 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#2ECC71_1px,transparent_1px)] [background-size:20px_20px]" />
+        <div className="max-w-[1200px] mx-auto relative z-10 text-center">
+          <span className="inline-block px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-emerald-300 bg-white/10 border border-emerald-400/30 mb-4 backdrop-blur-sm">
+            Nossos Serviços
+          </span>
+          <h1 className="font-heading font-extrabold text-3xl sm:text-5xl tracking-tight mb-6">
+            Soluções completas com excelência técnica e agilidade
+          </h1>
+          <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-300 leading-relaxed font-normal">
+            Do operacional ao estratégico, cobrimos todas as áreas essenciais para sua empresa
+            operar com segurança, economizar tributos e acelerar seu crescimento.
+          </p>
+        </div>
+      </section>
+
+      {/* 2. SEÇÕES DETALHADAS DOS SERVIÇOS (ALTERNANDO ESQUERDA/DIREITA) */}
+      <section className="py-20 bg-white">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-24">
+          {serviceDetails.map((service) => {
+            const IconComp = service.icon
+            return (
+              <div
+                id={service.id}
+                key={service.id}
+                className={`grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center pt-8 border-t border-slate-100 first:border-t-0 first:pt-0 ${
+                  service.reverse ? 'lg:grid-flow-dense' : ''
+                }`}
+              >
+                {/* Imagem */}
+                <div className={service.reverse ? 'lg:col-start-2' : ''}>
+                  <div className="rounded-[24px] overflow-hidden shadow-xl border border-slate-200 relative group">
+                    <img
+                      src={service.image}
+                      alt={service.title}
+                      className="w-full h-[360px] object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute top-4 left-4 p-3 bg-white/90 backdrop-blur-md rounded-xl shadow-md border border-white/40 text-[#145A32]">
+                      <IconComp className="w-6 h-6 stroke-[2.5]" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Texto */}
+                <div className={service.reverse ? 'lg:col-start-1' : ''}>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-[#145A32] bg-emerald-50 border border-emerald-200 mb-3">
+                    <IconComp className="w-3.5 h-3.5" />
+                    <span>Especialidade Contábil</span>
+                  </div>
+
+                  <h2 className="font-heading font-bold text-2xl sm:text-3xl text-slate-900 tracking-tight mb-2">
+                    {service.title}
+                  </h2>
+
+                  <p className="text-sm font-medium text-[#145A32] mb-4">{service.subtitle}</p>
+
+                  <p className="text-slate-600 leading-relaxed text-sm sm:text-base mb-6">
+                    {service.description}
+                  </p>
+
+                  {/* Lista de recursos */}
+                  <div className="space-y-2.5 mb-8">
+                    {service.features.map((feature, idx) => (
+                      <div key={idx} className="flex items-start gap-2.5 text-sm text-slate-700">
+                        <CheckCircle2 className="w-4 h-4 text-[#2ECC71] shrink-0 mt-0.5 stroke-[2.5]" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <a
+                    href="/#contato"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-md transition-all duration-200 hover:-translate-y-0.5 btn-press"
+                  >
+                    Contratar este Serviço
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* 3. CTA FINAL */}
+      <section className="py-16 bg-gradient-to-r from-[#0A1A13] to-[#145A32] text-white">
+        <div className="max-w-[1000px] mx-auto px-4 sm:px-6 text-center">
+          <h2 className="font-heading font-bold text-3xl sm:text-4xl mb-4">
+            Precisa de um pacote sob medida para sua operação?
+          </h2>
+          <p className="text-slate-300 text-base max-w-xl mx-auto mb-8">
+            Nossos consultores montam uma proposta que integra exatamente as soluções que o seu
+            negócio precisa hoje, com total escalabilidade para o futuro.
+          </p>
+          <a
+            href="/#contato"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 btn-press"
+          >
+            Solicitar Proposta Customizada
+            <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+          </a>
+        </div>
+      </section>
+    </div>
+  )
+}
