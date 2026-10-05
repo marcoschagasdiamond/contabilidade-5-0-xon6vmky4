@@ -19,11 +19,22 @@ import {
   Building,
   HelpCircle,
   FileCheck2,
+  ShoppingCart,
+  Briefcase,
+  Factory,
+  HeartPulse,
+  GraduationCap,
+  Sprout,
+  Truck,
+  Cpu,
+  Hammer,
+  UtensilsCrossed,
 } from 'lucide-react'
 import {
   executarDiagnosticoTributario,
   type SegmentoEmpresa,
   type ResultadoDiagnosticoCompleto,
+  LISTA_SEGMENTOS,
   LIMITE_SIMPLES,
   LIMITE_PRESUMIDO,
 } from '@/lib/regimes'
@@ -72,7 +83,7 @@ export default function Diagnostico() {
     email: '',
     telefone: '',
     empresa: '',
-    segmento: 'Serviços',
+    segmento: 'Comércio',
     rbt12: 600000,
     folha12: 120000,
     margemLucro: 25,
@@ -474,42 +485,103 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 )}
               </div>
 
-              {/* Segmento de Atuação (Cards interativos) */}
+              {/* Segmento de Atuação (Grade responsiva com 10 opções) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                  Segmento Principal de Atividade *
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {(['Comércio', 'Indústria', 'Serviços'] as SegmentoEmpresa[]).map((seg) => {
-                    const isSelected = formData.segmento === seg
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Segmento Principal de Atividade *
+                  </label>
+                  <span className="text-[11px] text-slate-400">Selecione 1 das 10 opções</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                  {[
+                    {
+                      id: 'Comércio' as SegmentoEmpresa,
+                      icon: ShoppingCart,
+                      desc: 'Varejo e atacado de mercadorias (Anexo I / ICMS)',
+                    },
+                    {
+                      id: 'Serviços' as SegmentoEmpresa,
+                      icon: Briefcase,
+                      desc: 'Prestação de serviços e consultoria (ISS / Fator R)',
+                    },
+                    {
+                      id: 'Indústria' as SegmentoEmpresa,
+                      icon: Factory,
+                      desc: 'Fabricação e transformação fabril (Anexo II / ICMS)',
+                    },
+                    {
+                      id: 'Saúde' as SegmentoEmpresa,
+                      icon: HeartPulse,
+                      desc: 'Clínicas, consultórios e laboratórios (ISS)',
+                    },
+                    {
+                      id: 'Educação' as SegmentoEmpresa,
+                      icon: GraduationCap,
+                      desc: 'Escolas, faculdades e cursos livres (ISS)',
+                    },
+                    {
+                      id: 'Agro' as SegmentoEmpresa,
+                      icon: Sprout,
+                      desc: 'Produção rural e agronegócio (Base 8%)',
+                    },
+                    {
+                      id: 'Transporte' as SegmentoEmpresa,
+                      icon: Truck,
+                      desc: 'Cargas e passageiros (Presunção 16% IRPJ)',
+                    },
+                    {
+                      id: 'Tecnologia' as SegmentoEmpresa,
+                      icon: Cpu,
+                      desc: 'Software, SaaS e TI (ISS / Fator R)',
+                    },
+                    {
+                      id: 'Construção Civil' as SegmentoEmpresa,
+                      icon: Hammer,
+                      desc: 'Obras, reformas e engenharia civil (ISS)',
+                    },
+                    {
+                      id: 'Bares e Restaurantes' as SegmentoEmpresa,
+                      icon: UtensilsCrossed,
+                      desc: 'Alimentação e bebidas (Presunção 8% / ICMS)',
+                    },
+                  ].map((item) => {
+                    const isSelected = formData.segmento === item.id
+                    const IconComponent = item.icon
                     return (
                       <button
-                        key={seg}
+                        key={item.id}
                         type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, segmento: seg }))}
-                        className={`p-4 rounded-xl border text-left transition-all ${
+                        onClick={() => setFormData((prev) => ({ ...prev, segmento: item.id }))}
+                        className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
                           isSelected
                             ? 'border-[#2ECC71] bg-emerald-50/70 ring-2 ring-[#2ECC71]/30 shadow-sm'
                             : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-1">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                                isSelected
+                                  ? 'bg-[#2ECC71] text-[#0A1A13]'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              <IconComponent className="w-4 h-4" />
+                            </div>
+                            {isSelected && <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />}
+                          </div>
                           <span
-                            className={`font-heading font-bold text-sm ${
+                            className={`font-heading font-bold text-xs sm:text-sm block leading-tight ${
                               isSelected ? 'text-[#145A32]' : 'text-slate-800'
                             }`}
                           >
-                            {seg}
+                            {item.id}
                           </span>
-                          {isSelected && <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />}
                         </div>
-                        <p className="text-[11px] text-slate-500 leading-snug">
-                          {seg === 'Comércio' &&
-                            'Venda de mercadorias físicas (Anexo I no Simples / ICMS)'}
-                          {seg === 'Indústria' &&
-                            'Fabricação e transformação de produtos (Anexo II / IPI/ICMS)'}
-                          {seg === 'Serviços' &&
-                            'Prestação de serviços técnicos, digitais ou operacionais (ISS)'}
+                        <p className="text-[10px] text-slate-500 leading-snug mt-1.5">
+                          {item.desc}
                         </p>
                       </button>
                     )
@@ -1213,10 +1285,20 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">
-                      {formData.segmento === 'Serviços' ? 'ISS municipal:' : 'ICMS estadual:'}
+                      {formData.segmento === 'Comércio' ||
+                      formData.segmento === 'Indústria' ||
+                      formData.segmento === 'Agro' ||
+                      formData.segmento === 'Bares e Restaurantes'
+                        ? 'ICMS estadual:'
+                        : 'ISS municipal:'}
                     </span>
                     <strong className="text-slate-800">
-                      {formData.segmento === 'Serviços' ? '2%' : '12%'}
+                      {formData.segmento === 'Comércio' ||
+                      formData.segmento === 'Indústria' ||
+                      formData.segmento === 'Agro' ||
+                      formData.segmento === 'Bares e Restaurantes'
+                        ? '12%'
+                        : '2%'}
                     </strong>
                   </div>
                   <div className="flex justify-between">

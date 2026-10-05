@@ -7,7 +7,18 @@ export interface Diagnostico {
   email: string
   telefone: string
   empresa: string
-  segmento: 'Comércio' | 'Indústria' | 'Serviços' | string
+  segmento:
+    | 'Comércio'
+    | 'Serviços'
+    | 'Indústria'
+    | 'Saúde'
+    | 'Educação'
+    | 'Agro'
+    | 'Transporte'
+    | 'Tecnologia'
+    | 'Construção Civil'
+    | 'Bares e Restaurantes'
+    | string
   rbt12: number
   folha12: number
   margem_lucro: number

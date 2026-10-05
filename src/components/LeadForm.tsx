@@ -311,13 +311,16 @@ export default function LeadForm({ className = '' }: { className?: string }) {
                 }`}
               >
                 <option value="">Selecione...</option>
-                <option value="Tecnologia">Tecnologia</option>
-                <option value="Varejo">Varejo</option>
-                <option value="Indústria">Indústria</option>
+                <option value="Comércio">Comércio</option>
                 <option value="Serviços">Serviços</option>
-                <option value="Agronegócio">Agronegócio</option>
-                <option value="Sociedade de Profissionais">Sociedade de Profissionais</option>
-                <option value="Outros">Outros</option>
+                <option value="Indústria">Indústria</option>
+                <option value="Saúde">Saúde</option>
+                <option value="Educação">Educação</option>
+                <option value="Agro">Agro</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Tecnologia">Tecnologia</option>
+                <option value="Construção Civil">Construção Civil</option>
+                <option value="Bares e Restaurantes">Bares e Restaurantes</option>
               </select>
               {errors.segmento && (
                 <p className="mt-1 text-xs text-[#E74C3C] font-medium">{errors.segmento}</p>

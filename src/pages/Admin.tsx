@@ -51,6 +51,7 @@ export default function Admin() {
   const [isLoadingDiagnosticos, setIsLoadingDiagnosticos] = useState(true)
   const [diagSearchTerm, setDiagSearchTerm] = useState('')
   const [diagFilterRegime, setDiagFilterRegime] = useState('todos')
+  const [diagFilterSegmento, setDiagFilterSegmento] = useState('todos')
   const [diagToDelete, setDiagToDelete] = useState<DiagnosticoRecord | null>(null)
   const [isDeletingDiag, setIsDeletingDiag] = useState(false)
   const [selectedDiag, setSelectedDiag] = useState<DiagnosticoRecord | null>(null)
@@ -176,7 +177,11 @@ export default function Admin() {
     const matchesRegime =
       diagFilterRegime === 'todos' || item.regime_recomendado === diagFilterRegime
 
-    return matchesSearch && matchesRegime
+    const matchesSegmento =
+      diagFilterSegmento === 'todos' ||
+      item.segmento?.toLowerCase() === diagFilterSegmento.toLowerCase()
+
+    return matchesSearch && matchesRegime && matchesSegmento
   })
 
   // Exportar Leads CSV
@@ -470,13 +475,16 @@ export default function Admin() {
                   className="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 bg-white input-focus-ring w-full sm:w-auto"
                 >
                   <option value="todos">Todos os Segmentos</option>
-                  <option value="Tecnologia">Tecnologia</option>
-                  <option value="Varejo">Varejo</option>
-                  <option value="Indústria">Indústria</option>
+                  <option value="Comércio">Comércio</option>
                   <option value="Serviços">Serviços</option>
-                  <option value="Agronegócio">Agronegócio</option>
-                  <option value="Sociedade de Profissionais">Sociedade de Profissionais</option>
-                  <option value="Outros">Outros</option>
+                  <option value="Indústria">Indústria</option>
+                  <option value="Saúde">Saúde</option>
+                  <option value="Educação">Educação</option>
+                  <option value="Agro">Agro</option>
+                  <option value="Transporte">Transporte</option>
+                  <option value="Tecnologia">Tecnologia</option>
+                  <option value="Construção Civil">Construção Civil</option>
+                  <option value="Bares e Restaurantes">Bares e Restaurantes</option>
                 </select>
               </div>
             </div>
@@ -675,20 +683,41 @@ export default function Admin() {
                 />
               </div>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <span className="text-xs text-slate-500 font-medium shrink-0">
-                  Regime Sugerido:
-                </span>
-                <select
-                  value={diagFilterRegime}
-                  onChange={(e) => setDiagFilterRegime(e.target.value)}
-                  className="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 bg-white input-focus-ring w-full sm:w-auto"
-                >
-                  <option value="todos">Todos os Regimes</option>
-                  <option value="Simples Nacional">Simples Nacional</option>
-                  <option value="Lucro Presumido">Lucro Presumido</option>
-                  <option value="Lucro Real">Lucro Real</option>
-                </select>
+              <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 font-medium shrink-0">Regime:</span>
+                  <select
+                    value={diagFilterRegime}
+                    onChange={(e) => setDiagFilterRegime(e.target.value)}
+                    className="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 bg-white input-focus-ring"
+                  >
+                    <option value="todos">Todos os Regimes</option>
+                    <option value="Simples Nacional">Simples Nacional</option>
+                    <option value="Lucro Presumido">Lucro Presumido</option>
+                    <option value="Lucro Real">Lucro Real</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 font-medium shrink-0">Segmento:</span>
+                  <select
+                    value={diagFilterSegmento}
+                    onChange={(e) => setDiagFilterSegmento(e.target.value)}
+                    className="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 bg-white input-focus-ring"
+                  >
+                    <option value="todos">Todos os Segmentos</option>
+                    <option value="Comércio">Comércio</option>
+                    <option value="Serviços">Serviços</option>
+                    <option value="Indústria">Indústria</option>
+                    <option value="Saúde">Saúde</option>
+                    <option value="Educação">Educação</option>
+                    <option value="Agro">Agro</option>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Tecnologia">Tecnologia</option>
+                    <option value="Construção Civil">Construção Civil</option>
+                    <option value="Bares e Restaurantes">Bares e Restaurantes</option>
+                  </select>
+                </div>
               </div>
             </div>
 

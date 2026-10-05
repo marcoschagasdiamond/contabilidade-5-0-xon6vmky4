@@ -4,7 +4,30 @@
  * com base na legislação brasileira vigente (2025).
  */
 
-export type SegmentoEmpresa = 'Comércio' | 'Indústria' | 'Serviços'
+export type SegmentoEmpresa =
+  | 'Comércio'
+  | 'Serviços'
+  | 'Indústria'
+  | 'Saúde'
+  | 'Educação'
+  | 'Agro'
+  | 'Transporte'
+  | 'Tecnologia'
+  | 'Construção Civil'
+  | 'Bares e Restaurantes'
+
+export const LISTA_SEGMENTOS: SegmentoEmpresa[] = [
+  'Comércio',
+  'Serviços',
+  'Indústria',
+  'Saúde',
+  'Educação',
+  'Agro',
+  'Transporte',
+  'Tecnologia',
+  'Construção Civil',
+  'Bares e Restaurantes',
+]
 
 export interface DadosEntradaDiagnostico {
   nome: string
@@ -129,16 +152,29 @@ export function calcularSimplesNacional(
 
   const fatorR = rbt12 > 0 ? folha12 / rbt12 : 0
   let tabela = TABELAS_SIMPLES.anexoI
-  let anexoNome = 'Anexo I (Comércio)'
+  let anexoNome = 'Anexo I'
 
-  if (segmento === 'Comércio') {
+  // Mapeamento Simples Nacional por segmento:
+  // - Comércio: Anexo I
+  // - Indústria: Anexo II
+  // - Agro: tributado predominantemente na revenda/produção rural comercial/industrial (Anexo I/II; Anexo I padrão comercial)
+  // - Bares e Restaurantes: comercialização e preparo de alimentos e bebidas fora do estabelecimento (Anexo I padrão comercial)
+  // - Transporte: Anexo III para transporte de passageiros / cargas
+  // - Serviços em geral (Serviços, Saúde, Educação, Tecnologia, Construção Civil):
+  //   Sujeitos à regra do Fator R (>= 28% -> Anexo III, < 28% -> Anexo V) ou Anexo III direto (Construção Civil/Saúde com Fator R)
+  if (segmento === 'Comércio' || segmento === 'Agro' || segmento === 'Bares e Restaurantes') {
     tabela = TABELAS_SIMPLES.anexoI
-    anexoNome = 'Anexo I'
+    anexoNome = 'Anexo I (Comércio)'
   } else if (segmento === 'Indústria') {
     tabela = TABELAS_SIMPLES.anexoII
-    anexoNome = 'Anexo II'
+    anexoNome = 'Anexo II (Indústria)'
+  } else if (segmento === 'Transporte') {
+    // Transporte de passageiros/cargas enquadra-se no Anexo III
+    tabela = TABELAS_SIMPLES.anexoIII
+    anexoNome = 'Anexo III (Transporte)'
   } else {
-    // Serviços: depende do Fator R (>= 28% -> Anexo III, < 28% -> Anexo V)
+    // Serviços, Saúde, Educação, Tecnologia, Construção Civil:
+    // Avaliados com a regra do Fator R (>= 28% -> Anexo III, < 28% -> Anexo V)
     if (fatorR >= 0.28) {
       tabela = TABELAS_SIMPLES.anexoIII
       anexoNome = 'Anexo III (Fator R ≥ 28%)'
@@ -200,11 +236,37 @@ export function calcularLucroPresumido(rbt12: number, segmento: SegmentoEmpresa)
     }
   }
 
-  // Base de presunção IRPJ e CSLL
-  // Comércio / Indústria: presunção IRPJ 8%, CSLL 12%
-  // Serviços: presunção IRPJ 32%, CSLL 32%
-  const basePresuncaoIRPJPercent = segmento === 'Serviços' ? 0.32 : 0.08
-  const basePresuncaoCSLLPercent = segmento === 'Serviços' ? 0.32 : 0.12
+  // Base de presunção IRPJ e CSLL no Lucro Presumido:
+  // - Comércio, Indústria, Agro: IRPJ 8%, CSLL 12%, ICMS 12%
+  // - Bares e Restaurantes: predominantemente venda de refeições/mercadorias -> presunção 8% IRPJ, 12% CSLL, ICMS 12%
+  // - Transporte: serviços de transporte de passageiros/cargas possuem presunção própria legal de 16% no IRPJ (art. 15 da Lei 9.249/95), CSLL 12%, ISS/ICMS (utilizamos ISS 2% para transporte intramunicipal/serviços)
+  // - Serviços, Saúde, Educação, Tecnologia, Construção Civil: IRPJ 32%, CSLL 32%, ISS 2%
+  let basePresuncaoIRPJPercent = 0.32
+  let basePresuncaoCSLLPercent = 0.32
+  let icmsOuIssPercent = 0.02
+
+  if (segmento === 'Comércio' || segmento === 'Indústria' || segmento === 'Agro') {
+    basePresuncaoIRPJPercent = 0.08
+    basePresuncaoCSLLPercent = 0.12
+    icmsOuIssPercent = 0.12 // ICMS
+  } else if (segmento === 'Bares e Restaurantes') {
+    // Para bares e restaurantes, a atividade preponderante é o fornecimento de alimentos/bebidas (venda mercantil),
+    // o que na legislação do Lucro Presumido adota a presunção comercial de 8% de IRPJ e 12% de CSLL com ICMS (alíquota média).
+    basePresuncaoIRPJPercent = 0.08
+    basePresuncaoCSLLPercent = 0.12
+    icmsOuIssPercent = 0.12 // ICMS
+  } else if (segmento === 'Transporte') {
+    // Serviços de transporte de passageiros e cargas têm presunção específica de 16% de IRPJ (art. 15, § 1º, II, 'a' da Lei 9.249/95)
+    // e 12% de CSLL.
+    basePresuncaoIRPJPercent = 0.16
+    basePresuncaoCSLLPercent = 0.12
+    icmsOuIssPercent = 0.02 // ISS / ICMS frete
+  } else {
+    // Serviços, Saúde, Educação, Tecnologia, Construção Civil
+    basePresuncaoIRPJPercent = 0.32
+    basePresuncaoCSLLPercent = 0.32
+    icmsOuIssPercent = 0.02 // ISS
+  }
 
   const basePresumidaIRPJ = rbt12 * basePresuncaoIRPJPercent
   const basePresumidaCSLL = rbt12 * basePresuncaoCSLLPercent
@@ -221,8 +283,6 @@ export function calcularLucroPresumido(rbt12: number, segmento: SegmentoEmpresa)
   // PIS + COFINS cumulativo: PIS 0,65% + COFINS 3% = 3,65% sobre a receita bruta
   const pisCofins = rbt12 * 0.0365
 
-  // ICMS 12% (Comércio/Indústria) ou ISS 2% (Serviços)
-  const icmsOuIssPercent = segmento === 'Serviços' ? 0.02 : 0.12
   const icmsOuIss = rbt12 * icmsOuIssPercent
 
   const cargaAnual = Math.round((irpjTotal + csllTotal + pisCofins + icmsOuIss) * 100) / 100
@@ -282,10 +342,13 @@ export function calcularLucroReal(
   // (PIS 1,65% + COFINS 7,60%)
   const pisCofins = rbt12 * 0.0925
 
-  // ICMS 12% (Comércio/Indústria) ou ISS 2% (Serviços)
-  const icmsOuIssPercent = segmento === 'Serviços' ? 0.02 : 0.02 // No Lucro Real, aplicamos a alíquota municipal/estadual correspondente
-  // Conforme especificação: ICMS 12% (Comércio/Indústria) ou ISS 2% (Serviços)
-  const impostoConsumoPercent = segmento === 'Serviços' ? 0.02 : 0.12
+  // Tributo sobre consumo: ICMS 12% (Comércio/Indústria/Agro/Bares e Restaurantes) ou ISS 2% (Serviços, Saúde, Educação, Tecnologia, Construção Civil, Transporte)
+  const isMercadoria =
+    segmento === 'Comércio' ||
+    segmento === 'Indústria' ||
+    segmento === 'Agro' ||
+    segmento === 'Bares e Restaurantes'
+  const impostoConsumoPercent = isMercadoria ? 0.12 : 0.02
   const impostoConsumo = rbt12 * impostoConsumoPercent
 
   const cargaAnual = Math.round((irpjTotal + csllTotal + pisCofins + impostoConsumo) * 100) / 100
@@ -352,14 +415,21 @@ export function executarDiagnosticoTributario(
   if (rbt12 > LIMITE_PRESUMIDO) {
     explicacaoRecomendacao = `Com faturamento anual de R$ ${rbt12.toLocaleString('pt-BR')}, o enquadramento no Lucro Real é obrigatório pela legislação fiscal brasileira (acima de R$ 78 milhões).`
   } else if (regimeRecomendado === 'Simples Nacional') {
-    if (segmento === 'Serviços') {
+    const isServicoComFatorR =
+      segmento === 'Serviços' ||
+      segmento === 'Saúde' ||
+      segmento === 'Educação' ||
+      segmento === 'Tecnologia' ||
+      segmento === 'Construção Civil'
+
+    if (isServicoComFatorR) {
       if (fatorRElegivelAnexoIII) {
-        explicacaoRecomendacao = `O Simples Nacional é o mais vantajoso gerando alíquota efetiva de ${simples.aliquotaEfetiva}%. Sua folha salarial representa ${fatorR.toFixed(1)}% do faturamento (Fator R ≥ 28%), o que enquadra sua empresa no vantajoso Anexo III em vez do Anexo V.`
+        explicacaoRecomendacao = `O Simples Nacional é o mais vantajoso gerando alíquota efetiva de ${simples.aliquotaEfetiva}%. No setor de ${segmento}, sua folha salarial representa ${fatorR.toFixed(1)}% do faturamento (Fator R ≥ 28%), o que enquadra sua empresa no vantajoso Anexo III em vez do Anexo V.`
       } else {
-        explicacaoRecomendacao = `O Simples Nacional apresenta a menor carga fiscal total (${simples.aliquotaEfetiva}% efetivo), mesmo tributando no Anexo V (Fator R em ${fatorR.toFixed(1)}%). Vale analisar com nossos especialistas se um ajuste no pró-labore elevaria seu Fator R para 28% para reduzir ainda mais os impostos.`
+        explicacaoRecomendacao = `O Simples Nacional apresenta a menor carga fiscal total (${simples.aliquotaEfetiva}% efetivo) para ${segmento}, mesmo tributando no Anexo V (Fator R em ${fatorR.toFixed(1)}%). Vale analisar com nossos especialistas se um ajuste no pró-labore elevaria seu Fator R para 28% para reduzir ainda mais os impostos.`
       }
     } else {
-      explicacaoRecomendacao = `O Simples Nacional proporciona a menor alíquota efetiva global (${simples.aliquotaEfetiva}%) unificando tributos federais e ICMS no DAS, gerando uma economia estimada de R$ ${economiaAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em relação ao segundo regime mais viável.`
+      explicacaoRecomendacao = `O Simples Nacional proporciona a menor alíquota efetiva global (${simples.aliquotaEfetiva}%) unificando tributos federais e estaduais/municipais no DAS para o setor de ${segmento}, gerando uma economia estimada de R$ ${economiaAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em relação ao segundo regime mais viável.`
     }
   } else if (regimeRecomendado === 'Lucro Presumido') {
     explicacaoRecomendacao = `O Lucro Presumido é a opção mais econômica neste cenário (${presumido.aliquotaEfetiva}% de alíquota efetiva). Como sua margem líquida (${margemLucro}%) ou faturamento superam os limites do Simples ou a base de presunção legal é mais favorável, este regime reduz a carga de IRPJ/CSLL consideravelmente.`

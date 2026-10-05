@@ -8,13 +8,16 @@ export interface Lead {
   telefone: string
   empresa: string
   segmento:
-    | 'Tecnologia'
-    | 'Varejo'
-    | 'Indústria'
+    | 'Comércio'
     | 'Serviços'
-    | 'Agronegócio'
-    | 'Sociedade de Profissionais'
-    | 'Outros'
+    | 'Indústria'
+    | 'Saúde'
+    | 'Educação'
+    | 'Agro'
+    | 'Transporte'
+    | 'Tecnologia'
+    | 'Construção Civil'
+    | 'Bares e Restaurantes'
     | string
   funcionarios: '1–5' | '6–20' | '21–50' | '51–200' | 'Mais de 200' | string
   mensagem?: string

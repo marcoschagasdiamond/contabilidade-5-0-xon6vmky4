@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-05T23:32:20.656Z",
+  "generatedAt": "2026-10-05T23:52:07.217Z",
   "collections": [
     {
       "name": "users",
@@ -85,13 +85,16 @@
           "required": true,
           "system": false,
           "selectValues": [
-            "Tecnologia",
-            "Varejo",
-            "Indústria",
+            "Comércio",
             "Serviços",
-            "Agronegócio",
-            "Sociedade de Profissionais",
-            "Outros"
+            "Indústria",
+            "Saúde",
+            "Educação",
+            "Agro",
+            "Transporte",
+            "Tecnologia",
+            "Construção Civil",
+            "Bares e Restaurantes"
           ]
         },
         {
@@ -167,7 +170,18 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["Comércio", "Indústria", "Serviços"]
+          "selectValues": [
+            "Comércio",
+            "Serviços",
+            "Indústria",
+            "Saúde",
+            "Educação",
+            "Agro",
+            "Transporte",
+            "Tecnologia",
+            "Construção Civil",
+            "Bares e Restaurantes"
+          ]
         },
         {
           "name": "rbt12",
