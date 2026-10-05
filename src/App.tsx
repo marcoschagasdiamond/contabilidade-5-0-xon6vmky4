@@ -18,6 +18,7 @@ import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import TermosDeUso from './pages/TermosDeUso'
 import Login from './pages/Login'
 import Admin from './pages/Admin'
+import Diagnostico from './pages/Diagnostico'
 import NotFound from './pages/NotFound'
 
 // Rota protegida para /admin
@@ -54,6 +55,7 @@ const App = () => (
             {/* Páginas institucionais */}
             <Route path="/sobre" element={<Sobre />} />
             <Route path="/servicos" element={<Servicos />} />
+            <Route path="/diagnostico" element={<Diagnostico />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/contato" element={<Contato />} />

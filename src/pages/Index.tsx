@@ -172,14 +172,13 @@ export default function Index() {
 
               {/* Botões de Ação */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-10">
-                <button
-                  type="button"
-                  onClick={() => scrollToSection('contato')}
+                <Link
+                  to="/diagnostico"
                   className="px-7 py-4 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-1 btn-press flex items-center justify-center gap-2"
                 >
-                  Solicitar uma Proposta
+                  Fazer Diagnóstico Tributário
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                </button>
+                </Link>
 
                 <button
                   type="button"
@@ -592,6 +591,38 @@ export default function Index() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* BANNER CTA: DIAGNÓSTICO TRIBUTÁRIO */}
+      <section className="py-14 bg-gradient-to-r from-[#0D2A1C] via-[#145A32] to-[#0A1A13] text-white relative overflow-hidden border-y border-white/10">
+        <div className="absolute top-0 right-1/4 w-80 h-80 bg-[#2ECC71]/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 relative z-10">
+          <div className="bg-white/[0.08] backdrop-blur-md rounded-[24px] p-8 sm:p-12 border border-white/15 flex flex-col lg:flex-row items-center justify-between gap-8 shadow-2xl">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#2ECC71]/20 border border-[#2ECC71]/30 text-xs font-bold text-[#2ECC71] uppercase tracking-wider mb-3">
+                <Sparkles className="w-3.5 h-3.5" />
+                Simulador Gratuito 2025
+              </div>
+              <h2 className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-white tracking-tight leading-tight">
+                Descubra o melhor regime tributário para sua empresa
+              </h2>
+              <p className="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed">
+                Simule em 4 etapas se o <strong>Simples Nacional</strong>,{' '}
+                <strong>Lucro Presumido</strong> ou <strong>Lucro Real</strong> proporciona a menor
+                carga fiscal e maior economia para o seu negócio.
+              </p>
+            </div>
+            <div className="shrink-0 w-full sm:w-auto">
+              <Link
+                to="/diagnostico"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl font-heading font-bold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-0.5 btn-press whitespace-nowrap"
+              >
+                <span>Fazer Diagnóstico Agora</span>
+                <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>

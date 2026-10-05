@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T19:06:36.627Z",
+  "generatedAt": "2026-10-05T23:32:20.656Z",
   "collections": [
     {
       "name": "users",
@@ -125,6 +125,117 @@
       "indexes": [
         "CREATE INDEX idx_leads_created ON leads (created DESC)",
         "CREATE INDEX idx_leads_email ON leads (email)"
+      ]
+    },
+    {
+      "name": "diagnosticos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "telefone",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "empresa",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "segmento",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Comércio", "Indústria", "Serviços"]
+        },
+        {
+          "name": "rbt12",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "folha12",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "margem_lucro",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "regime_recomendado",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Simples Nacional", "Lucro Presumido", "Lucro Real"]
+        },
+        {
+          "name": "carga_simples",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "carga_presumido",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "carga_real",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "economia_anual",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_diagnosticos_created ON diagnosticos (created DESC)",
+        "CREATE INDEX idx_diagnosticos_email ON diagnosticos (email)"
       ]
     }
   ]
