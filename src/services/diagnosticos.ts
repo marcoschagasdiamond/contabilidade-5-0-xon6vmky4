@@ -28,6 +28,15 @@ export interface Diagnostico {
   carga_presumido: number
   carga_real: number
   economia_anual?: number
+  // Campos da Reforma Tributária (EC 132/2023, LC 214/2025)
+  ano_base?: number
+  sistema_recomendado_atual?: string
+  sistema_recomendado_novo?: string
+  carga_simples_novo?: number
+  carga_presumido_novo?: number
+  carga_real_novo?: number
+  economia_anual_novo?: number
+  detalhes_reforma_json?: any
   funcionarios?: string
   emissao_nf?: string
   atividade_mista?: boolean

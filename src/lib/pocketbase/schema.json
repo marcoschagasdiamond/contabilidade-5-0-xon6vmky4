@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-06T00:20:32.568Z",
+  "generatedAt": "2026-10-06T01:16:21.931Z",
   "collections": [
     {
       "name": "users",
@@ -291,6 +291,54 @@
         {
           "name": "cnpj",
           "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ano_base",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sistema_recomendado_atual",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sistema_recomendado_novo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "carga_simples_novo",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "carga_presumido_novo",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "carga_real_novo",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "economia_anual_novo",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "detalhes_reforma_json",
+          "type": "json",
           "required": false,
           "system": false
         }

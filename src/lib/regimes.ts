@@ -1,8 +1,21 @@
 /**
  * Motor de Cálculo Tributário - Contabilidade 5.0
  * Compara Simples Nacional, Lucro Presumido e Lucro Real
- * com base na legislação brasileira vigente (2025).
+ * com base no Novo Código Tributário (Reforma Tributária - EC 132/2023, LC 214/2025)
+ * e mantém a comparação com o Sistema Atual vigente.
  */
+
+import {
+  type AnoBaseSimulacao,
+  ANOS_SIMULACAO_DISPONIVEIS,
+  calcularAliquotasEfetivasReforma,
+  obterPercentualConsumoSimplesPorAno,
+  segmentoSusceptivelImpostoSeletivo,
+  FATOR_TRANSICAO_IBS,
+  FATOR_REMANESCENTE_ICMS_ISS,
+  TAXA_CBS_REFERENCIA,
+  TAXA_IBS_REFERENCIA,
+} from './reformaTributaria'
 
 export type SegmentoEmpresa =
   | 'Comércio'
@@ -279,6 +292,7 @@ export interface DadosEntradaDiagnostico {
   atividadeMista?: boolean // Comércio e serviços integrados
   regimeAtual?: RegimeAtualEmpresa | string
   cidade?: string // Cidade/UF selecionada
+  anoBase?: number // Ano da simulação (2026 a 2033)
 }
 
 export interface ItemRankingRegime {
@@ -336,7 +350,45 @@ export interface ResultadoRegime {
   descricaoCurta: string
 }
 
+export interface DetalhesReformaRegime {
+  anoBase: number
+  aliquotaCBS: number
+  aliquotaIBS: number
+  aliquotaICMSRemanescente: number
+  aliquotaISSRemanescente: number
+  fatorReducaoSetorial: number
+  parcelaCBSReais: number
+  parcelaIBSReais: number
+  parcelaICMSouISSReais: number
+  percentualCreditoTransferidoSimples?: number
+  creditoTransferidoValorReais?: number
+  alertaSublimiteIBS?: boolean // RBT12 > 3.6M: IBS por fora do DAS
+  impostoSeletivoAlerta?: string
+}
+
+export interface ResultadoNovoSistemaReforma {
+  anoBase: number
+  simples: ResultadoRegime & { detalhesReforma?: DetalhesReformaRegime }
+  presumido: ResultadoRegime & { detalhesReforma?: DetalhesReformaRegime }
+  real: ResultadoRegime & { detalhesReforma?: DetalhesReformaRegime }
+  regimeRecomendado: 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real'
+  economiaAnual: number
+  segundoMaisVantajoso?: 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real'
+  ranking: ItemRankingRegime[]
+  empateTecnico: boolean
+  regimeEmpatado?: 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real'
+  explicacaoTransicao: string
+  projecaoAnos: Array<{
+    ano: number
+    cargaSimples: number
+    cargaPresumido: number
+    cargaReal: number
+    melhorRegime: string
+  }>
+}
+
 export interface ResultadoDiagnosticoCompleto {
+  // Sistema Atual
   simples: ResultadoRegime
   presumido: ResultadoRegime
   real: ResultadoRegime
@@ -358,6 +410,9 @@ export interface ResultadoDiagnosticoCompleto {
   motivosRecomendacao: string[] // 3 a 5 bullets didáticos vinculando input -> consequência fiscal
   gatilhosMudanca: GatilhoMudanca[]
   alternativas: JustificativaAlternativa[]
+  // NOVO CÓDIGO TRIBUTÁRIO (Reforma Tributária - EC 132/2023, LC 214/2025)
+  anoBase: number
+  novoSistema: ResultadoNovoSistemaReforma
 }
 
 // Limites legais
@@ -1045,6 +1100,60 @@ export function executarDiagnosticoTributario(
   // Justificativa geral (mantida compatível)
   let explicacaoRecomendacao = resumoSimplesTexto
 
+  // =========================================================================
+  // CÁLCULO DO NOVO CÓDIGO TRIBUTÁRIO (REFORMA TRIBUTÁRIA - EC 132/2023, LC 214/2025)
+  // =========================================================================
+  const anoSimulacao = (dados.anoBase || 2026) as AnoBaseSimulacao
+  const novoSistema = calcularDiagnosticoReformaTributaria({
+    rbt12,
+    folha12,
+    margemLucro,
+    segmento,
+    aliquotaISS,
+    cidadeNome,
+    anoBase: anoSimulacao,
+    simplesAtual: simples,
+    presumidoAtual: presumido,
+    realAtual: real,
+  })
+
+  // Adicionar regras e gatilhos da Reforma Tributária às listas existentes
+  if (rbt12 > 3_600_000 && rbt12 <= LIMITE_SIMPLES) {
+    regrasAplicadas.unshift({
+      titulo: 'Sublimite Estadual de R$ 3,6M (IBS por fora do DAS)',
+      descricao: `Pela LC 214/2025 art. 519 e art. 13-A da LC 123/2006, empresas com RBT12 entre R$ 3,6M e R$ 4,8M recolhem tributos federais no DAS, mas o IBS (assim como ICMS/ISS) é recolhido OBRIGATORIAMENTE por fora do Simples no regime regular.`,
+      tipo: 'alerta',
+      impacto: 'Gera apuração híbrida obrigatória e necessidade de apuração não-cumulativa de IBS.',
+    })
+
+    gatilhosMudanca.unshift({
+      titulo: 'Gatilho de Sublimite: IBS por fora do DAS (R$ 3,6M a R$ 4,8M)',
+      descricao: `Sua receita está na 6ª faixa do Simples. No novo código tributário, o IBS estadual/municipal deixa de integrar a guia única DAS e passa a ser recolhido pelo regime regular com débito e crédito.`,
+      condicao: 'RBT12 acima de R$ 3.600.000,00',
+    })
+  }
+
+  // Gatilho de clientes B2B e transferência de créditos no Simples
+  const infoIS = segmentoSusceptivelImpostoSeletivo(segmento)
+  if (infoIS.suscetivel && infoIS.motivo) {
+    regrasAplicadas.push({
+      titulo: 'Atenção ao Imposto Seletivo (IS — EC 132/2023)',
+      descricao: infoIS.motivo,
+      tipo: 'alerta',
+      impacto: 'Alíquotas específicas a serem fixadas por lei ordinária a partir de 2027.',
+    })
+  }
+
+  // Regra de Split Payment
+  regrasAplicadas.push({
+    titulo: 'Mecanismo de Split Payment (Liquidação Financeira)',
+    descricao:
+      'No Novo Código Tributário, o IBS e a CBS serão retidos e recolhidos automaticamente no momento da liquidação bancária/cartão/PIX da transação comercial.',
+    tipo: 'informativo',
+    impacto:
+      'Exige planejamento rigoroso de capital de giro, pois o imposto não fica mais represado até o dia 20 do mês seguinte.',
+  })
+
   return {
     simples,
     presumido,
@@ -1065,5 +1174,383 @@ export function executarDiagnosticoTributario(
     motivosRecomendacao,
     gatilhosMudanca,
     alternativas,
+    anoBase: anoSimulacao,
+    novoSistema,
+  }
+}
+
+/**
+ * Calcula os regimes no Novo Sistema Tributário (IBS / CBS / IS) para um determinado ano
+ */
+export function calcularDiagnosticoReformaTributaria(params: {
+  rbt12: number
+  folha12: number
+  margemLucro: number
+  segmento: SegmentoEmpresa
+  aliquotaISS: number
+  cidadeNome: string
+  anoBase: AnoBaseSimulacao
+  simplesAtual: ResultadoRegime
+  presumidoAtual: ResultadoRegime
+  realAtual: ResultadoRegime
+}): ResultadoNovoSistemaReforma {
+  const {
+    rbt12,
+    folha12,
+    margemLucro,
+    segmento,
+    aliquotaISS,
+    cidadeNome,
+    anoBase,
+    simplesAtual,
+    presumidoAtual,
+    realAtual,
+  } = params
+
+  const {
+    aliquotaCBS,
+    aliquotaIBS,
+    aliquotaICMSRemanescente,
+    aliquotaISSRemanescente,
+    fatorReducaoSetorial,
+    explicacaoTransicao,
+  } = calcularAliquotasEfetivasReforma(anoBase, segmento, aliquotaISS)
+
+  const isMercadoria =
+    segmento === 'Comércio' ||
+    segmento === 'Indústria' ||
+    segmento === 'Agro' ||
+    segmento === 'Bares e Restaurantes'
+
+  // Identificar faixa do Simples
+  let faixaNumero = 1
+  if (rbt12 > 3_600_000) faixaNumero = 6
+  else if (rbt12 > 1_800_000) faixaNumero = 5
+  else if (rbt12 > 720_000) faixaNumero = 4
+  else if (rbt12 > 360_000) faixaNumero = 3
+  else if (rbt12 > 180_000) faixaNumero = 2
+
+  const partilhaSimples = obterPercentualConsumoSimplesPorAno(anoBase, faixaNumero)
+  const isSublimiteIBS = rbt12 > 3_600_000 && rbt12 <= LIMITE_SIMPLES
+
+  // 1. Simples Nacional no Novo Sistema
+  let cargaSimplesNovo = simplesAtual.cargaAnual
+  let parcelaCBSSimples = 0
+  let parcelaIBSSimples = 0
+  let creditoTransferidoSimples = 0
+
+  if (simplesAtual.elegivel && rbt12 > 0) {
+    if (anoBase === 2026) {
+      // 2026: Simples totalmente inalterado (art. 348 LC 214)
+      cargaSimplesNovo = simplesAtual.cargaAnual
+      parcelaCBSSimples = 0
+      parcelaIBSSimples = 0
+      creditoTransferidoSimples = 0
+    } else {
+      // Alíquota efetiva do Simples permanece a mesma (LC 214 art. 519)
+      // O que muda é a repartição interna dos tributos na guia DAS
+      cargaSimplesNovo = simplesAtual.cargaAnual
+      parcelaCBSSimples = cargaSimplesNovo * (partilhaSimples.percentualCBS / 100)
+      parcelaIBSSimples = cargaSimplesNovo * (partilhaSimples.percentualIBS / 100)
+
+      // Crédito transferido aos clientes PJ (alíquota efetiva * soma CBS+IBS na faixa)
+      const pctCredito =
+        (simplesAtual.aliquotaEfetiva * (partilhaSimples.percentualTotalNovosImpostos / 100)) / 100
+      creditoTransferidoSimples = Math.round(rbt12 * pctCredito * 100) / 100
+
+      // Se sublimite de R$ 3,6M a R$ 4,8M: IBS é apurado por fora no regime regular!
+      if (isSublimiteIBS && anoBase >= 2029) {
+        const fatorIBS = FATOR_TRANSICAO_IBS[anoBase]
+        const ibsPorFora = rbt12 * TAXA_IBS_REFERENCIA * fatorIBS * fatorReducaoSetorial
+        cargaSimplesNovo = Math.round((cargaSimplesNovo + ibsPorFora) * 100) / 100
+      }
+    }
+  }
+
+  const detalhesSimplesReforma: DetalhesReformaRegime = {
+    anoBase,
+    aliquotaCBS: Math.round(aliquotaCBS * 10000) / 100,
+    aliquotaIBS: Math.round(aliquotaIBS * 10000) / 100,
+    aliquotaICMSRemanescente: Math.round(aliquotaICMSRemanescente * 10000) / 100,
+    aliquotaISSRemanescente: Math.round(aliquotaISSRemanescente * 10000) / 100,
+    fatorReducaoSetorial,
+    parcelaCBSReais: Math.round(parcelaCBSSimples * 100) / 100,
+    parcelaIBSReais: Math.round(parcelaIBSSimples * 100) / 100,
+    parcelaICMSouISSReais: 0,
+    percentualCreditoTransferidoSimples:
+      anoBase > 2026 ? Math.round(partilhaSimples.percentualTotalNovosImpostos * 100) / 100 : 0,
+    creditoTransferidoValorReais: creditoTransferidoSimples,
+    alertaSublimiteIBS: isSublimiteIBS,
+  }
+
+  const simplesNovo: ResultadoRegime & { detalhesReforma?: DetalhesReformaRegime } = {
+    nome: 'Simples Nacional',
+    elegivel: simplesAtual.elegivel,
+    motivoInelegibilidade: simplesAtual.motivoInelegibilidade,
+    cargaAnual: Math.round(cargaSimplesNovo * 100) / 100,
+    aliquotaEfetiva: rbt12 > 0 ? Math.round((cargaSimplesNovo / rbt12) * 10000) / 100 : 0,
+    detalhes: {
+      ...simplesAtual.detalhes,
+    },
+    descricaoCurta:
+      anoBase === 2026
+        ? 'No ano-base 2026, o Simples Nacional permanece inalterado pela LC 214/2025 art. 348.'
+        : `Guia DAS com CBS (~${partilhaSimples.percentualCBS.toFixed(1)}%) e IBS (~${partilhaSimples.percentualIBS.toFixed(1)}%) na partilha interna.`,
+    detalhesReforma: detalhesSimplesReforma,
+  }
+
+  // 2. Lucro Presumido no Novo Sistema
+  // IRPJ e CSLL continuam existindo (não foram extintos);
+  // PIS/COFINS (3,65%) são substituídos pela CBS de referência do ano;
+  // ICMS/ISS substituídos por IBS + resíduo transitório de ICMS/ISS.
+  let cargaPresumidoNovo = 0
+  let parcelaCBSPresumido = 0
+  let parcelaIBSPresumido = 0
+  let parcelaAntigosPresumido = 0
+
+  if (presumidoAtual.elegivel && rbt12 > 0) {
+    const irpjPresumido = presumidoAtual.detalhes.irpj || 0
+    const csllPresumido = presumidoAtual.detalhes.csll || 0
+
+    if (anoBase === 2026) {
+      // 2026: CBS 0,9% e IBS 0,1% são dispensados de recolhimento; PIS/COFINS e ICMS/ISS normais
+      cargaPresumidoNovo = presumidoAtual.cargaAnual
+    } else {
+      // CBS substitui PIS/COFINS
+      parcelaCBSPresumido = rbt12 * aliquotaCBS
+      // IBS com transição
+      parcelaIBSPresumido = rbt12 * aliquotaIBS
+      // ICMS ou ISS remanescentes da transição
+      const aliqAntiga = isMercadoria ? aliquotaICMSRemanescente : aliquotaISSRemanescente
+      parcelaAntigosPresumido = rbt12 * aliqAntiga
+
+      cargaPresumidoNovo =
+        irpjPresumido +
+        csllPresumido +
+        parcelaCBSPresumido +
+        parcelaIBSPresumido +
+        parcelaAntigosPresumido
+    }
+  }
+
+  const detalhesPresumidoReforma: DetalhesReformaRegime = {
+    anoBase,
+    aliquotaCBS: Math.round(aliquotaCBS * 10000) / 100,
+    aliquotaIBS: Math.round(aliquotaIBS * 10000) / 100,
+    aliquotaICMSRemanescente: Math.round(aliquotaICMSRemanescente * 10000) / 100,
+    aliquotaISSRemanescente: Math.round(aliquotaISSRemanescente * 10000) / 100,
+    fatorReducaoSetorial,
+    parcelaCBSReais: Math.round(parcelaCBSPresumido * 100) / 100,
+    parcelaIBSReais: Math.round(parcelaIBSPresumido * 100) / 100,
+    parcelaICMSouISSReais: Math.round(parcelaAntigosPresumido * 100) / 100,
+  }
+
+  const presumidoNovo: ResultadoRegime & { detalhesReforma?: DetalhesReformaRegime } = {
+    nome: 'Lucro Presumido',
+    elegivel: presumidoAtual.elegivel,
+    motivoInelegibilidade: presumidoAtual.motivoInelegibilidade,
+    cargaAnual: Math.round(cargaPresumidoNovo * 100) / 100,
+    aliquotaEfetiva: rbt12 > 0 ? Math.round((cargaPresumidoNovo / rbt12) * 10000) / 100 : 0,
+    detalhes: {
+      ...presumidoAtual.detalhes,
+    },
+    descricaoCurta:
+      anoBase === 2026
+        ? 'Lucro Presumido com regras do ano-teste de 2026.'
+        : `Presunção de IRPJ/CSLL mantida; CBS ${(aliquotaCBS * 100).toFixed(1)}% e IBS ${(aliquotaIBS * 100).toFixed(1)}% substituem PIS, COFINS, ICMS e ISS.`,
+    detalhesReforma: detalhesPresumidoReforma,
+  }
+
+  // 3. Lucro Real no Novo Sistema
+  // IRPJ e CSLL sobre lucro real mantidos;
+  // PIS/COFINS (9,25%) substituídos pela CBS de referência;
+  // ICMS/ISS substituídos pelo IBS com transição.
+  let cargaRealNovo = 0
+  let parcelaCBSReal = 0
+  let parcelaIBSReal = 0
+  let parcelaAntigosReal = 0
+
+  if (rbt12 > 0) {
+    const irpjReal = realAtual.detalhes.irpj || 0
+    const csllReal = realAtual.detalhes.csll || 0
+
+    if (anoBase === 2026) {
+      cargaRealNovo = realAtual.cargaAnual
+    } else {
+      parcelaCBSReal = rbt12 * aliquotaCBS
+      parcelaIBSReal = rbt12 * aliquotaIBS
+      const aliqAntiga = isMercadoria ? aliquotaICMSRemanescente : aliquotaISSRemanescente
+      parcelaAntigosReal = rbt12 * aliqAntiga
+
+      cargaRealNovo = irpjReal + csllReal + parcelaCBSReal + parcelaIBSReal + parcelaAntigosReal
+    }
+  }
+
+  const detalhesRealReforma: DetalhesReformaRegime = {
+    anoBase,
+    aliquotaCBS: Math.round(aliquotaCBS * 10000) / 100,
+    aliquotaIBS: Math.round(aliquotaIBS * 10000) / 100,
+    aliquotaICMSRemanescente: Math.round(aliquotaICMSRemanescente * 10000) / 100,
+    aliquotaISSRemanescente: Math.round(aliquotaISSRemanescente * 10000) / 100,
+    fatorReducaoSetorial,
+    parcelaCBSReais: Math.round(parcelaCBSReal * 100) / 100,
+    parcelaIBSReais: Math.round(parcelaIBSReal * 100) / 100,
+    parcelaICMSouISSReais: Math.round(parcelaAntigosReal * 100) / 100,
+  }
+
+  const realNovo: ResultadoRegime & { detalhesReforma?: DetalhesReformaRegime } = {
+    nome: 'Lucro Real',
+    elegivel: true,
+    cargaAnual: Math.round(cargaRealNovo * 100) / 100,
+    aliquotaEfetiva: rbt12 > 0 ? Math.round((cargaRealNovo / rbt12) * 10000) / 100 : 0,
+    detalhes: {
+      ...realAtual.detalhes,
+    },
+    descricaoCurta:
+      anoBase === 2026
+        ? 'Lucro Real no ano-base 2026 com compensação de teste CBS/IBS.'
+        : `Lucro contábil para IRPJ/CSLL com CBS ${(aliquotaCBS * 100).toFixed(1)}% e IBS ${(aliquotaIBS * 100).toFixed(1)}% com aproveitamento amplo de créditos.`,
+    detalhesReforma: detalhesRealReforma,
+  }
+
+  // Ranking do Novo Sistema
+  const todosNovos = [simplesNovo, presumidoNovo, realNovo]
+  const elegiveisNovos = todosNovos
+    .filter((r) => r.elegivel)
+    .sort((a, b) => a.cargaAnual - b.cargaAnual)
+  const inelegiveisNovos = todosNovos.filter((r) => !r.elegivel)
+
+  let regimeRecomendadoNovo: 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real' =
+    elegiveisNovos.length > 0 ? elegiveisNovos[0].nome : 'Lucro Real'
+  let economiaAnualNovo = 0
+  let segundoNovo: 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real' | undefined = undefined
+
+  if (elegiveisNovos.length > 1) {
+    segundoNovo = elegiveisNovos[1].nome
+    economiaAnualNovo = Math.max(
+      0,
+      Math.round((elegiveisNovos[1].cargaAnual - elegiveisNovos[0].cargaAnual) * 100) / 100,
+    )
+  }
+
+  if (rbt12 > LIMITE_PRESUMIDO) {
+    regimeRecomendadoNovo = 'Lucro Real'
+  }
+
+  const cargaPrimeiroNovo = elegiveisNovos.length > 0 ? elegiveisNovos[0].cargaAnual : 0
+  const aliqPrimeiroNovo = elegiveisNovos.length > 0 ? elegiveisNovos[0].aliquotaEfetiva : 0
+  let empateTecnicoNovo = false
+  let regimeEmpatadoNovo: 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real' | undefined =
+    undefined
+
+  const ordenadosNovos = [...elegiveisNovos, ...inelegiveisNovos]
+  const rankingNovo: ItemRankingRegime[] = ordenadosNovos.map((reg, idx) => {
+    const posicao = idx + 1
+    const diferencaValor = reg.elegivel
+      ? Math.max(0, Math.round((reg.cargaAnual - cargaPrimeiroNovo) * 100) / 100)
+      : 0
+    const diferencaPercent =
+      reg.elegivel && cargaPrimeiroNovo > 0
+        ? Math.round(((reg.cargaAnual - cargaPrimeiroNovo) / cargaPrimeiroNovo) * 1000) / 10
+        : 0
+    const diferencaAliq = Math.abs(reg.aliquotaEfetiva - aliqPrimeiroNovo)
+    const ehEmpate =
+      posicao === 2 &&
+      reg.elegivel &&
+      (diferencaPercent < 3.0 || diferencaAliq < 1.0) &&
+      rbt12 <= LIMITE_PRESUMIDO
+
+    if (ehEmpate) {
+      empateTecnicoNovo = true
+      regimeEmpatadoNovo = reg.nome
+    }
+
+    let statusDescritivo = ''
+    if (!reg.elegivel) {
+      statusDescritivo = 'Inelegível legalmente'
+    } else if (posicao === 1) {
+      statusDescritivo = `1º lugar no Novo Sistema (${anoBase})`
+    } else if (ehEmpate) {
+      statusDescritivo = '2º lugar • Empate técnico no Novo Sistema'
+    } else {
+      statusDescritivo = `${posicao}º lugar • Carga maior em R$ ${diferencaValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/ano`
+    }
+
+    return {
+      posicao,
+      regime: reg.nome,
+      cargaAnual: reg.cargaAnual,
+      aliquotaEfetiva: reg.aliquotaEfetiva,
+      elegivel: reg.elegivel,
+      motivoInelegibilidade: reg.motivoInelegibilidade,
+      diferencaValor,
+      diferencaPercent,
+      empateTecnicoComPrimeiro: ehEmpate,
+      statusDescritivo,
+    }
+  })
+
+  // Mini série temporal de projeção de 2026 até 2033
+  const projecaoAnos = ANOS_SIMULACAO_DISPONIVEIS.map((ano) => {
+    const resAno = calcularAliquotasEfetivasReforma(ano, segmento, aliquotaISS)
+    let cSimples = simplesAtual.cargaAnual
+    let cPresumido = presumidoAtual.cargaAnual
+    let cReal = realAtual.cargaAnual
+
+    if (ano > 2026) {
+      const irpjPres = presumidoAtual.detalhes.irpj || 0
+      const csllPres = presumidoAtual.detalhes.csll || 0
+      const cbsPres = rbt12 * resAno.aliquotaCBS
+      const ibsPres = rbt12 * resAno.aliquotaIBS
+      const antPres =
+        rbt12 * (isMercadoria ? resAno.aliquotaICMSRemanescente : resAno.aliquotaISSRemanescente)
+      cPresumido = Math.round((irpjPres + csllPres + cbsPres + ibsPres + antPres) * 100) / 100
+
+      const irpjR = realAtual.detalhes.irpj || 0
+      const csllR = realAtual.detalhes.csll || 0
+      const cbsR = rbt12 * resAno.aliquotaCBS
+      const ibsR = rbt12 * resAno.aliquotaIBS
+      const antR =
+        rbt12 * (isMercadoria ? resAno.aliquotaICMSRemanescente : resAno.aliquotaISSRemanescente)
+      cReal = Math.round((irpjR + csllR + cbsR + ibsR + antR) * 100) / 100
+
+      if (isSublimiteIBS && ano >= 2029) {
+        const fatorIBS = FATOR_TRANSICAO_IBS[ano]
+        const ibsPorFora = rbt12 * TAXA_IBS_REFERENCIA * fatorIBS * resAno.fatorReducaoSetorial
+        cSimples = Math.round((cSimples + ibsPorFora) * 100) / 100
+      }
+    }
+
+    const opcoes = [
+      { regime: 'Simples Nacional', carga: cSimples, elegivel: simplesAtual.elegivel },
+      { regime: 'Lucro Presumido', carga: cPresumido, elegivel: presumidoAtual.elegivel },
+      { regime: 'Lucro Real', carga: cReal, elegivel: true },
+    ].filter((o) => o.elegivel)
+
+    opcoes.sort((a, b) => a.carga - b.carga)
+    const melhor = opcoes.length > 0 ? opcoes[0].regime : 'Lucro Real'
+
+    return {
+      ano,
+      cargaSimples: simplesAtual.elegivel ? cSimples : 0,
+      cargaPresumido: presumidoAtual.elegivel ? cPresumido : 0,
+      cargaReal: cReal,
+      melhorRegime: melhor,
+    }
+  })
+
+  return {
+    anoBase,
+    simples: simplesNovo,
+    presumido: presumidoNovo,
+    real: realNovo,
+    regimeRecomendado: regimeRecomendadoNovo,
+    economiaAnual: economiaAnualNovo,
+    segundoMaisVantajoso: segundoNovo,
+    ranking: rankingNovo,
+    empateTecnico: empateTecnicoNovo,
+    regimeEmpatado: regimeEmpatadoNovo,
+    explicacaoTransicao,
+    projecaoAnos,
   }
 }

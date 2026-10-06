@@ -48,6 +48,13 @@ import {
   LIMITE_SIMPLES,
   LIMITE_PRESUMIDO,
 } from '@/lib/regimes'
+import {
+  type AnoBaseSimulacao,
+  ANOS_SIMULACAO_DISPONIVEIS,
+  CRONOGRAMA_REFORMA,
+  TAXA_CBS_REFERENCIA,
+  TAXA_IBS_REFERENCIA,
+} from '@/lib/reformaTributaria'
 import { createDiagnostico } from '@/services/diagnosticos'
 import { createLead } from '@/services/leads'
 import { formatarCNPJ, validarCNPJ, limparCNPJ } from '@/lib/cnpj'
@@ -96,6 +103,7 @@ export default function Diagnostico() {
     emissaoNf: string
     atividadeMista: boolean
     regimeAtual: string
+    anoBase: AnoBaseSimulacao
   }>({
     nome: '',
     email: '',
@@ -111,7 +119,11 @@ export default function Diagnostico() {
     emissaoNf: 'Predominante para Pessoas Jurídicas (B2B)',
     atividadeMista: false,
     regimeAtual: 'Simples Nacional',
+    anoBase: 2026,
   })
+
+  // Visualização ativa na tela de resultado: 'novo' (Reforma IBS/CBS), 'atual' (Legislação Atual) ou 'comparativo' (lado a lado)
+  const [visaoSistema, setVisaoSistema] = useState<'novo' | 'comparativo' | 'atual'>('novo')
 
   // Inputs raw em string para facilitar digitação com formatação
   const [rbt12Input, setRbt12Input] = useState('600.000,00')
@@ -145,6 +157,7 @@ export default function Diagnostico() {
           atividadeMista: formData.atividadeMista,
           regimeAtual: formData.regimeAtual,
           cidade: formData.cidade,
+          anoBase: formData.anoBase,
         },
         resultado,
       })
@@ -302,9 +315,10 @@ export default function Diagnostico() {
           atividadeMista: formData.atividadeMista,
           regimeAtual: formData.regimeAtual,
           cidade: formData.cidade,
+          anoBase: formData.anoBase,
         })
 
-        // Persistir na coleção 'diagnosticos' incluindo novos campos, cidade, alíquota de ISS e ranking
+        // Persistir na coleção 'diagnosticos' incluindo novos campos da Reforma Tributária
         try {
           await createDiagnostico({
             nome: formData.nome.trim(),
@@ -318,11 +332,25 @@ export default function Diagnostico() {
             rbt12: formData.rbt12,
             folha12: formData.folha12,
             margem_lucro: formData.margemLucro,
-            regime_recomendado: diagResult.regimeRecomendado,
+            regime_recomendado: diagResult.novoSistema.regimeRecomendado,
             carga_simples: diagResult.simples.cargaAnual,
             carga_presumido: diagResult.presumido.cargaAnual,
             carga_real: diagResult.real.cargaAnual,
-            economia_anual: diagResult.economiaAnual,
+            economia_anual: diagResult.novoSistema.economiaAnual,
+            // Novos campos Reforma Tributária
+            ano_base: formData.anoBase,
+            sistema_recomendado_atual: diagResult.regimeRecomendado,
+            sistema_recomendado_novo: diagResult.novoSistema.regimeRecomendado,
+            carga_simples_novo: diagResult.novoSistema.simples.cargaAnual,
+            carga_presumido_novo: diagResult.novoSistema.presumido.cargaAnual,
+            carga_real_novo: diagResult.novoSistema.real.cargaAnual,
+            economia_anual_novo: diagResult.novoSistema.economiaAnual,
+            detalhes_reforma_json: {
+              anoBase: formData.anoBase,
+              explicacaoTransicao: diagResult.novoSistema.explicacaoTransicao,
+              projecaoAnos: diagResult.novoSistema.projecaoAnos,
+              rankingNovo: diagResult.novoSistema.ranking,
+            },
             funcionarios: formData.funcionarios,
             emissao_nf: formData.emissaoNf,
             atividade_mista: formData.atividadeMista,
@@ -1039,6 +1067,82 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 </div>
               </div>
 
+              {/* SELETOR DE ANO-BASE DA REFORMA TRIBUTÁRIA (NOVA PERGUNTA) */}
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-50/90 to-teal-50/90 border-2 border-[#2ECC71]/40">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-[#145A32] text-white">
+                        Novo Código Tributário
+                      </span>
+                      <span className="text-xs font-bold text-slate-700">
+                        EC 132/2023 · LC 214/2025
+                      </span>
+                    </div>
+                    <label className="block text-sm font-heading font-extrabold text-slate-900 mt-1">
+                      Ano-base para a Simulação da Transição Fiscais (2026 a 2033) *
+                    </label>
+                  </div>
+                  <span className="text-xs font-bold text-[#145A32] bg-white px-3 py-1 rounded-full border border-emerald-300 shrink-0 self-start sm:self-auto">
+                    Ano selecionado: {formData.anoBase}
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+                  Escolha o ano de referência para calcular o impacto da substituição de
+                  PIS/COFINS/ICMS/ISS por <strong>CBS (federal)</strong> e{' '}
+                  <strong>IBS (estadual/municipal)</strong>.
+                </p>
+
+                <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 sm:gap-2">
+                  {ANOS_SIMULACAO_DISPONIVEIS.map((ano) => {
+                    const isSelected = formData.anoBase === ano
+                    return (
+                      <button
+                        key={ano}
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, anoBase: ano }))}
+                        className={`py-2.5 px-2 rounded-xl text-center font-heading font-bold text-xs sm:text-sm transition-all ${
+                          isSelected
+                            ? 'bg-[#145A32] text-white shadow-md ring-2 ring-[#2ECC71] scale-105'
+                            : 'bg-white hover:bg-emerald-50/80 text-slate-700 border border-slate-200'
+                        }`}
+                      >
+                        <div>{ano}</div>
+                        <div
+                          className={`text-[9px] font-normal mt-0.5 truncate ${isSelected ? 'text-emerald-200' : 'text-slate-400'}`}
+                        >
+                          {ano === 2026 && 'Teste 0,9%'}
+                          {ano === 2027 && 'CBS Plena'}
+                          {ano === 2028 && 'CBS Trans.'}
+                          {ano === 2029 && 'IBS 10%'}
+                          {ano === 2030 && 'IBS 20%'}
+                          {ano === 2031 && 'IBS 30%'}
+                          {ano === 2032 && 'IBS 40%'}
+                          {ano === 2033 && 'IBS Pleno'}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="mt-3 text-[11px] text-slate-600 flex items-start gap-1.5 bg-white/70 p-2.5 rounded-lg border border-emerald-200/60">
+                  <Info className="w-3.5 h-3.5 text-[#145A32] shrink-0 mt-0.5" />
+                  <span>
+                    {formData.anoBase === 2026 &&
+                      'Em 2026 vigora a fase de teste operacional com dispensa de recolhimento para obrigações regulares (art. 348 LC 214). O Simples Nacional não sofre alterações.'}
+                    {formData.anoBase >= 2027 &&
+                      formData.anoBase <= 2028 &&
+                      'A partir de 2027 PIS e COFINS são extintos e a CBS entra em vigor. O Imposto Seletivo (IS) começa a incidir.'}
+                    {formData.anoBase >= 2029 &&
+                      formData.anoBase <= 2032 &&
+                      `No ano de ${formData.anoBase}, a transição federativa avança: o IBS absorve ${(formData.anoBase - 2028) * 10}% e o ICMS/ISS caem para ${100 - (formData.anoBase - 2028) * 10}%.`}
+                    {formData.anoBase === 2033 &&
+                      'Em 2033 o novo sistema opera em regime 100% pleno: ICMS e ISS totalmente extintos, com CBS e IBS definitivos.'}
+                  </span>
+                </div>
+              </div>
+
               {/* Avisos de limites */}
               {formData.rbt12 > LIMITE_SIMPLES && (
                 <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
@@ -1408,15 +1512,123 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
         {/* ========================================================= */}
         {etapa === 5 && resultado && (
           <div className="space-y-8 animate-fade-in">
-            {/* 1. RESUMO DIRETO EM LINGUAGEM SIMPLES (2 A 3 FRASES SEM JARGÃO) */}
+            {/* TABS NO TOPO: NOVO SISTEMA (IBS/CBS) vs COMPARATIVO vs SISTEMA ATUAL */}
+            <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-md border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#2ECC71] animate-ping" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                  Visão de Análise:
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto bg-slate-100 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setVisaoSistema('novo')}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    visaoSistema === 'novo'
+                      ? 'bg-[#145A32] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Novo Sistema (IBS/CBS {resultado.anoBase})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVisaoSistema('comparativo')}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    visaoSistema === 'comparativo'
+                      ? 'bg-[#145A32] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Comparativo Lado a Lado
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVisaoSistema('atual')}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    visaoSistema === 'atual'
+                      ? 'bg-[#145A32] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Sistema Atual (Vigente)
+                </button>
+              </div>
+
+              {/* Seletor dinâmico de ano-base */}
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-slate-500 font-medium">Ano da Reforma:</span>
+                <select
+                  value={formData.anoBase}
+                  onChange={(e) => {
+                    const novoAno = parseInt(e.target.value) as AnoBaseSimulacao
+                    setFormData((prev) => ({ ...prev, anoBase: novoAno }))
+                    const recalculado = executarDiagnosticoTributario({
+                      segmento: formData.segmento,
+                      rbt12: formData.rbt12,
+                      folha12: formData.folha12,
+                      margemLucro: formData.margemLucro,
+                      funcionarios: formData.funcionarios,
+                      emissaoNf: formData.emissaoNf,
+                      atividadeMista: formData.atividadeMista,
+                      regimeAtual: formData.regimeAtual,
+                      cidade: formData.cidade,
+                      anoBase: novoAno,
+                    })
+                    setResultado(recalculado)
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-900 bg-emerald-50/50"
+                >
+                  {ANOS_SIMULACAO_DISPONIVEIS.map((a) => (
+                    <option key={a} value={a}>
+                      {a} {a === 2026 ? '(Teste 0,9%)' : a === 2033 ? '(Pleno)' : `(Transição)`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* 1. RESUMO DIRETO EM LINGUAGEM SIMPLES (EXPLICANDO OS DOIS SISTEMAS) */}
             <div className="bg-white rounded-[24px] p-6 sm:p-7 shadow-lg border-2 border-[#2ECC71]/30">
-              <div className="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider text-[#145A32]">
-                <Sparkles className="w-4 h-4 text-[#2ECC71]" />
-                <span>Resumo Executivo do Diagnóstico</span>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#145A32]">
+                  <Sparkles className="w-4 h-4 text-[#2ECC71]" />
+                  <span>Resumo Executivo do Diagnóstico</span>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-[#145A32] border border-emerald-300">
+                  Base Legal: EC 132/2023 · LC 214/2025
+                </span>
               </div>
               <p className="text-base sm:text-lg text-slate-800 font-medium leading-relaxed">
-                {resultado.resumoSimplesTexto}
+                {visaoSistema === 'atual'
+                  ? resultado.resumoSimplesTexto
+                  : `Sob as regras do Novo Código Tributário Brasileiro (EC 132/2023 e LC 214/2025) para o ano de ${resultado.anoBase}, o regime mais vantajoso para a ${formData.empresa} é o ${resultado.novoSistema.regimeRecomendado}, gerando uma economia estimada de R$ ${resultado.novoSistema.economiaAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/ano em relação ao 2º colocado.${
+                      resultado.regimeRecomendado !== resultado.novoSistema.regimeRecomendado
+                        ? ` (Nota: No sistema tributário atual a melhor opção seria o ${resultado.regimeRecomendado}).`
+                        : ''
+                    }`}
               </p>
+
+              {/* Frase traduzindo o efeito prático em linguagem simples */}
+              <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex items-start gap-2">
+                <Info className="w-4 h-4 text-[#145A32] shrink-0 mt-0.5" />
+                <span>
+                  <strong>Efeito prático para seu negócio:</strong>{' '}
+                  {resultado.anoBase === 2026 &&
+                    'Em 2026, sua operação cumpre apenas obrigações de teste da CBS/IBS com dispensa de recolhimento financeiro, mantendo o Simples 100% inalterado.'}
+                  {resultado.anoBase >= 2027 &&
+                    resultado.anoBase <= 2028 &&
+                    'A partir de 2027 a sua guia mensal passa a ter CBS no lugar do PIS e da COFINS, garantindo crédito integral para compras de insumos e despesas operacionais.'}
+                  {resultado.anoBase >= 2029 &&
+                    resultado.anoBase <= 2032 &&
+                    `Em ${resultado.anoBase}, você vivencia a substituição gradual do ICMS e ISS pelo IBS estadual/municipal com redução progressiva dos tributos antigos.`}
+                  {resultado.anoBase === 2033 &&
+                    'A partir de 2033 o sistema opera pleno: ICMS, ISS, PIS e COFINS deixam de existir e sua empresa recolhe exclusivamente CBS + IBS com split payment automático.'}
+                </span>
+              </div>
+
               <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
                   <span>
@@ -1435,8 +1647,8 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     • Segmento: <strong className="text-slate-800">{formData.segmento}</strong>
                   </span>
                   <span>
-                    • Regime atual informado:{' '}
-                    <strong className="text-slate-800">{formData.regimeAtual}</strong>
+                    • Ano-base Simulado:{' '}
+                    <strong className="text-[#145A32]">{resultado.anoBase}</strong>
                   </span>
                 </div>
 
@@ -1461,68 +1673,488 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               </div>
             </div>
 
-            {/* 2. CARD DE DESTAQUE: REGIME RECOMENDADO & ECONOMIA */}
-            <div className="rounded-[28px] p-6 sm:p-10 bg-gradient-to-br from-[#0A1A13] via-[#0E2E1E] to-[#145A32] text-white shadow-2xl border border-white/20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-[#2ECC71]/20 rounded-full blur-3xl pointer-events-none" />
-
-              <div className="relative z-10">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#2ECC71]/20 border border-[#2ECC71]/40 text-[#2ECC71] text-xs font-bold uppercase tracking-wider">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Regime Recomendado para 2025
+            {/* 2. CARD DE DESTAQUE: RECOMENDAÇÃO PRINCIPAL (NOVO CÓDIGO TRIBUTÁRIO OU COMPARATIVO) */}
+            {visaoSistema === 'comparativo' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Lado Esquerdo: Sistema Atual */}
+                <div className="rounded-[24px] p-6 bg-slate-900 text-white shadow-xl border border-slate-700 relative overflow-hidden">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-600 text-slate-300 text-xs font-bold uppercase tracking-wider mb-4">
+                    Sistema Atual (Vigente até a Transição)
                   </div>
-                  {resultado.empateTecnico && (
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-200 text-xs font-bold">
-                      <Scale className="w-3.5 h-3.5" />
-                      Empate Técnico Detectado (&lt; 3% de diferença)
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                  <div className="lg:col-span-8">
-                    <span className="text-xs text-emerald-300 font-semibold uppercase tracking-wider block mb-1">
-                      Menor Carga Tributária Anual Global
-                    </span>
-                    <h2 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight mb-4">
-                      {resultado.regimeRecomendado}
-                    </h2>
-
-                    <p className="text-sm sm:text-base text-slate-200 leading-relaxed max-w-2xl mb-6">
-                      {resultado.explicacaoRecomendacao}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-emerald-200">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-[#2ECC71]" />
-                        <span>Conforme legislação federal 2025</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FileCheck2 className="w-4 h-4 text-[#2ECC71]" />
-                        <span>Cálculo com base no SPED, DAS e Lei 9.249/95</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card com a economia estimada em R$ */}
-                  <div className="lg:col-span-4 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 text-center">
-                    <span className="text-xs text-slate-300 uppercase tracking-wider block mb-1">
-                      Economia Estimada vs. 2º Colocado
-                    </span>
-                    <div className="font-heading font-extrabold text-3xl sm:text-4xl text-[#2ECC71] my-2">
+                  <span className="text-xs text-slate-400 block uppercase">Regime Recomendado</span>
+                  <h3 className="font-heading font-extrabold text-2xl sm:text-3xl text-white my-2">
+                    {resultado.regimeRecomendado}
+                  </h3>
+                  <div className="my-3 p-4 rounded-xl bg-slate-800/80 border border-slate-700">
+                    <span className="text-xs text-slate-400 block">Carga Estimada Anual:</span>
+                    <span className="font-heading font-extrabold text-2xl text-emerald-400">
                       R${' '}
+                      {(resultado.regimeRecomendado === 'Simples Nacional'
+                        ? resultado.simples.cargaAnual
+                        : resultado.regimeRecomendado === 'Lucro Presumido'
+                          ? resultado.presumido.cargaAnual
+                          : resultado.real.cargaAnual
+                      ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-xs text-slate-400 block mt-1">
+                      Economia vs 2º: R${' '}
                       {resultado.economiaAnual.toLocaleString('pt-BR', {
                         minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
                       })}
-                    </div>
-                    <span className="text-xs text-emerald-300 block">por ano em caixa livre</span>
+                      /ano
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Tributos federais (PIS, COFINS, IRPJ, CSLL) e locais (ICMS e ISS) apurados pelos
+                    métodos cumulativo/presunção tradicionais.
+                  </p>
+                </div>
 
-                    {resultado.segundoMaisVantajoso && (
-                      <p className="text-[11px] text-slate-300 mt-3 pt-3 border-t border-white/10">
-                        Comparado a optar por <strong>{resultado.segundoMaisVantajoso}</strong>.
-                      </p>
+                {/* Lado Direito: Novo Sistema (IBS/CBS) */}
+                <div className="rounded-[24px] p-6 bg-gradient-to-br from-[#0A1A13] via-[#0E2E1E] to-[#145A32] text-white shadow-2xl border-2 border-[#2ECC71] relative overflow-hidden">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2ECC71]/20 border border-[#2ECC71]/40 text-[#2ECC71] text-xs font-bold uppercase tracking-wider mb-4">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Novo Código Tributário (Ano {resultado.anoBase})
+                  </div>
+                  <span className="text-xs text-emerald-300 block uppercase">
+                    Regime Recomendado na Reforma
+                  </span>
+                  <h3 className="font-heading font-extrabold text-2xl sm:text-3xl text-white my-2">
+                    {resultado.novoSistema.regimeRecomendado}
+                  </h3>
+                  <div className="my-3 p-4 rounded-xl bg-white/10 border border-white/20">
+                    <span className="text-xs text-emerald-200 block">
+                      Carga Projetada no Novo Sistema:
+                    </span>
+                    <span className="font-heading font-extrabold text-2xl text-[#2ECC71]">
+                      R${' '}
+                      {(resultado.novoSistema.regimeRecomendado === 'Simples Nacional'
+                        ? resultado.novoSistema.simples.cargaAnual
+                        : resultado.novoSistema.regimeRecomendado === 'Lucro Presumido'
+                          ? resultado.novoSistema.presumido.cargaAnual
+                          : resultado.novoSistema.real.cargaAnual
+                      ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-xs text-emerald-200 block mt-1">
+                      Economia projetada: R${' '}
+                      {resultado.novoSistema.economiaAnual.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                      })}
+                      /ano
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-200 leading-relaxed">
+                    {resultado.novoSistema.explicacaoTransicao}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Card Hero Único para a visão ativa */
+              <div className="rounded-[28px] p-6 sm:p-10 bg-gradient-to-br from-[#0A1A13] via-[#0E2E1E] to-[#145A32] text-white shadow-2xl border border-white/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-[#2ECC71]/20 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative z-10">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#2ECC71]/20 border border-[#2ECC71]/40 text-[#2ECC71] text-xs font-bold uppercase tracking-wider">
+                      <CheckCircle2 className="w-4 h-4" />
+                      {visaoSistema === 'novo'
+                        ? `Regime Recomendado pelo Novo Código Tributário (${resultado.anoBase})`
+                        : 'Regime Recomendado no Sistema Atual'}
+                    </div>
+                    {((visaoSistema === 'novo' && resultado.novoSistema.empateTecnico) ||
+                      (visaoSistema === 'atual' && resultado.empateTecnico)) && (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-200 text-xs font-bold">
+                        <Scale className="w-3.5 h-3.5" />
+                        Empate Técnico Detectado (&lt; 3% de diferença)
+                      </div>
                     )}
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <div className="lg:col-span-8">
+                      <span className="text-xs text-emerald-300 font-semibold uppercase tracking-wider block mb-1">
+                        Menor Carga Tributária Anual Global
+                      </span>
+                      <h2 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight mb-4">
+                        {visaoSistema === 'novo'
+                          ? resultado.novoSistema.regimeRecomendado
+                          : resultado.regimeRecomendado}
+                      </h2>
+
+                      <p className="text-sm sm:text-base text-slate-200 leading-relaxed max-w-2xl mb-6">
+                        {visaoSistema === 'novo'
+                          ? resultado.novoSistema.explicacaoTransicao
+                          : resultado.explicacaoRecomendacao}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-emerald-200">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-[#2ECC71]" />
+                          <span>
+                            {visaoSistema === 'novo'
+                              ? `Simulação baseada na EC 132/2023 e LC 214/2025`
+                              : `Legislação federal vigente`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <FileCheck2 className="w-4 h-4 text-[#2ECC71]" />
+                          <span>
+                            {visaoSistema === 'novo'
+                              ? `CBS (${(TAXA_CBS_REFERENCIA * 100).toFixed(1)}%) e IBS (${(TAXA_IBS_REFERENCIA * 100).toFixed(1)}%) de referência`
+                              : `DAS, SPED e IRPJ/CSLL`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card com a economia estimada em R$ */}
+                    <div className="lg:col-span-4 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 text-center">
+                      <span className="text-xs text-slate-300 uppercase tracking-wider block mb-1">
+                        Economia Estimada vs. 2º Colocado
+                      </span>
+                      <div className="font-heading font-extrabold text-3xl sm:text-4xl text-[#2ECC71] my-2">
+                        R${' '}
+                        {(visaoSistema === 'novo'
+                          ? resultado.novoSistema.economiaAnual
+                          : resultado.economiaAnual
+                        ).toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                      <span className="text-xs text-emerald-300 block">por ano em caixa livre</span>
+
+                      <p className="text-[11px] text-slate-300 mt-3 pt-3 border-t border-white/10">
+                        Comparado a optar por{' '}
+                        <strong>
+                          {visaoSistema === 'novo'
+                            ? resultado.novoSistema.segundoMaisVantajoso || 'outro regime'
+                            : resultado.segundoMaisVantajoso || 'outro regime'}
+                        </strong>
+                        .
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MINI SÉRIE TEMPORAL: PROJEÇÃO DA CARGA DE 2026 A 2033 */}
+            <div className="bg-white rounded-[24px] p-6 sm:p-8 shadow-xl border border-slate-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-[#145A32]" />
+                    <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight">
+                      Curva de Transição Tributária (2026 até 2033)
+                    </h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                    Projeção anual de evolução da carga nos 3 regimes durante toda a janela de
+                    transição da Reforma.
+                  </p>
+                </div>
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-[#145A32]">
+                  Cronograma ADCT arts. 125–129
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse min-w-[620px]">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 uppercase">
+                      <th className="py-2.5 px-3 font-semibold">Ano</th>
+                      <th className="py-2.5 px-3 font-semibold">Fase da Transição</th>
+                      <th className="py-2.5 px-3 font-semibold text-right">Simples Nacional</th>
+                      <th className="py-2.5 px-3 font-semibold text-right">Lucro Presumido</th>
+                      <th className="py-2.5 px-3 font-semibold text-right">Lucro Real</th>
+                      <th className="py-2.5 px-3 font-semibold text-center">Mais Vantajoso</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {resultado.novoSistema.projecaoAnos.map((p) => {
+                      const isAnoAtual = p.ano === resultado.anoBase
+                      return (
+                        <tr
+                          key={p.ano}
+                          className={`hover:bg-slate-50/70 transition-colors ${
+                            isAnoAtual ? 'bg-emerald-50/80 font-bold' : ''
+                          }`}
+                        >
+                          <td className="py-3 px-3 font-heading font-bold text-slate-900">
+                            {p.ano}
+                            {isAnoAtual && (
+                              <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] bg-[#145A32] text-white">
+                                Atual
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-slate-600">
+                            {p.ano === 2026 && 'Ano de Teste (0,9% CBS / 0,1% IBS)'}
+                            {p.ano === 2027 && 'CBS Plena 8,7% · Extinção PIS/COFINS'}
+                            {p.ano === 2028 && 'Consolidação CBS'}
+                            {p.ano === 2029 && 'IBS 10% · ICMS/ISS 90%'}
+                            {p.ano === 2030 && 'IBS 20% · ICMS/ISS 80%'}
+                            {p.ano === 2031 && 'IBS 30% · ICMS/ISS 70%'}
+                            {p.ano === 2032 && 'IBS 40% · ICMS/ISS 60%'}
+                            {p.ano === 2033 && 'Sistema Pleno do IVA Dual'}
+                          </td>
+                          <td className="py-3 px-3 text-right text-slate-800">
+                            {p.cargaSimples > 0
+                              ? `R$ ${p.cargaSimples.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : 'Inelegível'}
+                          </td>
+                          <td className="py-3 px-3 text-right text-slate-800">
+                            {p.cargaPresumido > 0
+                              ? `R$ ${p.cargaPresumido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : 'Inelegível'}
+                          </td>
+                          <td className="py-3 px-3 text-right text-slate-800">
+                            R$ {p.cargaReal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#2ECC71]/20 text-[#145A32] border border-[#2ECC71]/40">
+                              {p.melhorRegime}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* 3. RANKING COMPLETO DOS REGIMES (DO 1º AO 3º COLOCADO NO SISTEMA ESCOLHIDO) */}
+            <div className="bg-white rounded-[24px] p-6 sm:p-8 shadow-xl border border-slate-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Scale className="w-5 h-5 text-[#145A32]" />
+                    <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight">
+                      Ranking dos Regimes Tributários{' '}
+                      {visaoSistema === 'novo'
+                        ? `(Novo Sistema · ${resultado.anoBase})`
+                        : '(Sistema Atual)'}
+                    </h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                    Comparação ordenada da menor para a maior carga tributária calculada.
+                  </p>
+                </div>
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600">
+                  3 regimes avaliados
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {(visaoSistema === 'novo' ? resultado.novoSistema.ranking : resultado.ranking).map(
+                  (item) => {
+                    const ehPrimeiro = item.posicao === 1
+                    const ehEmpate = item.empateTecnicoComPrimeiro
+
+                    return (
+                      <div
+                        key={item.regime}
+                        className={`p-5 rounded-2xl border transition-all ${
+                          ehPrimeiro
+                            ? 'border-[#2ECC71] bg-emerald-50/50 ring-2 ring-[#2ECC71]/30 shadow-sm'
+                            : ehEmpate
+                              ? 'border-amber-300 bg-amber-50/40 ring-1 ring-amber-300'
+                              : item.elegivel
+                                ? 'border-slate-200 bg-white hover:bg-slate-50/50'
+                                : 'border-slate-200 bg-slate-50/70 opacity-75'
+                        }`}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                                ehPrimeiro
+                                  ? 'bg-[#2ECC71] text-[#0A1A13]'
+                                  : ehEmpate
+                                    ? 'bg-amber-400 text-amber-950'
+                                    : item.elegivel
+                                      ? 'bg-slate-100 text-slate-700'
+                                      : 'bg-slate-200 text-slate-500'
+                              }`}
+                            >
+                              #{item.posicao}
+                            </div>
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="font-heading font-bold text-base text-slate-900">
+                                  {item.regime}
+                                </h4>
+                                {ehPrimeiro && (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#2ECC71] text-[#0A1A13]">
+                                    Recomendado
+                                  </span>
+                                )}
+                                {ehEmpate && (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-200 text-amber-900">
+                                    Empate Técnico Viável
+                                  </span>
+                                )}
+                                {!item.elegivel && (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-800">
+                                    Inelegível por Lei
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-xs text-slate-500 block mt-0.5">
+                                {item.statusDescritivo}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="sm:text-right">
+                            {item.elegivel ? (
+                              <div>
+                                <div className="font-heading font-extrabold text-xl text-slate-900">
+                                  R${' '}
+                                  {item.cargaAnual.toLocaleString('pt-BR', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}
+                                  <span className="text-xs font-semibold text-slate-500 ml-1.5">
+                                    /ano
+                                  </span>
+                                </div>
+                                <div className="text-xs text-slate-600 mt-0.5">
+                                  Alíquota efetiva: <strong>{item.aliquotaEfetiva}%</strong>
+                                  {!ehPrimeiro && item.diferencaValor > 0 && (
+                                    <span className="text-[#C0392B] font-semibold ml-2">
+                                      (+R${' '}
+                                      {item.diferencaValor.toLocaleString('pt-BR', {
+                                        minimumFractionDigits: 2,
+                                      })}
+                                      )
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-xs text-red-700 font-medium">
+                                {item.motivoInelegibilidade ||
+                                  'Ultrapassa os limites legais permitidos'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  },
+                )}
+              </div>
+
+              {((visaoSistema === 'novo' && resultado.novoSistema.empateTecnico) ||
+                (visaoSistema === 'atual' && resultado.empateTecnico)) && (
+                <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                  <Scale className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-900 leading-relaxed">
+                    <strong>Atenção ao Empate Técnico:</strong> A diferença financeira entre o 1º e
+                    o 2º lugar é inferior a 3%. Nesses casos, fatores como créditos de IBS/CBS
+                    transferidos a clientes B2B, split payment e conformidade fiscal pesam mais do
+                    que a alíquota isolada.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* BLOCOS ESPECÍFICOS DE REGRAS DO NOVO SISTEMA (IBS / CBS) */}
+            <div className="bg-white rounded-[24px] p-6 sm:p-8 shadow-xl border border-slate-200">
+              <div className="mb-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-[#145A32]" />
+                  <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight">
+                    Diretrizes do Novo Código Tributário (IBS / CBS / IS)
+                  </h3>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                  Pontos críticos da LC 214/2025 e EC 132/2023 que impactam o dia a dia da sua
+                  empresa.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 1. Sublimite R$ 3,6M */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-2 mb-2 text-slate-900 font-heading font-bold text-sm">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    Sublimite Estadual de R$ 3,6M (IBS por fora do DAS)
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Pela LC 214/2025 art. 519 e art. 13-A da LC 123, faturamento entre{' '}
+                    <strong>R$ 3,6 milhões e R$ 4,8 milhões</strong> recolhe a CBS federal no
+                    Simples, mas o IBS estadual/municipal passa a ser recolhido{' '}
+                    <strong>por fora do DAS</strong>, com débitos e créditos no regime regular.
+                  </p>
+                  <div className="mt-2 text-[11px] font-semibold text-slate-700">
+                    Sua RBT12: R${' '}
+                    {formData.rbt12.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}{' '}
+                    {formData.rbt12 > 3_600_000 && formData.rbt12 <= LIMITE_SIMPLES ? (
+                      <span className="text-amber-700">(Gatilho Ativado!)</span>
+                    ) : (
+                      <span className="text-slate-500">(Abaixo do sublimite)</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Opção Regime Regular no Simples (Simples Híbrido) */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-2 mb-2 text-slate-900 font-heading font-bold text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
+                    Opção Anual pelo Regime Regular de IBS/CBS (Simples Híbrido)
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Conforme o <strong>art. 41, §3º da LC 214/2025</strong>, o optante do Simples
+                    pode escolher apurar IBS e CBS pelo regime regular. Janela de opção:{' '}
+                    <strong>1º a 30 de setembro</strong> do ano anterior. Decisivo para quem vende
+                    para PJ e precisa transferir créditos integrais.
+                  </p>
+                  <div className="mt-2 text-[11px] font-semibold text-slate-700">
+                    Crédito transferido no Simples: ~
+                    {resultado.novoSistema.simples.detalhesReforma
+                      ?.percentualCreditoTransferidoSimples || 0}
+                    % da guia
+                  </div>
+                </div>
+
+                {/* 3. Split Payment */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-2 mb-2 text-slate-900 font-heading font-bold text-sm">
+                    <DollarSign className="w-4 h-4 text-[#145A32]" />
+                    Split Payment (Liquidação Financeira Automática)
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    A liquidação de pagamentos em cartões, PIX e boletos fará a retenção instantânea
+                    da CBS e do IBS no momento da liquidação bancária. Impede a utilização do
+                    tributo como capital de giro até a data de vencimento.
+                  </p>
+                  <div className="mt-2 text-[11px] font-semibold text-slate-700">
+                    Impacto: Exige fluxo de caixa mais rigoroso e controle de margem líquida.
+                  </div>
+                </div>
+
+                {/* 4. Imposto Seletivo */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-2 mb-2 text-slate-900 font-heading font-bold text-sm">
+                    <AlertCircle className="w-4 h-4 text-purple-600" />
+                    Imposto Seletivo (IS — 'Imposto do Pecado')
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    A partir de 2027 incidirá sobre produtos prejudiciais à saúde ou meio ambiente
+                    (bebidas alcoólicas, cigarros, veículos, etc.).
+                    {formData.segmento === 'Bares e Restaurantes' && (
+                      <strong className="text-purple-800 block mt-1">
+                        Atenção Bares e Restaurantes: pode onerar a revenda de bebidas alcoólicas e
+                        açucaradas.
+                      </strong>
+                    )}
+                  </p>
+                  <div className="mt-2 text-[11px] font-semibold text-slate-700">
+                    Alíquotas específicas a serem fixadas por lei ordinária futura.
                   </div>
                 </div>
               </div>
@@ -2201,37 +2833,39 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     Limitações e Cuidados na Orientação Tributária (Aviso Legal Obrigatório)
                   </h4>
                   <p>
-                    <strong>Natureza Estimativa:</strong> Este diagnóstico é uma ferramenta de
-                    simulação preliminar e comparativa baseada exclusivamente nos números declarados
-                    pelo usuário e nas tabelas gerais da legislação brasileira vigente em 2025.{' '}
+                    <strong>Natureza Estimativa e Regulamentação Pendente:</strong> Este diagnóstico
+                    é uma ferramenta de simulação preliminar e comparativa baseada nos dados
+                    fornecidos pelo usuário e no marco legal da Reforma Tributária (EC 132/2023, LC
+                    214/2025 e ADCT).{' '}
                     <strong>
-                      Ele não substitui uma análise contábil personalizada nem dispensa o parecer
-                      formal de um contador legalmente habilitado no CRC.
+                      As alíquotas de referência da CBS (~8,8%) e do IBS (~17,7%) foram projetadas a
+                      partir dos tetos constitucionais e ainda dependem de resolução final pelo
+                      Senado Federal e pelo Comitê Gestor do IBS (CGIBS). Esta simulação não
+                      substitui a orientação contábil individualizada nem dispensa o parecer formal
+                      de um contador habilitado no CRC.
                     </strong>
                   </p>
                   <ul className="list-disc pl-5 space-y-1 text-amber-900/90">
                     <li>
-                      <strong>CNAEs impeditivos e vedações legais:</strong> Algumas atividades
-                      específicas, composições societárias (sócio pessoa jurídica, sócio residente
-                      no exterior) ou débitos com o fisco impedem o ingresso no Simples Nacional,
-                      independentemente do faturamento.
+                      <strong>Janela de Opção Anual do Simples Híbrido:</strong> Conforme o art. 41,
+                      §3º da LC 214/2025, a opção por recolher IBS e CBS pelo regime regular deve
+                      ser formalizada anualmente entre <strong>1º e 30 de setembro</strong> do
+                      ano-calendário anterior.
                     </li>
                     <li>
-                      <strong>Créditos e não cumulatividade:</strong> No Lucro Real, o PIS e a
-                      COFINS (9,25%) podem ter seu impacto reduzido por créditos sobre insumos,
-                      mercadorias revendidas, energia elétrica e aluguéis, o que exige auditoria
-                      documental.
+                      <strong>Sublimite Estadual de R$ 3,6M:</strong> Empresas com faturamento entre
+                      R$ 3,6M e R$ 4,8M recolhem o IBS/ICMS obrigatoriamente por fora do DAS no
+                      regime regular com débitos e créditos.
                     </li>
                     <li>
-                      <strong>ISS municipal e ICMS estadual:</strong> As alíquotas de ISS variam de
-                      2% a 5% conforme o município e podem sofrer retenção na fonte. No ICMS,
-                      regimes de substituição tributária (ST) e benefícios fiscais estaduais podem
-                      alterar a carga final.
+                      <strong>CNAEs impeditivos e vedações legais:</strong> Atividades específicas,
+                      composições societárias ou débitos com a União, Estados e Municípios continuam
+                      vedando o Simples Nacional.
                     </li>
                     <li>
-                      <strong>Prazos legais de opção:</strong> A mudança de regime tributário só
-                      pode ser realizada anualmente, no mês de <strong>janeiro</strong> de cada
-                      ano-calendário, sendo irretratável para todo o exercício.
+                      <strong>Créditos e não-cumulatividade ampla:</strong> No novo sistema de
+                      IBS/CBS, o crédito é pleno sobre todas as aquisições da pessoa jurídica,
+                      condicionado ao recolhimento pelo fornecedor (split payment).
                     </li>
                   </ul>
                   <p className="pt-2 border-t border-amber-200/80 text-[11px] text-amber-800">

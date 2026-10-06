@@ -395,73 +395,110 @@ export function gerarRelatorioDiagnosticoPDF({ dados, resultado }: GerarPdfOptio
   })
 
   // ==========================================
-  // BLOCO 7: DETALHAMENTO TÉCNICO POR TRIBUTO
+  // BLOCO 7: NOVO SISTEMA TRIBUTÁRIO (IBS / CBS - EC 132/2023, LC 214/2025)
   // ==========================================
-  verificarQuebraPagina(40)
+  verificarQuebraPagina(60)
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
   doc.setTextColor(COR_PRIMARIA[0], COR_PRIMARIA[1], COR_PRIMARIA[2])
-  doc.text('DETALHAMENTO TÉCNICO ESTIMADO POR TRIBUTO', margin, currentY + 3)
+  doc.text(
+    `ANÁLISE PELO NOVO CÓDIGO TRIBUTÁRIO — IBS / CBS (ANO-BASE ${resultado.anoBase})`,
+    margin,
+    currentY + 3,
+  )
 
   currentY += 6
 
-  // Tabela de Detalhes
-  doc.setFillColor(COR_PRIMARIA[0], COR_PRIMARIA[1], COR_PRIMARIA[2])
+  // Linha descritiva da reforma
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.5)
+  doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+  const reformaIntro = doc.splitTextToSize(
+    `Substituição gradual de PIS/COFINS por CBS (federal) e de ICMS/ISS por IBS (estadual/municipal). Regime recomendado no Novo Sistema: ${resultado.novoSistema.regimeRecomendado} (Economia de ${formatarMoeda(resultado.novoSistema.economiaAnual)}/ano).`,
+    contentWidth,
+  )
+  doc.text(reformaIntro, margin, currentY + 2)
+  currentY += reformaIntro.length * 3.5 + 3
+
+  // Tabela do Novo Sistema
+  doc.setFillColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
   doc.rect(margin, currentY, contentWidth, 6.5, 'F')
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(7.5)
   doc.setFont('helvetica', 'bold')
-  doc.text('Componente / Tributo', margin + 3, currentY + 4.5)
-  doc.text('Simples Nacional', margin + 55, currentY + 4.5)
-  doc.text('Lucro Presumido', margin + 98, currentY + 4.5)
+  doc.text('Componente do Novo Código', margin + 3, currentY + 4.5)
+  doc.text('Simples Nacional', margin + 60, currentY + 4.5)
+  doc.text('Lucro Presumido', margin + 102, currentY + 4.5)
   doc.text('Lucro Real', margin + 142, currentY + 4.5)
 
   currentY += 6.5
 
-  const linhasTecnicas = [
+  const linhasNovoSistema = [
     {
-      nome: 'IRPJ (Imposto de Renda)',
+      nome: 'IRPJ + CSLL (Bases Mantidas)',
       simples: 'Embutido no DAS',
-      presumido: formatarMoeda(resultado.presumido.detalhes.irpj || 0),
-      real: formatarMoeda(resultado.real.detalhes.irpj || 0),
+      presumido: formatarMoeda(
+        (resultado.presumido.detalhes.irpj || 0) + (resultado.presumido.detalhes.csll || 0),
+      ),
+      real: formatarMoeda(
+        (resultado.real.detalhes.irpj || 0) + (resultado.real.detalhes.csll || 0),
+      ),
     },
     {
-      nome: 'CSLL (Contribuição Social)',
-      simples: 'Embutido no DAS',
-      presumido: formatarMoeda(resultado.presumido.detalhes.csll || 0),
-      real: formatarMoeda(resultado.real.detalhes.csll || 0),
+      nome: `CBS Federal (Ref. ${(resultado.novoSistema.presumido.detalhesReforma?.aliquotaCBS || 8.8).toFixed(1)}%)`,
+      simples:
+        resultado.anoBase === 2026
+          ? '0% (Dispensa art. 348)'
+          : formatarMoeda(resultado.novoSistema.simples.detalhesReforma?.parcelaCBSReais || 0),
+      presumido:
+        resultado.anoBase === 2026
+          ? '0% (Dispensa teste)'
+          : formatarMoeda(resultado.novoSistema.presumido.detalhesReforma?.parcelaCBSReais || 0),
+      real:
+        resultado.anoBase === 2026
+          ? '0% (Dispensa teste)'
+          : formatarMoeda(resultado.novoSistema.real.detalhesReforma?.parcelaCBSReais || 0),
     },
     {
-      nome: 'PIS / COFINS',
-      simples: 'Embutido no DAS',
-      presumido: formatarMoeda(resultado.presumido.detalhes.pisCofins || 0),
-      real: formatarMoeda(resultado.real.detalhes.pisCofins || 0),
+      nome: `IBS Local + Resíduo Antigo`,
+      simples:
+        resultado.anoBase === 2026
+          ? 'Inalterado (2026)'
+          : formatarMoeda(resultado.novoSistema.simples.detalhesReforma?.parcelaIBSReais || 0),
+      presumido:
+        resultado.anoBase === 2026
+          ? formatarMoeda(resultado.presumido.detalhes.icmsOuIss || 0)
+          : formatarMoeda(
+              (resultado.novoSistema.presumido.detalhesReforma?.parcelaIBSReais || 0) +
+                (resultado.novoSistema.presumido.detalhesReforma?.parcelaICMSouISSReais || 0),
+            ),
+      real:
+        resultado.anoBase === 2026
+          ? formatarMoeda(resultado.real.detalhes.icmsOuIss || 0)
+          : formatarMoeda(
+              (resultado.novoSistema.real.detalhesReforma?.parcelaIBSReais || 0) +
+                (resultado.novoSistema.real.detalhesReforma?.parcelaICMSouISSReais || 0),
+            ),
     },
     {
-      nome: `ISS / ICMS (${resultado.cidade})`,
-      simples: 'Embutido no DAS',
-      presumido: formatarMoeda(resultado.presumido.detalhes.icmsOuIss || 0),
-      real: formatarMoeda(resultado.real.detalhes.icmsOuIss || 0),
-    },
-    {
-      nome: 'Carga Anual Consolidada',
-      simples: resultado.simples.elegivel
-        ? formatarMoeda(resultado.simples.cargaAnual)
+      nome: `Carga Anual no Novo Sistema (${resultado.anoBase})`,
+      simples: resultado.novoSistema.simples.elegivel
+        ? formatarMoeda(resultado.novoSistema.simples.cargaAnual)
         : 'Inelegível',
-      presumido: resultado.presumido.elegivel
-        ? formatarMoeda(resultado.presumido.cargaAnual)
+      presumido: resultado.novoSistema.presumido.elegivel
+        ? formatarMoeda(resultado.novoSistema.presumido.cargaAnual)
         : 'Inelegível',
-      real: formatarMoeda(resultado.real.cargaAnual),
+      real: formatarMoeda(resultado.novoSistema.real.cargaAnual),
       destaque: true,
     },
   ]
 
-  linhasTecnicas.forEach((lin, idx) => {
+  linhasNovoSistema.forEach((lin, idx) => {
     doc.setFillColor(
-      lin.destaque ? 240 : idx % 2 === 0 ? 255 : 248,
+      lin.destaque ? 236 : idx % 2 === 0 ? 255 : 248,
       lin.destaque ? 253 : idx % 2 === 0 ? 255 : 250,
-      lin.destaque ? 244 : idx % 2 === 0 ? 255 : 252,
+      lin.destaque ? 245 : idx % 2 === 0 ? 255 : 252,
     )
     doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
     doc.rect(margin, currentY, contentWidth, 7, 'FD')
@@ -475,11 +512,73 @@ export function gerarRelatorioDiagnosticoPDF({ dados, resultado }: GerarPdfOptio
     )
 
     doc.text(lin.nome, margin + 3, currentY + 4.8)
-    doc.text(lin.simples, margin + 55, currentY + 4.8)
-    doc.text(lin.presumido, margin + 98, currentY + 4.8)
+    doc.text(lin.simples, margin + 60, currentY + 4.8)
+    doc.text(lin.presumido, margin + 102, currentY + 4.8)
     doc.text(lin.real, margin + 142, currentY + 4.8)
 
     currentY += 7
+  })
+
+  currentY += 8
+
+  // ==========================================
+  // BLOCO 7.1: MINI PROJEÇÃO ANUAL ATÉ 2033
+  // ==========================================
+  verificarQuebraPagina(45)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9)
+  doc.setTextColor(COR_PRIMARIA[0], COR_PRIMARIA[1], COR_PRIMARIA[2])
+  doc.text('PROJEÇÃO DA CARGA TRIBUTÁRIA AO LONGO DA TRANSIÇÃO (2026 A 2033)', margin, currentY + 3)
+
+  currentY += 6
+
+  doc.setFillColor(COR_PRIMARIA[0], COR_PRIMARIA[1], COR_PRIMARIA[2])
+  doc.rect(margin, currentY, contentWidth, 6, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Ano', margin + 3, currentY + 4.2)
+  doc.text('Simples Nacional', margin + 25, currentY + 4.2)
+  doc.text('Lucro Presumido', margin + 65, currentY + 4.2)
+  doc.text('Lucro Real', margin + 105, currentY + 4.2)
+  doc.text('Recomendado', margin + 145, currentY + 4.2)
+
+  currentY += 6
+
+  resultado.novoSistema.projecaoAnos.forEach((p, idx) => {
+    const isAnoBaseSel = p.ano === resultado.anoBase
+    doc.setFillColor(
+      isAnoBaseSel ? 236 : idx % 2 === 0 ? 255 : 248,
+      isAnoBaseSel ? 253 : idx % 2 === 0 ? 255 : 250,
+      isAnoBaseSel ? 245 : idx % 2 === 0 ? 255 : 252,
+    )
+    doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+    doc.rect(margin, currentY, contentWidth, 5.8, 'FD')
+
+    doc.setFont('helvetica', isAnoBaseSel ? 'bold' : 'normal')
+    doc.setFontSize(7)
+    doc.setTextColor(
+      isAnoBaseSel ? COR_SECUNDARIA[0] : COR_TEXTO[0],
+      isAnoBaseSel ? COR_SECUNDARIA[1] : COR_TEXTO[1],
+      isAnoBaseSel ? COR_SECUNDARIA[2] : COR_TEXTO[2],
+    )
+
+    doc.text(`${p.ano}${isAnoBaseSel ? ' *' : ''}`, margin + 3, currentY + 4)
+    doc.text(
+      p.cargaSimples > 0 ? formatarMoeda(p.cargaSimples) : 'Inelegível',
+      margin + 25,
+      currentY + 4,
+    )
+    doc.text(
+      p.cargaPresumido > 0 ? formatarMoeda(p.cargaPresumido) : 'Inelegível',
+      margin + 65,
+      currentY + 4,
+    )
+    doc.text(formatarMoeda(p.cargaReal), margin + 105, currentY + 4)
+    doc.text(p.melhorRegime, margin + 145, currentY + 4)
+
+    currentY += 5.8
   })
 
   currentY += 8
@@ -502,7 +601,7 @@ export function gerarRelatorioDiagnosticoPDF({ dados, resultado }: GerarPdfOptio
   doc.setFontSize(6.5)
   doc.setTextColor(127, 29, 29)
   const avisoLinhas = doc.splitTextToSize(
-    'Este diagnóstico é uma simulação preliminar e estimativa fiscal elaborada com base nas informações prestadas pelo usuário e nas tabelas da legislação federal e municipal vigente. Não substitui o planejamento tributário formal, análise de NCMs, benefícios fiscais estaduais (ST/DIFAL) ou parecer emitido por contador registrado perante o CRC. A opção definitiva de regime ocorre em janeiro de cada exercício fiscal.',
+    'Este diagnóstico é uma simulação preliminar e estimativa fiscal elaborada com base nos dados prestados pelo usuário e nos marcos legais da Reforma Tributária (EC 132/2023, LC 214/2025 e ADCT). As alíquotas de referência da CBS (~8,8%) e do IBS (~17,7%) foram projetadas a partir dos limites constitucionais e ainda dependem de resolução final pelo Senado Federal e Comitê Gestor (CGIBS). Não substitui planejamento tributário formal nem parecer emitido por contador registrado perante o CRC.',
     contentWidth - 8,
   )
   doc.text(avisoLinhas, margin + 4, currentY + 9.5)

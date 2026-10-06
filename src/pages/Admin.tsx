@@ -239,11 +239,17 @@ export default function Admin() {
       'RBT12',
       'Folha12',
       'MargemLucro',
-      'RegimeRecomendado',
-      'CargaSimples',
-      'CargaPresumido',
-      'CargaReal',
-      'EconomiaAnual',
+      'AnoBaseReforma',
+      'RegimeRecomendadoNovo',
+      'RegimeRecomendadoAtual',
+      'CargaSimplesNovo',
+      'CargaPresumidoNovo',
+      'CargaRealNovo',
+      'EconomiaAnualNovo',
+      'CargaSimplesAtual',
+      'CargaPresumidoAtual',
+      'CargaRealAtual',
+      'EconomiaAnualAtual',
       'Data',
     ]
     const rows = diagnosticos.map((d) => [
@@ -259,7 +265,13 @@ export default function Admin() {
       d.rbt12 || 0,
       d.folha12 || 0,
       d.margem_lucro || 0,
-      `"${d.regime_recomendado || ''}"`,
+      d.ano_base || 2026,
+      `"${d.sistema_recomendado_novo || d.regime_recomendado || ''}"`,
+      `"${d.sistema_recomendado_atual || d.regime_recomendado || ''}"`,
+      d.carga_simples_novo || d.carga_simples || 0,
+      d.carga_presumido_novo || d.carga_presumido || 0,
+      d.carga_real_novo || d.carga_real || 0,
+      d.economia_anual_novo || d.economia_anual || 0,
       d.carga_simples || 0,
       d.carga_presumido || 0,
       d.carga_real || 0,
@@ -751,13 +763,14 @@ export default function Admin() {
                       <tr>
                         <th className="py-4 px-6">Empresa & Contato</th>
                         <th className="py-4 px-6">Segmento</th>
-                        <th className="py-4 px-6">RBT12 (Receita Bruta)</th>
-                        <th className="py-4 px-6">Regime Sugerido</th>
+                        <th className="py-4 px-6">RBT12 (Receita)</th>
+                        <th className="py-4 px-6">Novo Sistema (IBS/CBS)</th>
+                        <th className="py-4 px-6">Sistema Atual</th>
                         <th className="py-4 px-6">Economia Est.</th>
                         <th className="py-4 px-6">Data</th>
                         <th className="py-4 px-6 text-right">Ações</th>
                       </tr>
-                    </thead>
+                    </thead>{' '}
                     <tbody className="divide-y divide-slate-100">
                       {filteredDiagnosticos.map((item) => (
                         <tr
@@ -806,30 +819,46 @@ export default function Admin() {
                           </td>
 
                           <td className="py-4 px-6">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                                item.regime_recomendado === 'Simples Nacional'
-                                  ? 'bg-emerald-100 text-[#145A32]'
-                                  : item.regime_recomendado === 'Lucro Presumido'
-                                    ? 'bg-amber-100 text-amber-900'
-                                    : 'bg-purple-100 text-purple-900'
-                              }`}
-                            >
-                              <Sparkles className="w-3 h-3" />
-                              {item.regime_recomendado}
+                            <div className="flex flex-col gap-1">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold w-fit ${
+                                  (item.sistema_recomendado_novo || item.regime_recomendado) ===
+                                  'Simples Nacional'
+                                    ? 'bg-emerald-100 text-[#145A32]'
+                                    : (item.sistema_recomendado_novo || item.regime_recomendado) ===
+                                        'Lucro Presumido'
+                                      ? 'bg-amber-100 text-amber-900'
+                                      : 'bg-purple-100 text-purple-900'
+                                }`}
+                              >
+                                <Sparkles className="w-3 h-3" />
+                                {item.sistema_recomendado_novo || item.regime_recomendado}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-medium">
+                                Ano-Base: {item.ano_base || 2026}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-6">
+                            <span className="text-xs text-slate-700 font-medium">
+                              {item.sistema_recomendado_atual || item.regime_recomendado}
                             </span>
                           </td>
 
                           <td className="py-4 px-6">
                             <span className="font-semibold text-[#145A32]">
                               R${' '}
-                              {(item.economia_anual || 0).toLocaleString('pt-BR', {
+                              {(
+                                item.economia_anual_novo ||
+                                item.economia_anual ||
+                                0
+                              ).toLocaleString('pt-BR', {
                                 minimumFractionDigits: 2,
                               })}
                             </span>
                             <span className="text-[10px] text-slate-400 block">/ano</span>
                           </td>
-
                           <td className="py-4 px-6 text-xs text-slate-500">
                             {item.created
                               ? new Date(item.created).toLocaleDateString('pt-BR', {
@@ -977,15 +1006,20 @@ export default function Admin() {
               <DialogTitle className="font-heading font-bold text-xl text-slate-900 flex items-center justify-between">
                 <span>Diagnóstico Tributário</span>
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-[#145A32]">
-                  {selectedDiag.regime_recomendado}
+                  Novo: {selectedDiag.sistema_recomendado_novo || selectedDiag.regime_recomendado} (
+                  {selectedDiag.ano_base || 2026})
                 </span>
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500">
                 Calculado em{' '}
                 {selectedDiag.created
                   ? new Date(selectedDiag.created).toLocaleString('pt-BR')
-                  : '—'}
-              </DialogDescription>
+                  : '—'}{' '}
+                • Sistema Atual:{' '}
+                <strong>
+                  {selectedDiag.sistema_recomendado_atual || selectedDiag.regime_recomendado}
+                </strong>
+              </DialogDescription>{' '}
             </DialogHeader>
 
             <div className="space-y-4 my-4 text-sm">
@@ -1103,46 +1137,80 @@ export default function Admin() {
                 </div>
               </div>
 
-              {/* Comparativo das cargas anuais & Ranking Salvo */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
-                <span className="text-xs font-semibold text-slate-400 uppercase block mb-1">
-                  Carga Tributária Anual Estimada
-                </span>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-medium text-slate-700">Simples Nacional:</span>
-                  <span className="font-bold text-slate-900">
-                    {selectedDiag.carga_simples > 0
-                      ? `R$ ${selectedDiag.carga_simples.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                      : 'Não elegível (> 4,8M)'}
+              {/* Comparativo das cargas anuais (Novo Sistema vs Sistema Atual) */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
+                <div>
+                  <span className="text-xs font-semibold text-[#145A32] uppercase block mb-1">
+                    Novo Código Tributário (Ano-Base {selectedDiag.ano_base || 2026} · IBS / CBS)
                   </span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-medium text-slate-700">Lucro Presumido:</span>
-                  <span className="font-bold text-slate-900">
-                    {selectedDiag.carga_presumido > 0
-                      ? `R$ ${selectedDiag.carga_presumido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                      : 'Não elegível (> 78M)'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-medium text-slate-700">Lucro Real:</span>
-                  <span className="font-bold text-slate-900">
-                    R${' '}
-                    {selectedDiag.carga_real?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-                {selectedDiag.economia_anual && selectedDiag.economia_anual > 0 && (
-                  <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-xs text-[#145A32]">
-                    <span className="font-bold">Economia anual estimada:</span>
-                    <span className="font-extrabold text-sm text-[#145A32]">
-                      R${' '}
-                      {selectedDiag.economia_anual.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                      })}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-medium text-slate-700">Simples Nacional (Novo):</span>
+                    <span className="font-bold text-slate-900">
+                      {(selectedDiag.carga_simples_novo || selectedDiag.carga_simples) > 0
+                        ? `R$ ${(selectedDiag.carga_simples_novo || selectedDiag.carga_simples).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                        : 'Não elegível (> 4,8M)'}
                     </span>
                   </div>
-                )}
+                  <div className="flex justify-between items-center text-xs mt-1">
+                    <span className="font-medium text-slate-700">Lucro Presumido (Novo):</span>
+                    <span className="font-bold text-slate-900">
+                      {(selectedDiag.carga_presumido_novo || selectedDiag.carga_presumido) > 0
+                        ? `R$ ${(selectedDiag.carga_presumido_novo || selectedDiag.carga_presumido).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                        : 'Não elegível (> 78M)'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs mt-1">
+                    <span className="font-medium text-slate-700">Lucro Real (Novo):</span>
+                    <span className="font-bold text-slate-900">
+                      R${' '}
+                      {(selectedDiag.carga_real_novo || selectedDiag.carga_real)?.toLocaleString(
+                        'pt-BR',
+                        { minimumFractionDigits: 2 },
+                      )}
+                    </span>
+                  </div>
+                  {selectedDiag.economia_anual_novo || selectedDiag.economia_anual ? (
+                    <div className="pt-1.5 mt-1.5 border-t border-slate-200 flex justify-between items-center text-xs text-[#145A32]">
+                      <span className="font-bold">Economia Anual Projetada:</span>
+                      <span className="font-extrabold text-sm text-[#145A32]">
+                        R${' '}
+                        {(
+                          selectedDiag.economia_anual_novo ||
+                          selectedDiag.economia_anual ||
+                          0
+                        ).toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                        })}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
 
+                <div className="pt-2 border-t border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase block mb-1">
+                    Sistema Atual (Para Comparação)
+                  </span>
+                  <div className="grid grid-cols-3 gap-2 text-[11px] text-slate-600">
+                    <div>
+                      Simples: R${' '}
+                      {selectedDiag.carga_simples?.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                      })}
+                    </div>
+                    <div>
+                      Presumido: R${' '}
+                      {selectedDiag.carga_presumido?.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                      })}
+                    </div>
+                    <div>
+                      Real: R${' '}
+                      {selectedDiag.carga_real?.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                      })}
+                    </div>
+                  </div>
+                </div>
                 {/* Se houver ranking_json gravado */}
                 {Array.isArray(selectedDiag.ranking_json) &&
                   selectedDiag.ranking_json.length > 0 && (
