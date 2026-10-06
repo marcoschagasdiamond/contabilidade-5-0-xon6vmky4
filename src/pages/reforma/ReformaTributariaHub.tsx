@@ -46,7 +46,7 @@ export default function ReformaTributariaHub() {
         </div>
       </div>
 
-      {/* CONTEÚDO PRINCIPAL: OS 10 CARDS */}
+      {/* CONTEÚDO PRINCIPAL: OS 9 CARDS */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
           <div>
@@ -58,7 +58,7 @@ export default function ReformaTributariaHub() {
               Selecione o tema para aprofundar
             </h2>
             <p className="text-slate-600 text-sm sm:text-base mt-1">
-              Navegue pelos 10 módulos detalhados para orientar seu planejamento e tirar dúvidas com
+              Navegue pelos 9 módulos detalhados para orientar seu planejamento e tirar dúvidas com
               clareza.
             </p>
           </div>

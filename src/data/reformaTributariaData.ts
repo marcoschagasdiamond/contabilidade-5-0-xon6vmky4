@@ -1,5 +1,5 @@
 /**
- * Dados estruturados dos 10 módulos da Reforma Tributária
+ * Dados estruturados dos módulos da Reforma Tributária
  * Baseados na EC 132/2023, LC 214/2025 e materiais técnicos Diamond Group.
  */
 
@@ -113,20 +113,8 @@ export const MODULOS_REFORMA: ModuloReforma[] = [
     destaque: '5 etapas de esteira contábil',
   },
   {
-    id: 'kit-precificacao',
-    numero: 9,
-    slug: 'kit-precificacao',
-    titulo: 'Kit de Precificação',
-    subtitulo: 'Script de oferta em 4 passos e faixas de preço de referência',
-    descricao:
-      'Script completo (Gancho, Autoridade, Oferta, Fechamento) e tabela editável com valores médios de mercado em R$ para diagnóstico, adequação, treino e acompanhamento.',
-    icone: 'Coins',
-    tag: 'Comercial & Propostas',
-    destaque: 'Script de 4 passos + tabela em R$',
-  },
-  {
     id: 'glossario',
-    numero: 10,
+    numero: 9,
     slug: 'glossario',
     titulo: 'Glossário e Fontes',
     subtitulo: 'Quadro comparativo de confusões e legislação oficial',
@@ -1211,110 +1199,7 @@ export const ROTINA_MENSAL_SEMANAS = [
 ]
 
 // ==========================================
-// 9. KIT DE PRECIFICAÇÃO (SCRIPT 4 PASSOS + FAIXAS R$)
-// ==========================================
-export const SCRIPT_OFERTA_4_PASSOS = {
-  passo1_gancho: {
-    titulo: '1. O Gancho (Atenção e Urgência)',
-    texto:
-      '"Olá [Nome do Cliente], você sabia que a partir de 2026 toda empresa no Brasil terá que emitir notas com os novos impostos IBS e CBS, e que a partir de 2027 o PIS e a COFINS simplesmente deixam de existir? Se a sua empresa não estiver adaptada, você corre o risco de perder clientes corporativos que vão exigir crédito fiscal integral e de ter retenções automáticas de dinheiro no seu banco sem entender o motivo."',
-  },
-  passo2_autoridade: {
-    titulo: '2. A Autoridade (Confiança Técnica Diamond)',
-    texto:
-      '"Aqui na Contabilidade 5.0, nossa equipe tributária domina integralmente a Lei Complementar nº 214/2025 e já implementou a metodologia Diamond Group de transição fiscal. Nós mapeamos todas as 10 áreas de risco do seu negócio — desde o sistema de emissão até o impacto real no seu preço de venda e margem de lucro."',
-  },
-  passo3_oferta: {
-    titulo: '3. A Oferta (A Solução Estruturada)',
-    texto:
-      '"Nós estruturamos para a sua empresa um Programa de Adequação à Reforma Tributária em 3 fases: primeiro um Diagnóstico de 40 minutos com Laudo e Farol de Urgência; depois a homologação do seu ERP e treinamento da sua equipe; e, por fim, o acompanhamento mensal para garantir que cada centavo de crédito fiscal volte para o seu caixa."',
-  },
-  passo4_fechamento: {
-    titulo: '4. O Fechamento (Chamada para Ação Irresistível)',
-    texto:
-      '"Para não correr contra o tempo na virada de ano e arriscar travar seu faturamento, vamos agendar o seu Diagnóstico Inicial nesta semana? O investimento é mínimo comparado ao risco de autuações ou perda de contratos. Posso reservar terça-feira às 14h ou quinta-feira às 10h para iniciarmos?"',
-  },
-}
-
-export interface ServicoPrecificacao {
-  id: string
-  titulo: string
-  descricao: string
-  entregaveis: string[]
-  faixaSugeridaMin: number
-  faixaSugeridaMax: number
-  unidade: string
-  destaqueBadge?: string
-}
-
-export const SERVICOS_PRECIFICACAO_REFERENCIA: ServicoPrecificacao[] = [
-  {
-    id: 'diagnostico_inicial',
-    titulo: 'Diagnóstico Inicial da Reforma Tributária',
-    descricao:
-      'Reunião técnica de 40 minutos com análise profunda dos blocos de vendas e operação. Emissão de laudo executivo com farol de risco e 3 prioridades para os próximos 90 dias.',
-    entregaveis: [
-      'Entrevista técnica guiada de 40 minutos',
-      'Laudo executivo em PDF com farol de urgência',
-      'Mapeamento do impacto setorial e produtos com redução',
-      'Matriz de decisão: Simples Tradicional vs Híbrido vs Lucro Real',
-    ],
-    faixaSugeridaMin: 1500,
-    faixaSugeridaMax: 3500,
-    unidade: 'por empresa / diagnóstico',
-    destaqueBadge: 'Porta de Entrada',
-  },
-  {
-    id: 'projeto_adequacao',
-    titulo: 'Projeto Completo de Adequação e Transição',
-    descricao:
-      'Implantação completa: parametrização do ERP/emissor com tags IBS/CBS, revisão da tabela de NCMs, saneamento tributário e reestruturação da política de precificação.',
-    entregaveis: [
-      'Homologação de testes de emissão no CGIBS',
-      'Revisão cadastral de todos os itens e serviços',
-      'Adequação de contratos com clientes e fornecedores',
-      'Simulação de fluxo de caixa considerando o split payment',
-    ],
-    faixaSugeridaMin: 4500,
-    faixaSugeridaMax: 12000,
-    unidade: 'projeto avulso (2 a 4 meses)',
-    destaqueBadge: 'Mais Contratado',
-  },
-  {
-    id: 'treinamento_equipe',
-    titulo: 'Treinamento e Capacitação da Equipe',
-    descricao:
-      'Workshop prático presencial ou online com os setores financeiro, compras, vendas e faturamento do cliente, ensinando a nova rotina sem juridiquês.',
-    entregaveis: [
-      'Workshop de 4 horas gravado para novos colaboradores',
-      'Manual de bolso de regras fiscais para a equipe de vendas',
-      'Guia de conferência de notas para o setor de compras',
-      'Sessão de dúvidas ao vivo com os líderes de setor',
-    ],
-    faixaSugeridaMin: 2000,
-    faixaSugeridaMax: 5000,
-    unidade: 'por turma (até 15 pessoas)',
-  },
-  {
-    id: 'acompanhamento_mensal',
-    titulo: 'Acompanhamento e Gestão Tributária Contínua',
-    descricao:
-      'Suporte contínuo mensal para auditar créditos acumulados, conciliar as retenções de split payment e acompanhar a evolução anual das alíquotas de 2026 a 2033.',
-    entregaveis: [
-      'Conciliação mensal das retenções de split payment',
-      'Relatório gerencial de créditos de IBS e CBS aproveitados',
-      'Apoio consultivo contínuo ao departamento comercial',
-      'Revisão anual obrigatória da opção pelo Simples Híbrido (até 30/09)',
-    ],
-    faixaSugeridaMin: 800,
-    faixaSugeridaMax: 2500,
-    unidade: 'mensalidade recorrente',
-    destaqueBadge: 'Receita Recorrente',
-  },
-]
-
-// ==========================================
-// 10. GLOSSÁRIO E FONTES
+// 9. GLOSSÁRIO E FONTES
 // ==========================================
 export interface ConfusaoComum {
   comparativo: string

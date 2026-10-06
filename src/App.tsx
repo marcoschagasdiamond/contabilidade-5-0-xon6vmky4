@@ -31,7 +31,6 @@ import SubpageExcecoes from './pages/reforma/SubpageExcecoes'
 import SubpageComparador from './pages/reforma/SubpageComparador'
 import SubpageDiagnosticoReforma from './pages/reforma/SubpageDiagnosticoReforma'
 import SubpagePainelCarteira from './pages/reforma/SubpagePainelCarteira'
-import SubpageKitPrecificacao from './pages/reforma/SubpageKitPrecificacao'
 import SubpageGlossarioFontes from './pages/reforma/SubpageGlossarioFontes'
 
 // Rota protegida para /admin
@@ -82,7 +81,7 @@ const App = () => (
             <Route path="/reforma-tributaria/painel-carteira" element={<SubpagePainelCarteira />} />
             <Route
               path="/reforma-tributaria/kit-precificacao"
-              element={<SubpageKitPrecificacao />}
+              element={<Navigate to="/reforma-tributaria" replace />}
             />
             <Route path="/reforma-tributaria/glossario" element={<SubpageGlossarioFontes />} />
             <Route path="/diagnostico" element={<Diagnostico />} />
