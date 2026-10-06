@@ -9,6 +9,7 @@ onRecordAfterCreateSuccess((e) => {
     const email = record.getString('email') || 'Não informado'
     const telefone = record.getString('telefone') || 'Não informado'
     const empresa = record.getString('empresa') || 'Não informada'
+    const cnpj = record.getString('cnpj') || 'Não informado'
     const segmento = record.getString('segmento') || 'Não informado'
     const cidade = record.getString('cidade') || 'Não informada'
     const aliquotaISS = record.getFloat('aliquota_iss') || 0
@@ -72,6 +73,10 @@ onRecordAfterCreateSuccess((e) => {
                 <tr>
                   <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b; width: 35%;"><strong>Empresa:</strong></td>
                   <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; font-weight: 600;">${empresa}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b;"><strong>CNPJ:</strong></td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; font-weight: 600;">${cnpj}</td>
                 </tr>
                 <tr>
                   <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b;"><strong>Contato:</strong></td>

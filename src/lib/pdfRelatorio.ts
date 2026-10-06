@@ -93,7 +93,7 @@ export function gerarRelatorioDiagnosticoPDF({ dados, resultado }: GerarPdfOptio
   // ==========================================
   doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
   doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-  doc.roundedRect(margin, currentY, contentWidth, 27, 2, 2, 'FD')
+  doc.roundedRect(margin, currentY, contentWidth, 31, 2, 2, 'FD')
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
@@ -110,14 +110,19 @@ export function gerarRelatorioDiagnosticoPDF({ dados, resultado }: GerarPdfOptio
   doc.text(dados.empresa || 'Não informada', margin + 22, currentY + 12)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Contato:', margin + 4, currentY + 18)
+  doc.text('CNPJ:', margin + 4, currentY + 17.5)
   doc.setFont('helvetica', 'normal')
-  doc.text(`${dados.nome || 'Não informado'} (${dados.email || '-'})`, margin + 22, currentY + 18)
+  doc.text(dados.cnpj || 'Não informado', margin + 22, currentY + 17.5)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('WhatsApp:', margin + 4, currentY + 23.5)
+  doc.text('Contato:', margin + 4, currentY + 23)
   doc.setFont('helvetica', 'normal')
-  doc.text(dados.telefone || 'Não informado', margin + 22, currentY + 23.5)
+  doc.text(`${dados.nome || 'Não informado'} (${dados.email || '-'})`, margin + 22, currentY + 23)
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('WhatsApp:', margin + 4, currentY + 28)
+  doc.setFont('helvetica', 'normal')
+  doc.text(dados.telefone || 'Não informado', margin + 22, currentY + 28)
 
   // Coluna 2
   const col2X = margin + 98
@@ -127,16 +132,20 @@ export function gerarRelatorioDiagnosticoPDF({ dados, resultado }: GerarPdfOptio
   doc.text(dados.segmento || '-', col2X + 26, currentY + 12)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Cidade / ISS:', col2X, currentY + 18)
+  doc.text('Cidade / ISS:', col2X, currentY + 17.5)
   doc.setFont('helvetica', 'normal')
-  doc.text(`${resultado.cidade} (${resultado.aliquotaISS.toFixed(1)}%)`, col2X + 26, currentY + 18)
+  doc.text(
+    `${resultado.cidade} (${resultado.aliquotaISS.toFixed(1)}%)`,
+    col2X + 26,
+    currentY + 17.5,
+  )
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Regime Atual:', col2X, currentY + 23.5)
+  doc.text('Regime Atual:', col2X, currentY + 23)
   doc.setFont('helvetica', 'normal')
-  doc.text(String(dados.regimeAtual || 'Simples Nacional'), col2X + 26, currentY + 23.5)
+  doc.text(String(dados.regimeAtual || 'Simples Nacional'), col2X + 26, currentY + 23)
 
-  currentY += 33
+  currentY += 37
 
   // ==========================================
   // BLOCO 2: RESUMO EXECUTIVO & REGIME RECOMENDADO

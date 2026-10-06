@@ -269,6 +269,7 @@ export interface DadosEntradaDiagnostico {
   email: string
   telefone: string
   empresa: string
+  cnpj?: string
   segmento: SegmentoEmpresa
   rbt12: number // Receita Bruta acumulada dos últimos 12 meses
   folha12: number // Folha de pagamento dos últimos 12 meses (salários, pró-labore, encargos)

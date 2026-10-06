@@ -7,6 +7,7 @@ export interface Diagnostico {
   email: string
   telefone: string
   empresa: string
+  cnpj?: string
   segmento:
     | 'Comércio'
     | 'Serviços'

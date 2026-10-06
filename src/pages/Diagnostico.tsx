@@ -50,6 +50,7 @@ import {
 } from '@/lib/regimes'
 import { createDiagnostico } from '@/services/diagnosticos'
 import { createLead } from '@/services/leads'
+import { formatarCNPJ, validarCNPJ, limparCNPJ } from '@/lib/cnpj'
 import {
   Dialog,
   DialogContent,
@@ -64,6 +65,7 @@ interface FormErrors {
   email?: string
   telefone?: string
   empresa?: string
+  cnpj?: string
   segmento?: string
   rbt12?: string
   folha12?: string
@@ -84,6 +86,7 @@ export default function Diagnostico() {
     email: string
     telefone: string
     empresa: string
+    cnpj: string
     cidade: string
     segmento: SegmentoEmpresa
     rbt12: number
@@ -98,6 +101,7 @@ export default function Diagnostico() {
     email: '',
     telefone: '',
     empresa: '',
+    cnpj: '',
     cidade: 'sp-sao-paulo',
     segmento: 'Comércio',
     rbt12: 600000,
@@ -131,6 +135,7 @@ export default function Diagnostico() {
           email: formData.email,
           telefone: formData.telefone,
           empresa: formData.empresa,
+          cnpj: formData.cnpj,
           segmento: formData.segmento,
           rbt12: formData.rbt12,
           folha12: formData.folha12,
@@ -187,6 +192,14 @@ export default function Diagnostico() {
     }
   }
 
+  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatarCNPJ(e.target.value)
+    setFormData((prev) => ({ ...prev, cnpj: formatted }))
+    if (errors.cnpj) {
+      setErrors((prev) => ({ ...prev, cnpj: undefined }))
+    }
+  }
+
   const handleRbt12Change = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/[^\d,.]/g, '')
     setRbt12Input(val)
@@ -231,6 +244,14 @@ export default function Diagnostico() {
         newErrors.telefone = 'Informe um telefone válido com DDD (mínimo 10 dígitos)'
 
       if (!formData.empresa.trim()) newErrors.empresa = 'Nome da empresa é obrigatório'
+
+      const cnpjDigits = limparCNPJ(formData.cnpj)
+      if (!formData.cnpj.trim()) {
+        newErrors.cnpj = 'Informe um CNPJ válido com 14 dígitos'
+      } else if (cnpjDigits.length !== 14 || !validarCNPJ(formData.cnpj)) {
+        newErrors.cnpj = 'Informe um CNPJ válido com 14 dígitos'
+      }
+
       if (!formData.segmento) newErrors.segmento = 'Selecione o segmento principal de atuação'
     }
 
@@ -290,6 +311,7 @@ export default function Diagnostico() {
             email: formData.email.trim().toLowerCase(),
             telefone: formData.telefone.trim(),
             empresa: formData.empresa.trim(),
+            cnpj: formData.cnpj.trim(),
             cidade: diagResult.cidade,
             aliquota_iss: diagResult.aliquotaISS,
             segmento: formData.segmento,
@@ -350,7 +372,7 @@ export default function Diagnostico() {
     setIsLeadSubmitting(true)
     try {
       const mensagemPreenchida = `Solicitei diagnóstico tributário no simulador.
-Empresa: ${formData.empresa} (${formData.segmento})
+Empresa: ${formData.empresa} (CNPJ: ${formData.cnpj || 'Não informado'}) (${formData.segmento})
 Cidade/UF: ${resultado.cidade} (ISS: ${resultado.aliquotaISS}%)
 Regime Atual: ${formData.regimeAtual}
 Porte: ${formData.funcionarios}
@@ -549,7 +571,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 )}
               </div>
 
-              {/* Razão Social / Nome da Empresa e Cidade/UF (ISS) */}
+              {/* Razão Social / Nome da Empresa e CNPJ da Empresa */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -575,27 +597,55 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      Cidade / UF (Alíquota de ISS) *
+                      CNPJ da Empresa *
                     </label>
-                    <span className="text-[11px] font-semibold text-[#145A32]">
-                      ISS: {obterAliquotaISS(formData.cidade).aliquota.toFixed(1)}%
-                    </span>
+                    <span className="text-[11px] text-slate-400">14 dígitos</span>
                   </div>
-                  <select
-                    value={formData.cidade}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, cidade: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
-                  >
-                    {CIDADES_ISS_MAPA.map((cid) => (
-                      <option key={cid.id} value={cid.id}>
-                        {cid.descricao || `${cid.nome}/${cid.uf} (${cid.aliquota.toFixed(1)}%)`}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Define o ISS municipal aplicado aos cálculos de serviços e transporte.
-                  </p>
+                  <input
+                    type="text"
+                    value={formData.cnpj}
+                    onChange={handleCnpjChange}
+                    maxLength={18}
+                    placeholder="00.000.000/0000-00"
+                    className={`w-full px-4 py-3 rounded-xl border text-sm text-slate-900 bg-slate-50/50 input-focus-ring ${
+                      errors.cnpj ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
+                    }`}
+                  />
+                  {errors.cnpj && (
+                    <p className="mt-1 text-xs text-red-600 font-medium">{errors.cnpj}</p>
+                  )}
+                  {!errors.cnpj && (
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Aceita com ou sem máscara (ex: 00.000.000/0000-00).
+                    </p>
+                  )}
                 </div>
+              </div>
+
+              {/* Cidade/UF (ISS) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Cidade / UF (Alíquota de ISS) *
+                  </label>
+                  <span className="text-[11px] font-semibold text-[#145A32]">
+                    ISS: {obterAliquotaISS(formData.cidade).aliquota.toFixed(1)}%
+                  </span>
+                </div>
+                <select
+                  value={formData.cidade}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, cidade: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                >
+                  {CIDADES_ISS_MAPA.map((cid) => (
+                    <option key={cid.id} value={cid.id}>
+                      {cid.descricao || `${cid.nome}/${cid.uf} (${cid.aliquota.toFixed(1)}%)`}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Define o ISS municipal aplicado aos cálculos de serviços e transporte.
+                </p>
               </div>
 
               {/* Segmento de Atuação (Grade responsiva com 10 opções) */}
@@ -1372,6 +1422,11 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   <span>
                     Empresa: <strong className="text-slate-800">{formData.empresa}</strong>
                   </span>
+                  {formData.cnpj && (
+                    <span>
+                      • CNPJ: <strong className="text-slate-800">{formData.cnpj}</strong>
+                    </span>
+                  )}
                   <span>
                     • Cidade: <strong className="text-slate-800">{resultado.cidade}</strong> (ISS:{' '}
                     <strong className="text-[#145A32]">{resultado.aliquotaISS.toFixed(1)}%</strong>)

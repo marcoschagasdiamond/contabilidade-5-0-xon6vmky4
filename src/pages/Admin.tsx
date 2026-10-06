@@ -171,6 +171,7 @@ export default function Admin() {
       item.nome?.toLowerCase().includes(term) ||
       item.email?.toLowerCase().includes(term) ||
       item.empresa?.toLowerCase().includes(term) ||
+      item.cnpj?.toLowerCase().includes(term) ||
       item.telefone?.includes(term) ||
       item.segmento?.toLowerCase().includes(term)
 
@@ -231,6 +232,7 @@ export default function Admin() {
       'Email',
       'Telefone',
       'Empresa',
+      'CNPJ',
       'Cidade',
       'AliquotaISS',
       'Segmento',
@@ -250,6 +252,7 @@ export default function Admin() {
       `"${d.email || ''}"`,
       `"${d.telefone || ''}"`,
       `"${d.empresa || ''}"`,
+      `"${d.cnpj || ''}"`,
       `"${d.cidade || ''}"`,
       d.aliquota_iss || 2.0,
       `"${d.segmento || ''}"`,
@@ -464,11 +467,11 @@ export default function Admin() {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Buscar por nome, e-mail ou empresa..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar por nome, empresa, CNPJ ou telefone..."
+                  value={diagSearchTerm}
+                  onChange={(e) => setDiagSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-900 input-focus-ring"
-                />
+                />{' '}
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -766,6 +769,11 @@ export default function Admin() {
                             <div className="font-semibold text-slate-900 group-hover:text-[#145A32] transition-colors">
                               {item.empresa}
                             </div>
+                            {item.cnpj && (
+                              <div className="text-xs font-mono text-slate-600 mt-0.5">
+                                CNPJ: {item.cnpj}
+                              </div>
+                            )}
                             <div className="text-xs text-slate-500 mt-0.5">
                               {item.nome} • {item.telefone}
                             </div>
@@ -987,6 +995,12 @@ export default function Admin() {
                     Empresa
                   </span>
                   <strong className="text-slate-900">{selectedDiag.empresa}</strong>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase block">CNPJ</span>
+                  <strong className="text-slate-900 font-mono">
+                    {selectedDiag.cnpj || 'Não informado'}
+                  </strong>
                 </div>
                 <div>
                   <span className="text-xs font-semibold text-slate-400 uppercase block">
