@@ -31,6 +31,8 @@ export interface Diagnostico {
   emissao_nf?: string
   atividade_mista?: boolean
   regime_atual?: string
+  cidade?: string
+  aliquota_iss?: number
   ranking_json?: Array<{
     posicao: number
     regime: string

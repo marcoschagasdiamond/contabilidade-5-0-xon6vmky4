@@ -48,6 +48,222 @@ export type RegimeAtualEmpresa =
   | 'MEI (Microempreendedor)'
   | 'Nova empresa / Ainda não optante'
 
+export interface ItemCidadeISS {
+  id: string
+  nome: string
+  uf: string
+  aliquota: number // Alíquota percentual de ISS (ex: 2.0, 3.0, 5.0)
+  descricao?: string
+}
+
+export const CIDADES_ISS_MAPA: ItemCidadeISS[] = [
+  {
+    id: 'sp-sao-paulo',
+    nome: 'São Paulo',
+    uf: 'SP',
+    aliquota: 3.0,
+    descricao: 'São Paulo/SP (3,0% padrão serviços)',
+  },
+  { id: 'sp-campinas', nome: 'Campinas', uf: 'SP', aliquota: 3.0, descricao: 'Campinas/SP (3,0%)' },
+  {
+    id: 'sp-guarulhos',
+    nome: 'Guarulhos',
+    uf: 'SP',
+    aliquota: 2.5,
+    descricao: 'Guarulhos/SP (2,5%)',
+  },
+  {
+    id: 'sp-sao-bernardo',
+    nome: 'São Bernardo do Campo',
+    uf: 'SP',
+    aliquota: 2.5,
+    descricao: 'São Bernardo do Campo/SP (2,5%)',
+  },
+  {
+    id: 'sp-santo-andre',
+    nome: 'Santo André',
+    uf: 'SP',
+    aliquota: 2.5,
+    descricao: 'Santo André/SP (2,5%)',
+  },
+  {
+    id: 'sp-osasco',
+    nome: 'Osasco',
+    uf: 'SP',
+    aliquota: 2.0,
+    descricao: 'Osasco/SP (2,0% polo serviços/TI)',
+  },
+  {
+    id: 'sp-barueri',
+    nome: 'Barueri (Alphaville)',
+    uf: 'SP',
+    aliquota: 2.0,
+    descricao: 'Barueri/SP (2,0% polo tecnológico)',
+  },
+  {
+    id: 'sp-ribeirao-preto',
+    nome: 'Ribeirão Preto',
+    uf: 'SP',
+    aliquota: 3.0,
+    descricao: 'Ribeirão Preto/SP (3,0%)',
+  },
+  {
+    id: 'sp-sao-jose-dos-campos',
+    nome: 'São José dos Campos',
+    uf: 'SP',
+    aliquota: 2.5,
+    descricao: 'São José dos Campos/SP (2,5%)',
+  },
+  { id: 'sp-sorocaba', nome: 'Sorocaba', uf: 'SP', aliquota: 2.5, descricao: 'Sorocaba/SP (2,5%)' },
+  {
+    id: 'rj-rio-de-janeiro',
+    nome: 'Rio de Janeiro',
+    uf: 'RJ',
+    aliquota: 5.0,
+    descricao: 'Rio de Janeiro/RJ (5,0%)',
+  },
+  { id: 'rj-niteroi', nome: 'Niterói', uf: 'RJ', aliquota: 4.0, descricao: 'Niterói/RJ (4,0%)' },
+  {
+    id: 'rj-duque-de-caxias',
+    nome: 'Duque de Caxias',
+    uf: 'RJ',
+    aliquota: 3.0,
+    descricao: 'Duque de Caxias/RJ (3,0%)',
+  },
+  {
+    id: 'mg-belo-horizonte',
+    nome: 'Belo Horizonte',
+    uf: 'MG',
+    aliquota: 4.0,
+    descricao: 'Belo Horizonte/MG (4,0%)',
+  },
+  {
+    id: 'mg-uberlandia',
+    nome: 'Uberlândia',
+    uf: 'MG',
+    aliquota: 3.0,
+    descricao: 'Uberlândia/MG (3,0%)',
+  },
+  { id: 'mg-contagem', nome: 'Contagem', uf: 'MG', aliquota: 3.0, descricao: 'Contagem/MG (3,0%)' },
+  {
+    id: 'mg-juiz-de-fora',
+    nome: 'Juiz de Fora',
+    uf: 'MG',
+    aliquota: 3.0,
+    descricao: 'Juiz de Fora/MG (3,0%)',
+  },
+  { id: 'pr-curitiba', nome: 'Curitiba', uf: 'PR', aliquota: 4.0, descricao: 'Curitiba/PR (4,0%)' },
+  { id: 'pr-londrina', nome: 'Londrina', uf: 'PR', aliquota: 3.0, descricao: 'Londrina/PR (3,0%)' },
+  { id: 'pr-maringa', nome: 'Maringá', uf: 'PR', aliquota: 3.0, descricao: 'Maringá/PR (3,0%)' },
+  {
+    id: 'sc-florianopolis',
+    nome: 'Florianópolis',
+    uf: 'SC',
+    aliquota: 3.0,
+    descricao: 'Florianópolis/SC (3,0%)',
+  },
+  {
+    id: 'sc-joinville',
+    nome: 'Joinville',
+    uf: 'SC',
+    aliquota: 3.0,
+    descricao: 'Joinville/SC (3,0%)',
+  },
+  { id: 'sc-blumenau', nome: 'Blumenau', uf: 'SC', aliquota: 3.0, descricao: 'Blumenau/SC (3,0%)' },
+  {
+    id: 'rs-porto-alegre',
+    nome: 'Porto Alegre',
+    uf: 'RS',
+    aliquota: 4.0,
+    descricao: 'Porto Alegre/RS (4,0%)',
+  },
+  {
+    id: 'rs-caxias-do-sul',
+    nome: 'Caxias do Sul',
+    uf: 'RS',
+    aliquota: 3.0,
+    descricao: 'Caxias do Sul/RS (3,0%)',
+  },
+  { id: 'ba-salvador', nome: 'Salvador', uf: 'BA', aliquota: 4.5, descricao: 'Salvador/BA (4,5%)' },
+  { id: 'pe-recife', nome: 'Recife', uf: 'PE', aliquota: 5.0, descricao: 'Recife/PE (5,0%)' },
+  {
+    id: 'ce-fortaleza',
+    nome: 'Fortaleza',
+    uf: 'CE',
+    aliquota: 4.0,
+    descricao: 'Fortaleza/CE (4,0%)',
+  },
+  { id: 'df-brasilia', nome: 'Brasília', uf: 'DF', aliquota: 4.0, descricao: 'Brasília/DF (4,0%)' },
+  { id: 'go-goiania', nome: 'Goiânia', uf: 'GO', aliquota: 3.5, descricao: 'Goiânia/GO (3,5%)' },
+  { id: 'es-vitoria', nome: 'Vitória', uf: 'ES', aliquota: 3.0, descricao: 'Vitória/ES (3,0%)' },
+  {
+    id: 'es-vila-velha',
+    nome: 'Vila Velha',
+    uf: 'ES',
+    aliquota: 3.0,
+    descricao: 'Vila Velha/ES (3,0%)',
+  },
+  {
+    id: 'ms-campo-grande',
+    nome: 'Campo Grande',
+    uf: 'MS',
+    aliquota: 3.5,
+    descricao: 'Campo Grande/MS (3,5%)',
+  },
+  { id: 'mt-cuiaba', nome: 'Cuiabá', uf: 'MT', aliquota: 3.5, descricao: 'Cuiabá/MT (3,5%)' },
+  { id: 'am-manaus', nome: 'Manaus', uf: 'AM', aliquota: 3.0, descricao: 'Manaus/AM (3,0%)' },
+  { id: 'pa-belem', nome: 'Belém', uf: 'PA', aliquota: 4.0, descricao: 'Belém/PA (4,0%)' },
+  { id: 'ma-sao-luis', nome: 'São Luís', uf: 'MA', aliquota: 4.0, descricao: 'São Luís/MA (4,0%)' },
+  { id: 'rn-natal', nome: 'Natal', uf: 'RN', aliquota: 4.0, descricao: 'Natal/RN (4,0%)' },
+  {
+    id: 'pb-joao-pessoa',
+    nome: 'João Pessoa',
+    uf: 'PB',
+    aliquota: 4.0,
+    descricao: 'João Pessoa/PB (4,0%)',
+  },
+  { id: 'al-maceio', nome: 'Maceió', uf: 'AL', aliquota: 4.0, descricao: 'Maceió/AL (4,0%)' },
+  { id: 'se-aracaju', nome: 'Aracaju', uf: 'SE', aliquota: 4.0, descricao: 'Aracaju/SE (4,0%)' },
+  { id: 'pi-teresina', nome: 'Teresina', uf: 'PI', aliquota: 4.0, descricao: 'Teresina/PI (4,0%)' },
+  { id: 'to-palmas', nome: 'Palmas', uf: 'TO', aliquota: 3.0, descricao: 'Palmas/TO (3,0%)' },
+  {
+    id: 'ro-porto-velho',
+    nome: 'Porto Velho',
+    uf: 'RO',
+    aliquota: 3.0,
+    descricao: 'Porto Velho/RO (3,0%)',
+  },
+  {
+    id: 'outra',
+    nome: 'Outra cidade',
+    uf: 'BR',
+    aliquota: 2.0,
+    descricao: 'Outra cidade / Interior (2,0% mínimo legal)',
+  },
+]
+
+export function obterAliquotaISS(cidadeOuId?: string): { cidadeNome: string; aliquota: number } {
+  if (!cidadeOuId) {
+    return { cidadeNome: 'São Paulo - SP', aliquota: 3.0 }
+  }
+  const limpo = cidadeOuId.toLowerCase().trim()
+  const encontrado = CIDADES_ISS_MAPA.find(
+    (c) =>
+      c.id.toLowerCase() === limpo ||
+      c.nome.toLowerCase() === limpo ||
+      `${c.nome}/${c.uf}`.toLowerCase() === limpo ||
+      `${c.nome} - ${c.uf}`.toLowerCase() === limpo,
+  )
+  if (encontrado) {
+    return {
+      cidadeNome:
+        encontrado.id === 'outra' ? 'Outra cidade' : `${encontrado.nome} - ${encontrado.uf}`,
+      aliquota: encontrado.aliquota,
+    }
+  }
+  return { cidadeNome: cidadeOuId, aliquota: 2.0 }
+}
+
 export interface DadosEntradaDiagnostico {
   nome: string
   email: string
@@ -61,6 +277,7 @@ export interface DadosEntradaDiagnostico {
   emissaoNf?: EmissaoNotaFiscal | string
   atividadeMista?: boolean // Comércio e serviços integrados
   regimeAtual?: RegimeAtualEmpresa | string
+  cidade?: string // Cidade/UF selecionada
 }
 
 export interface ItemRankingRegime {
@@ -112,6 +329,8 @@ export interface ResultadoRegime {
     pisCofinsPercent?: number
     presuncaoIRPJPercent?: number
     presuncaoCSLLPercent?: number
+    aliquotaISSPercent?: number
+    cidadeISS?: string
   }
   descricaoCurta: string
 }
@@ -126,6 +345,9 @@ export interface ResultadoDiagnosticoCompleto {
   explicacaoRecomendacao: string
   fatorR: number
   fatorRElegivelAnexoIII: boolean
+  // Dados de localização e ISS
+  cidade: string
+  aliquotaISS: number
   // Novos dados estruturados
   resumoSimplesTexto: string // 2 a 3 frases sem jargão para o cliente
   ranking: ItemRankingRegime[]
@@ -277,14 +499,22 @@ export function calcularSimplesNacional(
 /**
  * Calcula a carga tributária do Lucro Presumido
  */
-export function calcularLucroPresumido(rbt12: number, segmento: SegmentoEmpresa): ResultadoRegime {
+export function calcularLucroPresumido(
+  rbt12: number,
+  segmento: SegmentoEmpresa,
+  aliquotaISSPercent: number = 2.0,
+  cidadeNome?: string,
+): ResultadoRegime {
   if (rbt12 <= 0) {
     return {
       nome: 'Lucro Presumido',
       elegivel: true,
       cargaAnual: 0,
       aliquotaEfetiva: 0,
-      detalhes: {},
+      detalhes: {
+        aliquotaISSPercent,
+        cidadeISS: cidadeNome,
+      },
       descricaoCurta:
         'Tributação baseada em margem de lucro pré-fixada pela legislação sobre o faturamento bruto.',
     }
@@ -297,7 +527,10 @@ export function calcularLucroPresumido(rbt12: number, segmento: SegmentoEmpresa)
       motivoInelegibilidade: `Receita bruta anual (R$ ${rbt12.toLocaleString('pt-BR')}) excede o teto de R$ 78.000.000,00.`,
       cargaAnual: 0,
       aliquotaEfetiva: 0,
-      detalhes: {},
+      detalhes: {
+        aliquotaISSPercent,
+        cidadeISS: cidadeNome,
+      },
       descricaoCurta:
         'Tributação simplificada sobre lucro pré-fixado pela Receita Federal, limitada a empresas com faturamento até R$ 78 milhões.',
     }
@@ -306,11 +539,12 @@ export function calcularLucroPresumido(rbt12: number, segmento: SegmentoEmpresa)
   // Base de presunção IRPJ e CSLL no Lucro Presumido:
   // - Comércio, Indústria, Agro: IRPJ 8%, CSLL 12%, ICMS 12%
   // - Bares e Restaurantes: predominantemente venda de refeições/mercadorias -> presunção 8% IRPJ, 12% CSLL, ICMS 12%
-  // - Transporte: serviços de transporte de passageiros/cargas possuem presunção própria legal de 16% no IRPJ (art. 15 da Lei 9.249/95), CSLL 12%, ISS/ICMS (utilizamos ISS 2% para transporte intramunicipal/serviços)
-  // - Serviços, Saúde, Educação, Tecnologia, Construção Civil: IRPJ 32%, CSLL 32%, ISS 2%
+  // - Transporte: serviços de transporte de passageiros/cargas possuem presunção própria legal de 16% no IRPJ (art. 15 da Lei 9.249/95), CSLL 12%, ISS municipal ou ICMS frete
+  // - Serviços, Saúde, Educação, Tecnologia, Construção Civil: IRPJ 32%, CSLL 32%, ISS municipal (conforme cidade)
   let basePresuncaoIRPJPercent = 0.32
   let basePresuncaoCSLLPercent = 0.32
-  let icmsOuIssPercent = 0.02
+  const issDecimal = (aliquotaISSPercent || 2.0) / 100
+  let icmsOuIssPercent = issDecimal
 
   if (segmento === 'Comércio' || segmento === 'Indústria' || segmento === 'Agro') {
     basePresuncaoIRPJPercent = 0.08
@@ -327,12 +561,12 @@ export function calcularLucroPresumido(rbt12: number, segmento: SegmentoEmpresa)
     // e 12% de CSLL.
     basePresuncaoIRPJPercent = 0.16
     basePresuncaoCSLLPercent = 0.12
-    icmsOuIssPercent = 0.02 // ISS / ICMS frete
+    icmsOuIssPercent = issDecimal // ISS intramunicipal ou ICMS frete
   } else {
     // Serviços, Saúde, Educação, Tecnologia, Construção Civil
     basePresuncaoIRPJPercent = 0.32
     basePresuncaoCSLLPercent = 0.32
-    icmsOuIssPercent = 0.02 // ISS
+    icmsOuIssPercent = issDecimal // ISS conforme cidade
   }
 
   const basePresumidaIRPJ = rbt12 * basePresuncaoIRPJPercent
@@ -367,6 +601,8 @@ export function calcularLucroPresumido(rbt12: number, segmento: SegmentoEmpresa)
       icmsOuIss: Math.round(icmsOuIss * 100) / 100,
       presuncaoIRPJPercent: Math.round(basePresuncaoIRPJPercent * 100),
       presuncaoCSLLPercent: Math.round(basePresuncaoCSLLPercent * 100),
+      aliquotaISSPercent,
+      cidadeISS: cidadeNome,
     },
     descricaoCurta:
       'Tributa o IRPJ e a CSLL sobre margem presumida (8% a 32%), com PIS/COFINS cumulativo (3,65%). É vantajoso quando a margem de lucro real da empresa for maior que a margem presumida.',
@@ -380,6 +616,8 @@ export function calcularLucroReal(
   rbt12: number,
   margemLucroPercent: number,
   segmento: SegmentoEmpresa,
+  aliquotaISSPercent: number = 2.0,
+  cidadeNome?: string,
 ): ResultadoRegime {
   if (rbt12 <= 0) {
     return {
@@ -411,13 +649,14 @@ export function calcularLucroReal(
   // (PIS 1,65% + COFINS 7,60%)
   const pisCofins = rbt12 * 0.0925
 
-  // Tributo sobre consumo: ICMS 12% (Comércio/Indústria/Agro/Bares e Restaurantes) ou ISS 2% (Serviços, Saúde, Educação, Tecnologia, Construção Civil, Transporte)
+  // Tributo sobre consumo: ICMS 12% (Comércio/Indústria/Agro/Bares e Restaurantes) ou ISS municipal (Serviços, Saúde, Educação, Tecnologia, Construção Civil, Transporte)
   const isMercadoria =
     segmento === 'Comércio' ||
     segmento === 'Indústria' ||
     segmento === 'Agro' ||
     segmento === 'Bares e Restaurantes'
-  const impostoConsumoPercent = isMercadoria ? 0.12 : 0.02
+  const issDecimal = (aliquotaISSPercent || 2.0) / 100
+  const impostoConsumoPercent = isMercadoria ? 0.12 : issDecimal
   const impostoConsumo = rbt12 * impostoConsumoPercent
 
   const cargaAnual = Math.round((irpjTotal + csllTotal + pisCofins + impostoConsumo) * 100) / 100
@@ -434,6 +673,8 @@ export function calcularLucroReal(
       pisCofins: Math.round(pisCofins * 100) / 100,
       icmsOuIss: Math.round(impostoConsumo * 100) / 100,
       pisCofinsPercent: 9.25,
+      aliquotaISSPercent,
+      cidadeISS: cidadeNome,
     },
     descricaoCurta:
       'Impostos calculados diretamente sobre o lucro líquido efetivo apurado. Ideal para empresas com margem de lucro reduzida, despesas dedutíveis elevadas ou faturamento acima de R$ 78 milhões.',
@@ -446,11 +687,13 @@ export function calcularLucroReal(
 export function executarDiagnosticoTributario(
   dados: Omit<DadosEntradaDiagnostico, 'nome' | 'email' | 'telefone' | 'empresa'>,
 ): ResultadoDiagnosticoCompleto {
-  const { rbt12, folha12, margemLucro, segmento, atividadeMista, regimeAtual } = dados
+  const { rbt12, folha12, margemLucro, segmento, atividadeMista, regimeAtual, cidade } = dados
+
+  const { cidadeNome, aliquota: aliquotaISS } = obterAliquotaISS(cidade)
 
   const simples = calcularSimplesNacional(rbt12, folha12, segmento)
-  const presumido = calcularLucroPresumido(rbt12, segmento)
-  const real = calcularLucroReal(rbt12, margemLucro, segmento)
+  const presumido = calcularLucroPresumido(rbt12, segmento, aliquotaISS, cidadeNome)
+  const real = calcularLucroReal(rbt12, margemLucro, segmento, aliquotaISS, cidadeNome)
 
   const fatorR = rbt12 > 0 ? (folha12 / rbt12) * 100 : 0
   const fatorRElegivelAnexoIII = fatorR >= 28
@@ -605,6 +848,24 @@ export function executarDiagnosticoTributario(
     tipo: 'informativo',
     impacto: `Sua margem estimada é de ${margemLucro}%. Quando sua margem real for maior que a presunção, o Presumido torna-se atrativo.`,
   })
+
+  // Regra de ISS municipal
+  const isSegmentoComISS =
+    segmento === 'Serviços' ||
+    segmento === 'Saúde' ||
+    segmento === 'Educação' ||
+    segmento === 'Tecnologia' ||
+    segmento === 'Construção Civil' ||
+    segmento === 'Transporte'
+
+  if (isSegmentoComISS) {
+    regrasAplicadas.push({
+      titulo: `ISS Municipal aplicado: ${aliquotaISS.toFixed(1)}% (${cidadeNome})`,
+      descricao: `Para o município de ${cidadeNome}, foi aplicada a alíquota municipal de ISS de ${aliquotaISS.toFixed(1)}% sobre as receitas de serviços no Lucro Presumido e Lucro Real.`,
+      tipo: aliquotaISS > 3.0 ? 'alerta' : 'sucesso',
+      impacto: `Impacto anual de R$ ${(rbt12 * (aliquotaISS / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em tributos municipais fora do Simples.`,
+    })
+  }
 
   // Regra do teto de R$ 78 milhões
   if (rbt12 > LIMITE_PRESUMIDO) {
@@ -793,6 +1054,8 @@ export function executarDiagnosticoTributario(
     explicacaoRecomendacao,
     fatorR: Math.round(fatorR * 10) / 10,
     fatorRElegivelAnexoIII,
+    cidade: cidadeNome,
+    aliquotaISS,
     resumoSimplesTexto,
     ranking,
     empateTecnico,

@@ -231,6 +231,8 @@ export default function Admin() {
       'Email',
       'Telefone',
       'Empresa',
+      'Cidade',
+      'AliquotaISS',
       'Segmento',
       'RBT12',
       'Folha12',
@@ -248,6 +250,8 @@ export default function Admin() {
       `"${d.email || ''}"`,
       `"${d.telefone || ''}"`,
       `"${d.empresa || ''}"`,
+      `"${d.cidade || ''}"`,
+      d.aliquota_iss || 2.0,
       `"${d.segmento || ''}"`,
       d.rbt12 || 0,
       d.folha12 || 0,
@@ -765,6 +769,12 @@ export default function Admin() {
                             <div className="text-xs text-slate-500 mt-0.5">
                               {item.nome} • {item.telefone}
                             </div>
+                            {item.cidade && (
+                              <div className="text-[11px] text-[#145A32] font-medium mt-0.5">
+                                📍 {item.cidade}{' '}
+                                {item.aliquota_iss ? `(ISS: ${item.aliquota_iss}%)` : ''}
+                              </div>
+                            )}
                           </td>
 
                           <td className="py-4 px-6">
@@ -1002,6 +1012,22 @@ export default function Admin() {
                   >
                     {selectedDiag.telefone}
                   </a>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase block">
+                    Cidade / UF
+                  </span>
+                  <span className="text-slate-800 font-medium">
+                    {selectedDiag.cidade || 'Não informada'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase block">
+                    Alíquota ISS Aplicada
+                  </span>
+                  <span className="text-[#145A32] font-bold">
+                    {selectedDiag.aliquota_iss ? `${selectedDiag.aliquota_iss}%` : '2,0% (padrão)'}
+                  </span>
                 </div>
               </div>
 

@@ -35,12 +35,16 @@ import {
   ChevronUp,
   FileSpreadsheet,
   AlertCircle,
+  Download,
 } from 'lucide-react'
+import { gerarRelatorioDiagnosticoPDF } from '@/lib/pdfRelatorio'
 import {
   executarDiagnosticoTributario,
   type SegmentoEmpresa,
   type ResultadoDiagnosticoCompleto,
   LISTA_SEGMENTOS,
+  CIDADES_ISS_MAPA,
+  obterAliquotaISS,
   LIMITE_SIMPLES,
   LIMITE_PRESUMIDO,
 } from '@/lib/regimes'
@@ -80,6 +84,7 @@ export default function Diagnostico() {
     email: string
     telefone: string
     empresa: string
+    cidade: string
     segmento: SegmentoEmpresa
     rbt12: number
     folha12: number
@@ -93,6 +98,7 @@ export default function Diagnostico() {
     email: '',
     telefone: '',
     empresa: '',
+    cidade: 'sp-sao-paulo',
     segmento: 'Comércio',
     rbt12: 600000,
     folha12: 120000,
@@ -113,6 +119,36 @@ export default function Diagnostico() {
   const [leadEnviado, setLeadEnviado] = useState(false)
   const [isEspecialistaModalOpen, setIsEspecialistaModalOpen] = useState(false)
   const [mostrarDetalhesTecnicos, setMostrarDetalhesTecnicos] = useState(false)
+  const [isGerandoPDF, setIsGerandoPDF] = useState(false)
+
+  const handleBaixarPDF = async () => {
+    if (!resultado) return
+    setIsGerandoPDF(true)
+    try {
+      gerarRelatorioDiagnosticoPDF({
+        dados: {
+          nome: formData.nome,
+          email: formData.email,
+          telefone: formData.telefone,
+          empresa: formData.empresa,
+          segmento: formData.segmento,
+          rbt12: formData.rbt12,
+          folha12: formData.folha12,
+          margemLucro: formData.margemLucro,
+          funcionarios: formData.funcionarios,
+          emissaoNf: formData.emissaoNf,
+          atividadeMista: formData.atividadeMista,
+          regimeAtual: formData.regimeAtual,
+          cidade: formData.cidade,
+        },
+        resultado,
+      })
+    } catch (err) {
+      console.error('Erro ao gerar relatório em PDF:', err)
+    } finally {
+      setIsGerandoPDF(false)
+    }
+  }
 
   // Formatador de telefone idêntico ao LeadForm
   const formatPhoneBR = (value: string) => {
@@ -244,15 +280,18 @@ export default function Diagnostico() {
           emissaoNf: formData.emissaoNf,
           atividadeMista: formData.atividadeMista,
           regimeAtual: formData.regimeAtual,
+          cidade: formData.cidade,
         })
 
-        // Persistir na coleção 'diagnosticos' incluindo novos campos e ranking
+        // Persistir na coleção 'diagnosticos' incluindo novos campos, cidade, alíquota de ISS e ranking
         try {
           await createDiagnostico({
             nome: formData.nome.trim(),
             email: formData.email.trim().toLowerCase(),
             telefone: formData.telefone.trim(),
             empresa: formData.empresa.trim(),
+            cidade: diagResult.cidade,
+            aliquota_iss: diagResult.aliquotaISS,
             segmento: formData.segmento,
             rbt12: formData.rbt12,
             folha12: formData.folha12,
@@ -312,6 +351,7 @@ export default function Diagnostico() {
     try {
       const mensagemPreenchida = `Solicitei diagnóstico tributário no simulador.
 Empresa: ${formData.empresa} (${formData.segmento})
+Cidade/UF: ${resultado.cidade} (ISS: ${resultado.aliquotaISS}%)
 Regime Atual: ${formData.regimeAtual}
 Porte: ${formData.funcionarios}
 Emissão de NF: ${formData.emissaoNf}
@@ -509,26 +549,53 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 )}
               </div>
 
-              {/* Razão Social / Nome da Empresa */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Nome da Empresa *
-                </label>
-                <input
-                  type="text"
-                  value={formData.empresa}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, empresa: e.target.value }))
-                    if (errors.empresa) setErrors((prev) => ({ ...prev, empresa: undefined }))
-                  }}
-                  placeholder="Ex: Inova Tecnologia & Consultoria Ltda"
-                  className={`w-full px-4 py-3 rounded-xl border text-sm text-slate-900 bg-slate-50/50 input-focus-ring ${
-                    errors.empresa ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
-                  }`}
-                />
-                {errors.empresa && (
-                  <p className="mt-1 text-xs text-red-600 font-medium">{errors.empresa}</p>
-                )}
+              {/* Razão Social / Nome da Empresa e Cidade/UF (ISS) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Nome da Empresa *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.empresa}
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, empresa: e.target.value }))
+                      if (errors.empresa) setErrors((prev) => ({ ...prev, empresa: undefined }))
+                    }}
+                    placeholder="Ex: Inova Tecnologia & Consultoria Ltda"
+                    className={`w-full px-4 py-3 rounded-xl border text-sm text-slate-900 bg-slate-50/50 input-focus-ring ${
+                      errors.empresa ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
+                    }`}
+                  />
+                  {errors.empresa && (
+                    <p className="mt-1 text-xs text-red-600 font-medium">{errors.empresa}</p>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Cidade / UF (Alíquota de ISS) *
+                    </label>
+                    <span className="text-[11px] font-semibold text-[#145A32]">
+                      ISS: {obterAliquotaISS(formData.cidade).aliquota.toFixed(1)}%
+                    </span>
+                  </div>
+                  <select
+                    value={formData.cidade}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, cidade: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                  >
+                    {CIDADES_ISS_MAPA.map((cid) => (
+                      <option key={cid.id} value={cid.id}>
+                        {cid.descricao || `${cid.nome}/${cid.uf} (${cid.aliquota.toFixed(1)}%)`}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Define o ISS municipal aplicado aos cálculos de serviços e transporte.
+                  </p>
+                </div>
               </div>
 
               {/* Segmento de Atuação (Grade responsiva com 10 opções) */}
@@ -1300,17 +1367,42 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               <p className="text-base sm:text-lg text-slate-800 font-medium leading-relaxed">
                 {resultado.resumoSimplesTexto}
               </p>
-              <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-                <span>
-                  Empresa: <strong className="text-slate-800">{formData.empresa}</strong>
-                </span>
-                <span>
-                  • Segmento: <strong className="text-slate-800">{formData.segmento}</strong>
-                </span>
-                <span>
-                  • Regime atual informado:{' '}
-                  <strong className="text-slate-800">{formData.regimeAtual}</strong>
-                </span>
+              <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
+                  <span>
+                    Empresa: <strong className="text-slate-800">{formData.empresa}</strong>
+                  </span>
+                  <span>
+                    • Cidade: <strong className="text-slate-800">{resultado.cidade}</strong> (ISS:{' '}
+                    <strong className="text-[#145A32]">{resultado.aliquotaISS.toFixed(1)}%</strong>)
+                  </span>
+                  <span>
+                    • Segmento: <strong className="text-slate-800">{formData.segmento}</strong>
+                  </span>
+                  <span>
+                    • Regime atual informado:{' '}
+                    <strong className="text-slate-800">{formData.regimeAtual}</strong>
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleBaixarPDF}
+                  disabled={isGerandoPDF}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center gap-1.5 shrink-0"
+                >
+                  {isGerandoPDF ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Gerando PDF...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Baixar relatório em PDF</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
@@ -1992,9 +2084,28 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                 <button
                   type="button"
+                  onClick={handleBaixarPDF}
+                  disabled={isGerandoPDF}
+                  className="px-6 py-4 rounded-xl font-heading font-semibold text-sm sm:text-base text-white bg-white/15 hover:bg-white/25 border border-white/25 hover:border-white/50 transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap shadow-sm disabled:opacity-70"
+                >
+                  {isGerandoPDF ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin text-[#2ECC71]" />
+                      <span>Gerando PDF...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-5 h-5 text-[#2ECC71]" />
+                      <span>Baixar relatório em PDF</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleFalarEspecialista}
                   disabled={isLeadSubmitting || leadEnviado}
-                  className="px-8 py-4 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-0.5 btn-press flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-80"
+                  className="px-7 py-4 rounded-xl font-heading font-semibold text-sm sm:text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-0.5 btn-press flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-80"
                 >
                   {isLeadSubmitting ? (
                     <>
@@ -2017,7 +2128,8 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 <button
                   type="button"
                   onClick={reiniciarDiagnostico}
-                  className="px-5 py-4 rounded-xl border border-white/20 hover:border-white text-slate-200 hover:text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                  className="px-4 py-4 rounded-xl border border-white/20 hover:border-white text-slate-200 hover:text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                  title="Reiniciar Simulação"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>Novo Cálculo</span>
