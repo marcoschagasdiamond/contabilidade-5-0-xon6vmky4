@@ -22,9 +22,10 @@ export default function SubpageDicionario() {
             Chega de 'sopa de letrinhas' tributária
           </h2>
           <p className="text-slate-300 text-sm mt-2 leading-relaxed max-w-3xl">
-            A nova tributação brasileira trouxe siglas novas (IBS, CBS, IS, Split Payment, DeRE).
-            Associamos cada conceito a uma imagem mental simples para facilitar conversas com sua
-            equipe, clientes e parceiros de negócio.
+            A nova tributação brasileira trouxe conceitos e siglas fundamentais (IBS, CBS, IS, Split
+            Payment, DeRE, IVA Dual, Não Cumulativo e Crédito). Associamos cada conceito a uma
+            imagem mental simples para facilitar conversas com sua equipe, clientes e parceiros de
+            negócio.
           </p>
         </div>
 

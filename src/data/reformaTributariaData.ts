@@ -400,6 +400,36 @@ export const DICIONARIO_MNEMONICOS: SiglaMnemonic[] = [
       'Uma indústria no Simples que vende para grandes redes pode escolher o Simples Híbrido para não perder clientes que exigem crédito integral de 26,5%.',
     icone: 'Shuffle',
   },
+  {
+    sigla: 'IVA Dual',
+    nomeOficial: 'Imposto sobre Valor Agregado Dual (CBS + IBS)',
+    truqueMemoria: 'Um só imposto, cobrado em duas partes: uma de cima, outra de baixo',
+    definicaoSimples:
+      'O Brasil adotou um modelo de IVA duplo: um tributo federal (CBS) e um estadual/municipal (IBS) que compartilham as mesmas regras, fatos geradores e base de cálculo.',
+    exemploPratico:
+      'Em vez de emitir guias separadas de ICMS, ISS, PIS e COFINS com regras conflitantes, você calcula CBS e IBS juntos sobre o mesmo valor da venda, com alíquota única somada.',
+    icone: 'Layers',
+  },
+  {
+    sigla: 'Não Cumulativo',
+    nomeOficial: 'Princípio da Não Cumulatividade Plena',
+    truqueMemoria: 'Quem comprou com imposto, desconta na hora de pagar o seu',
+    definicaoSimples:
+      'Sistema em que cada etapa da cadeia desconta o imposto pago na etapa anterior. A empresa recolhe tributo apenas sobre o valor que realmente agregou ao produto ou serviço.',
+    exemploPratico:
+      'Se você compra matéria-prima por R$ 100 com R$ 26,50 de imposto e vende o produto acabado por R$ 200 (imposto de R$ 53), só recolhe a diferença de R$ 26,50 aos cofres públicos.',
+    icone: 'MinusCircle',
+  },
+  {
+    sigla: 'Crédito',
+    nomeOficial: 'Crédito Tributário Financeiro Amplo',
+    truqueMemoria: 'Imposto que entra vira desconto do imposto que sai',
+    definicaoSimples:
+      'O valor do imposto pago nas compras que a empresa abate diretamente do imposto a recolher sobre suas vendas, eliminando a tributação em cascata.',
+    exemploPratico:
+      'Tudo o que sua empresa compra com nota fiscal regular (energia, máquinas, insumos, softwares, aluguel PJ) gera crédito para abater automaticamente do IBS e CBS a pagar no mês.',
+    icone: 'Coins',
+  },
 ]
 
 // ==========================================
