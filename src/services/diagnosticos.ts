@@ -27,6 +27,19 @@ export interface Diagnostico {
   carga_presumido: number
   carga_real: number
   economia_anual?: number
+  funcionarios?: string
+  emissao_nf?: string
+  atividade_mista?: boolean
+  regime_atual?: string
+  ranking_json?: Array<{
+    posicao: number
+    regime: string
+    cargaAnual: number
+    aliquotaEfetiva: number
+    elegivel: boolean
+    diferencaValor: number
+    diferencaPercent: number
+  }>
   created?: string
   updated?: string
 }

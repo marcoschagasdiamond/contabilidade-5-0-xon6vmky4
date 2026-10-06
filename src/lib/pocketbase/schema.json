@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-05T23:52:07.217Z",
+  "generatedAt": "2026-10-05T23:56:45.733Z",
   "collections": [
     {
       "name": "users",
@@ -245,6 +245,36 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "funcionarios",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "emissao_nf",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "atividade_mista",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "regime_atual",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ranking_json",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

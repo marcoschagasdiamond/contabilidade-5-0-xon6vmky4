@@ -1028,9 +1028,42 @@ export default function Admin() {
                     <strong className="text-slate-900">{selectedDiag.margem_lucro}%</strong>
                   </div>
                 </div>
+
+                {/* Novos dados do diagnóstico */}
+                <div className="mt-3 pt-3 border-t border-slate-200/70 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div>
+                    <span className="text-slate-500 block">Regime Atual:</span>
+                    <strong className="text-slate-800">
+                      {selectedDiag.regime_atual || 'Não inf.'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Equipe:</span>
+                    <strong className="text-slate-800">
+                      {selectedDiag.funcionarios || 'Não inf.'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Emissão NF:</span>
+                    <strong
+                      className="text-slate-800 truncate block"
+                      title={selectedDiag.emissao_nf}
+                    >
+                      {selectedDiag.emissao_nf
+                        ? selectedDiag.emissao_nf.replace('Predominante para ', '')
+                        : 'Não inf.'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Ativ. Mista:</span>
+                    <strong className="text-slate-800">
+                      {selectedDiag.atividade_mista ? 'Sim (Comércio+Serviço)' : 'Não'}
+                    </strong>
+                  </div>
+                </div>
               </div>
 
-              {/* Comparativo das cargas anuais */}
+              {/* Comparativo das cargas anuais & Ranking Salvo */}
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
                 <span className="text-xs font-semibold text-slate-400 uppercase block mb-1">
                   Carga Tributária Anual Estimada
@@ -1069,6 +1102,33 @@ export default function Admin() {
                     </span>
                   </div>
                 )}
+
+                {/* Se houver ranking_json gravado */}
+                {Array.isArray(selectedDiag.ranking_json) &&
+                  selectedDiag.ranking_json.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-slate-200">
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase block mb-2">
+                        Ranking Calculado dos 3 Regimes
+                      </span>
+                      <div className="space-y-1.5">
+                        {selectedDiag.ranking_json.map((rk) => (
+                          <div
+                            key={rk.regime}
+                            className="flex items-center justify-between text-xs p-1.5 rounded-lg bg-white border border-slate-100"
+                          >
+                            <span className="font-medium text-slate-700">
+                              #{rk.posicao} {rk.regime}
+                            </span>
+                            <span className="font-bold text-slate-900">
+                              {rk.elegivel
+                                ? `R$ ${rk.cargaAnual?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${rk.aliquotaEfetiva}%)`
+                                : 'Inelegível'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
 

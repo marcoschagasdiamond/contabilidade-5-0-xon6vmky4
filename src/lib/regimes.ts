@@ -29,6 +29,25 @@ export const LISTA_SEGMENTOS: SegmentoEmpresa[] = [
   'Bares e Restaurantes',
 ]
 
+export type PorteFuncionarios =
+  | 'Apenas sócios (sem funcionários)'
+  | '1 a 5 funcionários'
+  | '6 a 15 funcionários'
+  | '16 a 50 funcionários'
+  | 'Mais de 50 funcionários'
+
+export type EmissaoNotaFiscal =
+  | 'Predominante para Pessoas Jurídicas (B2B)'
+  | 'Predominante para Consumidor Final / PF (B2C)'
+  | 'Equilibrado (PF e PJ)'
+
+export type RegimeAtualEmpresa =
+  | 'Simples Nacional'
+  | 'Lucro Presumido'
+  | 'Lucro Real'
+  | 'MEI (Microempreendedor)'
+  | 'Nova empresa / Ainda não optante'
+
 export interface DadosEntradaDiagnostico {
   nome: string
   email: string
@@ -38,6 +57,42 @@ export interface DadosEntradaDiagnostico {
   rbt12: number // Receita Bruta acumulada dos últimos 12 meses
   folha12: number // Folha de pagamento dos últimos 12 meses (salários, pró-labore, encargos)
   margemLucro: number // Margem de lucro líquida estimada (0 a 100%)
+  funcionarios?: PorteFuncionarios | string
+  emissaoNf?: EmissaoNotaFiscal | string
+  atividadeMista?: boolean // Comércio e serviços integrados
+  regimeAtual?: RegimeAtualEmpresa | string
+}
+
+export interface ItemRankingRegime {
+  posicao: number
+  regime: 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real'
+  cargaAnual: number
+  aliquotaEfetiva: number
+  elegivel: boolean
+  motivoInelegibilidade?: string
+  diferencaValor: number // em relação ao 1º colocado (R$)
+  diferencaPercent: number // diferença percentual da carga ou alíquota
+  empateTecnicoComPrimeiro: boolean // diferença menor que 3%
+  statusDescritivo: string
+}
+
+export interface RegraAplicada {
+  titulo: string
+  descricao: string
+  tipo: 'sucesso' | 'alerta' | 'informativo' | 'inelegivel'
+  impacto: string
+}
+
+export interface GatilhoMudanca {
+  titulo: string
+  descricao: string
+  condicao: string
+}
+
+export interface JustificativaAlternativa {
+  regime: 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real'
+  quandoValeAPena: string
+  statusNesteCenario: string
 }
 
 export interface ResultadoRegime {
@@ -54,6 +109,9 @@ export interface ResultadoRegime {
     simplesGeral?: number
     anexoUtilizado?: string
     fatorR?: number
+    pisCofinsPercent?: number
+    presuncaoIRPJPercent?: number
+    presuncaoCSLLPercent?: number
   }
   descricaoCurta: string
 }
@@ -68,6 +126,15 @@ export interface ResultadoDiagnosticoCompleto {
   explicacaoRecomendacao: string
   fatorR: number
   fatorRElegivelAnexoIII: boolean
+  // Novos dados estruturados
+  resumoSimplesTexto: string // 2 a 3 frases sem jargão para o cliente
+  ranking: ItemRankingRegime[]
+  empateTecnico: boolean
+  regimeEmpatado?: 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real'
+  regrasAplicadas: RegraAplicada[]
+  motivosRecomendacao: string[] // 3 a 5 bullets didáticos vinculando input -> consequência fiscal
+  gatilhosMudanca: GatilhoMudanca[]
+  alternativas: JustificativaAlternativa[]
 }
 
 // Limites legais
@@ -298,6 +365,8 @@ export function calcularLucroPresumido(rbt12: number, segmento: SegmentoEmpresa)
       csll: Math.round(csllTotal * 100) / 100,
       pisCofins: Math.round(pisCofins * 100) / 100,
       icmsOuIss: Math.round(icmsOuIss * 100) / 100,
+      presuncaoIRPJPercent: Math.round(basePresuncaoIRPJPercent * 100),
+      presuncaoCSLLPercent: Math.round(basePresuncaoCSLLPercent * 100),
     },
     descricaoCurta:
       'Tributa o IRPJ e a CSLL sobre margem presumida (8% a 32%), com PIS/COFINS cumulativo (3,65%). É vantajoso quando a margem de lucro real da empresa for maior que a margem presumida.',
@@ -364,6 +433,7 @@ export function calcularLucroReal(
       csll: Math.round(csllTotal * 100) / 100,
       pisCofins: Math.round(pisCofins * 100) / 100,
       icmsOuIss: Math.round(impostoConsumo * 100) / 100,
+      pisCofinsPercent: 9.25,
     },
     descricaoCurta:
       'Impostos calculados diretamente sobre o lucro líquido efetivo apurado. Ideal para empresas com margem de lucro reduzida, despesas dedutíveis elevadas ou faturamento acima de R$ 78 milhões.',
@@ -376,7 +446,7 @@ export function calcularLucroReal(
 export function executarDiagnosticoTributario(
   dados: Omit<DadosEntradaDiagnostico, 'nome' | 'email' | 'telefone' | 'empresa'>,
 ): ResultadoDiagnosticoCompleto {
-  const { rbt12, folha12, margemLucro, segmento } = dados
+  const { rbt12, folha12, margemLucro, segmento, atividadeMista, regimeAtual } = dados
 
   const simples = calcularSimplesNacional(rbt12, folha12, segmento)
   const presumido = calcularLucroPresumido(rbt12, segmento)
@@ -385,9 +455,12 @@ export function executarDiagnosticoTributario(
   const fatorR = rbt12 > 0 ? (folha12 / rbt12) * 100 : 0
   const fatorRElegivelAnexoIII = fatorR >= 28
 
-  // Lista dos regimes elegíveis ordenados pela menor carga tributária anual
-  const regimes = [simples, presumido, real]
-  const elegiveis = regimes.filter((r) => r.elegivel).sort((a, b) => a.cargaAnual - b.cargaAnual)
+  // Lista dos 3 regimes
+  const todosOsRegimes = [simples, presumido, real]
+  const elegiveis = todosOsRegimes
+    .filter((r) => r.elegivel)
+    .sort((a, b) => a.cargaAnual - b.cargaAnual)
+  const inelegiveis = todosOsRegimes.filter((r) => !r.elegivel)
 
   let regimeRecomendado: 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real' = 'Lucro Real'
   let economiaAnual = 0
@@ -410,37 +483,305 @@ export function executarDiagnosticoTributario(
     regimeRecomendado = 'Lucro Real'
   }
 
-  // Gerar justificativa didática
-  let explicacaoRecomendacao = ''
-  if (rbt12 > LIMITE_PRESUMIDO) {
-    explicacaoRecomendacao = `Com faturamento anual de R$ ${rbt12.toLocaleString('pt-BR')}, o enquadramento no Lucro Real é obrigatório pela legislação fiscal brasileira (acima de R$ 78 milhões).`
-  } else if (regimeRecomendado === 'Simples Nacional') {
-    const isServicoComFatorR =
-      segmento === 'Serviços' ||
-      segmento === 'Saúde' ||
-      segmento === 'Educação' ||
-      segmento === 'Tecnologia' ||
-      segmento === 'Construção Civil'
+  // 1. Construir Ranking completo dos 3 regimes
+  // Ordena primeiro elegíveis por menor carga, depois inelegíveis
+  const regimesOrdenados = [...elegiveis, ...inelegiveis]
+  const cargaPrimeiro = elegiveis.length > 0 ? elegiveis[0].cargaAnual : 0
+  const aliqPrimeiro = elegiveis.length > 0 ? elegiveis[0].aliquotaEfetiva : 0
 
-    if (isServicoComFatorR) {
-      if (fatorRElegivelAnexoIII) {
-        explicacaoRecomendacao = `O Simples Nacional é o mais vantajoso gerando alíquota efetiva de ${simples.aliquotaEfetiva}%. No setor de ${segmento}, sua folha salarial representa ${fatorR.toFixed(1)}% do faturamento (Fator R ≥ 28%), o que enquadra sua empresa no vantajoso Anexo III em vez do Anexo V.`
-      } else {
-        explicacaoRecomendacao = `O Simples Nacional apresenta a menor carga fiscal total (${simples.aliquotaEfetiva}% efetivo) para ${segmento}, mesmo tributando no Anexo V (Fator R em ${fatorR.toFixed(1)}%). Vale analisar com nossos especialistas se um ajuste no pró-labore elevaria seu Fator R para 28% para reduzir ainda mais os impostos.`
-      }
-    } else {
-      explicacaoRecomendacao = `O Simples Nacional proporciona a menor alíquota efetiva global (${simples.aliquotaEfetiva}%) unificando tributos federais e estaduais/municipais no DAS para o setor de ${segmento}, gerando uma economia estimada de R$ ${economiaAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em relação ao segundo regime mais viável.`
+  let empateTecnico = false
+  let regimeEmpatado: 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real' | undefined = undefined
+
+  const ranking: ItemRankingRegime[] = regimesOrdenados.map((reg, idx) => {
+    const posicao = idx + 1
+    const diferencaValor = reg.elegivel
+      ? Math.max(0, Math.round((reg.cargaAnual - cargaPrimeiro) * 100) / 100)
+      : 0
+    // Diferença em percentual relativo da alíquota
+    const diferencaPercent =
+      reg.elegivel && cargaPrimeiro > 0
+        ? Math.round(((reg.cargaAnual - cargaPrimeiro) / cargaPrimeiro) * 1000) / 10
+        : 0
+
+    // Empate técnico: diferença de alíquota efetiva < 1.0 ponto percentual OU diferença relativa de carga < 3%
+    const diferencaAliq = Math.abs(reg.aliquotaEfetiva - aliqPrimeiro)
+    const ehEmpate =
+      posicao === 2 &&
+      reg.elegivel &&
+      (diferencaPercent < 3.0 || diferencaAliq < 1.0) &&
+      rbt12 <= LIMITE_PRESUMIDO
+
+    if (ehEmpate) {
+      empateTecnico = true
+      regimeEmpatado = reg.nome
     }
-  } else if (regimeRecomendado === 'Lucro Presumido') {
-    explicacaoRecomendacao = `O Lucro Presumido é a opção mais econômica neste cenário (${presumido.aliquotaEfetiva}% de alíquota efetiva). Como sua margem líquida (${margemLucro}%) ou faturamento superam os limites do Simples ou a base de presunção legal é mais favorável, este regime reduz a carga de IRPJ/CSLL consideravelmente.`
-  } else {
-    // Lucro Real
-    if (!simples.elegivel && !presumido.elegivel) {
-      explicacaoRecomendacao = `O Lucro Real é o único regime aplicável para a dimensão de faturamento informada, garantindo total conformidade contábil.`
+
+    let statusDescritivo = ''
+    if (!reg.elegivel) {
+      statusDescritivo = 'Inelegível legalmente'
+    } else if (posicao === 1) {
+      statusDescritivo = '1º lugar • Mais econômico'
+    } else if (ehEmpate) {
+      statusDescritivo = '2º lugar • Empate técnico viável'
     } else {
-      explicacaoRecomendacao = `O Lucro Real foi o mais vantajoso (${real.aliquotaEfetiva}% de carga efetiva). Como a margem de lucro estimada é de ${margemLucro}%, a base de cálculo real do IRPJ e da CSLL é inferior à presunção do Lucro Presumido e às tabelas do Simples, gerando economia líquida de impostos.`
+      statusDescritivo = `${posicao}º lugar • Carga maior em R$ ${diferencaValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/ano`
+    }
+
+    return {
+      posicao,
+      regime: reg.nome,
+      cargaAnual: reg.cargaAnual,
+      aliquotaEfetiva: reg.aliquotaEfetiva,
+      elegivel: reg.elegivel,
+      motivoInelegibilidade: reg.motivoInelegibilidade,
+      diferencaValor,
+      diferencaPercent,
+      empateTecnicoComPrimeiro: ehEmpate,
+      statusDescritivo,
+    }
+  })
+
+  // 2. Regras de análise aplicadas à empresa
+  const regrasAplicadas: RegraAplicada[] = []
+
+  // Regra de faturamento Simples Nacional
+  if (rbt12 <= LIMITE_SIMPLES) {
+    regrasAplicadas.push({
+      titulo: 'Elegibilidade ao Simples Nacional',
+      descricao: `Sua receita bruta anual de R$ ${rbt12.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} está dentro do sublimite de R$ 4,8 milhões/ano.`,
+      tipo: 'sucesso',
+      impacto: 'Empresa autorizada a recolher via guia única (DAS).',
+    })
+  } else {
+    regrasAplicadas.push({
+      titulo: 'Inelegibilidade ao Simples Nacional',
+      descricao: `A receita bruta de R$ ${rbt12.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ultrapassou o teto federal de R$ 4.800.000,00.`,
+      tipo: 'inelegivel',
+      impacto: 'Obrigatório optar entre Lucro Presumido ou Lucro Real.',
+    })
+  }
+
+  // Regra do Fator R (se aplicável ao segmento)
+  const isSegmentoFatorR =
+    segmento === 'Serviços' ||
+    segmento === 'Saúde' ||
+    segmento === 'Educação' ||
+    segmento === 'Tecnologia' ||
+    segmento === 'Construção Civil'
+
+  if (isSegmentoFatorR && rbt12 <= LIMITE_SIMPLES) {
+    if (fatorRElegivelAnexoIII) {
+      regrasAplicadas.push({
+        titulo: 'Fator R favorável (Anexo III)',
+        descricao: `Sua folha de pagamento representa ${fatorR.toFixed(1)}% do faturamento (regra de 28% superada com sucesso).`,
+        tipo: 'sucesso',
+        impacto: 'Tributação pelo Anexo III (alíquota inicial de 6% em vez dos 15,5% do Anexo V).',
+      })
+    } else {
+      regrasAplicadas.push({
+        titulo: 'Fator R abaixo do corte (Anexo V)',
+        descricao: `Sua folha representa ${fatorR.toFixed(1)}% do faturamento (abaixo dos 28% exigidos pelo art. 18 da LC 123/2006).`,
+        tipo: 'alerta',
+        impacto: 'No Simples a empresa cai no Anexo V (tributação a partir de 15,5%).',
+      })
     }
   }
+
+  // Regra de presunção do segmento no Lucro Presumido
+  let presuncaoTexto = '32% (serviços em geral)'
+  if (
+    segmento === 'Comércio' ||
+    segmento === 'Indústria' ||
+    segmento === 'Agro' ||
+    segmento === 'Bares e Restaurantes'
+  ) {
+    presuncaoTexto = '8% para IRPJ e 12% para CSLL (atividades mercantis/industriais)'
+  } else if (segmento === 'Transporte') {
+    presuncaoTexto = '16% para IRPJ e 12% para CSLL (transporte de cargas/passageiros)'
+  }
+  regrasAplicadas.push({
+    titulo: `Presunção legal para o setor de ${segmento}`,
+    descricao: `No Lucro Presumido, a base de cálculo estipulada pela Receita Federal é de ${presuncaoTexto}.`,
+    tipo: 'informativo',
+    impacto: `Sua margem estimada é de ${margemLucro}%. Quando sua margem real for maior que a presunção, o Presumido torna-se atrativo.`,
+  })
+
+  // Regra do teto de R$ 78 milhões
+  if (rbt12 > LIMITE_PRESUMIDO) {
+    regrasAplicadas.push({
+      titulo: 'Obrigatoriedade legal do Lucro Real',
+      descricao: `Receita anual acima de R$ 78.000.000,00 obriga a empresa ao Lucro Real por determinação do art. 14 da Lei 9.718/1998.`,
+      tipo: 'inelegivel',
+      impacto: 'Não é permitida a opção pelo Lucro Presumido ou Simples.',
+    })
+  }
+
+  // Regra de atividade mista (se informada)
+  if (atividadeMista) {
+    regrasAplicadas.push({
+      titulo: 'Operação mista de Comércio e Serviços',
+      descricao:
+        'Sua empresa combina venda de mercadorias com prestação de serviços no mesmo CNPJ.',
+      tipo: 'alerta',
+      impacto:
+        'Exige segregação de receitas no Simples (Anexo I + Anexo III/V) ou segregação de presunções (8% + 32%) no Lucro Presumido.',
+    })
+  }
+
+  // 3. Resumo simples em 2 a 3 frases sem jargão
+  let resumoSimplesTexto = ''
+  const nomeSegundo = segundoMaisVantajoso || 'outros regimes'
+  const economiaFormatada = economiaAnual.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+
+  if (rbt12 > LIMITE_PRESUMIDO) {
+    resumoSimplesTexto = `Pelo volume de faturamento de R$ ${rbt12.toLocaleString('pt-BR')}, sua empresa está enquadrada obrigatoriamente no Lucro Real pela lei brasileira. A gestão contábil rigorosa de despesas e créditos é o caminho para manter a carga no menor nível possível.`
+  } else if (empateTecnico && regimeEmpatado) {
+    resumoSimplesTexto = `Para o perfil da sua empresa de ${segmento}, identificamos um empate técnico muito próximo entre o ${regimeRecomendado} e o ${regimeEmpatado}, com diferença de menos de 3% no valor final de impostos. Ambas as opções são viáveis e a melhor escolha vai depender do controle de créditos e emissão de notas.`
+  } else if (regimeRecomendado === 'Simples Nacional') {
+    resumoSimplesTexto = `Para uma empresa de ${segmento} faturando R$ ${rbt12.toLocaleString('pt-BR')} por ano, o Simples Nacional é a opção mais econômica, com economia estimada de R$ ${economiaFormatada} ao ano em relação ao ${nomeSegundo}. A unificação de impostos no DAS simplifica sua rotina e protege seu fluxo de caixa.`
+  } else if (regimeRecomendado === 'Lucro Presumido') {
+    resumoSimplesTexto = `Para uma empresa de ${segmento} faturando R$ ${rbt12.toLocaleString('pt-BR')} por ano, o Lucro Presumido tende a ser a alternativa mais vantajosa, gerando economia anual estimada de R$ ${economiaFormatada} frente ao ${nomeSegundo}. A margem de presunção fixada em lei é mais vantajosa do que as faixas avançadas do Simples ou a tributação sobre o lucro real.`
+  } else {
+    // Lucro Real
+    resumoSimplesTexto = `Para a margem de rentabilidade informada (${margemLucro}%), o Lucro Real desponta como o regime mais vantajoso, economizando cerca de R$ ${economiaFormatada} ao ano em relação ao ${nomeSegundo}. Como seus impostos incidirão apenas sobre o resultado contábil efetivo, despesas comprovadas reduzem diretamente a conta fiscal.`
+  }
+
+  // 4. Motivos da recomendação (3 a 5 bullets didáticos vinculando input -> consequência fiscal)
+  const motivosRecomendacao: string[] = []
+
+  if (regimeRecomendado === 'Simples Nacional') {
+    motivosRecomendacao.push(
+      `Faturamento dentro do teto: sua receita anual (R$ ${rbt12.toLocaleString('pt-BR')}) aproveita as faixas competitivas do Simples Nacional com guia única (DAS).`,
+    )
+    if (isSegmentoFatorR) {
+      if (fatorRElegivelAnexoIII) {
+        motivosRecomendacao.push(
+          `Folha salarial favorável: sua folha consome ${fatorR.toFixed(1)}% da receita (Fator R ≥ 28%), garantindo o enquadramento no Anexo III, com alíquota inicial muito mais baixa que os 15,5% do Anexo V.`,
+        )
+      } else {
+        motivosRecomendacao.push(
+          `Carga global consolidada: mesmo com o Fator R em ${fatorR.toFixed(1)}%, a alíquota efetiva do Simples (${simples.aliquotaEfetiva}%) ainda supera a soma de IRPJ, CSLL, PIS, COFINS e ISS do regime Presumido.`,
+        )
+      }
+    }
+    motivosRecomendacao.push(
+      `Isenção de CPP na folha (exceto Anexo IV): no Simples Nacional, os 20% de cota patronal do INSS sobre a folha já vêm incluídos na alíquota do DAS, barateando a contratação.`,
+    )
+    motivosRecomendacao.push(
+      `Menor burocracia contábil: dispensa entrega de SPED Contábil complexo, ECF e retenções federais na fonte sobre notas de serviços.`,
+    )
+  } else if (regimeRecomendado === 'Lucro Presumido') {
+    motivosRecomendacao.push(
+      `Esgotamento das faixas do Simples: para o seu faturamento (R$ ${rbt12.toLocaleString('pt-BR')}), as alíquotas marginais das últimas faixas do Simples superam os tributos federais fixos do Lucro Presumido.`,
+    )
+    motivosRecomendacao.push(
+      `Margem de lucro declarada (${margemLucro}%): a presunção legal fixa para ${segmento} protege seus ganhos excedentes, pois a Receita Federal não tributa o que passar da base estimada.`,
+    )
+    motivosRecomendacao.push(
+      `PIS e COFINS cumulativo: alíquota enxuta de 3,65% sobre o faturamento bruto, sem complexidades de apuração e sem o risco da alíquota de 9,25% do Lucro Real.`,
+    )
+    motivosRecomendacao.push(
+      `Distribuição de dividendos isenta: todo o lucro apurado acima da presunção pode ser distribuído aos sócios 100% livre de Imposto de Renda.`,
+    )
+  } else {
+    // Lucro Real
+    motivosRecomendacao.push(
+      `Margem líquida moderada (${margemLucro}%): como seu lucro efetivo é menor do que as presunções de tabela (8% a 32%), a base do IRPJ (15%+10%) e da CSLL (9%) fica reduzida.`,
+    )
+    motivosRecomendacao.push(
+      `Tributação estritamente sobre resultado: em meses com prejuízo fiscal ou despesas elevadas, a empresa não paga IRPJ nem CSLL sobre tais competências.`,
+    )
+    motivosRecomendacao.push(
+      `Aproveitamento de créditos de PIS/COFINS (9,25%): insumos, aluguéis de prédios, depreciação de máquinas e energia elétrica geram abatimentos fiscais no regime não cumulativo.`,
+    )
+    if (rbt12 > LIMITE_PRESUMIDO) {
+      motivosRecomendacao.push(
+        `Exigência legal obrigatória: faturamentos anuais acima de R$ 78 milhões exigem por lei a adoção compulsória do Lucro Real.`,
+      )
+    }
+  }
+
+  // 5. Quando cada regime alternativo faria sentido
+  const alternativas: JustificativaAlternativa[] = [
+    {
+      regime: 'Simples Nacional',
+      quandoValeAPena:
+        'Vale a pena quando o faturamento não ultrapassa R$ 4,8 milhões/ano e a folha salarial é bem equilibrada (Fator R ≥ 28% em serviços) ou o custo com colaboradores CLT é expressivo.',
+      statusNesteCenario:
+        regimeRecomendado === 'Simples Nacional'
+          ? 'Recomendado neste diagnóstico como a opção mais vantajosa.'
+          : simples.elegivel
+            ? `Carga calculada em R$ ${simples.cargaAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${simples.aliquotaEfetiva}% efetivo) — ${simples.cargaAnual > cargaPrimeiro ? `R$ ${(simples.cargaAnual - cargaPrimeiro).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} mais caro ao ano` : 'competitivo'}.`
+            : simples.motivoInelegibilidade ||
+              'Inelegível devido ao faturamento acima do teto de R$ 4,8 milhões.',
+    },
+    {
+      regime: 'Lucro Presumido',
+      quandoValeAPena:
+        'Vale a pena para empresas com margem de lucro real alta (superior à presunção legal do segmento), folha de pagamento baixa em relação à receita, ou faturamento entre R$ 2M e R$ 78M.',
+      statusNesteCenario:
+        regimeRecomendado === 'Lucro Presumido'
+          ? 'Recomendado neste diagnóstico como a opção mais vantajosa.'
+          : presumido.elegivel
+            ? `Carga calculada em R$ ${presumido.cargaAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${presumido.aliquotaEfetiva}% efetivo) — ${presumido.cargaAnual > cargaPrimeiro ? `R$ ${(presumido.cargaAnual - cargaPrimeiro).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} mais caro ao ano` : 'competitivo'}.`
+            : presumido.motivoInelegibilidade || 'Inelegível pelo teto de R$ 78 milhões.',
+    },
+    {
+      regime: 'Lucro Real',
+      quandoValeAPena:
+        'Vale a pena para empresas com margem de lucro líquida reduzida (abaixo de 10%–15%), custos operacionais pesados, histórico de prejuízos compensáveis ou faturamento acima de R$ 78 milhões.',
+      statusNesteCenario:
+        regimeRecomendado === 'Lucro Real'
+          ? 'Recomendado neste diagnóstico como a opção mais vantajosa.'
+          : `Carga calculada em R$ ${real.cargaAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${real.aliquotaEfetiva}% efetivo) — R$ ${(real.cargaAnual - cargaPrimeiro).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} mais caro devido à margem declarada de ${margemLucro}% e alíquota de PIS/COFINS de 9,25%.`,
+    },
+  ]
+
+  // 6. Gatilhos que podem mudar a recomendação
+  const gatilhosMudanca: GatilhoMudanca[] = []
+
+  // Gatilho: Proximidade do teto do Simples (acima de 80% do teto = R$ 3.840.000)
+  if (rbt12 >= 3_840_000 && rbt12 <= LIMITE_SIMPLES) {
+    gatilhosMudanca.push({
+      titulo: 'Proximidade do teto do Simples Nacional (zona de atenção)',
+      descricao: `Seu faturamento está em ${((rbt12 / LIMITE_SIMPLES) * 100).toFixed(0)}% do teto legal de R$ 4,8M. Um crescimento pequeno em 2025 pode desenquadrar a empresa ou elevar a alíquota na última faixa, tornando o Lucro Presumido mais barato ao longo do ano.`,
+      condicao: 'Crescimento de receita > 15%',
+    })
+  }
+
+  // Gatilho: Sensibilidade da Margem de Lucro
+  gatilhosMudanca.push({
+    titulo: 'Variação na Margem de Lucro Real',
+    descricao: `O cálculo do Lucro Real utilizou sua estimativa de margem de ${margemLucro}%. Se no fechamento do balanço a margem real for inferior a ${Math.max(3, Math.round(margemLucro * 0.65))}%, o Lucro Real pode se tornar muito mais vantajoso.`,
+    condicao: 'Margem de lucro real incerta ou variável',
+  })
+
+  // Gatilho: Fator R pró-labore
+  if (isSegmentoFatorR && !fatorRElegivelAnexoIII && rbt12 <= LIMITE_SIMPLES) {
+    const folhaNecessaria = Math.ceil(rbt12 * 0.28)
+    const diferencaFolha = folhaNecessaria - folha12
+    gatilhosMudanca.push({
+      titulo: 'Gatilho de otimização do Fator R via Pró-labore',
+      descricao: `Aumentar o pró-labore dos sócios em R$ ${Math.round(diferencaFolha / 12).toLocaleString('pt-BR')}/mês elevaria seu Fator R para 28%, transferindo a tributação do Anexo V (15,5%) para o Anexo III (6,0%) no Simples Nacional.`,
+      condicao: 'Ajuste de pró-labore com planejamento previdenciário',
+    })
+  }
+
+  // Gatilho: Operação mista / Emissão de Notas
+  if (atividadeMista) {
+    gatilhosMudanca.push({
+      titulo: 'Proporção entre Comércio e Serviços',
+      descricao:
+        'Se a maior parte da receita vier do comércio, o Simples Anexo I ou Presumido com presunção de 8% se destacam. Se os serviços crescerem, a carga pode oscilar.',
+      condicao: 'Mudança no mix de faturamento',
+    })
+  }
+
+  // Justificativa geral (mantida compatível)
+  let explicacaoRecomendacao = resumoSimplesTexto
 
   return {
     simples,
@@ -452,5 +793,13 @@ export function executarDiagnosticoTributario(
     explicacaoRecomendacao,
     fatorR: Math.round(fatorR * 10) / 10,
     fatorRElegivelAnexoIII,
+    resumoSimplesTexto,
+    ranking,
+    empateTecnico,
+    regimeEmpatado,
+    regrasAplicadas,
+    motivosRecomendacao,
+    gatilhosMudanca,
+    alternativas,
   }
 }

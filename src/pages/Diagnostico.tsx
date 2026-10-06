@@ -29,6 +29,12 @@ import {
   Cpu,
   Hammer,
   UtensilsCrossed,
+  Scale,
+  Zap,
+  ChevronDown,
+  ChevronUp,
+  FileSpreadsheet,
+  AlertCircle,
 } from 'lucide-react'
 import {
   executarDiagnosticoTributario,
@@ -78,6 +84,10 @@ export default function Diagnostico() {
     rbt12: number
     folha12: number
     margemLucro: number
+    funcionarios: string
+    emissaoNf: string
+    atividadeMista: boolean
+    regimeAtual: string
   }>({
     nome: '',
     email: '',
@@ -87,6 +97,10 @@ export default function Diagnostico() {
     rbt12: 600000,
     folha12: 120000,
     margemLucro: 25,
+    funcionarios: '1 a 5 funcionários',
+    emissaoNf: 'Predominante para Pessoas Jurídicas (B2B)',
+    atividadeMista: false,
+    regimeAtual: 'Simples Nacional',
   })
 
   // Inputs raw em string para facilitar digitação com formatação
@@ -98,6 +112,7 @@ export default function Diagnostico() {
   const [isLeadSubmitting, setIsLeadSubmitting] = useState(false)
   const [leadEnviado, setLeadEnviado] = useState(false)
   const [isEspecialistaModalOpen, setIsEspecialistaModalOpen] = useState(false)
+  const [mostrarDetalhesTecnicos, setMostrarDetalhesTecnicos] = useState(false)
 
   // Formatador de telefone idêntico ao LeadForm
   const formatPhoneBR = (value: string) => {
@@ -165,39 +180,44 @@ export default function Diagnostico() {
     const newErrors: FormErrors = {}
 
     if (step === 1) {
-      if (!formData.nome.trim()) newErrors.nome = 'Nome é obrigatório'
+      if (!formData.nome.trim()) newErrors.nome = 'Nome é obrigatório (mínimo 3 caracteres)'
+      else if (formData.nome.trim().length < 3) newErrors.nome = 'Informe seu nome completo'
+
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!formData.email.trim()) newErrors.email = 'E-mail corporativo é obrigatório'
-      else if (!emailRegex.test(formData.email.trim())) newErrors.email = 'E-mail inválido'
+      else if (!emailRegex.test(formData.email.trim()))
+        newErrors.email = 'Informe um e-mail válido (ex: seu.nome@empresa.com.br)'
 
       const digitsOnly = formData.telefone.replace(/\D/g, '')
       const cleanDigits = digitsOnly.startsWith('55') ? digitsOnly.slice(2) : digitsOnly
-      if (!formData.telefone.trim()) newErrors.telefone = 'Telefone é obrigatório'
-      else if (cleanDigits.length < 10) newErrors.telefone = 'Informe um telefone com DDD'
+      if (!formData.telefone.trim()) newErrors.telefone = 'Telefone/WhatsApp é obrigatório'
+      else if (cleanDigits.length < 10)
+        newErrors.telefone = 'Informe um telefone válido com DDD (mínimo 10 dígitos)'
 
       if (!formData.empresa.trim()) newErrors.empresa = 'Nome da empresa é obrigatório'
-      if (!formData.segmento) newErrors.segmento = 'Selecione o segmento'
+      if (!formData.segmento) newErrors.segmento = 'Selecione o segmento principal de atuação'
     }
 
     if (step === 2) {
       if (formData.rbt12 <= 0) {
-        newErrors.rbt12 = 'Informe a receita bruta anual (maior que zero)'
+        newErrors.rbt12 = 'Informe a receita bruta dos últimos 12 meses (valor maior que zero)'
       }
     }
 
     if (step === 3) {
       if (formData.folha12 < 0) {
-        newErrors.folha12 = 'A folha não pode ser negativa'
+        newErrors.folha12 =
+          'A folha não pode ser negativa (use 0 se não houver funcionários/pró-labore)'
       }
       if (formData.folha12 > formData.rbt12 * 1.5 && formData.rbt12 > 0) {
         newErrors.folha12 =
-          'A folha anual parece muito superior à receita bruta. Verifique o valor.'
+          'Atenção: a folha anual informada supera 150% do faturamento bruto. Verifique se o valor está correto.'
       }
     }
 
     if (step === 4) {
       if (formData.margemLucro < 0 || formData.margemLucro > 100) {
-        newErrors.margemLucro = 'A margem deve estar entre 0% e 100%'
+        newErrors.margemLucro = 'A margem de lucro estimada deve ficar entre 0% e 100%'
       }
     }
 
@@ -220,9 +240,13 @@ export default function Diagnostico() {
           rbt12: formData.rbt12,
           folha12: formData.folha12,
           margemLucro: formData.margemLucro,
+          funcionarios: formData.funcionarios,
+          emissaoNf: formData.emissaoNf,
+          atividadeMista: formData.atividadeMista,
+          regimeAtual: formData.regimeAtual,
         })
 
-        // Persistir na coleção 'diagnosticos'
+        // Persistir na coleção 'diagnosticos' incluindo novos campos e ranking
         try {
           await createDiagnostico({
             nome: formData.nome.trim(),
@@ -238,6 +262,19 @@ export default function Diagnostico() {
             carga_presumido: diagResult.presumido.cargaAnual,
             carga_real: diagResult.real.cargaAnual,
             economia_anual: diagResult.economiaAnual,
+            funcionarios: formData.funcionarios,
+            emissao_nf: formData.emissaoNf,
+            atividade_mista: formData.atividadeMista,
+            regime_atual: formData.regimeAtual,
+            ranking_json: diagResult.ranking.map((item) => ({
+              posicao: item.posicao,
+              regime: item.regime,
+              cargaAnual: item.cargaAnual,
+              aliquotaEfetiva: item.aliquotaEfetiva,
+              elegivel: item.elegivel,
+              diferencaValor: item.diferencaValor,
+              diferencaPercent: item.diferencaPercent,
+            })),
           })
         } catch (dbErr) {
           console.error('Aviso: diagnóstico gerado, mas falha ao salvar no banco:', dbErr)
@@ -275,11 +312,20 @@ export default function Diagnostico() {
     try {
       const mensagemPreenchida = `Solicitei diagnóstico tributário no simulador.
 Empresa: ${formData.empresa} (${formData.segmento})
+Regime Atual: ${formData.regimeAtual}
+Porte: ${formData.funcionarios}
+Emissão de NF: ${formData.emissaoNf}
+Operação Mista: ${formData.atividadeMista ? 'Sim (Comércio + Serviço)' : 'Não'}
 RBT12: R$ ${formData.rbt12.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 Folha 12m: R$ ${formData.folha12.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Fator R: ${resultado.fatorR}%)
 Margem Lucro: ${formData.margemLucro}%
-Regime recomendado: ${resultado.regimeRecomendado}
+Regime recomendado: ${resultado.regimeRecomendado} ${resultado.empateTecnico ? `(Empate técnico com ${resultado.regimeEmpatado})` : ''}
 Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/ano.`
+
+      let leadFuncionario = '1–5'
+      if (formData.funcionarios.includes('6 a 15')) leadFuncionario = '6–20'
+      else if (formData.funcionarios.includes('16 a 50')) leadFuncionario = '21–50'
+      else if (formData.funcionarios.includes('Mais de 50')) leadFuncionario = '51–200'
 
       await createLead({
         nome: formData.nome.trim(),
@@ -287,7 +333,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
         telefone: formData.telefone.trim(),
         empresa: formData.empresa.trim(),
         segmento: formData.segmento,
-        funcionarios: formData.folha12 > 500000 ? '21–50' : '6–20',
+        funcionarios: leadFuncionario as any,
         mensagem: mensagemPreenchida,
       })
 
@@ -630,6 +676,130 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   )}
                 </div>
               </div>
+
+              {/* Novos Campos Estruturados da Empresa */}
+              <div className="pt-4 border-t border-slate-100 space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#2ECC71]" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                    Perfil Operacional da Empresa
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Regime Atual */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Regime Tributário Atual
+                      </label>
+                      <span className="text-[11px] text-slate-400">Como tributa hoje</span>
+                    </div>
+                    <select
+                      value={formData.regimeAtual}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, regimeAtual: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                    >
+                      <option value="Simples Nacional">Simples Nacional</option>
+                      <option value="Lucro Presumido">Lucro Presumido</option>
+                      <option value="Lucro Real">Lucro Real</option>
+                      <option value="MEI (Microempreendedor)">MEI (Microempreendedor)</option>
+                      <option value="Nova empresa / Ainda não optante">
+                        Nova empresa / Ainda não optante
+                      </option>
+                    </select>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Serve para compararmos o regime atual com a oportunidade identificada.
+                    </p>
+                  </div>
+
+                  {/* Quantidade de funcionários */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Quadro de Colaboradores
+                      </label>
+                      <span className="text-[11px] text-slate-400">Equipe</span>
+                    </div>
+                    <select
+                      value={formData.funcionarios}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, funcionarios: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                    >
+                      <option value="Apenas sócios (sem funcionários)">
+                        Apenas sócios (sem funcionários CLT)
+                      </option>
+                      <option value="1 a 5 funcionários">1 a 5 funcionários</option>
+                      <option value="6 a 15 funcionários">6 a 15 funcionários</option>
+                      <option value="16 a 50 funcionários">16 a 50 funcionários</option>
+                      <option value="Mais de 50 funcionários">Mais de 50 funcionários</option>
+                    </select>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Influencia o peso da CPP (contribuição patronal previdenciária de 20%).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  {/* Emissão de Nota Fiscal PF / PJ */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Perfil dos Clientes / Emissão de NF
+                      </label>
+                      <span className="text-[11px] text-slate-400">B2B ou B2C</span>
+                    </div>
+                    <select
+                      value={formData.emissaoNf}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, emissaoNf: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                    >
+                      <option value="Predominante para Pessoas Jurídicas (B2B)">
+                        Predominante para Pessoas Jurídicas (B2B)
+                      </option>
+                      <option value="Predominante para Consumidor Final / PF (B2C)">
+                        Predominante para Consumidor Final / PF (B2C)
+                      </option>
+                      <option value="Equilibrado (PF e PJ)">Equilibrado (PF e PJ)</option>
+                    </select>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Clientes PJ costumam exigir créditos fiscais ou reter impostos na fonte.
+                    </p>
+                  </div>
+
+                  {/* Operação mista de comércio e serviço */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Atividade Mista (Comércio + Serviço)
+                    </label>
+                    <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.atividadeMista}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, atividadeMista: e.target.checked }))
+                        }
+                        className="mt-1 w-4 h-4 rounded text-[#2ECC71] focus:ring-[#2ECC71] border-slate-300"
+                      />
+                      <div className="text-xs">
+                        <span className="font-semibold text-slate-800 block">
+                          Minha empresa fatura tanto venda de mercadorias quanto serviços
+                        </span>
+                        <span className="text-slate-500 text-[11px] block mt-0.5">
+                          Ex: oficina mecânica que vende autopeças, empresa de TI que comercializa
+                          equipamentos.
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Ações */}
@@ -665,11 +835,30 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
             </div>
 
             <div className="space-y-6">
+              {/* Box explicativo didático: o que é RBT12 */}
+              <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex items-start gap-3">
+                <HelpCircle className="w-5 h-5 text-[#145A32] shrink-0 mt-0.5" />
+                <div className="text-xs text-slate-700 leading-relaxed">
+                  <strong className="text-[#145A32] block mb-0.5 font-bold">
+                    O que é a RBT12?
+                  </strong>
+                  É a <strong>Receita Bruta Total acumulada nos últimos 12 meses</strong>. Esse é o
+                  termômetro oficial usado pela Receita Federal para definir sua faixa de alíquota
+                  no Simples Nacional e verificar se você respeita os limites legais de R$ 4,8
+                  milhões (Simples) e R$ 78 milhões (Presumido).
+                </div>
+              </div>
+
               {/* Campo monetário de destaque */}
               <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                  Receita Bruta Acumulada (R$) *
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    Receita Bruta Acumulada em 12 Meses (R$) *
+                  </label>
+                  <span className="text-[11px] font-medium text-slate-400">
+                    Total faturado no último ano
+                  </span>
+                </div>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 font-heading font-extrabold text-xl text-slate-400">
                     R$
@@ -686,18 +875,25 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   <p className="mt-2 text-xs text-red-600 font-medium">{errors.rbt12}</p>
                 )}
 
-                <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
-                  <Info className="w-4 h-4 text-[#145A32] shrink-0" />
-                  <span>
-                    Média mensal aproximada:{' '}
-                    <strong className="text-slate-800">
-                      R${' '}
-                      {(formData.rbt12 / 12).toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                      /mês
-                    </strong>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 pt-3 border-t border-slate-200/70">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4 text-[#145A32] shrink-0" />
+                    <span>
+                      Média mensal estimada:{' '}
+                      <strong className="text-slate-900">
+                        R${' '}
+                        {(formData.rbt12 / 12).toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                        /mês
+                      </strong>
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-400">
+                    {formData.rbt12 <= LIMITE_SIMPLES
+                      ? `Faltam R$ ${(LIMITE_SIMPLES - formData.rbt12).toLocaleString('pt-BR')} para o teto do Simples`
+                      : 'Acima do teto do Simples Nacional'}
                   </span>
                 </div>
               </div>
@@ -792,6 +988,21 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
             </div>
 
             <div className="space-y-6">
+              {/* Box explicativo didático: o que é Folha e Fator R */}
+              <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex items-start gap-3">
+                <HelpCircle className="w-5 h-5 text-[#145A32] shrink-0 mt-0.5" />
+                <div className="text-xs text-slate-700 leading-relaxed">
+                  <strong className="text-[#145A32] block mb-0.5 font-bold">
+                    O que é a Folha 12m e o Fator R?
+                  </strong>
+                  É o total acumulado em 12 meses de salários de colaboradores, pró-labore retirado
+                  pelos sócios, FGTS e INSS. O <strong>Fator R</strong> é a divisão desse valor pela
+                  receita bruta: se o resultado for <strong>28% ou mais</strong>, atividades de
+                  serviço tributam no <strong>Anexo III (a partir de 6%)</strong> em vez do pesado{' '}
+                  <strong>Anexo V (a partir de 15,5%)</strong>.
+                </div>
+              </div>
+
               <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
                 <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                   Folha Anual Acumulada (R$) *
@@ -935,6 +1146,21 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
             </div>
 
             <div className="space-y-6">
+              {/* Box explicativo didático: Margem de Lucro vs Regimes */}
+              <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex items-start gap-3">
+                <HelpCircle className="w-5 h-5 text-[#145A32] shrink-0 mt-0.5" />
+                <div className="text-xs text-slate-700 leading-relaxed">
+                  <strong className="text-[#145A32] block mb-0.5 font-bold">
+                    Por que a Margem de Lucro é decisiva?
+                  </strong>
+                  No <strong>Lucro Presumido</strong>, a Receita Federal presume um lucro fixo (8%
+                  no comércio ou 32% em serviços), não importando seus gastos. Já no{' '}
+                  <strong>Lucro Real</strong>, o imposto incide estritamente sobre o que sobrar de
+                  verdade no caixa após todas as despesas. Se seu lucro real for pequeno ou tiver
+                  altos custos dedutíveis, o Lucro Real costuma bater os outros regimes.
+                </div>
+              </div>
+
               <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
                 <div className="flex items-center justify-between mb-4">
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -1065,7 +1291,30 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
         {/* ========================================================= */}
         {etapa === 5 && resultado && (
           <div className="space-y-8 animate-fade-in">
-            {/* CARD DE DESTAQUE: REGIME RECOMENDADO */}
+            {/* 1. RESUMO DIRETO EM LINGUAGEM SIMPLES (2 A 3 FRASES SEM JARGÃO) */}
+            <div className="bg-white rounded-[24px] p-6 sm:p-7 shadow-lg border-2 border-[#2ECC71]/30">
+              <div className="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider text-[#145A32]">
+                <Sparkles className="w-4 h-4 text-[#2ECC71]" />
+                <span>Resumo Executivo do Diagnóstico</span>
+              </div>
+              <p className="text-base sm:text-lg text-slate-800 font-medium leading-relaxed">
+                {resultado.resumoSimplesTexto}
+              </p>
+              <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-4 text-xs text-slate-500">
+                <span>
+                  Empresa: <strong className="text-slate-800">{formData.empresa}</strong>
+                </span>
+                <span>
+                  • Segmento: <strong className="text-slate-800">{formData.segmento}</strong>
+                </span>
+                <span>
+                  • Regime atual informado:{' '}
+                  <strong className="text-slate-800">{formData.regimeAtual}</strong>
+                </span>
+              </div>
+            </div>
+
+            {/* 2. CARD DE DESTAQUE: REGIME RECOMENDADO & ECONOMIA */}
             <div className="rounded-[28px] p-6 sm:p-10 bg-gradient-to-br from-[#0A1A13] via-[#0E2E1E] to-[#145A32] text-white shadow-2xl border border-white/20 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-96 h-96 bg-[#2ECC71]/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -1073,18 +1322,20 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                   <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#2ECC71]/20 border border-[#2ECC71]/40 text-[#2ECC71] text-xs font-bold uppercase tracking-wider">
                     <CheckCircle2 className="w-4 h-4" />
-                    Melhor Enquadramento Identificado
+                    Regime Recomendado para 2025
                   </div>
-                  <span className="text-xs text-slate-300">
-                    Empresa: <strong className="text-white">{formData.empresa}</strong> •{' '}
-                    {formData.segmento}
-                  </span>
+                  {resultado.empateTecnico && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-200 text-xs font-bold">
+                      <Scale className="w-3.5 h-3.5" />
+                      Empate Técnico Detectado (&lt; 3% de diferença)
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                   <div className="lg:col-span-8">
                     <span className="text-xs text-emerald-300 font-semibold uppercase tracking-wider block mb-1">
-                      Regime mais vantajoso para 2025
+                      Menor Carga Tributária Anual Global
                     </span>
                     <h2 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight mb-4">
                       {resultado.regimeRecomendado}
@@ -1097,11 +1348,11 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-emerald-200">
                       <div className="flex items-center gap-2">
                         <ShieldCheck className="w-4 h-4 text-[#2ECC71]" />
-                        <span>100% de conformidade com a legislação</span>
+                        <span>Conforme legislação federal 2025</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <FileCheck2 className="w-4 h-4 text-[#2ECC71]" />
-                        <span>Fórmula apurada com base no SPED/DAS 2025</span>
+                        <span>Cálculo com base no SPED, DAS e Lei 9.249/95</span>
                       </div>
                     </div>
                   </div>
@@ -1122,7 +1373,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
 
                     {resultado.segundoMaisVantajoso && (
                       <p className="text-[11px] text-slate-300 mt-3 pt-3 border-t border-white/10">
-                        Comparado a escolher <strong>{resultado.segundoMaisVantajoso}</strong>.
+                        Comparado a optar por <strong>{resultado.segundoMaisVantajoso}</strong>.
                       </p>
                     )}
                   </div>
@@ -1130,12 +1381,331 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               </div>
             </div>
 
+            {/* 3. RANKING COMPLETO DOS REGIMES (DO 1º AO 3º COLOCADO) */}
+            <div className="bg-white rounded-[24px] p-6 sm:p-8 shadow-xl border border-slate-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Scale className="w-5 h-5 text-[#145A32]" />
+                    <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight">
+                      Ranking dos Regimes Tributários
+                    </h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                    Comparação ordenada da menor para a maior carga tributária calculada.
+                  </p>
+                </div>
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600">
+                  3 regimes avaliados
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {resultado.ranking.map((item) => {
+                  const ehPrimeiro = item.posicao === 1
+                  const ehEmpate = item.empateTecnicoComPrimeiro
+
+                  return (
+                    <div
+                      key={item.regime}
+                      className={`p-5 rounded-2xl border transition-all ${
+                        ehPrimeiro
+                          ? 'border-[#2ECC71] bg-emerald-50/50 ring-2 ring-[#2ECC71]/30 shadow-sm'
+                          : ehEmpate
+                            ? 'border-amber-300 bg-amber-50/40 ring-1 ring-amber-300'
+                            : item.elegivel
+                              ? 'border-slate-200 bg-white hover:bg-slate-50/50'
+                              : 'border-slate-200 bg-slate-50/70 opacity-75'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                              ehPrimeiro
+                                ? 'bg-[#2ECC71] text-[#0A1A13]'
+                                : ehEmpate
+                                  ? 'bg-amber-400 text-amber-950'
+                                  : item.elegivel
+                                    ? 'bg-slate-100 text-slate-700'
+                                    : 'bg-slate-200 text-slate-500'
+                            }`}
+                          >
+                            #{item.posicao}
+                          </div>
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="font-heading font-bold text-base text-slate-900">
+                                {item.regime}
+                              </h4>
+                              {ehPrimeiro && (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#2ECC71] text-[#0A1A13]">
+                                  Recomendado
+                                </span>
+                              )}
+                              {ehEmpate && (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-200 text-amber-900">
+                                  Empate Técnico Viável
+                                </span>
+                              )}
+                              {!item.elegivel && (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-800">
+                                  Inelegível por Lei
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-slate-500 block mt-0.5">
+                              {item.statusDescritivo}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="sm:text-right">
+                          {item.elegivel ? (
+                            <div>
+                              <div className="font-heading font-extrabold text-xl text-slate-900">
+                                R${' '}
+                                {item.cargaAnual.toLocaleString('pt-BR', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                                <span className="text-xs font-semibold text-slate-500 ml-1.5">
+                                  /ano
+                                </span>
+                              </div>
+                              <div className="text-xs text-slate-600 mt-0.5">
+                                Alíquota efetiva: <strong>{item.aliquotaEfetiva}%</strong>
+                                {!ehPrimeiro && item.diferencaValor > 0 && (
+                                  <span className="text-[#C0392B] font-semibold ml-2">
+                                    (+R${' '}
+                                    {item.diferencaValor.toLocaleString('pt-BR', {
+                                      minimumFractionDigits: 2,
+                                    })}
+                                    )
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-red-700 font-medium">
+                              {item.motivoInelegibilidade ||
+                                'Ultrapassa os limites legais permitidos'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {resultado.empateTecnico && (
+                <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                  <Scale className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-900 leading-relaxed">
+                    <strong>Atenção ao Empate Técnico:</strong> A diferença financeira entre o{' '}
+                    <strong>{resultado.regimeRecomendado}</strong> e o{' '}
+                    <strong>{resultado.regimeEmpatado}</strong> é inferior a 3%. Nesses casos,
+                    fatores operacionais como retenção de ISS na fonte, direito a créditos
+                    tributários por clientes PJ e custo de emissão de declarações costumam
+                    desempatar a decisão com mais relevância que a alíquota isolada.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 4. REGRAS DE ANÁLISE APLICADAS À EMPRESA */}
+            <div className="bg-white rounded-[24px] p-6 sm:p-8 shadow-xl border border-slate-200">
+              <div className="mb-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-[#145A32]" />
+                  <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight">
+                    Regras Fiscais Aplicadas à sua Empresa
+                  </h3>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                  Itens da legislação tributária brasileira que influenciaram diretamente este
+                  cálculo.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {resultado.regrasAplicadas.map((regra, i) => {
+                  const borderCor =
+                    regra.tipo === 'sucesso'
+                      ? 'border-emerald-200 bg-emerald-50/40'
+                      : regra.tipo === 'alerta'
+                        ? 'border-amber-200 bg-amber-50/40'
+                        : regra.tipo === 'inelegivel'
+                          ? 'border-red-200 bg-red-50/40'
+                          : 'border-slate-200 bg-slate-50/60'
+
+                  const iconeCor =
+                    regra.tipo === 'sucesso'
+                      ? 'text-[#2ECC71]'
+                      : regra.tipo === 'alerta'
+                        ? 'text-amber-500'
+                        : regra.tipo === 'inelegivel'
+                          ? 'text-red-500'
+                          : 'text-[#145A32]'
+
+                  return (
+                    <div
+                      key={i}
+                      className={`p-4 rounded-xl border ${borderCor} flex flex-col justify-between`}
+                    >
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          {regra.tipo === 'sucesso' ? (
+                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${iconeCor}`} />
+                          ) : regra.tipo === 'alerta' ? (
+                            <AlertTriangle className={`w-4 h-4 shrink-0 ${iconeCor}`} />
+                          ) : regra.tipo === 'inelegivel' ? (
+                            <AlertCircle className={`w-4 h-4 shrink-0 ${iconeCor}`} />
+                          ) : (
+                            <Info className={`w-4 h-4 shrink-0 ${iconeCor}`} />
+                          )}
+                          <h4 className="font-heading font-bold text-sm text-slate-900">
+                            {regra.titulo}
+                          </h4>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed mb-2">
+                          {regra.descricao}
+                        </p>
+                      </div>
+                      <div className="pt-2 border-t border-slate-200/60 text-[11px] font-medium text-slate-700">
+                        <strong className="text-slate-900">Impacto:</strong> {regra.impacto}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 5. SEÇÃO: POR QUE ESTE REGIME? (3 A 5 BULLETS DIDÁTICOS) */}
+            <div className="bg-white rounded-[24px] p-6 sm:p-8 shadow-xl border border-slate-200">
+              <div className="mb-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-[#2ECC71]" />
+                  <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight">
+                    Por que o {resultado.regimeRecomendado} foi o escolhido?
+                  </h3>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                  Conexão direta entre as informações fornecidas por você e os impactos tributários
+                  legais.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {resultado.motivosRecomendacao.map((motivo, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-100"
+                  >
+                    <span className="w-6 h-6 rounded-full bg-emerald-100 text-[#145A32] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                      {idx + 1}
+                    </span>
+                    <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">{motivo}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Quando as alternativas fariam sentido */}
+              <div className="mt-8 pt-6 border-t border-slate-100">
+                <h4 className="font-heading font-bold text-base text-slate-900 mb-1">
+                  Quando os outros regimes passariam a valer a pena?
+                </h4>
+                <p className="text-xs text-slate-500 mb-4">
+                  Condições de mercado e operação que justificariam mudar para as opções
+                  alternativas.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {resultado.alternativas.map((alt) => {
+                    const isRecomendado = alt.regime === resultado.regimeRecomendado
+                    return (
+                      <div
+                        key={alt.regime}
+                        className={`p-4 rounded-xl border ${
+                          isRecomendado
+                            ? 'border-[#2ECC71] bg-emerald-50/40'
+                            : 'border-slate-200 bg-slate-50/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <strong className="font-heading font-bold text-sm text-slate-900">
+                            {alt.regime}
+                          </strong>
+                          {isRecomendado && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#2ECC71] text-[#0A1A13]">
+                              Atual escolha
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                          <strong className="text-slate-700">Quando vale a pena:</strong>{' '}
+                          {alt.quandoValeAPena}
+                        </p>
+                        <div className="text-[11px] text-slate-500 pt-2 border-t border-slate-200">
+                          <strong className="text-slate-700">Neste cenário:</strong>{' '}
+                          {alt.statusNesteCenario}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* 6. GATILHOS QUE PODEM MUDAR A RECOMENDAÇÃO */}
+            {resultado.gatilhosMudanca.length > 0 && (
+              <div className="bg-white rounded-[24px] p-6 sm:p-8 shadow-xl border border-slate-200">
+                <div className="mb-6 pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-amber-500" />
+                    <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight">
+                      Gatilhos de Atenção que Podem Mudar a Recomendação
+                    </h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                    Fatores dinâmicos na operação da sua empresa que devem ser monitorados
+                    trimestralmente.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {resultado.gatilhosMudanca.map((gatilho, i) => (
+                    <div
+                      key={i}
+                      className="p-4 rounded-xl border border-amber-200/80 bg-amber-50/30 flex items-start gap-3"
+                    >
+                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h4 className="font-heading font-bold text-sm text-slate-900">
+                            {gatilho.titulo}
+                          </h4>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                            Condição: {gatilho.condicao}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-700 leading-relaxed">
+                          {gatilho.descricao}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* GRÁFICO COMPARATIVO DE BARRAS DOS 3 REGIMES */}
             <div className="bg-white rounded-[24px] p-6 sm:p-8 shadow-xl border border-slate-200">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-100">
                 <div>
                   <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight">
-                    Comparativo Anual de Carga Tributária
+                    Comparativo Visual de Carga Tributária Anual
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-500">
                     Projeção anual de impostos e alíquotas efetivas sobre R${' '}
@@ -1234,105 +1804,174 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               </div>
             </div>
 
-            {/* DETALHAMENTO DOS TRIBUTOS EM 3 COLUNAS */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Card Simples */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-heading font-bold text-base text-slate-900">
-                    Simples Nacional
-                  </h4>
-                  <span className="text-xs text-slate-400">DAS Único</span>
-                </div>
-                <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                  Engloba IRPJ, CSLL, PIS, COFINS, CPP e impostos de consumo (ICMS/ISS) em alíquota
-                  progressiva.
-                </p>
-                <div className="space-y-2 text-xs pt-3 border-t border-slate-100">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Tabela aplicada:</span>
-                    <strong className="text-slate-800">
-                      {resultado.simples.detalhes.anexoUtilizado || 'Anexo padrão'}
-                    </strong>
+            {/* SEÇÃO RETRÁTIL: VER DETALHAMENTO TÉCNICO COMPLETO */}
+            <div className="bg-white rounded-[24px] p-6 shadow-md border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setMostrarDetalhesTecnicos((prev) => !prev)}
+                className="w-full flex items-center justify-between text-left group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-emerald-50 flex items-center justify-center text-[#145A32] transition-colors">
+                    <FileSpreadsheet className="w-5 h-5" />
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Fator R apurado:</span>
-                    <strong className="text-slate-800">{resultado.fatorR}%</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Teto da receita:</span>
-                    <span className="text-slate-800">R$ 4,8 milhões/ano</span>
+                  <div>
+                    <h4 className="font-heading font-bold text-base text-slate-900 group-hover:text-[#145A32] transition-colors">
+                      {mostrarDetalhesTecnicos
+                        ? 'Ocultar Detalhamento Técnico'
+                        : 'Ver Detalhamento Técnico Completo dos Tributos'}
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      Abra para conferir memória de cálculo de IRPJ, CSLL, PIS, COFINS, ISS/ICMS e
+                      anexos do Simples.
+                    </p>
                   </div>
                 </div>
-              </div>
 
-              {/* Card Presumido */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-heading font-bold text-base text-slate-900">
-                    Lucro Presumido
-                  </h4>
-                  <span className="text-xs text-slate-400">Cumulativo</span>
+                <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-[#2ECC71]/20 flex items-center justify-center text-slate-600 transition-colors">
+                  {mostrarDetalhesTecnicos ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
                 </div>
-                <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                  IRPJ e CSLL incidem sobre margem presumida fixada em lei (8% comércio ou 32%
-                  serviços).
-                </p>
-                <div className="space-y-2 text-xs pt-3 border-t border-slate-100">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">PIS + COFINS:</span>
-                    <strong className="text-slate-800">3,65% fixo</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">
-                      {formData.segmento === 'Comércio' ||
-                      formData.segmento === 'Indústria' ||
-                      formData.segmento === 'Agro' ||
-                      formData.segmento === 'Bares e Restaurantes'
-                        ? 'ICMS estadual:'
-                        : 'ISS municipal:'}
-                    </span>
-                    <strong className="text-slate-800">
-                      {formData.segmento === 'Comércio' ||
-                      formData.segmento === 'Indústria' ||
-                      formData.segmento === 'Agro' ||
-                      formData.segmento === 'Bares e Restaurantes'
-                        ? '12%'
-                        : '2%'}
-                    </strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Teto da receita:</span>
-                    <span className="text-slate-800">R$ 78 milhões/ano</span>
-                  </div>
-                </div>
-              </div>
+              </button>
 
-              {/* Card Real */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-heading font-bold text-base text-slate-900">Lucro Real</h4>
-                  <span className="text-xs text-slate-400">Não Cumulativo</span>
+              {mostrarDetalhesTecnicos && (
+                <div className="mt-6 pt-6 border-t border-slate-100 space-y-6 animate-fade-in">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Card Simples */}
+                    <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-heading font-bold text-sm text-slate-900">
+                          Simples Nacional (DAS)
+                        </h5>
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          Unificado
+                        </span>
+                      </div>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Tabela aplicada:</span>
+                          <strong className="text-slate-800 text-right">
+                            {resultado.simples.detalhes.anexoUtilizado || 'Anexo padrão'}
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Fator R apurado:</span>
+                          <strong className="text-slate-800">{resultado.fatorR}%</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Carga estimada anual:</span>
+                          <strong className="text-slate-900">
+                            {resultado.simples.elegivel
+                              ? `R$ ${resultado.simples.cargaAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : 'Inelegível'}
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Teto federal:</span>
+                          <span className="text-slate-800">R$ 4,8 milhões/ano</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Presumido */}
+                    <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-heading font-bold text-sm text-slate-900">
+                          Lucro Presumido
+                        </h5>
+                        <span className="text-[11px] font-bold text-slate-700 bg-slate-200 px-2 py-0.5 rounded-full">
+                          Cumulativo
+                        </span>
+                      </div>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">PIS + COFINS:</span>
+                          <strong className="text-slate-800">3,65% fixo</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">IRPJ estimado:</span>
+                          <strong className="text-slate-800">
+                            {resultado.presumido.detalhes.irpj
+                              ? `R$ ${resultado.presumido.detalhes.irpj.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : '—'}
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">CSLL estimada:</span>
+                          <strong className="text-slate-800">
+                            {resultado.presumido.detalhes.csll
+                              ? `R$ ${resultado.presumido.detalhes.csll.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : '—'}
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">ICMS ou ISS:</span>
+                          <strong className="text-slate-800">
+                            {resultado.presumido.detalhes.icmsOuIss
+                              ? `R$ ${resultado.presumido.detalhes.icmsOuIss.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : '—'}
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Teto federal:</span>
+                          <span className="text-slate-800">R$ 78 milhões/ano</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Real */}
+                    <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-heading font-bold text-sm text-slate-900">
+                          Lucro Real
+                        </h5>
+                        <span className="text-[11px] font-bold text-slate-700 bg-slate-200 px-2 py-0.5 rounded-full">
+                          Não Cumulativo
+                        </span>
+                      </div>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Margem aplicada:</span>
+                          <strong className="text-slate-800">
+                            {formData.margemLucro}% estimada
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">IRPJ estimado:</span>
+                          <strong className="text-slate-800">
+                            {resultado.real.detalhes.irpj
+                              ? `R$ ${resultado.real.detalhes.irpj.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : '—'}
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">CSLL estimada:</span>
+                          <strong className="text-slate-800">
+                            {resultado.real.detalhes.csll
+                              ? `R$ ${resultado.real.detalhes.csll.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : '—'}
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">PIS/COFINS (9,25%):</span>
+                          <strong className="text-slate-800">
+                            {resultado.real.detalhes.pisCofins
+                              ? `R$ ${resultado.real.detalhes.pisCofins.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : '—'}
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Obrigatório acima de:</span>
+                          <span className="text-slate-800">R$ 78 milhões</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                  Impostos federais incidem estritamente sobre o lucro contábil auferido pela
-                  empresa.
-                </p>
-                <div className="space-y-2 text-xs pt-3 border-t border-slate-100">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">IRPJ + CSLL:</span>
-                    <strong className="text-slate-800">Sobre lucro contábil</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">PIS + COFINS:</span>
-                    <strong className="text-slate-800">9,25% (com créditos)</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Obrigatório acima de:</span>
-                    <span className="text-slate-800">R$ 78 milhões</span>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* SEÇÃO CTA / BOTÃO FALAR COM ESPECIALISTA */}
@@ -1386,12 +2025,55 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               </div>
             </div>
 
-            {/* DISCLAIMER OBRIGATÓRIO */}
-            <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-center text-xs text-slate-500 leading-relaxed">
-              <strong>Aviso legal:</strong> Estimativa preliminar com base nas informações
-              fornecidas. Não substitui análise contábil completa. A escolha definitiva de
-              enquadramento deve considerar particularidades como CNAEs impeditivos, créditos de
-              ICMS/PIS/COFINS e convenções coletivas da categoria.
+            {/* LIMITAÇÕES E CUIDADOS NA ORIENTAÇÃO (OBRIGATÓRIO) */}
+            <div className="p-6 rounded-[24px] bg-amber-50/80 border border-amber-300 shadow-sm">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                <div className="space-y-2 text-xs text-amber-950 leading-relaxed">
+                  <h4 className="font-heading font-bold text-sm text-amber-900">
+                    Limitações e Cuidados na Orientação Tributária (Aviso Legal Obrigatório)
+                  </h4>
+                  <p>
+                    <strong>Natureza Estimativa:</strong> Este diagnóstico é uma ferramenta de
+                    simulação preliminar e comparativa baseada exclusivamente nos números declarados
+                    pelo usuário e nas tabelas gerais da legislação brasileira vigente em 2025.{' '}
+                    <strong>
+                      Ele não substitui uma análise contábil personalizada nem dispensa o parecer
+                      formal de um contador legalmente habilitado no CRC.
+                    </strong>
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1 text-amber-900/90">
+                    <li>
+                      <strong>CNAEs impeditivos e vedações legais:</strong> Algumas atividades
+                      específicas, composições societárias (sócio pessoa jurídica, sócio residente
+                      no exterior) ou débitos com o fisco impedem o ingresso no Simples Nacional,
+                      independentemente do faturamento.
+                    </li>
+                    <li>
+                      <strong>Créditos e não cumulatividade:</strong> No Lucro Real, o PIS e a
+                      COFINS (9,25%) podem ter seu impacto reduzido por créditos sobre insumos,
+                      mercadorias revendidas, energia elétrica e aluguéis, o que exige auditoria
+                      documental.
+                    </li>
+                    <li>
+                      <strong>ISS municipal e ICMS estadual:</strong> As alíquotas de ISS variam de
+                      2% a 5% conforme o município e podem sofrer retenção na fonte. No ICMS,
+                      regimes de substituição tributária (ST) e benefícios fiscais estaduais podem
+                      alterar a carga final.
+                    </li>
+                    <li>
+                      <strong>Prazos legais de opção:</strong> A mudança de regime tributário só
+                      pode ser realizada anualmente, no mês de <strong>janeiro</strong> de cada
+                      ano-calendário, sendo irretratável para todo o exercício.
+                    </li>
+                  </ul>
+                  <p className="pt-2 border-t border-amber-200/80 text-[11px] text-amber-800">
+                    Para validar com total segurança jurídica e risco zero antes da virada do
+                    exercício fiscal, consulte gratuitamente nosso time de especialistas através do
+                    botão acima.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
