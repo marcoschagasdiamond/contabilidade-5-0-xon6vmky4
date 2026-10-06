@@ -21,6 +21,19 @@ import Admin from './pages/Admin'
 import Diagnostico from './pages/Diagnostico'
 import NotFound from './pages/NotFound'
 
+// Reforma Tributária (Diamond Group)
+import ReformaTributariaHub from './pages/reforma/ReformaTributariaHub'
+import SubpageVisaoGeral from './pages/reforma/SubpageVisaoGeral'
+import SubpageCalendario from './pages/reforma/SubpageCalendario'
+import SubpageDicionario from './pages/reforma/SubpageDicionario'
+import SubpageImpactoSetor from './pages/reforma/SubpageImpactoSetor'
+import SubpageExcecoes from './pages/reforma/SubpageExcecoes'
+import SubpageComparador from './pages/reforma/SubpageComparador'
+import SubpageDiagnosticoReforma from './pages/reforma/SubpageDiagnosticoReforma'
+import SubpagePainelCarteira from './pages/reforma/SubpagePainelCarteira'
+import SubpageKitPrecificacao from './pages/reforma/SubpageKitPrecificacao'
+import SubpageGlossarioFontes from './pages/reforma/SubpageGlossarioFontes'
+
 // Rota protegida para /admin
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -55,6 +68,23 @@ const App = () => (
             {/* Páginas institucionais */}
             <Route path="/sobre" element={<Sobre />} />
             <Route path="/servicos" element={<Servicos />} />
+            <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
+            <Route path="/reforma-tributaria/visao-geral" element={<SubpageVisaoGeral />} />
+            <Route path="/reforma-tributaria/calendario" element={<SubpageCalendario />} />
+            <Route path="/reforma-tributaria/dicionario" element={<SubpageDicionario />} />
+            <Route path="/reforma-tributaria/impacto-por-setor" element={<SubpageImpactoSetor />} />
+            <Route path="/reforma-tributaria/excecoes" element={<SubpageExcecoes />} />
+            <Route path="/reforma-tributaria/comparador" element={<SubpageComparador />} />
+            <Route
+              path="/reforma-tributaria/diagnostico-reforma"
+              element={<SubpageDiagnosticoReforma />}
+            />
+            <Route path="/reforma-tributaria/painel-carteira" element={<SubpagePainelCarteira />} />
+            <Route
+              path="/reforma-tributaria/kit-precificacao"
+              element={<SubpageKitPrecificacao />}
+            />
+            <Route path="/reforma-tributaria/glossario" element={<SubpageGlossarioFontes />} />
             <Route path="/diagnostico" element={<Diagnostico />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
