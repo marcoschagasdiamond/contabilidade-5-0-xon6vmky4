@@ -423,7 +423,7 @@ export const LIMITE_PRESUMIDO = 78_000_000 // R$ 78 milhões
 const FAIXAS_SIMPLES = [180_000, 360_000, 720_000, 1_800_000, 3_600_000, 4_800_000]
 
 // Tabelas do Simples Nacional 2025: [aliquotaNominalPercentual, deducaoReais]
-const TABELAS_SIMPLES = {
+export const TABELAS_SIMPLES = {
   // Comércio
   anexoI: [
     { max: 180_000, aliq: 4.0, deducao: 0 },

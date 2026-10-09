@@ -19,6 +19,7 @@ import TermosDeUso from './pages/TermosDeUso'
 import Login from './pages/Login'
 import Admin from './pages/Admin'
 import Diagnostico from './pages/Diagnostico'
+import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
 import NotFound from './pages/NotFound'
 
 // Reforma Tributária (Diamond Group)
@@ -68,6 +69,7 @@ const App = () => (
             <Route path="/sobre" element={<Sobre />} />
             <Route path="/servicos" element={<Servicos />} />
             <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
+            <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
             <Route path="/reforma-tributaria/visao-geral" element={<SubpageVisaoGeral />} />
             <Route path="/reforma-tributaria/calendario" element={<SubpageCalendario />} />
             <Route path="/reforma-tributaria/dicionario" element={<SubpageDicionario />} />

@@ -20,6 +20,36 @@ export default function ReformaTributariaHub() {
         mostrarDiagnosticoBtn={true}
       />
 
+      {/* BANNER DESTAQUE CALCULADORA IBS/CBS */}
+      <div className="bg-gradient-to-r from-[#07132B] via-[#0E2442] to-[#14345C] text-white py-6 px-4 sm:px-6 lg:px-8 border-b border-[#D4AF37]/30 shadow-lg">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/20 border border-[#D4AF37]/40 flex items-center justify-center shrink-0">
+              <Sparkles className="w-6 h-6 text-[#D4AF37]" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 uppercase mb-1">
+                Nova Ferramenta Interativa
+              </div>
+              <h3 className="text-lg font-heading font-bold text-white">
+                Calculadora IBS / CBS com 6 Módulos Interligados
+              </h3>
+              <p className="text-xs text-slate-300">
+                Simule alíquotas oficiais (26,50%), comparativo dos 4 regimes, créditos e cronograma
+                2026-2033.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/calculadora-ibs-cbs"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-md transition-all shrink-0"
+          >
+            Abrir Calculadora IBS/CBS
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+
       {/* BARRA DE DESTAQUES RÁPIDOS */}
       <div className="bg-[#0E2442] text-white py-5 px-4 sm:px-6 lg:px-8 border-b border-[#D4AF37]/20 shadow-inner">
         <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
