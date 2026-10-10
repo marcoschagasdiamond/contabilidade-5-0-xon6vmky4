@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-10T20:37:46.591Z",
+  "generatedAt": "2026-10-10T21:06:25.509Z",
   "collections": [
     {
       "name": "users",
@@ -339,6 +339,36 @@
         {
           "name": "detalhes_reforma_json",
           "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "folha_pagamento",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "despesas_creditos",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "percentual_exportacao",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "uf_origem",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "aliquota_icms",
+          "type": "number",
           "required": false,
           "system": false
         }

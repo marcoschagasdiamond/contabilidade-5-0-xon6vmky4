@@ -36,7 +36,13 @@ export interface Diagnostico {
   carga_presumido_novo?: number
   carga_real_novo?: number
   economia_anual_novo?: number
-  detalhes_reforma_json?: any
+  detalhes_reforma_json?: Record<string, any>
+  // Novos campos do Módulo 3
+  folha_pagamento?: number // folha mensal
+  despesas_creditos?: number // despesas com créditos mensais
+  percentual_exportacao?: number // % exportação
+  uf_origem?: string // sigla UF
+  aliquota_icms?: number // alíquota de ICMS da UF
   funcionarios?: string
   emissao_nf?: string
   atividade_mista?: boolean

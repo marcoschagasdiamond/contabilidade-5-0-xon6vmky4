@@ -16,6 +16,7 @@ import {
   TAXA_CBS_REFERENCIA,
   TAXA_IBS_REFERENCIA,
 } from './reformaTributaria'
+import { LISTA_UFS_ICMS } from '../types/calculadoraIbsCbs'
 
 export type SegmentoEmpresa =
   | 'Comércio'
@@ -255,9 +256,13 @@ export const CIDADES_ISS_MAPA: ItemCidadeISS[] = [
   },
 ]
 
-export function obterAliquotaISS(cidadeOuId?: string): { cidadeNome: string; aliquota: number } {
+export function obterAliquotaISS(cidadeOuId?: string): {
+  cidadeNome: string
+  aliquota: number
+  uf?: string
+} {
   if (!cidadeOuId) {
-    return { cidadeNome: 'São Paulo - SP', aliquota: 3.0 }
+    return { cidadeNome: 'São Paulo - SP', aliquota: 3.0, uf: 'SP' }
   }
   const limpo = cidadeOuId.toLowerCase().trim()
   const encontrado = CIDADES_ISS_MAPA.find(
@@ -272,9 +277,19 @@ export function obterAliquotaISS(cidadeOuId?: string): { cidadeNome: string; ali
       cidadeNome:
         encontrado.id === 'outra' ? 'Outra cidade' : `${encontrado.nome} - ${encontrado.uf}`,
       aliquota: encontrado.aliquota,
+      uf: encontrado.uf !== 'BR' ? encontrado.uf : undefined,
     }
   }
-  return { cidadeNome: cidadeOuId, aliquota: 2.0 }
+  // Tentar extrair UF do padrão "Nome - UF" ou "Nome/UF"
+  const match = cidadeOuId.match(/[-/]\s*([A-Za-z]{2})$/)
+  const ufExtraida = match ? match[1].toUpperCase() : undefined
+  return { cidadeNome: cidadeOuId, aliquota: 2.0, uf: ufExtraida }
+}
+
+export function obterAliquotaIcmsUf(uf?: string): number {
+  if (!uf) return 18.0 // Padrão SP / referência nacional média
+  const item = LISTA_UFS_ICMS.find((u) => u.uf.toUpperCase() === uf.toUpperCase())
+  return item ? item.aliquotaInternaPadrao : 18.0
 }
 
 export interface DadosEntradaDiagnostico {
@@ -287,6 +302,12 @@ export interface DadosEntradaDiagnostico {
   rbt12: number // Receita Bruta acumulada dos últimos 12 meses
   folha12: number // Folha de pagamento dos últimos 12 meses (salários, pró-labore, encargos)
   margemLucro: number // Margem de lucro líquida estimada (0 a 100%)
+  // Novos campos alinhados ao Módulo 3 da Calculadora
+  folhaMensal?: number // Folha mensal de pagamento (R$) com pró-labore
+  despesasCreditosMensais?: number // Despesas mensais com créditos (R$) - insumos, energia, aluguel
+  percentualExportacao?: number // % da receita bruta oriunda de exportação (0 a 100%)
+  ufOrigem?: string // UF da empresa (ex: 'SP', 'RJ', 'MG'...) para alíquota de ICMS interna
+  comprasSobreVendasPercent?: number // % de compras sobre vendas (padrão 40% se não informado)
   funcionarios?: PorteFuncionarios | string
   emissaoNf?: EmissaoNotaFiscal | string
   atividadeMista?: boolean // Comércio e serviços integrados
@@ -345,7 +366,14 @@ export interface ResultadoRegime {
     presuncaoIRPJPercent?: number
     presuncaoCSLLPercent?: number
     aliquotaISSPercent?: number
+    aliquotaICMSPercent?: number
     cidadeISS?: string
+    ufOrigem?: string
+    creditosCompras?: number
+    creditosDespesas?: number
+    creditosTotais?: number
+    receitaExportacaoIsenta?: number
+    receitaInternaTributavel?: number
   }
   descricaoCurta: string
 }
@@ -469,6 +497,7 @@ export function calcularSimplesNacional(
   rbt12: number,
   folha12: number,
   segmento: SegmentoEmpresa,
+  percentualExportacao: number = 0,
 ): ResultadoRegime {
   if (rbt12 <= 0) {
     return {
@@ -496,6 +525,7 @@ export function calcularSimplesNacional(
   }
 
   const fatorR = rbt12 > 0 ? folha12 / rbt12 : 0
+  const fatorRPercent = Math.round(fatorR * 1000) / 10
   let tabela = TABELAS_SIMPLES.anexoI
   let anexoNome = 'Anexo I'
 
@@ -514,7 +544,6 @@ export function calcularSimplesNacional(
     tabela = TABELAS_SIMPLES.anexoII
     anexoNome = 'Anexo II (Indústria)'
   } else if (segmento === 'Transporte') {
-    // Transporte de passageiros/cargas enquadra-se no Anexo III
     tabela = TABELAS_SIMPLES.anexoIII
     anexoNome = 'Anexo III (Transporte)'
   } else {
@@ -522,30 +551,39 @@ export function calcularSimplesNacional(
     // Avaliados com a regra do Fator R (>= 28% -> Anexo III, < 28% -> Anexo V)
     if (fatorR >= 0.28) {
       tabela = TABELAS_SIMPLES.anexoIII
-      anexoNome = 'Anexo III (Fator R ≥ 28%)'
+      anexoNome = `Anexo III (Fator R = ${fatorRPercent}% ≥ 28%)`
     } else {
       tabela = TABELAS_SIMPLES.anexoV
-      anexoNome = 'Anexo V (Fator R < 28%)'
+      anexoNome = `Anexo V (Fator R = ${fatorRPercent}% < 28%)`
     }
   }
 
-  // Encontrar faixa
+  // Encontrar faixa baseada na receita bruta total acumulada (RBT12)
   const faixa = tabela.find((f) => rbt12 <= f.max) || tabela[tabela.length - 1]
 
   // Fórmula: Alíquota Efetiva = (RBT12 * Alíquota Nominal - Dedução) / RBT12
   const aliquotaEfetivaPercent = ((rbt12 * (faixa.aliq / 100) - faixa.deducao) / rbt12) * 100
   const aliqEfetivaAjustada = Math.max(0, aliquotaEfetivaPercent)
-  const cargaAnual = Math.round(rbt12 * (aliqEfetivaAjustada / 100) * 100) / 100
+
+  // Desoneração de exportação: a receita de exportação é imune no Simples Nacional (LC 123/2006 art. 18 § 4º-A)
+  const pctExp = Math.max(0, Math.min(100, percentualExportacao || 0)) / 100
+  const receitaExportacao = rbt12 * pctExp
+  const receitaInternaTributavel = Math.max(0, rbt12 - receitaExportacao)
+
+  const cargaAnual = Math.round(receitaInternaTributavel * (aliqEfetivaAjustada / 100) * 100) / 100
+  const aliquotaSobreFaturamentoTotal = rbt12 > 0 ? (cargaAnual / rbt12) * 100 : 0
 
   return {
     nome: 'Simples Nacional',
     elegivel: true,
     cargaAnual,
-    aliquotaEfetiva: Math.round(aliqEfetivaAjustada * 100) / 100,
+    aliquotaEfetiva: Math.round(aliquotaSobreFaturamentoTotal * 100) / 100,
     detalhes: {
       simplesGeral: cargaAnual,
       anexoUtilizado: anexoNome,
-      fatorR: Math.round(fatorR * 1000) / 10,
+      fatorR: fatorRPercent,
+      receitaExportacaoIsenta: Math.round(receitaExportacao * 100) / 100,
+      receitaInternaTributavel: Math.round(receitaInternaTributavel * 100) / 100,
     },
     descricaoCurta:
       'Unifica IRPJ, CSLL, PIS, COFINS, CPP e ICMS/ISS em guia única (DAS). Excelente para empresas com estrutura enxuta ou alto custo de folha salarial.',
@@ -560,6 +598,9 @@ export function calcularLucroPresumido(
   segmento: SegmentoEmpresa,
   aliquotaISSPercent: number = 2.0,
   cidadeNome?: string,
+  aliquotaICMSPercent: number = 18.0,
+  percentualExportacao: number = 0,
+  ufOrigem?: string,
 ): ResultadoRegime {
   if (rbt12 <= 0) {
     return {
@@ -570,6 +611,8 @@ export function calcularLucroPresumido(
       detalhes: {
         aliquotaISSPercent,
         cidadeISS: cidadeNome,
+        aliquotaICMSPercent,
+        ufOrigem,
       },
       descricaoCurta:
         'Tributação baseada em margem de lucro pré-fixada pela legislação sobre o faturamento bruto.',
@@ -586,38 +629,43 @@ export function calcularLucroPresumido(
       detalhes: {
         aliquotaISSPercent,
         cidadeISS: cidadeNome,
+        aliquotaICMSPercent,
+        ufOrigem,
       },
       descricaoCurta:
         'Tributação simplificada sobre lucro pré-fixado pela Receita Federal, limitada a empresas com faturamento até R$ 78 milhões.',
     }
   }
 
+  // Base de exportação desonerada
+  const pctExp = Math.max(0, Math.min(100, percentualExportacao || 0)) / 100
+  const receitaExportacao = rbt12 * pctExp
+  const receitaInternaTributavel = Math.max(0, rbt12 - receitaExportacao)
+
   // Base de presunção IRPJ e CSLL no Lucro Presumido:
-  // - Comércio, Indústria, Agro: IRPJ 8%, CSLL 12%, ICMS 12%
-  // - Bares e Restaurantes: predominantemente venda de refeições/mercadorias -> presunção 8% IRPJ, 12% CSLL, ICMS 12%
-  // - Transporte: serviços de transporte de passageiros/cargas possuem presunção própria legal de 16% no IRPJ (art. 15 da Lei 9.249/95), CSLL 12%, ISS municipal ou ICMS frete
-  // - Serviços, Saúde, Educação, Tecnologia, Construção Civil: IRPJ 32%, CSLL 32%, ISS municipal (conforme cidade)
+  // - Comércio, Indústria, Agro: IRPJ 8%, CSLL 12%, ICMS da UF
+  // - Bares e Restaurantes: presunção 8% IRPJ, 12% CSLL, ICMS da UF
+  // - Transporte: presunção 16% IRPJ, 12% CSLL, ISS ou ICMS frete
+  // - Serviços, Saúde, Educação, Tecnologia, Construção Civil: IRPJ 32%, CSLL 32%, ISS municipal
   let basePresuncaoIRPJPercent = 0.32
   let basePresuncaoCSLLPercent = 0.32
   const issDecimal = (aliquotaISSPercent || 2.0) / 100
+  const icmsDecimal = (aliquotaICMSPercent || 18.0) / 100
   let icmsOuIssPercent = issDecimal
 
-  if (segmento === 'Comércio' || segmento === 'Indústria' || segmento === 'Agro') {
+  if (
+    segmento === 'Comércio' ||
+    segmento === 'Indústria' ||
+    segmento === 'Agro' ||
+    segmento === 'Bares e Restaurantes'
+  ) {
     basePresuncaoIRPJPercent = 0.08
     basePresuncaoCSLLPercent = 0.12
-    icmsOuIssPercent = 0.12 // ICMS
-  } else if (segmento === 'Bares e Restaurantes') {
-    // Para bares e restaurantes, a atividade preponderante é o fornecimento de alimentos/bebidas (venda mercantil),
-    // o que na legislação do Lucro Presumido adota a presunção comercial de 8% de IRPJ e 12% de CSLL com ICMS (alíquota média).
-    basePresuncaoIRPJPercent = 0.08
-    basePresuncaoCSLLPercent = 0.12
-    icmsOuIssPercent = 0.12 // ICMS
+    icmsOuIssPercent = icmsDecimal // ICMS interno da UF
   } else if (segmento === 'Transporte') {
-    // Serviços de transporte de passageiros e cargas têm presunção específica de 16% de IRPJ (art. 15, § 1º, II, 'a' da Lei 9.249/95)
-    // e 12% de CSLL.
     basePresuncaoIRPJPercent = 0.16
     basePresuncaoCSLLPercent = 0.12
-    icmsOuIssPercent = issDecimal // ISS intramunicipal ou ICMS frete
+    icmsOuIssPercent = issDecimal // ISS intramunicipal
   } else {
     // Serviços, Saúde, Educação, Tecnologia, Construção Civil
     basePresuncaoIRPJPercent = 0.32
@@ -625,6 +673,7 @@ export function calcularLucroPresumido(
     icmsOuIssPercent = issDecimal // ISS conforme cidade
   }
 
+  // IRPJ e CSLL incidem sobre a receita bruta total (exportações de serviços/bens também sofrem IRPJ/CSLL sobre lucro presumido, mas PIS/COFINS e ICMS/ISS são 100% imunes na exportação)
   const basePresumidaIRPJ = rbt12 * basePresuncaoIRPJPercent
   const basePresumidaCSLL = rbt12 * basePresuncaoCSLLPercent
 
@@ -637,10 +686,11 @@ export function calcularLucroPresumido(
   // CSLL: 9% sobre a base de presunção
   const csllTotal = basePresumidaCSLL * 0.09
 
-  // PIS + COFINS cumulativo: PIS 0,65% + COFINS 3% = 3,65% sobre a receita bruta
-  const pisCofins = rbt12 * 0.0365
+  // PIS + COFINS cumulativo: PIS 0,65% + COFINS 3% = 3,65% sobre a receita interna (exportação é desonerada de PIS/COFINS pela CF art. 149 § 2º I)
+  const pisCofins = receitaInternaTributavel * 0.0365
 
-  const icmsOuIss = rbt12 * icmsOuIssPercent
+  // ICMS ou ISS também são imunes na exportação de mercadorias e serviços
+  const icmsOuIss = receitaInternaTributavel * icmsOuIssPercent
 
   const cargaAnual = Math.round((irpjTotal + csllTotal + pisCofins + icmsOuIss) * 100) / 100
   const aliquotaEfetiva = rbt12 > 0 ? (cargaAnual / rbt12) * 100 : 0
@@ -658,7 +708,11 @@ export function calcularLucroPresumido(
       presuncaoIRPJPercent: Math.round(basePresuncaoIRPJPercent * 100),
       presuncaoCSLLPercent: Math.round(basePresuncaoCSLLPercent * 100),
       aliquotaISSPercent,
+      aliquotaICMSPercent,
       cidadeISS: cidadeNome,
+      ufOrigem,
+      receitaExportacaoIsenta: Math.round(receitaExportacao * 100) / 100,
+      receitaInternaTributavel: Math.round(receitaInternaTributavel * 100) / 100,
     },
     descricaoCurta:
       'Tributa o IRPJ e a CSLL sobre margem presumida (8% a 32%), com PIS/COFINS cumulativo (3,65%). É vantajoso quando a margem de lucro real da empresa for maior que a margem presumida.',
@@ -674,6 +728,11 @@ export function calcularLucroReal(
   segmento: SegmentoEmpresa,
   aliquotaISSPercent: number = 2.0,
   cidadeNome?: string,
+  aliquotaICMSPercent: number = 18.0,
+  despesasCreditosMensais: number = 0,
+  percentualExportacao: number = 0,
+  comprasSobreVendasPercent: number = 40,
+  ufOrigem?: string,
 ): ResultadoRegime {
   if (rbt12 <= 0) {
     return {
@@ -687,8 +746,13 @@ export function calcularLucroReal(
     }
   }
 
+  // Base desonerada de exportação
+  const pctExp = Math.max(0, Math.min(100, percentualExportacao || 0)) / 100
+  const receitaExportacao = rbt12 * pctExp
+  const receitaInternaTributavel = Math.max(0, rbt12 - receitaExportacao)
+
   // Lucro Real é sempre elegível (e obrigatório acima de 78M)
-  // Lucro apurado = Receita * Margem de lucro (%)
+  // Lucro apurado = Receita Bruta Total * Margem de lucro (%)
   const margemDecimal = Math.max(0, margemLucroPercent) / 100
   const lucroRealApurado = rbt12 * margemDecimal
 
@@ -701,21 +765,44 @@ export function calcularLucroReal(
   // CSLL: 9% sobre o lucro real
   const csllTotal = lucroRealApurado * 0.09
 
-  // PIS + COFINS não cumulativo: 9,25% sobre a receita bruta
-  // (PIS 1,65% + COFINS 7,60%)
-  const pisCofins = rbt12 * 0.0925
-
-  // Tributo sobre consumo: ICMS 12% (Comércio/Indústria/Agro/Bares e Restaurantes) ou ISS municipal (Serviços, Saúde, Educação, Tecnologia, Construção Civil, Transporte)
+  // Tributo indireto (ICMS interno da UF ou ISS municipal)
   const isMercadoria =
     segmento === 'Comércio' ||
     segmento === 'Indústria' ||
     segmento === 'Agro' ||
     segmento === 'Bares e Restaurantes'
   const issDecimal = (aliquotaISSPercent || 2.0) / 100
-  const impostoConsumoPercent = isMercadoria ? 0.12 : issDecimal
-  const impostoConsumo = rbt12 * impostoConsumoPercent
+  const icmsDecimal = (aliquotaICMSPercent || 18.0) / 100
+  const taxaIndiretoDecimal = isMercadoria ? icmsDecimal : issDecimal
 
-  const cargaAnual = Math.round((irpjTotal + csllTotal + pisCofins + impostoConsumo) * 100) / 100
+  // Débito nominal sobre receita interna tributável
+  const debitoPisCofins = receitaInternaTributavel * 0.0925 // PIS 1,65% + COFINS 7,60%
+  const debitoIndireto = receitaInternaTributavel * taxaIndiretoDecimal
+
+  // Créditos não cumulativos (compras sobre vendas + despesas operacionais com créditos)
+  // Compras anuais = rbt12 * (% compras)
+  const pctCompras = Math.max(0, Math.min(100, comprasSobreVendasPercent || 40)) / 100
+  const comprasAnuais = rbt12 * pctCompras
+  // Compras tomam crédito de PIS/COFINS (9,25%) + ICMS (se mercadoria)
+  const aliqCreditoCompras = isMercadoria ? 0.0925 + icmsDecimal : 0.0925
+  const creditosCompras = comprasAnuais * aliqCreditoCompras
+
+  // Despesas com créditos mensais multiplicadas por 12 (energia, aluguel, TI, insumos - PIS 1,65% + COFINS 7,60% = 9,25%)
+  const despesasAnuaisCredito = Math.max(0, despesasCreditosMensais || 0) * 12
+  const creditosDespesas = despesasAnuaisCredito * 0.0925
+
+  const creditosTotais = creditosCompras + creditosDespesas
+
+  // Débito total indireto e PIS/COFINS deduzido dos créditos
+  const debitoConsumoTotal = debitoPisCofins + debitoIndireto
+  const impostoConsumoEfetivo = Math.max(0, debitoConsumoTotal - creditosTotais)
+
+  // Separar proporcionalmente para o relatório
+  const proporcaoPisCofins = debitoConsumoTotal > 0 ? debitoPisCofins / debitoConsumoTotal : 0.5
+  const pisCofinsEfetivo = impostoConsumoEfetivo * proporcaoPisCofins
+  const indiretoEfetivo = impostoConsumoEfetivo * (1 - proporcaoPisCofins)
+
+  const cargaAnual = Math.round((irpjTotal + csllTotal + impostoConsumoEfetivo) * 100) / 100
   const aliquotaEfetiva = rbt12 > 0 ? (cargaAnual / rbt12) * 100 : 0
 
   return {
@@ -726,11 +813,18 @@ export function calcularLucroReal(
     detalhes: {
       irpj: Math.round(irpjTotal * 100) / 100,
       csll: Math.round(csllTotal * 100) / 100,
-      pisCofins: Math.round(pisCofins * 100) / 100,
-      icmsOuIss: Math.round(impostoConsumo * 100) / 100,
+      pisCofins: Math.round(pisCofinsEfetivo * 100) / 100,
+      icmsOuIss: Math.round(indiretoEfetivo * 100) / 100,
       pisCofinsPercent: 9.25,
       aliquotaISSPercent,
+      aliquotaICMSPercent,
       cidadeISS: cidadeNome,
+      ufOrigem,
+      creditosCompras: Math.round(creditosCompras * 100) / 100,
+      creditosDespesas: Math.round(creditosDespesas * 100) / 100,
+      creditosTotais: Math.round(creditosTotais * 100) / 100,
+      receitaExportacaoIsenta: Math.round(receitaExportacao * 100) / 100,
+      receitaInternaTributavel: Math.round(receitaInternaTributavel * 100) / 100,
     },
     descricaoCurta:
       'Impostos calculados diretamente sobre o lucro líquido efetivo apurado. Ideal para empresas com margem de lucro reduzida, despesas dedutíveis elevadas ou faturamento acima de R$ 78 milhões.',
@@ -743,13 +837,53 @@ export function calcularLucroReal(
 export function executarDiagnosticoTributario(
   dados: Omit<DadosEntradaDiagnostico, 'nome' | 'email' | 'telefone' | 'empresa'>,
 ): ResultadoDiagnosticoCompleto {
-  const { rbt12, folha12, margemLucro, segmento, atividadeMista, regimeAtual, cidade } = dados
+  const {
+    rbt12,
+    folha12: folha12Entrada,
+    folhaMensal,
+    margemLucro,
+    despesasCreditosMensais = 0,
+    percentualExportacao = 0,
+    ufOrigem: ufEntrada,
+    comprasSobreVendasPercent = 40,
+    segmento,
+    atividadeMista,
+    regimeAtual,
+    cidade,
+    anoBase: anoEntrada,
+  } = dados
 
-  const { cidadeNome, aliquota: aliquotaISS } = obterAliquotaISS(cidade)
+  // Harmonização da folha de pagamento: se folhaMensal foi informada, ela define a folha12 (folhaMensal * 12)
+  const folha12 =
+    folhaMensal !== undefined && folhaMensal > 0 ? folhaMensal * 12 : folha12Entrada || 0
 
-  const simples = calcularSimplesNacional(rbt12, folha12, segmento)
-  const presumido = calcularLucroPresumido(rbt12, segmento, aliquotaISS, cidadeNome)
-  const real = calcularLucroReal(rbt12, margemLucro, segmento, aliquotaISS, cidadeNome)
+  // Obter alíquota de ISS e UF a partir da cidade ou seletor
+  const { cidadeNome, aliquota: aliquotaISS, uf: ufDaCidade } = obterAliquotaISS(cidade)
+  const ufEfetiva = ufEntrada || ufDaCidade || 'SP'
+  const aliquotaICMS = obterAliquotaIcmsUf(ufEfetiva)
+
+  const simples = calcularSimplesNacional(rbt12, folha12, segmento, percentualExportacao)
+  const presumido = calcularLucroPresumido(
+    rbt12,
+    segmento,
+    aliquotaISS,
+    cidadeNome,
+    aliquotaICMS,
+    percentualExportacao,
+    ufEfetiva,
+  )
+  const real = calcularLucroReal(
+    rbt12,
+    margemLucro,
+    segmento,
+    aliquotaISS,
+    cidadeNome,
+    aliquotaICMS,
+    despesasCreditosMensais,
+    percentualExportacao,
+    comprasSobreVendasPercent,
+    ufEfetiva,
+  )
 
   const fatorR = rbt12 > 0 ? (folha12 / rbt12) * 100 : 0
   const fatorRElegivelAnexoIII = fatorR >= 28
@@ -1100,14 +1234,56 @@ export function executarDiagnosticoTributario(
   // Justificativa geral (mantida compatível)
   let explicacaoRecomendacao = resumoSimplesTexto
 
+  // Adicionar regras dos novos parâmetros à lista de regras aplicadas
+  if (percentualExportacao > 0) {
+    const valorExp = rbt12 * (percentualExportacao / 100)
+    regrasAplicadas.push({
+      titulo: `Receita de Exportação Imune (${percentualExportacao}%)`,
+      descricao: `R$ ${valorExp.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} da sua receita anual provém do mercado externo. Conforme a CF/88 e a EC 132/2023, exportações são imunes a tributos indiretos em todos os regimes.`,
+      tipo: 'sucesso',
+      impacto:
+        'Redução direta da base tributável no mercado interno mantendo o aproveitamento de créditos.',
+    })
+  }
+
+  if (despesasCreditosMensais > 0) {
+    const despesasAnuais = despesasCreditosMensais * 12
+    regrasAplicadas.push({
+      titulo: `Despesas Operacionais Geradoras de Créditos`,
+      descricao: `Sua empresa possui R$ ${despesasAnuais.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/ano em despesas com energia, insumos e aluguel.`,
+      tipo: 'sucesso',
+      impacto: `Gera abatimento de R$ ${(despesasAnuais * 0.0925).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em PIS/COFINS no Lucro Real e crédito pleno no novo IVA Dual (IBS/CBS).`,
+    })
+  }
+
+  const isSegmentoMercadoria =
+    segmento === 'Comércio' ||
+    segmento === 'Indústria' ||
+    segmento === 'Agro' ||
+    segmento === 'Bares e Restaurantes'
+
+  if (isSegmentoMercadoria) {
+    regrasAplicadas.push({
+      titulo: `ICMS Estadual de Origem: ${aliquotaICMS.toFixed(1)}% (${ufEfetiva})`,
+      descricao: `Alíquota interna padrão de ICMS de ${aliquotaICMS.toFixed(1)}% para o estado de ${ufEfetiva} aplicada sobre a circulação de mercadorias no Lucro Presumido e Lucro Real.`,
+      tipo: 'informativo',
+      impacto: `No Novo Código Tributário, o ICMS estadual de ${aliquotaICMS.toFixed(1)}% será substituído gradualmente pelo IBS estadual/municipal.`,
+    })
+  }
+
   // =========================================================================
   // CÁLCULO DO NOVO CÓDIGO TRIBUTÁRIO (REFORMA TRIBUTÁRIA - EC 132/2023, LC 214/2025)
   // =========================================================================
-  const anoSimulacao = (dados.anoBase || 2026) as AnoBaseSimulacao
+  const anoSimulacao = (anoEntrada || 2026) as AnoBaseSimulacao
   const novoSistema = calcularDiagnosticoReformaTributaria({
     rbt12,
     folha12,
     margemLucro,
+    despesasCreditosMensais,
+    percentualExportacao,
+    comprasSobreVendasPercent,
+    ufOrigem: ufEfetiva,
+    aliquotaICMS,
     segmento,
     aliquotaISS,
     cidadeNome,
@@ -1186,6 +1362,11 @@ export function calcularDiagnosticoReformaTributaria(params: {
   rbt12: number
   folha12: number
   margemLucro: number
+  despesasCreditosMensais?: number
+  percentualExportacao?: number
+  comprasSobreVendasPercent?: number
+  ufOrigem?: string
+  aliquotaICMS?: number
   segmento: SegmentoEmpresa
   aliquotaISS: number
   cidadeNome: string
@@ -1198,6 +1379,11 @@ export function calcularDiagnosticoReformaTributaria(params: {
     rbt12,
     folha12,
     margemLucro,
+    despesasCreditosMensais = 0,
+    percentualExportacao = 0,
+    comprasSobreVendasPercent = 40,
+    ufOrigem = 'SP',
+    aliquotaICMS = 18.0,
     segmento,
     aliquotaISS,
     cidadeNome,
@@ -1233,6 +1419,16 @@ export function calcularDiagnosticoReformaTributaria(params: {
   const partilhaSimples = obterPercentualConsumoSimplesPorAno(anoBase, faixaNumero)
   const isSublimiteIBS = rbt12 > 3_600_000 && rbt12 <= LIMITE_SIMPLES
 
+  // Desoneração de exportação e base de créditos no novo sistema
+  const pctExp = Math.max(0, Math.min(100, percentualExportacao || 0)) / 100
+  const receitaExportacao = rbt12 * pctExp
+  const receitaInternaTributavel = Math.max(0, rbt12 - receitaExportacao)
+
+  // Base de compras e despesas anuais com créditos
+  const pctCompras = Math.max(0, Math.min(100, comprasSobreVendasPercent || 40)) / 100
+  const comprasAnuais = rbt12 * pctCompras
+  const despesasCreditosAnuais = Math.max(0, despesasCreditosMensais || 0) * 12
+
   // 1. Simples Nacional no Novo Sistema
   let cargaSimplesNovo = simplesAtual.cargaAnual
   let parcelaCBSSimples = 0
@@ -1256,12 +1452,13 @@ export function calcularDiagnosticoReformaTributaria(params: {
       // Crédito transferido aos clientes PJ (alíquota efetiva * soma CBS+IBS na faixa)
       const pctCredito =
         (simplesAtual.aliquotaEfetiva * (partilhaSimples.percentualTotalNovosImpostos / 100)) / 100
-      creditoTransferidoSimples = Math.round(rbt12 * pctCredito * 100) / 100
+      creditoTransferidoSimples = Math.round(receitaInternaTributavel * pctCredito * 100) / 100
 
       // Se sublimite de R$ 3,6M a R$ 4,8M: IBS é apurado por fora no regime regular!
       if (isSublimiteIBS && anoBase >= 2029) {
         const fatorIBS = FATOR_TRANSICAO_IBS[anoBase]
-        const ibsPorFora = rbt12 * TAXA_IBS_REFERENCIA * fatorIBS * fatorReducaoSetorial
+        const ibsPorFora =
+          receitaInternaTributavel * TAXA_IBS_REFERENCIA * fatorIBS * fatorReducaoSetorial
         cargaSimplesNovo = Math.round((cargaSimplesNovo + ibsPorFora) * 100) / 100
       }
     }
@@ -1301,8 +1498,8 @@ export function calcularDiagnosticoReformaTributaria(params: {
 
   // 2. Lucro Presumido no Novo Sistema
   // IRPJ e CSLL continuam existindo (não foram extintos);
-  // PIS/COFINS (3,65%) são substituídos pela CBS de referência do ano;
-  // ICMS/ISS substituídos por IBS + resíduo transitório de ICMS/ISS.
+  // PIS/COFINS (3,65%) são substituídos pela CBS de referência do ano sobre receita interna (exportação imune);
+  // ICMS/ISS substituídos por IBS + resíduo transitório de ICMS/ISS (com exportação imune).
   let cargaPresumidoNovo = 0
   let parcelaCBSPresumido = 0
   let parcelaIBSPresumido = 0
@@ -1313,16 +1510,15 @@ export function calcularDiagnosticoReformaTributaria(params: {
     const csllPresumido = presumidoAtual.detalhes.csll || 0
 
     if (anoBase === 2026) {
-      // 2026: CBS 0,9% e IBS 0,1% são dispensados de recolhimento; PIS/COFINS e ICMS/ISS normais
       cargaPresumidoNovo = presumidoAtual.cargaAnual
     } else {
-      // CBS substitui PIS/COFINS
-      parcelaCBSPresumido = rbt12 * aliquotaCBS
+      // CBS substitui PIS/COFINS (incide sobre receita interna)
+      parcelaCBSPresumido = receitaInternaTributavel * aliquotaCBS
       // IBS com transição
-      parcelaIBSPresumido = rbt12 * aliquotaIBS
+      parcelaIBSPresumido = receitaInternaTributavel * aliquotaIBS
       // ICMS ou ISS remanescentes da transição
       const aliqAntiga = isMercadoria ? aliquotaICMSRemanescente : aliquotaISSRemanescente
-      parcelaAntigosPresumido = rbt12 * aliqAntiga
+      parcelaAntigosPresumido = receitaInternaTributavel * aliqAntiga
 
       cargaPresumidoNovo =
         irpjPresumido +
@@ -1362,13 +1558,14 @@ export function calcularDiagnosticoReformaTributaria(params: {
   }
 
   // 3. Lucro Real no Novo Sistema
-  // IRPJ e CSLL sobre lucro real mantidos;
-  // PIS/COFINS (9,25%) substituídos pela CBS de referência;
-  // ICMS/ISS substituídos pelo IBS com transição.
+  // IRPJ e CSLL sobre lucro real contábil mantidos;
+  // Tributos sobre consumo (CBS + IBS + tributos antigos remanescentes) com APROVEITAMENTO AMPLO DE CRÉDITOS
+  // sobre compras de insumos e despesas operacionais com créditos.
   let cargaRealNovo = 0
   let parcelaCBSReal = 0
   let parcelaIBSReal = 0
   let parcelaAntigosReal = 0
+  let creditosNovoReal = 0
 
   if (rbt12 > 0) {
     const irpjReal = realAtual.detalhes.irpj || 0
@@ -1377,12 +1574,23 @@ export function calcularDiagnosticoReformaTributaria(params: {
     if (anoBase === 2026) {
       cargaRealNovo = realAtual.cargaAnual
     } else {
-      parcelaCBSReal = rbt12 * aliquotaCBS
-      parcelaIBSReal = rbt12 * aliquotaIBS
+      // Débito nominal sobre receita interna tributável
+      parcelaCBSReal = receitaInternaTributavel * aliquotaCBS
+      parcelaIBSReal = receitaInternaTributavel * aliquotaIBS
       const aliqAntiga = isMercadoria ? aliquotaICMSRemanescente : aliquotaISSRemanescente
-      parcelaAntigosReal = rbt12 * aliqAntiga
+      parcelaAntigosReal = receitaInternaTributavel * aliqAntiga
 
-      cargaRealNovo = irpjReal + csllReal + parcelaCBSReal + parcelaIBSReal + parcelaAntigosReal
+      const debitoConsumoNovo = parcelaCBSReal + parcelaIBSReal + parcelaAntigosReal
+
+      // Créditos plenos do novo sistema: compras + despesas operacionais (energia, aluguel, insumos)
+      // A alíquota de crédito de CBS+IBS acompanha a soma incidente
+      const aliqCreditoNovo = aliquotaCBS + aliquotaIBS + aliqAntiga
+      const creditosComprasNovo = comprasAnuais * aliqCreditoNovo
+      const creditosDespesasNovo = despesasCreditosAnuais * (aliquotaCBS + aliquotaIBS)
+      creditosNovoReal = creditosComprasNovo + creditosDespesasNovo
+
+      const consumoEfetivoReal = Math.max(0, debitoConsumoNovo - creditosNovoReal)
+      cargaRealNovo = irpjReal + csllReal + consumoEfetivoReal
     }
   }
 
@@ -1500,23 +1708,34 @@ export function calcularDiagnosticoReformaTributaria(params: {
     if (ano > 2026) {
       const irpjPres = presumidoAtual.detalhes.irpj || 0
       const csllPres = presumidoAtual.detalhes.csll || 0
-      const cbsPres = rbt12 * resAno.aliquotaCBS
-      const ibsPres = rbt12 * resAno.aliquotaIBS
+      const cbsPres = receitaInternaTributavel * resAno.aliquotaCBS
+      const ibsPres = receitaInternaTributavel * resAno.aliquotaIBS
       const antPres =
-        rbt12 * (isMercadoria ? resAno.aliquotaICMSRemanescente : resAno.aliquotaISSRemanescente)
+        receitaInternaTributavel *
+        (isMercadoria ? resAno.aliquotaICMSRemanescente : resAno.aliquotaISSRemanescente)
       cPresumido = Math.round((irpjPres + csllPres + cbsPres + ibsPres + antPres) * 100) / 100
 
       const irpjR = realAtual.detalhes.irpj || 0
       const csllR = realAtual.detalhes.csll || 0
-      const cbsR = rbt12 * resAno.aliquotaCBS
-      const ibsR = rbt12 * resAno.aliquotaIBS
-      const antR =
-        rbt12 * (isMercadoria ? resAno.aliquotaICMSRemanescente : resAno.aliquotaISSRemanescente)
-      cReal = Math.round((irpjR + csllR + cbsR + ibsR + antR) * 100) / 100
+      const debitoConsumo =
+        receitaInternaTributavel *
+        (resAno.aliquotaCBS +
+          resAno.aliquotaIBS +
+          (isMercadoria ? resAno.aliquotaICMSRemanescente : resAno.aliquotaISSRemanescente))
+      const credCompras =
+        comprasAnuais *
+        (resAno.aliquotaCBS +
+          resAno.aliquotaIBS +
+          (isMercadoria ? resAno.aliquotaICMSRemanescente : 0))
+      const credDesp = despesasCreditosAnuais * (resAno.aliquotaCBS + resAno.aliquotaIBS)
+      const credTotal = credCompras + credDesp
+      const consumoEfetivo = Math.max(0, debitoConsumo - credTotal)
+      cReal = Math.round((irpjR + csllR + consumoEfetivo) * 100) / 100
 
       if (isSublimiteIBS && ano >= 2029) {
         const fatorIBS = FATOR_TRANSICAO_IBS[ano]
-        const ibsPorFora = rbt12 * TAXA_IBS_REFERENCIA * fatorIBS * resAno.fatorReducaoSetorial
+        const ibsPorFora =
+          receitaInternaTributavel * TAXA_IBS_REFERENCIA * fatorIBS * resAno.fatorReducaoSetorial
         cSimples = Math.round((cSimples + ibsPorFora) * 100) / 100
       }
     }
