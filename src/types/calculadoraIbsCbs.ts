@@ -2,6 +2,42 @@ export type RegimeDiferenciadoTipo = 'padrao' | 'saude_educacao' | 'transporte' 
 
 export type TipoAtividade = 'servico' | 'industria' | 'comercio' | 'misto'
 
+export interface ItemUfIcms {
+  uf: string
+  nome: string
+  aliquotaInternaPadrao: number
+}
+
+export const LISTA_UFS_ICMS: ItemUfIcms[] = [
+  { uf: 'AC', nome: 'Acre', aliquotaInternaPadrao: 19 },
+  { uf: 'AL', nome: 'Alagoas', aliquotaInternaPadrao: 19 },
+  { uf: 'AM', nome: 'Amazonas', aliquotaInternaPadrao: 20 },
+  { uf: 'AP', nome: 'Amapá', aliquotaInternaPadrao: 18 },
+  { uf: 'BA', nome: 'Bahia', aliquotaInternaPadrao: 20.5 },
+  { uf: 'CE', nome: 'Ceará', aliquotaInternaPadrao: 20 },
+  { uf: 'DF', nome: 'Distrito Federal', aliquotaInternaPadrao: 20 },
+  { uf: 'ES', nome: 'Espírito Santo', aliquotaInternaPadrao: 17 },
+  { uf: 'GO', nome: 'Goiás', aliquotaInternaPadrao: 19 },
+  { uf: 'MA', nome: 'Maranhão', aliquotaInternaPadrao: 22 },
+  { uf: 'MG', nome: 'Minas Gerais', aliquotaInternaPadrao: 18 },
+  { uf: 'MS', nome: 'Mato Grosso do Sul', aliquotaInternaPadrao: 17 },
+  { uf: 'MT', nome: 'Mato Grosso', aliquotaInternaPadrao: 17 },
+  { uf: 'PA', nome: 'Pará', aliquotaInternaPadrao: 19 },
+  { uf: 'PB', nome: 'Paraíba', aliquotaInternaPadrao: 20 },
+  { uf: 'PE', nome: 'Pernambuco', aliquotaInternaPadrao: 20.5 },
+  { uf: 'PI', nome: 'Piauí', aliquotaInternaPadrao: 21 },
+  { uf: 'PR', nome: 'Paraná', aliquotaInternaPadrao: 19.5 },
+  { uf: 'RJ', nome: 'Rio de Janeiro', aliquotaInternaPadrao: 20 }, // + 2% FECOP = 22%, modal básica 20%
+  { uf: 'RN', nome: 'Rio Grande do Norte', aliquotaInternaPadrao: 18 },
+  { uf: 'RO', nome: 'Rondônia', aliquotaInternaPadrao: 19.5 },
+  { uf: 'RR', nome: 'Roraima', aliquotaInternaPadrao: 20 },
+  { uf: 'RS', nome: 'Rio Grande do Sul', aliquotaInternaPadrao: 17 },
+  { uf: 'SC', nome: 'Santa Catarina', aliquotaInternaPadrao: 17 },
+  { uf: 'SE', nome: 'Sergipe', aliquotaInternaPadrao: 19 },
+  { uf: 'SP', nome: 'São Paulo', aliquotaInternaPadrao: 18 },
+  { uf: 'TO', nome: 'Tocantins', aliquotaInternaPadrao: 20 },
+]
+
 export interface ConfiguracoesGerais {
   // Alíquotas Padrão IVA Dual
   cbsPadrao: number // 8.80

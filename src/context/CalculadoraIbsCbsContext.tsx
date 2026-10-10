@@ -32,6 +32,17 @@ interface CalculadoraContextType {
   setProporcaoServicoMisto: (p: number) => void
   percentualComprasVendasComparativo: number
   setPercentualComprasVendasComparativo: (p: number) => void
+  // Novos campos do Módulo 3
+  folhaPagamentoMensal: number
+  setFolhaPagamentoMensal: (v: number) => void
+  margemLucroEstimada: number
+  setMargemLucroEstimada: (v: number) => void
+  despesasComCreditosMensais: number
+  setDespesasComCreditosMensais: (v: number) => void
+  percentualExportacao: number
+  setPercentualExportacao: (v: number) => void
+  ufOrigem: string
+  setUfOrigem: (v: string) => void
 
   // Módulo 4 - Simulador de Créditos
   despesasCreditos: CategoriaDespesaCredito[]
@@ -95,6 +106,8 @@ interface CalculadoraContextType {
       aliquotaEfetiva: number
       detalheImpostos: string
       faixaEncontrada: string
+      fatorR: number
+      anexoUtilizado: string
     }
     ibsCbs: {
       pisOuCbs: number // CBS
@@ -110,6 +123,18 @@ interface CalculadoraContextType {
     piorCenario: string
     economiaVersusPior: number
     economiaPercentual: number
+    dadosAdicionais: {
+      fatorR: number
+      fatorRPercent: number
+      fatorRQualificaAnexoIII: boolean
+      margemLucroEfetiva: number
+      creditosDespesasReal: number
+      creditosDespesasIbsCbs: number
+      aliquotaIcmsAplicada: number
+      origemIcms: string
+      receitaExportacaoIsenta: number
+      receitaTributavelInterna: number
+    }
   }
 
   resultadoCreditos: {
@@ -177,6 +202,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const [proporcaoServicoMisto, setProporcaoServicoMisto] = useState<number>(50)
   const [percentualComprasVendasComparativo, setPercentualComprasVendasComparativo] =
     useState<number>(40)
+  // Novos campos solicitados para o Módulo 3
+  const [folhaPagamentoMensal, setFolhaPagamentoMensal] = useState<number>(50000)
+  const [margemLucroEstimada, setMargemLucroEstimada] = useState<number>(20)
+  const [despesasComCreditosMensais, setDespesasComCreditosMensais] = useState<number>(30000)
+  const [percentualExportacao, setPercentualExportacao] = useState<number>(0)
+  const [ufOrigem, setUfOrigem] = useState<string>('')
 
   // Módulo 4: Simulador de Créditos
   const [despesasCreditos, setDespesasCreditos] =
@@ -258,14 +289,65 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   // CÁLCULO MÓDULO 3 (Comparativo por Regime)
   // ==========================================
   const resultadoComparativo = useMemo(() => {
-    const faturamento = Math.max(0, faturamentoMensal)
+    const faturamentoBruto = Math.max(0, faturamentoMensal)
+    const pctExp = Math.max(0, Math.min(100, percentualExportacao || 0)) / 100
+    const receitaExportacao = faturamentoBruto * pctExp
+    // Receita tributável no mercado interno (desonerada de exportação)
+    const faturamentoInternoTributavel = Math.max(0, faturamentoBruto - receitaExportacao)
+
     const pctCompras = Math.max(0, percentualComprasVendasComparativo) / 100
-    const comprasValor = faturamento * pctCompras
+    // Compras proporcionais sobre o faturamento total da operação
+    const comprasValor = faturamentoBruto * pctCompras
+    const despesasCreditos = Math.max(0, despesasComCreditosMensais || 0)
+    const folha = Math.max(0, folhaPagamentoMensal || 0)
+
+    // Alíquota de ICMS: se UF for selecionada, usar a alíquota interna padrão da UF; senão usar a do Módulo 1 (config.lucroRealIcms / config.lucroPresumidoIcms)
+    let aliqIcmsReal = config.lucroRealIcms
+    let aliqIcmsPresumido = config.lucroPresumidoIcms
+    let origemIcms = 'Módulo 1 (Configurações Gerais)'
+
+    if (ufOrigem) {
+      // Tabela de UFs
+      const mapaUf: Record<string, number> = {
+        AC: 19,
+        AL: 19,
+        AM: 20,
+        AP: 18,
+        BA: 20.5,
+        CE: 20,
+        DF: 20,
+        ES: 17,
+        GO: 19,
+        MA: 22,
+        MG: 18,
+        MS: 17,
+        MT: 17,
+        PA: 19,
+        PB: 20,
+        PE: 20.5,
+        PI: 21,
+        PR: 19.5,
+        RJ: 20,
+        RN: 18,
+        RO: 19.5,
+        RR: 20,
+        RS: 17,
+        SC: 17,
+        SE: 19,
+        SP: 18,
+        TO: 20,
+      }
+      if (mapaUf[ufOrigem]) {
+        aliqIcmsReal = mapaUf[ufOrigem]
+        aliqIcmsPresumido = mapaUf[ufOrigem]
+        origemIcms = `UF de Origem: ${ufOrigem} (${mapaUf[ufOrigem]}%)`
+      }
+    }
 
     // Alíquotas do Antigo conforme tipo de atividade:
     // Serviço: ISS (Módulo 1: config.lucroRealIss / config.lucroPresumidoIss)
     // Indústria: IPI (config.lucroRealIpi / config.lucroPresumidoIpi)
-    // Comércio: ICMS (config.lucroRealIcms / config.lucroPresumidoIcms)
+    // Comércio: ICMS (UF selecionada ou Módulo 1)
     // Misto: proporção configurável entre Serviço e Comércio
     let taxaIpiIcmsIssReal = 0
     let taxaIpiIcmsIssPresumido = 0
@@ -280,90 +362,164 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       taxaIpiIcmsIssPresumido = config.lucroPresumidoIpi
       nomeImpostoIndireto = 'IPI'
     } else if (tipoAtividade === 'comercio') {
-      taxaIpiIcmsIssReal = config.lucroRealIcms
-      taxaIpiIcmsIssPresumido = config.lucroPresumidoIcms
-      nomeImpostoIndireto = 'ICMS'
+      taxaIpiIcmsIssReal = aliqIcmsReal
+      taxaIpiIcmsIssPresumido = aliqIcmsPresumido
+      nomeImpostoIndireto = `ICMS (${aliqIcmsReal}%)`
     } else {
       // Misto: Serviço + Comércio
       const pServ = Math.max(0, Math.min(100, proporcaoServicoMisto)) / 100
       const pCom = 1 - pServ
-      taxaIpiIcmsIssReal = config.lucroRealIss * pServ + config.lucroRealIcms * pCom
-      taxaIpiIcmsIssPresumido = config.lucroPresumidoIss * pServ + config.lucroPresumidoIcms * pCom
-      nomeImpostoIndireto = `ISS (${Math.round(pServ * 100)}%) + ICMS (${Math.round(pCom * 100)}%)`
+      taxaIpiIcmsIssReal = config.lucroRealIss * pServ + aliqIcmsReal * pCom
+      taxaIpiIcmsIssPresumido = config.lucroPresumidoIss * pServ + aliqIcmsPresumido * pCom
+      nomeImpostoIndireto = `ISS (${Math.round(pServ * 100)}%) + ICMS (${Math.round(pCom * 100)}% @ ${aliqIcmsReal}%)`
     }
 
+    // ----------------------------------------------------
     // 1. LUCRO REAL
-    const lrPisNominal = (faturamento * config.lucroRealPis) / 100
-    const lrCofinsNominal = (faturamento * config.lucroRealCofins) / 100
-    const lrIndiretoNominal = (faturamento * taxaIpiIcmsIssReal) / 100
+    // ----------------------------------------------------
+    // Margem de lucro: padrão 20% se não especificada
+    const margemReal =
+      margemLucroEstimada !== undefined && margemLucroEstimada !== null
+        ? Math.max(0, margemLucroEstimada)
+        : 20
+    const margemDecimal = margemReal / 100
+    // Lucro efetivo apurado (faturamento total × margem)
+    const lucroOperacionalEfetivo = faturamentoBruto * margemDecimal
+
+    // Débitos PIS, COFINS e Indireto sobre a receita tributável (excluindo exportação)
+    const lrPisNominal = (faturamentoInternoTributavel * config.lucroRealPis) / 100
+    const lrCofinsNominal = (faturamentoInternoTributavel * config.lucroRealCofins) / 100
+    const lrIndiretoNominal = (faturamentoInternoTributavel * taxaIpiIcmsIssReal) / 100
     const lrTotalNominal = lrPisNominal + lrCofinsNominal + lrIndiretoNominal
 
-    // Créditos Lucro Real: compras geram PIS (1,65%), COFINS (7,60%) e ICMS/IPI conforme a atividade
-    const aliqCreditoReal =
+    // Créditos Lucro Real:
+    // a) Compras de insumos/mercadorias (PIS 1,65% + COFINS 7,60% + ICMS/IPI conforme atividade)
+    const aliqCreditoRealCompras =
       tipoAtividade === 'servico'
-        ? config.lucroRealPis + config.lucroRealCofins // Serviços não tomam crédito de ISS
+        ? config.lucroRealPis + config.lucroRealCofins
         : config.lucroRealPis + config.lucroRealCofins + taxaIpiIcmsIssReal
-    const lrCreditos = (comprasValor * aliqCreditoReal) / 100
-    const lrTotalEfetivo = Math.max(0, lrTotalNominal - lrCreditos)
-    const lrAliqEfetiva = faturamento > 0 ? (lrTotalEfetivo / faturamento) * 100 : 0
+    const creditosComprasReal = (comprasValor * aliqCreditoRealCompras) / 100
 
-    // 2. LUCRO PRESUMIDO (regime cumulativo - PIS 0,65% + COFINS 3% sem direito a crédito)
-    const lpPisNominal = (faturamento * config.lucroPresumidoPis) / 100
-    const lpCofinsNominal = (faturamento * config.lucroPresumidoCofins) / 100
-    const lpIndiretoNominal = (faturamento * taxaIpiIcmsIssPresumido) / 100
+    // b) Despesas com créditos mensais (energia, aluguel, insumos operacionais - PIS 1,65% + COFINS 7,60% = 9,25%)
+    const aliqPisCofinsReal = config.lucroRealPis + config.lucroRealCofins
+    const creditosDespesasReal = (despesasCreditos * aliqPisCofinsReal) / 100
+
+    const lrCreditosTotal = creditosComprasReal + creditosDespesasReal
+    const lrTotalEfetivo = Math.max(0, lrTotalNominal - lrCreditosTotal)
+    const lrAliqEfetiva = faturamentoBruto > 0 ? (lrTotalEfetivo / faturamentoBruto) * 100 : 0
+
+    // ----------------------------------------------------
+    // 2. LUCRO PRESUMIDO (Regime cumulativo)
+    // ----------------------------------------------------
+    // Exportação desonera a base proporcionalmente
+    const lpPisNominal = (faturamentoInternoTributavel * config.lucroPresumidoPis) / 100
+    const lpCofinsNominal = (faturamentoInternoTributavel * config.lucroPresumidoCofins) / 100
+    const lpIndiretoNominal = (faturamentoInternoTributavel * taxaIpiIcmsIssPresumido) / 100
     const lpTotalNominal = lpPisNominal + lpCofinsNominal + lpIndiretoNominal
     const lpCreditos = 0 // Cumulativo: não gera créditos
     const lpTotalEfetivo = lpTotalNominal
-    const lpAliqEfetiva = faturamento > 0 ? (lpTotalEfetivo / faturamento) * 100 : 0
+    const lpAliqEfetiva = faturamentoBruto > 0 ? (lpTotalEfetivo / faturamentoBruto) * 100 : 0
 
-    // 3. SIMPLES NACIONAL (tabela por faturamento anual = faturamentoMensal * 12)
-    const rbt12 = faturamento * 12
-    let tabelaSimples = TABELAS_SIMPLES.anexoIII // Serviços padrão
+    // ----------------------------------------------------
+    // 3. SIMPLES NACIONAL (com Fator R real e Anexos III vs V)
+    // ----------------------------------------------------
+    const rbt12 = faturamentoBruto * 12
+    const folha12 = folha * 12
+    const fatorR = faturamentoBruto > 0 ? folha / faturamentoBruto : 0
+    const fatorRPercent = Math.round(fatorR * 1000) / 10
+    const qualificaAnexoIII = fatorR >= 0.28
+
+    let tabelaSimples = TABELAS_SIMPLES.anexoIII
     let faixaNome = 'Anexo III'
+    let anexoCod = 'Anexo III'
 
     if (tipoAtividade === 'comercio') {
       tabelaSimples = TABELAS_SIMPLES.anexoI
       faixaNome = 'Anexo I (Comércio)'
+      anexoCod = 'Anexo I'
     } else if (tipoAtividade === 'industria') {
       tabelaSimples = TABELAS_SIMPLES.anexoII
       faixaNome = 'Anexo II (Indústria)'
-    } else if (tipoAtividade === 'misto') {
-      tabelaSimples = TABELAS_SIMPLES.anexoI
-      faixaNome = 'Anexo I / III (Misto Ponderado)'
+      anexoCod = 'Anexo II'
+    } else if (tipoAtividade === 'servico') {
+      // Serviços gerais sujeitos ao Fator R (LC 123/2006)
+      if (qualificaAnexoIII) {
+        tabelaSimples = TABELAS_SIMPLES.anexoIII
+        faixaNome = `Anexo III (Fator R = ${fatorRPercent}% ≥ 28%)`
+        anexoCod = 'Anexo III'
+      } else {
+        tabelaSimples = TABELAS_SIMPLES.anexoV
+        faixaNome = `Anexo V (Fator R = ${fatorRPercent}% < 28%)`
+        anexoCod = 'Anexo V'
+      }
+    } else {
+      // Misto: ponderação entre Comércio (Anexo I) e Serviço (Anexo III ou V conforme Fator R)
+      const pServ = Math.max(0, Math.min(100, proporcaoServicoMisto)) / 100
+      const tabServico = qualificaAnexoIII ? TABELAS_SIMPLES.anexoIII : TABELAS_SIMPLES.anexoV
+      const anexoServNome = qualificaAnexoIII ? 'Anexo III' : 'Anexo V'
+      tabelaSimples = tabServico
+      faixaNome = `Misto: Anexo I (${Math.round((1 - pServ) * 100)}%) + ${anexoServNome} (${Math.round(pServ * 100)}%)`
+      anexoCod = `Misto (I + ${anexoServNome})`
     }
 
     let snAliqEfetiva = 0
     if (rbt12 <= 4800000 && rbt12 > 0) {
-      const faixa =
-        tabelaSimples.find((f) => rbt12 <= f.max) || tabelaSimples[tabelaSimples.length - 1]
-      snAliqEfetiva = Math.max(0, ((rbt12 * (faixa.aliq / 100) - faixa.deducao) / rbt12) * 100)
+      if (tipoAtividade === 'misto') {
+        const pServ = Math.max(0, Math.min(100, proporcaoServicoMisto)) / 100
+        const pCom = 1 - pServ
+        const tabServ = qualificaAnexoIII ? TABELAS_SIMPLES.anexoIII : TABELAS_SIMPLES.anexoV
+        const fServ = tabServ.find((f) => rbt12 <= f.max) || tabServ[tabServ.length - 1]
+        const fCom =
+          TABELAS_SIMPLES.anexoI.find((f) => rbt12 <= f.max) ||
+          TABELAS_SIMPLES.anexoI[TABELAS_SIMPLES.anexoI.length - 1]
+        const aliqServ = Math.max(0, ((rbt12 * (fServ.aliq / 100) - fServ.deducao) / rbt12) * 100)
+        const aliqCom = Math.max(0, ((rbt12 * (fCom.aliq / 100) - fCom.deducao) / rbt12) * 100)
+        snAliqEfetiva = aliqServ * pServ + aliqCom * pCom
+      } else {
+        const faixa =
+          tabelaSimples.find((f) => rbt12 <= f.max) || tabelaSimples[tabelaSimples.length - 1]
+        snAliqEfetiva = Math.max(0, ((rbt12 * (faixa.aliq / 100) - faixa.deducao) / rbt12) * 100)
+      }
     } else if (rbt12 > 4800000) {
-      // Excedente ao Simples Nacional
-      snAliqEfetiva = 19.0 // Estimativa de teto
-      faixaNome = 'Excede sublimite de R$ 4,8M'
+      // Excedente ao teto do Simples Nacional
+      snAliqEfetiva = 19.0
+      faixaNome = 'Excede o sublimite/teto de R$ 4,8M/ano'
     }
 
-    const snTotalEfetivo = (faturamento * snAliqEfetiva) / 100
-    // No Simples, estimativa de distribuição dos tributos de consumo dentro do DAS
+    // A receita de exportação é imune no Simples Nacional (LC 123/2006 art. 18 § 4º-A)
+    // Assim, a alíquota incide sobre o faturamento tributável no mercado interno
+    const snTotalEfetivo = (faturamentoInternoTributavel * snAliqEfetiva) / 100
     const snPis = snTotalEfetivo * 0.05
     const snCofins = snTotalEfetivo * 0.15
-    const snIndireto = snTotalEfetivo * 0.35 // ICMS ou ISS dentro do DAS
-    const snCreditos = 0 // Optante do Simples não apropria crédito amplo
+    const snIndireto = snTotalEfetivo * 0.35
+    const snCreditos = 0
+    const snAliqEfetivaSobreTotal =
+      faturamentoBruto > 0 ? (snTotalEfetivo / faturamentoBruto) * 100 : 0
 
+    // ----------------------------------------------------
     // 4. IBS / CBS (Novo IVA Dual)
-    const ibsCbsTotalNominal = (faturamento * config.totalIvaDual) / 100
-    const cbsNominal = (faturamento * config.cbsPadrao) / 100
-    const ibsNominal = (faturamento * config.ibsPadrao) / 100
-    // Créditos amplos sobre todas as compras no IVA Dual (26,50%)
-    const ibsCbsCreditos = (comprasValor * config.totalIvaDual) / 100
-    const ibsCbsTotalEfetivo = Math.max(0, ibsCbsTotalNominal - ibsCbsCreditos)
-    const ibsCbsAliqEfetiva = faturamento > 0 ? (ibsCbsTotalEfetivo / faturamento) * 100 : 0
+    // ----------------------------------------------------
+    // Incide sobre o faturamento tributável interno (exportações são 100% imunes com manutenção plena de créditos)
+    const ibsCbsTotalNominal = (faturamentoInternoTributavel * config.totalIvaDual) / 100
+    const cbsNominal = (faturamentoInternoTributavel * config.cbsPadrao) / 100
+    const ibsNominal = (faturamentoInternoTributavel * config.ibsPadrao) / 100
+
+    // Créditos plenos do IVA Dual:
+    // a) Compras sobre vendas (comprasValor × taxa total do IVA Dual)
+    const creditosComprasIbsCbs = (comprasValor * config.totalIvaDual) / 100
+    // b) Despesas com créditos informadas (despesas × taxa total do IVA Dual)
+    const creditosDespesasIbsCbs = (despesasCreditos * config.totalIvaDual) / 100
+    const ibsCbsCreditosTotal = creditosComprasIbsCbs + creditosDespesasIbsCbs
+
+    const ibsCbsTotalEfetivo = Math.max(0, ibsCbsTotalNominal - ibsCbsCreditosTotal)
+    const ibsCbsAliqEfetiva =
+      faturamentoBruto > 0 ? (ibsCbsTotalEfetivo / faturamentoBruto) * 100 : 0
 
     // Comparativo e ranking
     const cenarios = [
       { nome: 'Lucro Real', total: lrTotalEfetivo, aliq: lrAliqEfetiva },
       { nome: 'Lucro Presumido', total: lpTotalEfetivo, aliq: lpAliqEfetiva },
-      { nome: 'Simples Nacional', total: snTotalEfetivo, aliq: snAliqEfetiva },
+      { nome: 'Simples Nacional', total: snTotalEfetivo, aliq: snAliqEfetivaSobreTotal },
       { nome: 'IBS/CBS', total: ibsCbsTotalEfetivo, aliq: ibsCbsAliqEfetiva },
     ]
 
@@ -379,10 +535,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         cofinsOuIbs: lrCofinsNominal,
         ipiOuIcmsOuIss: lrIndiretoNominal,
         totalNominal: lrTotalNominal,
-        creditos: lrCreditos,
+        creditos: lrCreditosTotal,
         totalEfetivo: lrTotalEfetivo,
         aliquotaEfetiva: lrAliqEfetiva,
-        detalheImpostos: `PIS ${config.lucroRealPis}% + COFINS ${config.lucroRealCofins}% + ${nomeImpostoIndireto} ${taxaIpiIcmsIssReal.toFixed(2)}%`,
+        detalheImpostos: `PIS ${config.lucroRealPis}% + COFINS ${config.lucroRealCofins}% + ${nomeImpostoIndireto}`,
       },
       lucroPresumido: {
         pisOuCbs: lpPisNominal,
@@ -392,7 +548,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         creditos: lpCreditos,
         totalEfetivo: lpTotalEfetivo,
         aliquotaEfetiva: lpAliqEfetiva,
-        detalheImpostos: `PIS ${config.lucroPresumidoPis}% + COFINS ${config.lucroPresumidoCofins}% + ${nomeImpostoIndireto} ${taxaIpiIcmsIssPresumido.toFixed(2)}% (Sem créditos)`,
+        detalheImpostos: `PIS ${config.lucroPresumidoPis}% + COFINS ${config.lucroPresumidoCofins}% + ${nomeImpostoIndireto} (Sem créditos)`,
       },
       simplesNacional: {
         pisOuCbs: snPis,
@@ -401,24 +557,38 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         totalNominal: snTotalEfetivo,
         creditos: snCreditos,
         totalEfetivo: snTotalEfetivo,
-        aliquotaEfetiva: snAliqEfetiva,
+        aliquotaEfetiva: snAliqEfetivaSobreTotal,
         detalheImpostos: `Guia única DAS (${faixaNome})`,
         faixaEncontrada: faixaNome,
+        fatorR: fatorRPercent,
+        anexoUtilizado: anexoCod,
       },
       ibsCbs: {
         pisOuCbs: cbsNominal,
         cofinsOuIbs: ibsNominal,
         ipiOuIcmsOuIss: 0,
         totalNominal: ibsCbsTotalNominal,
-        creditos: ibsCbsCreditos,
+        creditos: ibsCbsCreditosTotal,
         totalEfetivo: ibsCbsTotalEfetivo,
         aliquotaEfetiva: ibsCbsAliqEfetiva,
-        detalheImpostos: `CBS ${config.cbsPadrao}% + IBS ${config.ibsPadrao}% (Não-cumulativo pleno)`,
+        detalheImpostos: `CBS ${config.cbsPadrao}% + IBS ${config.ibsPadrao}% (Crédito amplo de compras e despesas)`,
       },
       regimeMaisVantajoso: melhor.nome,
       piorCenario: pior.nome,
       economiaVersusPior: economia,
       economiaPercentual: economiaPct,
+      dadosAdicionais: {
+        fatorR,
+        fatorRPercent,
+        fatorRQualificaAnexoIII: qualificaAnexoIII,
+        margemLucroEfetiva: margemReal,
+        creditosDespesasReal,
+        creditosDespesasIbsCbs,
+        aliquotaIcmsAplicada: aliqIcmsReal,
+        origemIcms,
+        receitaExportacaoIsenta: receitaExportacao,
+        receitaTributavelInterna: faturamentoInternoTributavel,
+      },
     }
   }, [
     config,
@@ -426,6 +596,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     tipoAtividade,
     proporcaoServicoMisto,
     percentualComprasVendasComparativo,
+    folhaPagamentoMensal,
+    margemLucroEstimada,
+    despesasComCreditosMensais,
+    percentualExportacao,
+    ufOrigem,
   ])
 
   // ==========================================
@@ -652,6 +827,16 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         setProporcaoServicoMisto,
         percentualComprasVendasComparativo,
         setPercentualComprasVendasComparativo,
+        folhaPagamentoMensal,
+        setFolhaPagamentoMensal,
+        margemLucroEstimada,
+        setMargemLucroEstimada,
+        despesasComCreditosMensais,
+        setDespesasComCreditosMensais,
+        percentualExportacao,
+        setPercentualExportacao,
+        ufOrigem,
+        setUfOrigem,
 
         despesasCreditos,
         updateDespesaCredito,
