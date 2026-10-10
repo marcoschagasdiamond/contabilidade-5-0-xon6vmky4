@@ -171,7 +171,7 @@ export default function Index() {
               </p>
 
               {/* Botões de Ação */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-10">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-6">
                 <Link
                   to="/diagnostico"
                   className="px-7 py-4 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-1 btn-press flex items-center justify-center gap-2"
@@ -187,6 +187,27 @@ export default function Index() {
                 >
                   Conhecer Serviços
                 </button>
+              </div>
+
+              {/* Chamada sutil para a série do blog e calculadora */}
+              <div className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+                <span className="text-[#D4AF37] font-semibold flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  Reforma 2026:
+                </span>
+                <Link
+                  to="/blog/apresentamos-a-calculadora-ibs-cbs-simule-o-impacto"
+                  className="hover:text-white underline underline-offset-2 decoration-[#D4AF37]/50"
+                >
+                  Conheça a Calculadora IBS/CBS no Blog
+                </Link>
+                <span>•</span>
+                <Link
+                  to="/blog"
+                  className="text-emerald-300 hover:text-white underline underline-offset-2"
+                >
+                  Ver série completa (5 partes) →
+                </Link>
               </div>
 
               {/* Barra de Confiança */}

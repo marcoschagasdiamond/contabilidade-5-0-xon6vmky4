@@ -93,12 +93,21 @@ export default function ReformaTributariaHub() {
             </p>
           </div>
 
-          <div className="text-xs text-slate-500 font-medium bg-slate-200/60 px-3 py-1.5 rounded-lg">
-            Atualizado conforme <strong className="text-slate-800">LC 214/2025</strong>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/blog"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#07132B] hover:text-[#D4AF37] bg-white border border-[#D4AF37]/50 px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all"
+            >
+              <FileText className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span>Série de Artigos no Blog (5 partes)</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+            <div className="text-xs text-slate-500 font-medium bg-slate-200/60 px-3 py-1.5 rounded-lg">
+              Atualizado conforme <strong className="text-slate-800">LC 214/2025</strong>
+            </div>
           </div>
         </div>
-
-        {/* GRID RESPONSIVO: DESKTOP GRID, MOBILE EMPILHADO */}
+        {/* GRID RESPONSIVO: DESKTOP GRID, MOBILE EMPILHADO */}{' '}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {MODULOS_REFORMA.map((modulo) => (
             <Link
