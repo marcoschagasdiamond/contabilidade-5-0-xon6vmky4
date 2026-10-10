@@ -233,12 +233,18 @@ export default function Admin() {
       'Telefone',
       'Empresa',
       'CNPJ',
+      'UF',
+      'AliquotaICMS',
       'Cidade',
       'AliquotaISS',
       'Segmento',
       'RBT12',
       'Folha12',
+      'FolhaMensal',
+      'FatorR',
       'MargemLucro',
+      'DespesasCreditosMensal',
+      'PercentualExportacao',
       'AnoBaseReforma',
       'RegimeRecomendadoNovo',
       'RegimeRecomendadoAtual',
@@ -252,32 +258,42 @@ export default function Admin() {
       'EconomiaAnualAtual',
       'Data',
     ]
-    const rows = diagnosticos.map((d) => [
-      d.id,
-      `"${d.nome || ''}"`,
-      `"${d.email || ''}"`,
-      `"${d.telefone || ''}"`,
-      `"${d.empresa || ''}"`,
-      `"${d.cnpj || ''}"`,
-      `"${d.cidade || ''}"`,
-      d.aliquota_iss || 2.0,
-      `"${d.segmento || ''}"`,
-      d.rbt12 || 0,
-      d.folha12 || 0,
-      d.margem_lucro || 0,
-      d.ano_base || 2026,
-      `"${d.sistema_recomendado_novo || d.regime_recomendado || ''}"`,
-      `"${d.sistema_recomendado_atual || d.regime_recomendado || ''}"`,
-      d.carga_simples_novo || d.carga_simples || 0,
-      d.carga_presumido_novo || d.carga_presumido || 0,
-      d.carga_real_novo || d.carga_real || 0,
-      d.economia_anual_novo || d.economia_anual || 0,
-      d.carga_simples || 0,
-      d.carga_presumido || 0,
-      d.carga_real || 0,
-      d.economia_anual || 0,
-      d.created ? new Date(d.created).toLocaleDateString('pt-BR') : '',
-    ])
+    const rows = diagnosticos.map((d) => {
+      const folhaTotal = d.folha_pagamento ? d.folha_pagamento * 12 : d.folha12 || 0
+      const fatorR = d.rbt12 && d.rbt12 > 0 ? ((folhaTotal / d.rbt12) * 100).toFixed(1) : '0'
+      return [
+        d.id,
+        `"${d.nome || ''}"`,
+        `"${d.email || ''}"`,
+        `"${d.telefone || ''}"`,
+        `"${d.empresa || ''}"`,
+        `"${d.cnpj || ''}"`,
+        `"${d.uf_origem || 'SP'}"`,
+        d.aliquota_icms || 18.0,
+        `"${d.cidade || ''}"`,
+        d.aliquota_iss || 2.0,
+        `"${d.segmento || ''}"`,
+        d.rbt12 || 0,
+        d.folha12 || 0,
+        d.folha_pagamento || 0,
+        `${fatorR}%`,
+        d.margem_lucro || 0,
+        d.despesas_creditos || 0,
+        d.percentual_exportacao || 0,
+        d.ano_base || 2026,
+        `"${d.sistema_recomendado_novo || d.regime_recomendado || ''}"`,
+        `"${d.sistema_recomendado_atual || d.regime_recomendado || ''}"`,
+        d.carga_simples_novo || d.carga_simples || 0,
+        d.carga_presumido_novo || d.carga_presumido || 0,
+        d.carga_real_novo || d.carga_real || 0,
+        d.economia_anual_novo || d.economia_anual || 0,
+        d.carga_simples || 0,
+        d.carga_presumido || 0,
+        d.carga_real || 0,
+        d.economia_anual || 0,
+        d.created ? new Date(d.created).toLocaleDateString('pt-BR') : '',
+      ]
+    })
     const csvContent =
       'data:text/csv;charset=utf-8,' +
       [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
@@ -802,6 +818,12 @@ export default function Admin() {
                             <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">
                               {item.segmento}
                             </span>
+                            {item.uf_origem && (
+                              <div className="text-[10px] text-slate-500 mt-1 font-semibold">
+                                UF: {item.uf_origem}{' '}
+                                {item.aliquota_icms ? `(ICMS ${item.aliquota_icms}%)` : ''}
+                              </div>
+                            )}
                           </td>
 
                           <td className="py-4 px-6">
@@ -813,9 +835,26 @@ export default function Admin() {
                               })}
                             </div>
                             <div className="text-[11px] text-slate-500">
-                              Folha: R$ {item.folha12?.toLocaleString('pt-BR')} (
-                              {item.rbt12 ? ((item.folha12 / item.rbt12) * 100).toFixed(1) : 0}%)
+                              {item.folha_pagamento ? (
+                                <>Folha: R$ {item.folha_pagamento.toLocaleString('pt-BR')}/mês</>
+                              ) : (
+                                <>Folha 12m: R$ {item.folha12?.toLocaleString('pt-BR')}</>
+                              )}
+                              {item.rbt12
+                                ? ` (Fator R: ${(((item.folha_pagamento ? item.folha_pagamento * 12 : item.folha12 || 0) / item.rbt12) * 100).toFixed(1)}%)`
+                                : ''}
                             </div>
+                            {item.despesas_creditos !== undefined && item.despesas_creditos > 0 && (
+                              <div className="text-[10px] text-emerald-700 font-medium">
+                                Créditos: R$ {item.despesas_creditos.toLocaleString('pt-BR')}/mês
+                              </div>
+                            )}
+                            {item.percentual_exportacao !== undefined &&
+                              item.percentual_exportacao > 0 && (
+                                <div className="text-[10px] text-blue-600 font-medium">
+                                  Exportação: {item.percentual_exportacao}%
+                                </div>
+                              )}
                           </td>
 
                           <td className="py-4 px-6">
@@ -1092,14 +1131,54 @@ export default function Admin() {
                     </strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Folha 12m:</span>
+                    <span className="text-slate-500 block">Folha Mensal:</span>
                     <strong className="text-slate-900">
-                      R$ {selectedDiag.folha12?.toLocaleString('pt-BR')}
+                      {selectedDiag.folha_pagamento
+                        ? `R$ ${selectedDiag.folha_pagamento.toLocaleString('pt-BR')}/mês`
+                        : `R$ ${Math.round((selectedDiag.folha12 || 0) / 12).toLocaleString('pt-BR')}/mês`}
+                    </strong>
+                    <span className="text-[10px] text-slate-400 block">
+                      12m: R${' '}
+                      {(selectedDiag.folha_pagamento
+                        ? selectedDiag.folha_pagamento * 12
+                        : selectedDiag.folha12 || 0
+                      ).toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Fator R / Margem:</span>
+                    <strong className="text-[#145A32]">
+                      {selectedDiag.rbt12
+                        ? `${(((selectedDiag.folha_pagamento ? selectedDiag.folha_pagamento * 12 : selectedDiag.folha12 || 0) / selectedDiag.rbt12) * 100).toFixed(1)}%`
+                        : '0%'}
+                    </strong>
+                    <span className="text-[10px] text-slate-500 block">
+                      Margem Lucro: {selectedDiag.margem_lucro}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Novos parâmetros Módulo 3 */}
+                <div className="mt-3 pt-3 border-t border-slate-200/70 grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-slate-500 block">UF de Origem:</span>
+                    <strong className="text-slate-800">
+                      {selectedDiag.uf_origem || 'SP'} ({selectedDiag.aliquota_icms || 18.0}% ICMS)
                     </strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Margem Líquida:</span>
-                    <strong className="text-slate-900">{selectedDiag.margem_lucro}%</strong>
+                    <span className="text-slate-500 block">Despesas c/ Créditos:</span>
+                    <strong className="text-slate-800">
+                      {selectedDiag.despesas_creditos
+                        ? `R$ ${selectedDiag.despesas_creditos.toLocaleString('pt-BR')}/mês`
+                        : 'R$ 0,00'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Exportação:</span>
+                    <strong className="text-slate-800">
+                      {selectedDiag.percentual_exportacao || 0}% da receita
+                    </strong>
                   </div>
                 </div>
 

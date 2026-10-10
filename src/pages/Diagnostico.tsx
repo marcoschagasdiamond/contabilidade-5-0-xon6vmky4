@@ -45,9 +45,11 @@ import {
   LISTA_SEGMENTOS,
   CIDADES_ISS_MAPA,
   obterAliquotaISS,
+  obterAliquotaIcmsUf,
   LIMITE_SIMPLES,
   LIMITE_PRESUMIDO,
 } from '@/lib/regimes'
+import { LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
 import {
   type AnoBaseSimulacao,
   ANOS_SIMULACAO_DISPONIVEIS,
@@ -76,6 +78,9 @@ interface FormErrors {
   segmento?: string
   rbt12?: string
   folha12?: string
+  folhaMensal?: string
+  despesasCreditos?: string
+  percentualExportacao?: string
   margemLucro?: string
 }
 
@@ -98,6 +103,10 @@ export default function Diagnostico() {
     segmento: SegmentoEmpresa
     rbt12: number
     folha12: number
+    folhaMensal: number
+    despesasCreditos: number
+    percentualExportacao: number
+    ufOrigem: string
     margemLucro: number
     funcionarios: string
     emissaoNf: string
@@ -114,6 +123,10 @@ export default function Diagnostico() {
     segmento: 'Comércio',
     rbt12: 600000,
     folha12: 120000,
+    folhaMensal: 10000,
+    despesasCreditos: 15000,
+    percentualExportacao: 0,
+    ufOrigem: 'SP',
     margemLucro: 25,
     funcionarios: '1 a 5 funcionários',
     emissaoNf: 'Predominante para Pessoas Jurídicas (B2B)',
@@ -128,6 +141,9 @@ export default function Diagnostico() {
   // Inputs raw em string para facilitar digitação com formatação
   const [rbt12Input, setRbt12Input] = useState('600.000,00')
   const [folha12Input, setFolha12Input] = useState('120.000,00')
+  const [folhaMensalInput, setFolhaMensalInput] = useState('10.000,00')
+  const [despesasCreditosInput, setDespesasCreditosInput] = useState('15.000,00')
+  const [exportacaoInput, setExportacaoInput] = useState('0')
   const [margemInput, setMargemInput] = useState('25')
 
   const [errors, setErrors] = useState<FormErrors>({})
@@ -151,6 +167,10 @@ export default function Diagnostico() {
           segmento: formData.segmento,
           rbt12: formData.rbt12,
           folha12: formData.folha12,
+          folhaMensal: formData.folhaMensal,
+          despesasCreditosMensais: formData.despesasCreditos,
+          percentualExportacao: formData.percentualExportacao,
+          ufOrigem: formData.ufOrigem,
           margemLucro: formData.margemLucro,
           funcionarios: formData.funcionarios,
           emissaoNf: formData.emissaoNf,
@@ -225,8 +245,39 @@ export default function Diagnostico() {
     const val = e.target.value.replace(/[^\d,.]/g, '')
     setFolha12Input(val)
     const num = parseMoeda(val)
-    setFormData((prev) => ({ ...prev, folha12: num }))
+    const mensal = Math.round(num / 12)
+    setFormData((prev) => ({ ...prev, folha12: num, folhaMensal: mensal }))
+    setFolhaMensalInput(formatMoedaInput(mensal))
     if (errors.folha12) setErrors((prev) => ({ ...prev, folha12: undefined }))
+  }
+
+  const handleFolhaMensalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^\d,.]/g, '')
+    setFolhaMensalInput(val)
+    const num = parseMoeda(val)
+    const anual = num * 12
+    setFormData((prev) => ({ ...prev, folhaMensal: num, folha12: anual }))
+    setFolha12Input(formatMoedaInput(anual))
+    if (errors.folhaMensal) setErrors((prev) => ({ ...prev, folhaMensal: undefined }))
+    if (errors.folha12) setErrors((prev) => ({ ...prev, folha12: undefined }))
+  }
+
+  const handleDespesasCreditosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^\d,.]/g, '')
+    setDespesasCreditosInput(val)
+    const num = parseMoeda(val)
+    setFormData((prev) => ({ ...prev, despesasCreditos: num }))
+    if (errors.despesasCreditos) setErrors((prev) => ({ ...prev, despesasCreditos: undefined }))
+  }
+
+  const handleExportacaoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^\d,.]/g, '')
+    setExportacaoInput(val)
+    const num = parseFloat(val.replace(',', '.')) || 0
+    const clamped = Math.min(100, Math.max(0, num))
+    setFormData((prev) => ({ ...prev, percentualExportacao: clamped }))
+    if (errors.percentualExportacao)
+      setErrors((prev) => ({ ...prev, percentualExportacao: undefined }))
   }
 
   const handleMargemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,7 +326,7 @@ export default function Diagnostico() {
     }
 
     if (step === 3) {
-      if (formData.folha12 < 0) {
+      if (formData.folha12 < 0 || formData.folhaMensal < 0) {
         newErrors.folha12 =
           'A folha não pode ser negativa (use 0 se não houver funcionários/pró-labore)'
       }
@@ -288,6 +339,12 @@ export default function Diagnostico() {
     if (step === 4) {
       if (formData.margemLucro < 0 || formData.margemLucro > 100) {
         newErrors.margemLucro = 'A margem de lucro estimada deve ficar entre 0% e 100%'
+      }
+      if (formData.despesasCreditos < 0) {
+        newErrors.despesasCreditos = 'Despesas não podem ser negativas'
+      }
+      if (formData.percentualExportacao < 0 || formData.percentualExportacao > 100) {
+        newErrors.percentualExportacao = 'O percentual de exportação deve ficar entre 0% e 100%'
       }
     }
 
@@ -309,6 +366,10 @@ export default function Diagnostico() {
           segmento: formData.segmento,
           rbt12: formData.rbt12,
           folha12: formData.folha12,
+          folhaMensal: formData.folhaMensal,
+          despesasCreditosMensais: formData.despesasCreditos,
+          percentualExportacao: formData.percentualExportacao,
+          ufOrigem: formData.ufOrigem,
           margemLucro: formData.margemLucro,
           funcionarios: formData.funcionarios,
           emissaoNf: formData.emissaoNf,
@@ -337,7 +398,7 @@ export default function Diagnostico() {
             carga_presumido: diagResult.presumido.cargaAnual,
             carga_real: diagResult.real.cargaAnual,
             economia_anual: diagResult.novoSistema.economiaAnual,
-            // Novos campos Reforma Tributária
+            // Novos campos Reforma Tributária & Operacionais
             ano_base: formData.anoBase,
             sistema_recomendado_atual: diagResult.regimeRecomendado,
             sistema_recomendado_novo: diagResult.novoSistema.regimeRecomendado,
@@ -345,6 +406,11 @@ export default function Diagnostico() {
             carga_presumido_novo: diagResult.novoSistema.presumido.cargaAnual,
             carga_real_novo: diagResult.novoSistema.real.cargaAnual,
             economia_anual_novo: diagResult.novoSistema.economiaAnual,
+            folha_pagamento: formData.folhaMensal,
+            despesas_creditos: formData.despesasCreditos,
+            percentual_exportacao: formData.percentualExportacao,
+            uf_origem: formData.ufOrigem,
+            aliquota_icms: obterAliquotaIcmsUf(formData.ufOrigem),
             detalhes_reforma_json: {
               anoBase: formData.anoBase,
               explicacaoTransicao: diagResult.novoSistema.explicacaoTransicao,
@@ -439,9 +505,17 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
 
   // Atalhos rápidos para faturamento e folha
   const preencherPreset = (rbt: number, folha: number, margem: number) => {
-    setFormData((prev) => ({ ...prev, rbt12: rbt, folha12: folha, margemLucro: margem }))
+    const mensal = Math.round(folha / 12)
+    setFormData((prev) => ({
+      ...prev,
+      rbt12: rbt,
+      folha12: folha,
+      folhaMensal: mensal,
+      margemLucro: margem,
+    }))
     setRbt12Input(formatMoedaInput(rbt))
     setFolha12Input(formatMoedaInput(folha))
+    setFolhaMensalInput(formatMoedaInput(mensal))
     setMargemInput(margem.toString())
   }
 
@@ -650,29 +724,69 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 </div>
               </div>
 
-              {/* Cidade/UF (ISS) */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Cidade / UF (Alíquota de ISS) *
-                  </label>
-                  <span className="text-[11px] font-semibold text-[#145A32]">
-                    ISS: {obterAliquotaISS(formData.cidade).aliquota.toFixed(1)}%
-                  </span>
+              {/* UF de Origem (ICMS) e Cidade / UF (ISS) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Seletor UF de Origem */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      UF de Origem (ICMS Estadual) *
+                    </label>
+                    <span className="text-[11px] font-bold text-[#145A32] bg-emerald-100/70 px-2 py-0.5 rounded-md border border-emerald-300/60">
+                      ICMS: {obterAliquotaIcmsUf(formData.ufOrigem).toFixed(1)}%
+                    </span>
+                  </div>
+                  <select
+                    value={formData.ufOrigem}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, ufOrigem: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                  >
+                    {LISTA_UFS_ICMS.map((ufItem) => (
+                      <option key={ufItem.uf} value={ufItem.uf}>
+                        {ufItem.uf} — {ufItem.nome} ({ufItem.aliquotaInternaPadrao.toFixed(1)}%
+                        ICMS)
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Define a alíquota interna padrão de ICMS estadual sobre comércio e indústria.
+                  </p>
                 </div>
-                <select
-                  value={formData.cidade}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, cidade: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
-                >
-                  {CIDADES_ISS_MAPA.map((cid) => (
-                    <option key={cid.id} value={cid.id}>
-                      {cid.descricao || `${cid.nome}/${cid.uf} (${cid.aliquota.toFixed(1)}%)`}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Define o ISS municipal aplicado aos cálculos de serviços e transporte.
+
+                {/* Seletor Cidade/ISS */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Cidade / UF (Alíquota de ISS) *
+                    </label>
+                    <span className="text-[11px] font-bold text-[#145A32] bg-emerald-100/70 px-2 py-0.5 rounded-md border border-emerald-300/60">
+                      ISS: {obterAliquotaISS(formData.cidade).aliquota.toFixed(1)}%
+                    </span>
+                  </div>
+                  <select
+                    value={formData.cidade}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, cidade: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                  >
+                    {CIDADES_ISS_MAPA.map((cid) => (
+                      <option key={cid.id} value={cid.id}>
+                        {cid.descricao || `${cid.nome}/${cid.uf} (${cid.aliquota.toFixed(1)}%)`}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Define o ISS municipal aplicado aos cálculos de serviços e transporte.
+                  </p>
+                </div>
+              </div>
+
+              {/* Box explicativo UF & ICMS */}
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-[#145A32] shrink-0 mt-0.5" />
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  <strong>Impacto no cálculo:</strong> A UF de origem determina o ICMS no sistema
+                  atual (Lucro Presumido e Real) e serve de base para calibrar a substituição
+                  gradual pelo IBS durante a transição 2029–2032.
                 </p>
               </div>
 
@@ -1224,71 +1338,133 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 </div>
               </div>
 
-              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                  Folha Anual Acumulada (R$) *
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-heading font-extrabold text-xl text-slate-400">
-                    R$
-                  </span>
-                  <input
-                    type="text"
-                    value={folha12Input}
-                    onChange={handleFolha12Change}
-                    placeholder="0,00"
-                    className="w-full pl-14 pr-4 py-4 rounded-xl border border-slate-200 bg-white font-heading font-bold text-2xl sm:text-3xl text-slate-900 input-focus-ring"
-                  />
-                </div>
-                {errors.folha12 && (
-                  <p className="mt-2 text-xs text-red-600 font-medium">{errors.folha12}</p>
-                )}
+              {/* Box didático sobre o impacto da folha e Fator R */}
+              <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-900 leading-relaxed">
+                  <strong>A folha define o Fator R:</strong> abaixo de 28% sua empresa de serviços
+                  cai no Anexo V (a partir de 15,5%), muito mais caro. Igual ou acima de 28%,
+                  enquadra-se no Anexo III (a partir de 6%), gerando economia imediata. Além disso,
+                  no Lucro Real a folha de salários e pró-labore é despesa dedutível direta do
+                  IRPJ/CSLL.
+                </p>
+              </div>
 
-                {/* Exibição do Fator R calculado dinamicamente */}
+              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-5">
+                {/* Campo 1: Folha Mensal com pró-labore */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Folha de Pagamento Mensal (incluindo pró-labore) *
+                    </label>
+                    <span className="text-[11px] text-slate-500">Média por mês</span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-heading font-extrabold text-lg text-slate-400">
+                      R$
+                    </span>
+                    <input
+                      type="text"
+                      value={folhaMensalInput}
+                      onChange={handleFolhaMensalChange}
+                      placeholder="0,00"
+                      className="w-full pl-14 pr-4 py-3.5 rounded-xl border border-slate-200 bg-white font-heading font-bold text-xl sm:text-2xl text-slate-900 input-focus-ring"
+                    />
+                  </div>
+                  {errors.folhaMensal && (
+                    <p className="mt-1 text-xs text-red-600 font-medium">{errors.folhaMensal}</p>
+                  )}
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Equivale a{' '}
+                    <strong>
+                      R${' '}
+                      {(formData.folhaMensal * 12).toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                      })}
+                      /ano
+                    </strong>{' '}
+                    (inclui salários CLT, pró-labore dos sócios, FGTS e encargos).
+                  </p>
+                </div>
+
+                {/* Campo 2: Folha 12m sincronizada */}
+                <div className="pt-4 border-t border-slate-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Folha Anual Acumulada em 12 Meses (R$) *
+                    </label>
+                    <span className="text-[11px] text-slate-400">Sincronizado (12 × mensal)</span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-heading font-extrabold text-lg text-slate-400">
+                      R$
+                    </span>
+                    <input
+                      type="text"
+                      value={folha12Input}
+                      onChange={handleFolha12Change}
+                      placeholder="0,00"
+                      className="w-full pl-14 pr-4 py-3.5 rounded-xl border border-slate-200 bg-white font-heading font-bold text-xl sm:text-2xl text-slate-900 input-focus-ring"
+                    />
+                  </div>
+                  {errors.folha12 && (
+                    <p className="mt-1 text-xs text-red-600 font-medium">{errors.folha12}</p>
+                  )}
+                </div>
+
+                {/* Badge e Medidor em TEMPO REAL do Fator R e Enquadramento */}
                 {formData.rbt12 > 0 && (
-                  <div className="mt-5 p-4 rounded-xl bg-white border border-slate-200">
+                  <div className="mt-4 p-4 rounded-xl bg-white border border-slate-200">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold uppercase text-slate-500 tracking-wider">
-                        Indicador Fator R (Folha / Receita)
+                      <span className="text-xs font-semibold uppercase text-slate-600 tracking-wider">
+                        Fator R em Tempo Real (Folha 12m ÷ RBT12)
                       </span>
-                      <span
-                        className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                          (formData.folha12 / formData.rbt12) * 100 >= 28
-                            ? 'bg-emerald-100 text-[#145A32] border border-emerald-300'
-                            : 'bg-amber-100 text-amber-800 border border-amber-300'
-                        }`}
-                      >
-                        {((formData.folha12 / formData.rbt12) * 100).toFixed(1)}%
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs font-extrabold px-3 py-1 rounded-full border shadow-sm ${
+                            (formData.folha12 / formData.rbt12) * 100 >= 28
+                              ? 'bg-emerald-100 text-[#145A32] border-emerald-300'
+                              : 'bg-amber-100 text-amber-900 border-amber-300'
+                          }`}
+                        >
+                          {((formData.folha12 / formData.rbt12) * 100).toFixed(1)}% —{' '}
+                          {(formData.folha12 / formData.rbt12) * 100 >= 28
+                            ? 'Anexo III (Mais Econômico)'
+                            : 'Anexo V (Mais Oneroso)'}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2">
+                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-2">
                       <div
-                        className={`h-full rounded-full ${
+                        className={`h-full rounded-full transition-all duration-300 ${
                           (formData.folha12 / formData.rbt12) * 100 >= 28
-                            ? 'bg-[#2ECC71]'
+                            ? 'bg-gradient-to-r from-[#145A32] to-[#2ECC71]'
                             : 'bg-amber-400'
                         }`}
                         style={{
-                          width: `${Math.min(100, (formData.folha12 / formData.rbt12) * 100)}%`,
+                          width: `${Math.min(100, Math.max(5, (formData.folha12 / formData.rbt12) * 100))}%`,
                         }}
                       />
                     </div>
 
-                    <p className="text-xs text-slate-600">
+                    <p className="text-xs text-slate-600 mt-2">
                       {(formData.folha12 / formData.rbt12) * 100 >= 28 ? (
                         <span className="text-[#145A32] font-medium flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4 text-[#2ECC71] shrink-0" />
-                          Excelente! Seu Fator R é igual ou superior a 28%, permitindo tributar
-                          serviços no <strong>Anexo III</strong> do Simples (alíquotas a partir de
-                          6%) em vez do Anexo V (15,5%).
+                          Enquadramento: <strong>Anexo III</strong> do Simples Nacional (alíquotas
+                          iniciais de 6%). Sua folha supera a meta legal dos 28%.
                         </span>
                       ) : (
-                        <span className="text-slate-600 flex items-center gap-1.5">
-                          <Info className="w-4 h-4 text-amber-500 shrink-0" />
-                          Fator R abaixo de 28%. Para empresas de serviços, a tributação no Simples
-                          fica no <strong>Anexo V</strong> (alíquotas mais altas). Nossos
-                          consultores podem sugerir estratégias de pró-labore para atingir os 28%.
+                        <span className="text-amber-900 font-medium flex items-center gap-1.5">
+                          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                          Enquadramento: <strong>Anexo V</strong> (alíquotas iniciais de 15,5%).
+                          Faltam R${' '}
+                          {Math.max(
+                            0,
+                            Math.round(formData.rbt12 * 0.28 - formData.folha12),
+                          ).toLocaleString('pt-BR')}{' '}
+                          em folha/pró-labore anual para migrar ao Anexo III.
                         </span>
                       )}
                     </p>
@@ -1472,6 +1648,127 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   </button>
                 ))}
               </div>
+
+              {/* Box didático sobre Lucro Real */}
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-[#145A32] shrink-0 mt-0.5" />
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  <strong>
+                    No Lucro Real o imposto incide sobre o lucro, não sobre o faturamento:
+                  </strong>{' '}
+                  Se sua margem de lucro real for menor que a presunção legal do governo (8%
+                  comércio ou 32% serviços), você economiza de forma expressiva em IRPJ e CSLL.
+                </p>
+              </div>
+
+              {/* NOVO CAMPO: Despesas mensais com créditos operacionais */}
+              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Despesas mensais com créditos (energia, aluguel, insumos — R$)
+                  </label>
+                  <span className="text-[11px] text-slate-400">Mensal</span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-heading font-extrabold text-xl text-slate-400">
+                    R$
+                  </span>
+                  <input
+                    type="text"
+                    value={despesasCreditosInput}
+                    onChange={handleDespesasCreditosChange}
+                    placeholder="0,00"
+                    className="w-full pl-14 pr-4 py-3.5 rounded-xl border border-slate-200 bg-white font-heading font-bold text-xl sm:text-2xl text-slate-900 input-focus-ring"
+                  />
+                </div>
+                {errors.despesasCreditos && (
+                  <p className="mt-1 text-xs text-red-600 font-medium">{errors.despesasCreditos}</p>
+                )}
+                <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs text-slate-700">
+                  <strong className="text-[#145A32] block mb-0.5 font-bold">
+                    Despesas geram créditos no sistema novo:
+                  </strong>
+                  No <strong>Novo Sistema Tributário (IBS/CBS)</strong> e no{' '}
+                  <strong>Lucro Real (PIS/COFINS 9,25%)</strong>, despesas com aluguel de galpão,
+                  energia elétrica, telecomunicações e insumos geram créditos integrais que abatem
+                  imposto a pagar. R$ {formData.despesasCreditos.toLocaleString('pt-BR')}/mês geram
+                  cerca de R${' '}
+                  {(formData.despesasCreditos * 12 * 0.0925).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                  })}
+                  /ano em créditos no Lucro Real e abatem IBS/CBS na transição.
+                </div>
+              </div>
+
+              {/* NOVO CAMPO: % da receita de exportação */}
+              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    % da Receita de Exportação (vendas para o exterior)
+                  </label>
+                  <span className="font-heading font-bold text-lg text-[#145A32] bg-emerald-100 px-3 py-1 rounded-xl border border-emerald-200">
+                    {formData.percentualExportacao}%
+                  </span>
+                </div>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={formData.percentualExportacao}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0
+                    setFormData((prev) => ({ ...prev, percentualExportacao: val }))
+                    setExportacaoInput(val.toString())
+                  }}
+                  className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#2ECC71]"
+                />
+
+                <div className="flex items-center gap-3 pt-2">
+                  <span className="text-xs text-slate-600 font-medium">
+                    Digite o percentual exato:
+                  </span>
+                  <div className="relative w-28">
+                    <input
+                      type="text"
+                      value={exportacaoInput}
+                      onChange={handleExportacaoChange}
+                      className="w-full px-3 py-2 pr-8 rounded-lg border border-slate-200 text-sm font-bold text-slate-900 bg-white input-focus-ring"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                      %
+                    </span>
+                  </div>
+                  {formData.percentualExportacao > 0 && (
+                    <span className="text-xs text-slate-600">
+                      Receita exterior:{' '}
+                      <strong>
+                        R${' '}
+                        {((formData.rbt12 * formData.percentualExportacao) / 100).toLocaleString(
+                          'pt-BR',
+                          { minimumFractionDigits: 2 },
+                        )}
+                        /ano
+                      </strong>
+                    </span>
+                  )}
+                </div>
+                {errors.percentualExportacao && (
+                  <p className="mt-1 text-xs text-red-600 font-medium">
+                    {errors.percentualExportacao}
+                  </p>
+                )}
+
+                <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200 text-xs text-slate-700">
+                  <strong className="text-blue-900 block mb-0.5 font-bold">
+                    Exportação é desonerada nos dois sistemas:
+                  </strong>
+                  Pela Constituição e pela LC 214/2025, receitas de exportação de bens ou serviços
+                  são 100% imunes de PIS, COFINS, ICMS, ISS, IBS e CBS. No novo sistema, os créditos
+                  de compras são mantidos e ressarcidos em dinheiro em até 60 dias.
+                </div>
+              </div>
             </div>
 
             {/* Ações */}
@@ -1569,6 +1866,10 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                       segmento: formData.segmento,
                       rbt12: formData.rbt12,
                       folha12: formData.folha12,
+                      folhaMensal: formData.folhaMensal,
+                      despesasCreditosMensais: formData.despesasCreditos,
+                      percentualExportacao: formData.percentualExportacao,
+                      ufOrigem: formData.ufOrigem,
                       margemLucro: formData.margemLucro,
                       funcionarios: formData.funcionarios,
                       emissaoNf: formData.emissaoNf,
@@ -1640,11 +1941,17 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     </span>
                   )}
                   <span>
+                    • UF/ICMS: <strong className="text-slate-800">{formData.ufOrigem}</strong> (
+                    {obterAliquotaIcmsUf(formData.ufOrigem).toFixed(1)}%)
+                  </span>
+                  <span>
                     • Cidade: <strong className="text-slate-800">{resultado.cidade}</strong> (ISS:{' '}
                     <strong className="text-[#145A32]">{resultado.aliquotaISS.toFixed(1)}%</strong>)
                   </span>
                   <span>
-                    • Segmento: <strong className="text-slate-800">{formData.segmento}</strong>
+                    • Fator R:{' '}
+                    <strong className="text-[#145A32]">{resultado.fatorR.toFixed(1)}%</strong> (
+                    {resultado.fatorRElegivelAnexoIII ? 'Anexo III' : 'Anexo V'})
                   </span>
                   <span>
                     • Ano-base Simulado:{' '}
@@ -1922,6 +2229,171 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     })}
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            {/* BLOCO DIDÁTICO: COMO SEUS DADOS MUDARAM O CÁLCULO */}
+            <div className="bg-gradient-to-br from-emerald-50/80 via-white to-slate-50 rounded-[24px] p-6 sm:p-8 shadow-lg border-2 border-emerald-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5 text-[#145A32]" />
+                <h3 className="font-heading font-bold text-lg sm:text-xl text-slate-900 tracking-tight">
+                  Como seus dados mudaram o cálculo
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">
+                Veja a conexão direta em linguagem simples entre as variáveis que você informou e o
+                impacto real na apuração tributária da {formData.empresa}:
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs text-slate-700">
+                <div className="p-3.5 rounded-xl bg-white border border-slate-200 flex items-start gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-[#2ECC71] mt-1.5 shrink-0" />
+                  <div>
+                    <strong className="text-slate-900 block mb-0.5 font-bold">
+                      Folha de R$ {formData.folhaMensal.toLocaleString('pt-BR')}/mês e Fator R de{' '}
+                      {resultado.fatorR.toFixed(1)}%:
+                    </strong>
+                    {resultado.fatorRElegivelAnexoIII
+                      ? `Como o Fator R superou 28%, sua empresa garantiu enquadramento no Anexo III do Simples Nacional com alíquotas a partir de 6%, evitando o Anexo V (a partir de 15,5%).`
+                      : `Com o Fator R abaixo de 28%, o Simples Nacional precisou ser calculado no Anexo V (alíquota maior), o que aumentou a atratividade comparativa do Lucro Presumido ou Real.`}
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white border border-slate-200 flex items-start gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-[#2ECC71] mt-1.5 shrink-0" />
+                  <div>
+                    <strong className="text-slate-900 block mb-0.5 font-bold">
+                      Margem de Lucro de {formData.margemLucro}% no Lucro Real:
+                    </strong>
+                    No Lucro Real o imposto incide sobre o lucro efetivo ({formData.margemLucro}%),
+                    não sobre a presunção governamental. Isso reduziu ou modulou o IRPJ e a CSLL
+                    frente ao faturamento bruto total.
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white border border-slate-200 flex items-start gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-[#2ECC71] mt-1.5 shrink-0" />
+                  <div>
+                    <strong className="text-slate-900 block mb-0.5 font-bold">
+                      Despesas c/ Créditos de R$ {formData.despesasCreditos.toLocaleString('pt-BR')}
+                      /mês:
+                    </strong>
+                    Suas despesas operacionais (energia, aluguel, insumos) geraram R${' '}
+                    {(formData.despesasCreditos * 12 * 0.0925).toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                    })}
+                    /ano em abatimentos diretos no PIS/COFINS (9,25%) do Lucro Real e créditos
+                    compensatórios de CBS/IBS no Novo Sistema.
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white border border-slate-200 flex items-start gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-[#2ECC71] mt-1.5 shrink-0" />
+                  <div>
+                    <strong className="text-slate-900 block mb-0.5 font-bold">
+                      UF {formData.ufOrigem} (ICMS{' '}
+                      {obterAliquotaIcmsUf(formData.ufOrigem).toFixed(1)}%) e{' '}
+                      {formData.percentualExportacao}% de Exportação:
+                    </strong>
+                    {formData.percentualExportacao > 0
+                      ? `A parcela exportada (${formData.percentualExportacao}%) foi totalmente desonerada de tributos indiretos (ICMS, ISS, PIS, COFINS, IBS e CBS), diminuindo a carga em todos os regimes.`
+                      : `A alíquota interna estadual de ICMS da UF ${formData.ufOrigem} (${obterAliquotaIcmsUf(formData.ufOrigem).toFixed(1)}%) calibrou a tributação de mercadorias no sistema atual e a substituição gradual de IBS até 2033.`}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CURVA IBS/CBS DO ANO-BASE DA TRANSIÇÃO (SEMPRE VISÍVEL NO COMPARATIVO/RESULTADO) */}
+            <div className="bg-white rounded-[24px] p-6 sm:p-8 shadow-xl border border-slate-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#145A32]" />
+                    <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight">
+                      Curva de Transição IBS / CBS — Ano-base {resultado.anoBase}
+                    </h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                    Como a substituição gradual do sistema antigo (PIS/COFINS/ICMS/ISS) pelo novo
+                    (IBS/CBS) atua no ano de {resultado.anoBase}.
+                  </p>
+                </div>
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-[#145A32] border border-emerald-300">
+                  EC 132/2023 · LC 214/2025
+                </span>
+              </div>
+
+              {/* Indicadores de alíquotas do ano selecionado */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase block">
+                    CBS Federal ({resultado.anoBase})
+                  </span>
+                  <span className="font-heading font-extrabold text-2xl text-[#145A32] block my-1">
+                    {(resultado.novoSistema.presumido.detalhesReforma?.aliquotaCBS ?? 8.8).toFixed(
+                      1,
+                    )}
+                    %
+                  </span>
+                  <span className="text-[10px] text-slate-500">
+                    {resultado.anoBase === 2026
+                      ? 'Alíquota teste (dispensa recolhimento)'
+                      : resultado.anoBase <= 2028
+                        ? 'Extinção de PIS/COFINS'
+                        : 'CBS consolidada'}
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase block">
+                    IBS Subnacional ({resultado.anoBase})
+                  </span>
+                  <span className="font-heading font-extrabold text-2xl text-[#145A32] block my-1">
+                    {(resultado.novoSistema.presumido.detalhesReforma?.aliquotaIBS ?? 0).toFixed(1)}
+                    %
+                  </span>
+                  <span className="text-[10px] text-slate-500">
+                    {resultado.anoBase === 2026
+                      ? 'Alíquota teste estadual'
+                      : resultado.anoBase <= 2028
+                        ? 'Fase preliminar IBS'
+                        : `Fator transição (${Math.round((resultado.anoBase - 2028) * 10)}%)`}
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase block">
+                    ICMS / ISS Remanescente
+                  </span>
+                  <span className="font-heading font-extrabold text-2xl text-slate-800 block my-1">
+                    {resultado.anoBase <= 2028
+                      ? '100%'
+                      : `${Math.max(0, 100 - (resultado.anoBase - 2028) * 10)}%`}
+                  </span>
+                  <span className="text-[10px] text-slate-500">
+                    {resultado.anoBase <= 2028
+                      ? 'Tributos locais integrais'
+                      : resultado.anoBase === 2033
+                        ? '100% extintos'
+                        : 'Redução proporcional'}
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                  <span className="text-[11px] font-semibold text-[#145A32] uppercase block">
+                    Regime Vencedor ({resultado.anoBase})
+                  </span>
+                  <span className="font-heading font-extrabold text-lg sm:text-xl text-[#145A32] block my-1 truncate">
+                    {resultado.novoSistema.regimeRecomendado}
+                  </span>
+                  <span className="text-[10px] text-emerald-800 font-semibold">
+                    Economia: R${' '}
+                    {resultado.novoSistema.economiaAnual.toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                    })}
+                    /ano
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -2638,7 +3110,16 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Fator R apurado:</span>
-                          <strong className="text-slate-800">{resultado.fatorR}%</strong>
+                          <strong className="text-slate-800">
+                            {resultado.fatorR}% (
+                            {resultado.fatorRElegivelAnexoIII ? 'Anexo III' : 'Anexo V'})
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Folha mensal:</span>
+                          <strong className="text-slate-800">
+                            R$ {formData.folhaMensal.toLocaleString('pt-BR')}/mês
+                          </strong>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Carga estimada anual:</span>
@@ -2687,11 +3168,19 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                           </strong>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-500">ICMS ou ISS:</span>
+                          <span className="text-slate-500">
+                            ICMS / ISS (UF {formData.ufOrigem}):
+                          </span>
                           <strong className="text-slate-800">
                             {resultado.presumido.detalhes.icmsOuIss
                               ? `R$ ${resultado.presumido.detalhes.icmsOuIss.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                               : '—'}
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Alíquota ICMS UF:</span>
+                          <strong className="text-slate-800">
+                            {obterAliquotaIcmsUf(formData.ufOrigem).toFixed(1)}%
                           </strong>
                         </div>
                         <div className="flex justify-between">
@@ -2735,11 +3224,17 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                           </strong>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-500">PIS/COFINS (9,25%):</span>
+                          <span className="text-slate-500">PIS/COFINS (9,25% c/ créditos):</span>
                           <strong className="text-slate-800">
                             {resultado.real.detalhes.pisCofins
                               ? `R$ ${resultado.real.detalhes.pisCofins.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                               : '—'}
+                          </strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Despesas c/ créditos:</span>
+                          <strong className="text-emerald-700">
+                            R$ {formData.despesasCreditos.toLocaleString('pt-BR')}/mês
                           </strong>
                         </div>
                         <div className="flex justify-between">

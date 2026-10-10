@@ -89,63 +89,106 @@ export function gerarRelatorioDiagnosticoPDF({ dados, resultado }: GerarPdfOptio
   currentY = 46
 
   // ==========================================
-  // BLOCO 1: DADOS DA EMPRESA
+  // BLOCO 1: DADOS DA EMPRESA E PARÂMETROS
   // ==========================================
   doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
   doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-  doc.roundedRect(margin, currentY, contentWidth, 31, 2, 2, 'FD')
+  doc.roundedRect(margin, currentY, contentWidth, 42, 2, 2, 'FD')
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
   doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
-  doc.text('DADOS DA EMPRESA ANALISADA', margin + 4, currentY + 6)
+  doc.text('DADOS DA EMPRESA & PARÂMETROS OPERACIONAIS', margin + 4, currentY + 6)
 
-  doc.setFontSize(8.5)
+  doc.setFontSize(8)
   doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
 
   // Coluna 1
   doc.setFont('helvetica', 'bold')
   doc.text('Empresa:', margin + 4, currentY + 12)
   doc.setFont('helvetica', 'normal')
-  doc.text(dados.empresa || 'Não informada', margin + 22, currentY + 12)
+  doc.text(dados.empresa || 'Não informada', margin + 20, currentY + 12)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('CNPJ:', margin + 4, currentY + 17.5)
+  doc.text('CNPJ:', margin + 4, currentY + 17)
   doc.setFont('helvetica', 'normal')
-  doc.text(dados.cnpj || 'Não informado', margin + 22, currentY + 17.5)
+  doc.text(dados.cnpj || 'Não informado', margin + 20, currentY + 17)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Contato:', margin + 4, currentY + 23)
+  doc.text('Contato:', margin + 4, currentY + 22)
   doc.setFont('helvetica', 'normal')
-  doc.text(`${dados.nome || 'Não informado'} (${dados.email || '-'})`, margin + 22, currentY + 23)
+  doc.text(`${dados.nome || 'Não informado'} (${dados.email || '-'})`, margin + 20, currentY + 22)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('WhatsApp:', margin + 4, currentY + 28)
+  doc.text('WhatsApp:', margin + 4, currentY + 27)
   doc.setFont('helvetica', 'normal')
-  doc.text(dados.telefone || 'Não informado', margin + 22, currentY + 28)
+  doc.text(dados.telefone || 'Não informado', margin + 20, currentY + 27)
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('Folha Mensal:', margin + 4, currentY + 32)
+  doc.setFont('helvetica', 'normal')
+  const folhaMensalVal =
+    dados.folhaMensal || (dados.folha12 ? Math.round(dados.folha12 / 12) : 10000)
+  doc.text(
+    `${formatarMoeda(folhaMensalVal)}/mês (${formatarMoeda(folhaMensalVal * 12)}/ano)`,
+    margin + 24,
+    currentY + 32,
+  )
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('Fator R:', margin + 4, currentY + 37)
+  doc.setFont('helvetica', 'normal')
+  const anexoTexto = resultado.fatorRElegivelAnexoIII ? 'Anexo III (≥ 28%)' : 'Anexo V (< 28%)'
+  doc.text(
+    `${resultado.fatorR.toFixed(1)}% — Enquadramento: ${anexoTexto}`,
+    margin + 20,
+    currentY + 37,
+  )
 
   // Coluna 2
   const col2X = margin + 98
   doc.setFont('helvetica', 'bold')
   doc.text('Segmento:', col2X, currentY + 12)
   doc.setFont('helvetica', 'normal')
-  doc.text(dados.segmento || '-', col2X + 26, currentY + 12)
+  doc.text(dados.segmento || '-', col2X + 24, currentY + 12)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Cidade / ISS:', col2X, currentY + 17.5)
+  doc.text('UF / ICMS:', col2X, currentY + 17)
   doc.setFont('helvetica', 'normal')
+  const ufNome = dados.ufOrigem || 'SP'
+  const icmsPadrao = resultado.real.detalhes?.aliquotaICMSPercent || 18.0
+  doc.text(`${ufNome} (Alíquota ICMS: ${icmsPadrao.toFixed(1)}%)`, col2X + 24, currentY + 17)
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('Cidade / ISS:', col2X, currentY + 22)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`${resultado.cidade} (${resultado.aliquotaISS.toFixed(1)}%)`, col2X + 24, currentY + 22)
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('Margem Lucro:', col2X, currentY + 27)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`${dados.margemLucro}% estimada`, col2X + 24, currentY + 27)
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('Despesas c/ Crédito:', col2X, currentY + 32)
+  doc.setFont('helvetica', 'normal')
+  const despCredVal = dados.despesasCreditosMensais || 0
   doc.text(
-    `${resultado.cidade} (${resultado.aliquotaISS.toFixed(1)}%)`,
-    col2X + 26,
-    currentY + 17.5,
+    `${formatarMoeda(despCredVal)}/mês (${formatarMoeda(despCredVal * 12)}/ano)`,
+    col2X + 34,
+    currentY + 32,
   )
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Regime Atual:', col2X, currentY + 23)
+  doc.text('% Exportação:', col2X, currentY + 37)
   doc.setFont('helvetica', 'normal')
-  doc.text(String(dados.regimeAtual || 'Simples Nacional'), col2X + 26, currentY + 23)
+  doc.text(
+    `${dados.percentualExportacao || 0}% da receita (desoneração indireta)`,
+    col2X + 24,
+    currentY + 37,
+  )
 
-  currentY += 37
+  currentY += 48
 
   // ==========================================
   // BLOCO 2: RESUMO EXECUTIVO & REGIME RECOMENDADO
@@ -415,7 +458,7 @@ export function gerarRelatorioDiagnosticoPDF({ dados, resultado }: GerarPdfOptio
   doc.setFontSize(7.5)
   doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
   const reformaIntro = doc.splitTextToSize(
-    `Substituição gradual de PIS/COFINS por CBS (federal) e de ICMS/ISS por IBS (estadual/municipal). Regime recomendado no Novo Sistema: ${resultado.novoSistema.regimeRecomendado} (Economia de ${formatarMoeda(resultado.novoSistema.economiaAnual)}/ano).`,
+    `Substituição gradual de PIS/COFINS por CBS (federal) e de ICMS/ISS por IBS (estadual/municipal). Regime recomendado no Novo Sistema: ${resultado.novoSistema.regimeRecomendado} (Economia de ${formatarMoeda(resultado.novoSistema.economiaAnual)}/ano). Curva da transição no ano-base ${resultado.anoBase}: CBS ${(resultado.novoSistema.presumido.detalhesReforma?.aliquotaCBS || 8.8).toFixed(1)}% e IBS ${(resultado.novoSistema.presumido.detalhesReforma?.aliquotaIBS || 0).toFixed(1)}%, mantendo crédito amplo de compras e despesas no Lucro Real.`,
     contentWidth,
   )
   doc.text(reformaIntro, margin, currentY + 2)

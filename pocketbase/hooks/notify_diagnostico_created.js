@@ -59,6 +59,18 @@ onRecordAfterCreateSuccess((e) => {
       }
     }
 
+    const folhaMensal = record.getFloat('folha_pagamento') || 0
+    const despesasCreditos = record.getFloat('despesas_creditos') || 0
+    const percentualExportacao = record.getFloat('percentual_exportacao') || 0
+    const ufOrigem = record.getString('uf_origem') || 'SP'
+    const aliquotaIcms = record.getFloat('aliquota_icms') || 18.0
+
+    // Cálculo do Fator R
+    const folhaTotalCalc = folhaMensal > 0 ? folhaMensal * 12 : folha12
+    const fatorR = rbt12 > 0 ? (folhaTotalCalc / rbt12) * 100 : 0
+    const enquadramentoFatorR =
+      fatorR >= 28 ? 'Anexo III (Fator R ≥ 28%)' : 'Anexo V (Fator R < 28%)'
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -122,8 +134,28 @@ onRecordAfterCreateSuccess((e) => {
                   <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a;">${segmento}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 10px 14px; font-size: 13px; color: #64748b;"><strong>Cidade / ISS:</strong></td>
-                  <td style="padding: 10px 14px; font-size: 14px; color: #0f172a; font-weight: 600;">${cidade} ${aliquotaISS > 0 ? `(${aliquotaISS}% ISS)` : ''}</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b;"><strong>UF Origem / ICMS:</strong></td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; font-weight: 600;">${ufOrigem} (${aliquotaIcms.toFixed(1)}% ICMS)</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b;"><strong>Cidade / ISS:</strong></td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; font-weight: 600;">${cidade} ${aliquotaISS > 0 ? `(${aliquotaISS}% ISS)` : ''}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b;"><strong>Folha Mensal (com pró-labore):</strong></td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a;">${formatMoney(folhaMensal)} /mês</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b;"><strong>Fator R Calculado:</strong></td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; font-weight: 600;">${fatorR.toFixed(1)}% — ${enquadramentoFatorR}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b;"><strong>Despesas c/ Créditos:</strong></td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a;">${formatMoney(despesasCreditos)} /mês (${formatMoney(despesasCreditos * 12)}/ano)</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; font-size: 13px; color: #64748b;"><strong>Receita de Exportação:</strong></td>
+                  <td style="padding: 10px 14px; font-size: 14px; color: #0f172a; font-weight: 600;">${percentualExportacao}% ${percentualExportacao > 0 ? '(Desonerada de tributos indiretos)' : '(Mercado interno 100%)'}</td>
                 </tr>
               </table>
 
@@ -194,5 +226,7 @@ onRecordAfterCreateSuccess((e) => {
     )
   } catch (err) {
     console.log('Erro ao enviar e-mail de notificação de diagnóstico:', err)
+  } finally {
+    e.next()
   }
 })
