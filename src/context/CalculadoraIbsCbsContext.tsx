@@ -82,6 +82,14 @@ interface CalculadoraContextType {
   setFaturamentoAnualProjetado: (v: number) => void
   setorTransicao: TipoAtividade
   setSetorTransicao: (s: TipoAtividade) => void
+  valorEstoqueVirada: number
+  setValorEstoqueVirada: (v: number) => void
+
+  // Etapa 4 - Split Payment
+  taxaMensalCapitalGiro: number
+  setTaxaMensalCapitalGiro: (v: number) => void
+  diasAntecipacaoSplit: number
+  setDiasAntecipacaoSplit: (v: number) => void
 
   // Módulo 6 - Filtros Dashboard
   periodoDashboard: 'mensal' | 'anual'
@@ -205,8 +213,48 @@ interface CalculadoraContextType {
     aliquotaEfetivaTotal: number
     impostoCenarioAtual: number
     diferencaAno: number
+    creditoEstoqueAno: number
+    impostoComCreditoEstoque: number
     alertaCritico?: string
   }>
+
+  // Etapa 3: Alertas dos Limites do Simples
+  alertaLimitesSimples: {
+    faturamentoAnualProjetado: number
+    statusTeto: 'verde' | 'amarelo' | 'vermelho'
+    statusSublimite: 'verde' | 'amarelo' | 'vermelho'
+    tetoMaximo: number // 4.800.000
+    sublimiteMaximo: number // 3.600.000
+    margemRestanteTeto: number
+    margemRestanteSublimite: number
+    percentualAtingidoTeto: number
+    percentualAtingidoSublimite: number
+    mensagemTeto: string
+    mensagemSublimite: string
+    isHibrido: boolean // Entre 3.6M e 4.8M
+    isDesenquadrado: boolean // > 4.8M
+  }
+
+  // Etapa 4: Impacto do Split Payment no Fluxo de Caixa
+  resultadoSplitPayment: {
+    retencaoMensalNota: number // CBS + IBS retidos no ato da nota fiscal
+    recolhimentoAtualMensal: number // Guia DAS / DARF recolhida no dia 20 do mês seguinte
+    diferencaFluxoCaixa: number
+    taxaMensalCapital: number
+    diasAntecipacao: number
+    custoCapitalMensal: number
+    custoCapitalAnual: number
+    explicacaoSimples: string
+  }
+
+  // Etapa 5: Crédito Presumido de Estoque na Transição
+  resultadoEstoque: {
+    valorEstoqueVirada: number
+    aliquotaCreditoPresumido: number
+    creditoTotalEstoque: number
+    economiaAno1: number
+    explicacaoSimples: string
+  }
 
   resultadoDashboard: {
     aliquotaEfetivaAtual: number
@@ -321,6 +369,17 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const [setorTransicao, setSetorTransicao] = useState<TipoAtividade>(
     () => perfilInicial.tipoAtividade || 'servico',
   )
+  // Etapa 5: Valor do estoque na virada (padrão estimado em ~1 a 2 meses de compras da empresa)
+  const [valorEstoqueVirada, setValorEstoqueVirada] = useState<number>(() => {
+    const fat = perfilInicial.faturamentoMensal || 200000
+    const pct = (perfilInicial.percentualComprasVendas ?? 40) / 100
+    // Estimativa inicial: 1,5 meses de compras
+    return Math.round(fat * pct * 1.5)
+  })
+
+  // Etapa 4: Split Payment parâmetros
+  const [taxaMensalCapitalGiro, setTaxaMensalCapitalGiro] = useState<number>(1.0) // 1.0% a.m. (CDI aproximado)
+  const [diasAntecipacaoSplit, setDiasAntecipacaoSplit] = useState<number>(30) // ~30 dias entre nota e guia dia 20
 
   // Módulo 6: Dashboard filtros
   const [periodoDashboard, setPeriodoDashboard] = useState<'mensal' | 'anual'>('mensal')
@@ -366,6 +425,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       despesasCreditos,
       faturamentoAnualProjetado,
       setorTransicao,
+      valorEstoqueVirada,
+      taxaMensalCapitalGiro,
+      diasAntecipacaoSplit,
       periodoDashboard,
       regimeAtualFiltro,
       empresa: perfil.nomeEmpresa,
@@ -406,6 +468,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     if (p.faturamentoAnualProjetado !== undefined)
       setFaturamentoAnualProjetado(p.faturamentoAnualProjetado)
     if (p.setorTransicao) setSetorTransicao(p.setorTransicao)
+    if (p.valorEstoqueVirada !== undefined) setValorEstoqueVirada(p.valorEstoqueVirada)
+    if (p.taxaMensalCapitalGiro !== undefined) setTaxaMensalCapitalGiro(p.taxaMensalCapitalGiro)
+    if (p.diasAntecipacaoSplit !== undefined) setDiasAntecipacaoSplit(p.diasAntecipacaoSplit)
 
     if (p.periodoDashboard) setPeriodoDashboard(p.periodoDashboard)
     if (p.regimeAtualFiltro) setRegimeAtualFiltro(p.regimeAtualFiltro)
@@ -1014,7 +1079,159 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   }, [despesasCreditos, config.totalIvaDual])
 
   // ==========================================
-  // CÁLCULO MÓDULO 5 (Transição 2026 a 2033)
+  // ETAPA 3: ALERTAS DE LIMITES DO SIMPLES NACIONAL
+  // ==========================================
+  const alertaLimitesSimples = useMemo(() => {
+    // Considera o faturamento anual projetado (ou faturamentoMensal × 12)
+    const fatAnual = Math.max(0, faturamentoMensal * 12)
+    const TETO = 4800000 // R$ 4,8 milhões/ano
+    const SUBLIMITE = 3600000 // R$ 3,6 milhões/ano
+
+    const pctTeto = (fatAnual / TETO) * 100
+    const pctSublimite = (fatAnual / SUBLIMITE) * 100
+
+    const margemRestanteTeto = Math.max(0, TETO - fatAnual)
+    const margemRestanteSublimite = Math.max(0, SUBLIMITE - fatAnual)
+
+    // Status do Teto (R$ 4,8M):
+    // Verde: < 90% (< 4.320.000)
+    // Amarelo: >= 90% e <= 100% (4.320.000 a 4.800.000)
+    // Vermelho: > 100% (> 4.800.000)
+    let statusTeto: 'verde' | 'amarelo' | 'vermelho' = 'verde'
+    let mensagemTeto = 'Faturamento dentro do limite legal do Simples Nacional.'
+
+    if (fatAnual > TETO) {
+      statusTeto = 'vermelho'
+      const excesso = fatAnual - TETO
+      mensagemTeto = `Desenquadramento obrigatório do Simples Nacional! Faturamento anual projetado excede o teto de R$ 4.800.000 em R$ ${excesso.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. A empresa deve migrar para o Lucro Presumido, Lucro Real ou IBS/CBS.`
+    } else if (pctTeto >= 90) {
+      statusTeto = 'amarelo'
+      mensagemTeto = `Atenção: faturamento anual projetado atingiu ${pctTeto.toFixed(1)}% do teto do Simples (R$ 4.800.000). Margem restante de segurança de R$ ${margemRestanteTeto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} antes do desenquadramento obrigatório.`
+    }
+
+    // Status do Sublimite (R$ 3,6M):
+    // Verde: < 90% (< 3.240.000)
+    // Amarelo: >= 90% e <= 100%
+    // Vermelho: > 100% (Simples Híbrido)
+    let statusSublimite: 'verde' | 'amarelo' | 'vermelho' = 'verde'
+    let mensagemSublimite = 'ICMS e ISS recolhidos unificados na guia DAS do Simples.'
+
+    const isHibrido = fatAnual > SUBLIMITE && fatAnual <= TETO
+    const isDesenquadrado = fatAnual > TETO
+
+    if (fatAnual > SUBLIMITE) {
+      statusSublimite = 'vermelho'
+      mensagemSublimite = `Empresa no "Simples Híbrido": faturamento anual supera o sublimite de R$ 3.600.000. O ICMS estadual e o ISS municipal deixam de ser recolhidos na guia DAS unificada e passam a ser apurados por fora (débito/crédito regular), o que altera a competitividade frente ao novo IBS/CBS.`
+    } else if (pctSublimite >= 90) {
+      statusSublimite = 'amarelo'
+      mensagemSublimite = `Aproximando do sublimite de R$ 3.600.000 (${pctSublimite.toFixed(1)}%). Restam R$ ${margemRestanteSublimite.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} antes de passar a recolher ICMS e ISS por fora da guia do Simples.`
+    }
+
+    return {
+      faturamentoAnualProjetado: fatAnual,
+      statusTeto,
+      statusSublimite,
+      tetoMaximo: TETO,
+      sublimiteMaximo: SUBLIMITE,
+      margemRestanteTeto,
+      margemRestanteSublimite,
+      percentualAtingidoTeto: Number(pctTeto.toFixed(1)),
+      percentualAtingidoSublimite: Number(pctSublimite.toFixed(1)),
+      mensagemTeto,
+      mensagemSublimite,
+      isHibrido,
+      isDesenquadrado,
+    }
+  }, [faturamentoMensal])
+
+  // ==========================================
+  // ETAPA 4: SPLIT PAYMENT (IMPACTO NO FLUXO DE CAIXA)
+  // ==========================================
+  const resultadoSplitPayment = useMemo(() => {
+    // No IBS/CBS, o imposto bruto é retido diretamente na liquidação da nota/pagamento bancário
+    // Valor mensal retido na nota (split payment bruto da saída)
+    const fatInterno =
+      resultadoComparativo.dadosAdicionais?.receitaTributavelInterna ?? faturamentoMensal
+    const aliqTotalIbsCbs = config.totalIvaDual // 26,50%
+    const fatorReducao = Math.max(
+      0,
+      1 - (resultadoComparativo.ibsCbs.reducaoAplicadaPercentual || 0) / 100,
+    )
+    const aliquotaSaidaEfetiva = aliqTotalIbsCbs * fatorReducao
+
+    // Retenção imediata no momento da nota / recebimento
+    // Na prática do split payment inteligente, o sistema retém o valor apurado ou o débito destacado da nota
+    const retencaoMensalNota = (fatInterno * aliquotaSaidaEfetiva) / 100
+
+    // No sistema atual, o recolhimento se dá pela guia mensal (DAS no Simples dia 20, DARF PIS/COFINS dia 25, etc.)
+    // Usamos o total efetivo apurado do regime atual selecionado
+    let recolhimentoAtualMensal = resultadoComparativo.simplesNacional.totalEfetivo
+    if (regimeAtualFiltro === 'Lucro Real') {
+      recolhimentoAtualMensal = resultadoComparativo.lucroReal.totalEfetivo
+    } else if (regimeAtualFiltro === 'Lucro Presumido') {
+      recolhimentoAtualMensal = resultadoComparativo.lucroPresumido.totalEfetivo
+    }
+
+    // Diferença imediata no caixa: no split payment o dinheiro nem cai na conta corrente da empresa
+    const diferencaFluxoCaixa = retencaoMensalNota - recolhimentoAtualMensal
+
+    // Custo de oportunidade / capital de giro da antecipação
+    // A empresa deixa de rentabilizar esse valor durante a média de dias de antecipação (padrão 30 dias)
+    // Custo capital mensal = valor retido antecipado × taxa mensal × (dias / 30)
+    const taxaDecimal = Math.max(0, taxaMensalCapitalGiro) / 100
+    const fatorTempo = Math.max(1, diasAntecipacaoSplit) / 30
+    const custoCapitalMensal = retencaoMensalNota * taxaDecimal * fatorTempo
+    const custoCapitalAnual = custoCapitalMensal * 12
+
+    const explicacaoSimples =
+      'No novo sistema (IBS/CBS), a retenção tributária ocorre automaticamente na conta bancária no instante em que o cliente paga a nota (split payment). No modelo atual, a empresa recebe 100% do valor da venda e só desembolsa o imposto por guia no dia 20 do mês seguinte, utilizando esse caixa como capital de giro sem juros por até 30 a 50 dias. Essa antecipação gera um custo financeiro invisível equivalente aos juros de capital de giro ou perda de rendimento no CDI.'
+
+    return {
+      retencaoMensalNota,
+      recolhimentoAtualMensal,
+      diferencaFluxoCaixa,
+      taxaMensalCapital: taxaMensalCapitalGiro,
+      diasAntecipacao: diasAntecipacaoSplit,
+      custoCapitalMensal,
+      custoCapitalAnual,
+      explicacaoSimples,
+    }
+  }, [
+    faturamentoMensal,
+    config.totalIvaDual,
+    resultadoComparativo,
+    regimeAtualFiltro,
+    taxaMensalCapitalGiro,
+    diasAntecipacaoSplit,
+  ])
+
+  // ==========================================
+  // ETAPA 5: CRÉDITO PRESUMIDO DE ESTOQUE NA TRANSIÇÃO
+  // ==========================================
+  const resultadoEstoque = useMemo(() => {
+    // Alíquota de crédito presumido de abertura na virada (CBS 8,80% na entrada plena em 2027)
+    // LC 214/2025 prevê apropriação de crédito sobre os estoques inventariados no encerramento do regime anterior
+    const estoque = Math.max(0, valorEstoqueVirada)
+    // Alíquota de crédito de abertura: alíquota de CBS vigente em 2027 (8,80% ou taxa configurada)
+    const aliqCredito = config.cbsPadrao // 8,80%
+    const creditoTotalEstoque = (estoque * aliqCredito) / 100
+    // O crédito de estoque é apropriado ao longo do primeiro ano de vigência plena (2027)
+    const economiaAno1 = creditoTotalEstoque
+
+    const explicacaoSimples =
+      'As mercadorias e insumos estocados no encerramento de 2026 foram adquiridos sob as regras antigas. A reforma permite calcular um crédito presumido de abertura sobre esse estoque (LC 214/2025), garantindo que a empresa abata até 8,80% (CBS) do imposto a pagar no primeiro ano de transição (2027), evitando bitributação na revenda.'
+
+    return {
+      valorEstoqueVirada: estoque,
+      aliquotaCreditoPresumido: aliqCredito,
+      creditoTotalEstoque,
+      economiaAno1,
+      explicacaoSimples,
+    }
+  }, [valorEstoqueVirada, config.cbsPadrao])
+
+  // ==========================================
+  // CÁLCULO MÓDULO 5 (Transição 2026 a 2033) COM CRÉDITO DE ESTOQUE
   // ==========================================
   const resultadoTransicao = useMemo(() => {
     const anos = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
@@ -1133,6 +1350,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       const impostoEstimado = (fatAnual * aliqEfetivaAno) / 100
       const diferencaAno = impostoEstimado - impostoAtual
 
+      // Etapa 5: Crédito presumido de estoque abatido no primeiro ano de CBS plena (2027)
+      const creditoEstoqueAno = ano === 2027 ? resultadoEstoque.economiaAno1 : 0
+      const impostoComCreditoEstoque = Math.max(0, impostoEstimado - creditoEstoqueAno)
+
       return {
         ano,
         fase,
@@ -1146,10 +1367,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         aliquotaEfetivaTotal: Number(aliqEfetivaAno.toFixed(2)),
         impostoCenarioAtual: impostoAtual,
         diferencaAno,
+        creditoEstoqueAno,
+        impostoComCreditoEstoque,
         alertaCritico,
       }
     })
-  }, [config, faturamentoAnualProjetado, setorTransicao])
+  }, [config, faturamentoAnualProjetado, setorTransicao, resultadoEstoque])
 
   // ==========================================
   // CÁLCULO MÓDULO 6 (Dashboard KPIs)
@@ -1232,7 +1455,23 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         aliquotaIbs: t.aliquotaIbs,
         impostoEstimado: t.impostoEstimado,
         aliquotaEfetivaTotal: t.aliquotaEfetivaTotal,
+        creditoEstoqueAno: t.creditoEstoqueAno,
       })),
+      resultadoEstoque: {
+        valorEstoqueVirada: resultadoEstoque.valorEstoqueVirada,
+        aliquotaCreditoPresumido: resultadoEstoque.aliquotaCreditoPresumido,
+        creditoTotalEstoque: resultadoEstoque.creditoTotalEstoque,
+        economiaAno1: resultadoEstoque.economiaAno1,
+      },
+      resultadoSplitPayment: {
+        retencaoMensalNota: resultadoSplitPayment.retencaoMensalNota,
+        recolhimentoAtualMensal: resultadoSplitPayment.recolhimentoAtualMensal,
+        diferencaFluxoCaixa: resultadoSplitPayment.diferencaFluxoCaixa,
+        taxaMensalCapital: resultadoSplitPayment.taxaMensalCapital,
+        custoCapitalMensal: resultadoSplitPayment.custoCapitalMensal,
+        custoCapitalAnual: resultadoSplitPayment.custoCapitalAnual,
+        diasAntecipacao: resultadoSplitPayment.diasAntecipacao,
+      },
       resultadoDashboard,
     }
   }
@@ -1286,6 +1525,13 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         setFaturamentoAnualProjetado,
         setorTransicao,
         setSetorTransicao,
+        valorEstoqueVirada,
+        setValorEstoqueVirada,
+
+        taxaMensalCapitalGiro,
+        setTaxaMensalCapitalGiro,
+        diasAntecipacaoSplit,
+        setDiasAntecipacaoSplit,
 
         periodoDashboard,
         setPeriodoDashboard,
@@ -1303,6 +1549,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         resultadoComparativo,
         resultadoCreditos,
         resultadoTransicao,
+        alertaLimitesSimples,
+        resultadoSplitPayment,
+        resultadoEstoque,
         resultadoDashboard,
       }}
     >

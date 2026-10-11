@@ -441,6 +441,87 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   currentY += 40
 
   // ==========================================
+  // BLOCO NOVO: SPLIT PAYMENT & CRÉDITO DE ESTOQUE
+  // ==========================================
+  if (resultados.resultadoSplitPayment || resultados.resultadoEstoque) {
+    verificarQuebraPagina(38)
+
+    // Caixa Split Payment
+    if (resultados.resultadoSplitPayment) {
+      doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
+      doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+      doc.roundedRect(margin, currentY, halfWidth, 32, 2, 2, 'FD')
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8)
+      doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
+      doc.text('SPLIT PAYMENT • FLUXO DE CAIXA', margin + 4, currentY + 5.5)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      doc.text(
+        `Retenção na Nota (IBS/CBS): ${formatarMoeda(resultados.resultadoSplitPayment.retencaoMensalNota)}/mês`,
+        margin + 4,
+        currentY + 11.5,
+      )
+      doc.text(
+        `Recolhimento Antigo (Dia 20): ${formatarMoeda(resultados.resultadoSplitPayment.recolhimentoAtualMensal)}/mês`,
+        margin + 4,
+        currentY + 16.5,
+      )
+      doc.text(
+        `Taxa de Capital de Giro: ${resultados.resultadoSplitPayment.taxaMensalCapital.toFixed(2)}% a.m. (~${resultados.resultadoSplitPayment.diasAntecipacao} dias)`,
+        margin + 4,
+        currentY + 21.5,
+      )
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(185, 28, 28)
+      doc.text(
+        `Custo da Antecipação: ${formatarMoeda(resultados.resultadoSplitPayment.custoCapitalAnual)}/ano`,
+        margin + 4,
+        currentY + 27,
+      )
+    }
+
+    // Caixa Crédito de Estoque
+    if (resultados.resultadoEstoque) {
+      doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
+      doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+      doc.roundedRect(box4X, currentY, halfWidth, 32, 2, 2, 'FD')
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8)
+      doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
+      doc.text('CRÉDITO PRESUMIDO DE ESTOQUE', box4X + 4, currentY + 5.5)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      doc.text(
+        `Estoque na Virada: ${formatarMoeda(resultados.resultadoEstoque.valorEstoqueVirada)}`,
+        box4X + 4,
+        currentY + 11.5,
+      )
+      doc.text(
+        `Alíquota de Crédito Presumido: ${resultados.resultadoEstoque.aliquotaCreditoPresumido.toFixed(2)}% (CBS)`,
+        box4X + 4,
+        currentY + 16.5,
+      )
+      doc.text('Aproveitamento no 1º Ano da Transição (2027)', box4X + 4, currentY + 21.5)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(COR_VERDE[0], COR_VERDE[1], COR_VERDE[2])
+      doc.text(
+        `Abatimento de Estoque: -${formatarMoeda(resultados.resultadoEstoque.economiaAno1)}`,
+        box4X + 4,
+        currentY + 27,
+      )
+    }
+
+    currentY += 38
+  }
+
+  // ==========================================
   // BLOCO 5: MÓDULO 5 - CRONOGRAMA DE TRANSIÇÃO (2026-2033)
   // ==========================================
   verificarQuebraPagina(55)

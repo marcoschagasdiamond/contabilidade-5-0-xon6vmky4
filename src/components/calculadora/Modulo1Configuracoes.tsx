@@ -5,9 +5,10 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Sliders, RotateCcw, Info, CheckCircle2, ShieldCheck, Zap } from 'lucide-react'
+import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
 
 export default function Modulo1Configuracoes() {
-  const { config, updateConfig, resetConfig } = useCalculadoraIbsCbs()
+  const { config, updateConfig, resetConfig, alertaLimitesSimples } = useCalculadoraIbsCbs()
 
   const handleInputChange = (field: keyof typeof config, value: string) => {
     const limpo = value.replace(',', '.')
@@ -47,6 +48,9 @@ export default function Modulo1Configuracoes() {
           </Button>
         </div>
       </div>
+
+      {/* ETAPA 3: FARÓIS DE LIMITES DO SIMPLES NACIONAL NO MÓDULO 1 */}
+      <FarolLimitesSimples alerta={alertaLimitesSimples} compacto={false} />
 
       {/* Grid de Configurações */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

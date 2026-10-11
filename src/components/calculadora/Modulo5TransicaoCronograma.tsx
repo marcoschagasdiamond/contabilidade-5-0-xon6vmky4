@@ -41,7 +41,10 @@ export default function Modulo5TransicaoCronograma() {
     setFaturamentoAnualProjetado,
     setorTransicao,
     setSetorTransicao,
+    valorEstoqueVirada,
+    setValorEstoqueVirada,
     resultadoTransicao,
+    resultadoEstoque,
     config,
     origemDadosEmpresa,
     restaurarDadosEmpresaNoModulo,
@@ -53,6 +56,12 @@ export default function Modulo5TransicaoCronograma() {
     const raw = e.target.value.replace(/\D/g, '')
     const valor = Number(raw) / 100
     setFaturamentoAnualProjetado(valor)
+  }
+
+  const handleEstoqueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '')
+    const valor = Number(raw) / 100
+    setValorEstoqueVirada(valor)
   }
 
   // Dados para o gráfico Recharts de evolução da alíquota efetiva
@@ -191,6 +200,94 @@ export default function Modulo5TransicaoCronograma() {
         </div>
       </div>
 
+      {/* ETAPA 5: BLOCO DE CRÉDITO PRESUMIDO DE ESTOQUE NA TRANSIÇÃO */}
+      <Card className="border border-[#D4AF37]/50 shadow-md bg-white overflow-hidden">
+        <div className="bg-gradient-to-r from-[#07132B] to-[#122347] text-white p-5 border-b border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 uppercase tracking-wider">
+              <TrendingUp className="w-3.5 h-3.5" />
+              Etapa 5 • Crédito de Abertura
+            </div>
+            <h3 className="text-lg font-heading font-extrabold text-white">
+              Crédito Presumido de Estoque na Transição (Virada de 2026 para 2027)
+            </h3>
+            <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+              Evite bitributação: mercadorias em estoque na virada geram direito a crédito de
+              abertura da CBS plena (8,80%), abatendo diretamente o imposto do primeiro ano (2027).
+            </p>
+          </div>
+
+          <div className="bg-white/5 p-3 rounded-xl border border-white/10 shrink-0 text-left sm:text-right">
+            <span className="text-[10px] text-slate-300 uppercase tracking-wider block font-semibold">
+              Crédito Presumido Total
+            </span>
+            <span className="text-xl font-mono font-extrabold text-[#D4AF37]">
+              {formatarMoeda(resultadoEstoque.creditoTotalEstoque)}
+            </span>
+          </div>
+        </div>
+
+        <CardContent className="p-6 space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Campo Editável: Valor do Estoque na Virada */}
+            <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <Label htmlFor="valorEstoque" className="text-xs font-bold text-[#07132B] block">
+                Valor de Estoque em Posse na Virada (R$)
+              </Label>
+              <Input
+                id="valorEstoque"
+                type="text"
+                value={valorEstoqueVirada.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                })}
+                onChange={handleEstoqueChange}
+                className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11"
+              />
+              <span className="text-[11px] text-slate-500 block leading-tight">
+                Custo de aquisição do inventário físico apurado no balanço de encerramento de 2026.
+              </span>
+            </div>
+
+            {/* Alíquota de Crédito Presumido Aplicada */}
+            <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50 space-y-1">
+              <span className="text-xs font-bold text-blue-900 block uppercase tracking-wide">
+                Alíquota do Crédito Presumido
+              </span>
+              <p className="text-2xl font-mono font-bold text-blue-900">
+                {formatarPorcentagem(resultadoEstoque.aliquotaCreditoPresumido)}
+              </p>
+              <p className="text-[11px] text-blue-700 leading-tight">
+                Baseado na CBS plena incidente na abertura dos novos fatos geradores a partir de
+                2027.
+              </p>
+            </div>
+
+            {/* Abatimento Direto no Ano 1 */}
+            <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-1">
+              <span className="text-xs font-bold text-emerald-900 block uppercase tracking-wide">
+                Abatimento no 1º Ano (2027)
+              </span>
+              <p className="text-2xl font-mono font-bold text-emerald-700">
+                - {formatarMoeda(resultadoEstoque.economiaAno1)}
+              </p>
+              <p className="text-[11px] text-emerald-800 leading-tight">
+                Crédito financeiro direto deduzido da guia de CBS a pagar na curva de transição de
+                2027.
+              </p>
+            </div>
+          </div>
+
+          {/* Explicação sem juridiquês do estoque */}
+          <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/90 text-xs text-amber-950 space-y-1">
+            <strong className="block font-bold">
+              Como funciona o crédito de estoque na prática (Sem Juridiquês):
+            </strong>
+            <p className="leading-relaxed">{resultadoEstoque.explicacaoSimples}</p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Linha do Tempo Interativa de 2026 a 2033 Conforme Especificação */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -327,6 +424,29 @@ export default function Modulo5TransicaoCronograma() {
               </span>
             </div>
           </div>
+
+          {/* Destaque se o ano selecionado for 2027 com crédito de estoque */}
+          {anoAtualDetalhe.ano === 2027 && resultadoEstoque.economiaAno1 > 0 && (
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <strong className="block text-sm font-bold text-emerald-950">
+                  Crédito Presumido de Estoque Ativo em 2027:
+                </strong>
+                <p className="text-xs leading-relaxed text-emerald-800">
+                  Imposto bruto projetado de {formatarMoeda(anoAtualDetalhe.impostoEstimado)}{' '}
+                  reduzido para{' '}
+                  <strong className="font-mono text-emerald-950">
+                    {formatarMoeda(anoAtualDetalhe.impostoComCreditoEstoque)}
+                  </strong>{' '}
+                  após abater os {formatarMoeda(resultadoEstoque.economiaAno1)} de crédito de
+                  estoque.
+                </p>
+              </div>
+              <span className="text-xs font-mono font-bold px-3 py-1 bg-emerald-600 text-white rounded-lg shrink-0">
+                Economia: -{formatarMoeda(resultadoEstoque.economiaAno1)}
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
 

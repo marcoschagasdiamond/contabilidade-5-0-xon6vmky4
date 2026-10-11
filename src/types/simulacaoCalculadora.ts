@@ -41,6 +41,11 @@ export interface ParametrosSimulacaoCalculadora {
   // Módulo 5 - Transição 2026-2033
   faturamentoAnualProjetado: number
   setorTransicao: TipoAtividade
+  valorEstoqueVirada?: number // Etapa 5: Crédito presumido de estoque
+
+  // Parâmetros de Split Payment (Etapa 4)
+  taxaMensalCapitalGiro?: number // % a.m. (padrão 1,0%)
+  diasAntecipacaoSplit?: number // dias médios de antecipação (padrão 30 dias)
 
   // Módulo 6 - Dashboard
   periodoDashboard: 'mensal' | 'anual'
@@ -115,7 +120,23 @@ export interface ResultadosSimulacaoCalculadora {
     aliquotaIbs: number
     impostoEstimado: number
     aliquotaEfetivaTotal: number
+    creditoEstoqueAno?: number
   }>
+  resultadoEstoque?: {
+    valorEstoqueVirada: number
+    aliquotaCreditoPresumido: number
+    creditoTotalEstoque: number
+    economiaAno1: number
+  }
+  resultadoSplitPayment?: {
+    retencaoMensalNota: number
+    recolhimentoAtualMensal: number
+    diferencaFluxoCaixa: number
+    taxaMensalCapital: number
+    custoCapitalMensal: number
+    custoCapitalAnual: number
+    diasAntecipacao: number
+  }
   resultadoDashboard: {
     aliquotaEfetivaAtual: number
     aliquotaEfetivaNova: number

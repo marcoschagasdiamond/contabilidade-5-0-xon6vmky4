@@ -24,9 +24,15 @@ import { useToast } from '@/hooks/use-toast'
 import { listarSimulacoes } from '@/services/simulacoesCalculadora'
 import { gerarRelatorioSimulacaoPDF } from '@/lib/pdfSimulacaoCalculadora'
 import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
+import { useSearchParams } from 'react-router-dom'
 import { ModalSalvarSimulacao } from '@/components/calculadora/ModalSalvarSimulacao'
 import { ModalCompararSimulacoes } from '@/components/calculadora/ModalCompararSimulacoes'
 import { ListaSimulacoes } from '@/components/calculadora/ListaSimulacoes'
+import {
+  ModalCompartilharLink,
+  decodificarParametrosDaUrl,
+} from '@/components/calculadora/ModalCompartilharLink'
+import { Share2, X } from 'lucide-react'
 import Modulo1Configuracoes from '@/components/calculadora/Modulo1Configuracoes'
 import Modulo2CalculadoraSimples from '@/components/calculadora/Modulo2CalculadoraSimples'
 import Modulo3ComparativoRegimes from '@/components/calculadora/Modulo3ComparativoRegimes'
@@ -103,10 +109,43 @@ function CalculadoraConteudo() {
   // Estados de simulações
   const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
   const [modalCompararAberto, setModalCompararAberto] = useState(false)
+  const [modalCompartilharAberto, setModalCompartilharAberto] = useState(false)
   const [simulacoes, setSimulacoes] = useState<SimulacaoCalculadora[]>([])
   const [carregandoSimulacoes, setCarregandoSimulacoes] = useState(false)
   const [selecionadasComparar, setSelecionadasComparar] = useState<string[]>([])
   const [gerandoPdf, setGerandoPdf] = useState(false)
+
+  // Etapa 6: Detecção de link compartilhado via query string (?simulacao=...)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [simulacaoCarregadaViaLink, setSimulacaoCarregadaViaLink] = useState(false)
+  const [empresaLink, setEmpresaLink] = useState<string>('')
+
+  React.useEffect(() => {
+    const rawParam = searchParams.get('simulacao')
+    if (rawParam) {
+      try {
+        const paramsRestaurados = decodificarParametrosDaUrl(rawParam)
+        if (paramsRestaurados) {
+          restaurarSimulacao(paramsRestaurados)
+          setSimulacaoCarregadaViaLink(true)
+          setEmpresaLink(paramsRestaurados.empresa || 'Cenário Compartilhado')
+          toast({
+            title: 'Simulação Carregada via Link!',
+            description:
+              'Os parâmetros e cálculos compartilhados foram restaurados com sucesso na sua tela.',
+          })
+        }
+      } catch (err) {
+        console.error('Falha ao restaurar simulação da URL:', err)
+      }
+    }
+  }, [searchParams])
+
+  const fecharAvisoLink = () => {
+    setSimulacaoCarregadaViaLink(false)
+    searchParams.delete('simulacao')
+    setSearchParams(searchParams, { replace: true })
+  }
 
   // Carrega simulações do usuário ou locais
   const recarregarSimulacoes = async () => {
@@ -221,9 +260,17 @@ function CalculadoraConteudo() {
                 {resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%
               </strong>
             </span>
-
-            {/* BOTÕES DE AÇÃO RÁPIDA: SALVAR E BAIXAR PDF */}
+            {/* BOTÕES DE AÇÃO RÁPIDA: SALVAR, COMPARTILHAR E BAIXAR PDF */}
             <div className="flex items-center gap-2 ml-auto">
+              <button
+                type="button"
+                onClick={() => setModalCompartilharAberto(true)}
+                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[#D4AF37] border border-[#D4AF37]/40 font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+                title="Compartilhar simulação via link público direto"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>Compartilhar</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setModalSalvarAberto(true)}
@@ -241,10 +288,46 @@ function CalculadoraConteudo() {
                 <FileDown className="w-3.5 h-3.5" />
                 <span>{gerandoPdf ? 'Gerando...' : 'Baixar PDF'}</span>
               </button>
-            </div>
+            </div>{' '}
           </div>
         </div>
       </div>
+
+      {/* ETAPA 6: BANNER SUTIL QUANDO CARREGADO VIA LINK COMPARTILHADO */}
+      {simulacaoCarregadaViaLink && (
+        <div className="bg-gradient-to-r from-emerald-900 via-[#07132B] to-emerald-950 text-white border-b border-emerald-500/40 py-2.5 px-4 sm:px-6 shadow-inner animate-fade-in">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-bold text-emerald-300">
+                Simulação carregada via Link Compartilhado:
+              </span>
+              <span className="text-white font-semibold">"{empresaLink}"</span>
+              <span className="hidden sm:inline text-slate-300">
+                — você pode navegar pelos 6 módulos e salvar este cenário na sua conta a qualquer
+                momento.
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setModalSalvarAberto(true)}
+                className="px-2.5 py-1 rounded bg-[#D4AF37] text-[#07132B] font-bold hover:bg-[#E5C158] text-[11px] transition-colors"
+              >
+                Salvar na Minha Conta
+              </button>
+              <button
+                type="button"
+                onClick={fecharAvisoLink}
+                className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white"
+                title="Fechar aviso"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ÁREA PRINCIPAL COM MENU LATERAL E CONTEÚDO */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -415,6 +498,13 @@ function CalculadoraConteudo() {
         onOpenChange={setModalCompararAberto}
         simulacoes={simulacoesParaComparar}
         onCarregarSimulacao={handleCarregarSimulacao}
+      />
+
+      {/* MODAL COMPARTILHAR LINK */}
+      <ModalCompartilharLink
+        open={modalCompartilharAberto}
+        onOpenChange={setModalCompartilharAberto}
+        parametros={obterSnapshotParametros()}
       />
     </div>
   )

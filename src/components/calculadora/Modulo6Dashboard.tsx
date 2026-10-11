@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { gerarRelatorioSimulacaoPDF } from '@/lib/pdfSimulacaoCalculadora'
 import { ModalSalvarSimulacao } from '@/components/calculadora/ModalSalvarSimulacao'
+import { ModalCompartilharLink } from '@/components/calculadora/ModalCompartilharLink'
 import {
   Select,
   SelectContent,
@@ -42,7 +43,11 @@ import {
   ShieldAlert,
   BookmarkPlus,
   FileDown,
+  Share2,
+  Zap,
 } from 'lucide-react'
+import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
+import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
 
 const CORES_PIZZA = ['#07132B', '#D4AF37', '#10B981', '#3B82F6', '#6366F1', '#EC4899', '#8B5CF6']
 
@@ -62,6 +67,13 @@ export default function Modulo6Dashboard() {
     resultadoComparativo,
     resultadoCreditos,
     resultadoTransicao,
+    alertaLimitesSimples,
+    resultadoSplitPayment,
+    resultadoEstoque,
+    taxaMensalCapitalGiro,
+    setTaxaMensalCapitalGiro,
+    diasAntecipacaoSplit,
+    setDiasAntecipacaoSplit,
     despesasCreditos,
     obterSnapshotParametros,
     obterSnapshotResultados,
@@ -69,6 +81,7 @@ export default function Modulo6Dashboard() {
 
   const { toast } = useToast()
   const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
+  const [modalCompartilharAberto, setModalCompartilharAberto] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
   const handleBaixarPdfDashboard = () => {
@@ -180,6 +193,16 @@ export default function Modulo6Dashboard() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setModalCompartilharAberto(true)}
+                className="bg-white/10 hover:bg-white/20 text-[#D4AF37] border-[#D4AF37]/50 font-bold text-xs h-9 shadow-md flex items-center gap-1.5"
+                title="Compartilhar link da simulação"
+              >
+                <Share2 className="w-4 h-4" />
+                Compartilhar
+              </Button>
               <Button
                 type="button"
                 onClick={() => setModalSalvarAberto(true)}
@@ -309,6 +332,9 @@ export default function Modulo6Dashboard() {
         </CardContent>
       </Card>
 
+      {/* ETAPA 3: FARÓIS DO SIMPLES NACIONAL (RESUMO EXECUTIVO NO DASHBOARD) */}
+      <FarolLimitesSimples alerta={alertaLimitesSimples} compacto={false} />
+
       {/* Cards de KPI no Topo Conforme Especificação */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Alíquota Efetiva Atual */}
@@ -392,6 +418,16 @@ export default function Modulo6Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ETAPA 4: BLOCO IMPACTO DO SPLIT PAYMENT NO FLUXO DE CAIXA NO DASHBOARD */}
+      <BlocoSplitPayment
+        resultadoSplitPayment={resultadoSplitPayment}
+        taxaMensalCapitalGiro={taxaMensalCapitalGiro}
+        setTaxaMensalCapitalGiro={setTaxaMensalCapitalGiro}
+        diasAntecipacaoSplit={diasAntecipacaoSplit}
+        setDiasAntecipacaoSplit={setDiasAntecipacaoSplit}
+        regimeAtualNome={regimeAtualFiltro}
+      />
 
       {/* 3 Gráficos Conforme Especificação */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -732,6 +768,13 @@ export default function Modulo6Dashboard() {
         parametros={obterSnapshotParametros()}
         resultados={obterSnapshotResultados()}
         onSalvoComSucesso={() => {}}
+      />
+
+      {/* Modal Compartilhar Simulação */}
+      <ModalCompartilharLink
+        open={modalCompartilharAberto}
+        onOpenChange={setModalCompartilharAberto}
+        parametros={obterSnapshotParametros()}
       />
     </div>
   )

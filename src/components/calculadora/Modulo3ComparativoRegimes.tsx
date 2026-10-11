@@ -54,6 +54,8 @@ import {
   Building2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
+import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
 
 export default function Modulo3ComparativoRegimes() {
   const {
@@ -84,6 +86,12 @@ export default function Modulo3ComparativoRegimes() {
     ufOrigem,
     setUfOrigem,
     resultadoComparativo,
+    alertaLimitesSimples,
+    resultadoSplitPayment,
+    taxaMensalCapitalGiro,
+    setTaxaMensalCapitalGiro,
+    diasAntecipacaoSplit,
+    setDiasAntecipacaoSplit,
     origemDadosEmpresa,
     restaurarDadosEmpresaNoModulo,
   } = useCalculadoraIbsCbs()
@@ -713,8 +721,27 @@ export default function Modulo3ComparativoRegimes() {
               </span>
             </div>
           </div>
+
+          {/* ETAPA 3: FARÓIS DO SIMPLES NACIONAL (TETO R$ 4,8M E SUBLIMITE R$ 3,6M) */}
+          <div className="pt-2">
+            <FarolLimitesSimples alerta={alertaLimitesSimples} compacto={false} />
+          </div>
         </div>
       </div>
+
+      {/* ETAPA 4: BLOCO IMPACTO DO SPLIT PAYMENT NO FLUXO DE CAIXA */}
+      <BlocoSplitPayment
+        resultadoSplitPayment={resultadoSplitPayment}
+        taxaMensalCapitalGiro={taxaMensalCapitalGiro}
+        setTaxaMensalCapitalGiro={setTaxaMensalCapitalGiro}
+        diasAntecipacaoSplit={diasAntecipacaoSplit}
+        setDiasAntecipacaoSplit={setDiasAntecipacaoSplit}
+        regimeAtualNome={
+          resultadoComparativo.regimeMaisVantajoso === 'Simples Nacional'
+            ? 'Simples Nacional'
+            : 'Lucro Presumido / Real'
+        }
+      />
 
       {/* Card de Conclusão / Vencedor */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
