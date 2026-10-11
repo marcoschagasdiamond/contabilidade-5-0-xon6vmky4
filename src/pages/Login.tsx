@@ -62,7 +62,7 @@ export default function Login() {
   // Preencher credenciais de admin para teste rápido
   const preencherAdmin = () => {
     setEmail('marcoschagasdiamond@icloud.com')
-    setPassword('Skip@Pass')
+    setPassword('M@c318180')
   }
 
   return (

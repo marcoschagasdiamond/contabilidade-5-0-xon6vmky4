@@ -62,7 +62,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null)
   }
 
-  const isAdmin = user?.email === 'marcoschagasdiamond@icloud.com'
+  const isAdmin =
+    (user as any)?.role === 'admin' || user?.email === 'marcoschagasdiamond@icloud.com'
 
   return (
     <AuthContext.Provider
