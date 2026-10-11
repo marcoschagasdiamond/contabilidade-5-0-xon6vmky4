@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import {
   Lock,
   Mail,
@@ -21,20 +21,35 @@ export default function Login() {
   const { login, isAuthenticated, isAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
+
+  // Helper para obter o destino de retorno (state ou query param ?redirect=...)
+  const getDestination = (): string | null => {
+    const fromState = (location.state as { from?: { pathname: string; search?: string } })?.from
+    if (fromState) {
+      return `${fromState.pathname}${fromState.search || ''}`
+    }
+    const redirectParam = searchParams.get('redirect')
+    if (redirectParam && redirectParam.startsWith('/')) {
+      return redirectParam
+    }
+    return null
+  }
+
+  const destination = getDestination()
 
   // Se já estiver logado, redireciona adequadamente
   React.useEffect(() => {
     if (isAuthenticated) {
-      const from = (location.state as { from?: { pathname: string } })?.from?.pathname
-      if (from) {
-        navigate(from, { replace: true })
+      if (destination) {
+        navigate(destination, { replace: true })
       } else if (isAdmin) {
         navigate('/admin', { replace: true })
       } else {
         navigate('/minha-conta', { replace: true })
       }
     }
-  }, [isAuthenticated, isAdmin, navigate, location.state])
+  }, [isAuthenticated, isAdmin, navigate, destination])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,9 +58,8 @@ export default function Login() {
 
     try {
       await login(email.trim().toLowerCase(), password)
-      const from = (location.state as { from?: { pathname: string } })?.from?.pathname
-      if (from) {
-        navigate(from, { replace: true })
+      if (destination) {
+        navigate(destination, { replace: true })
       } else if (email.trim().toLowerCase() === 'marcoschagasdiamond@icloud.com') {
         navigate('/admin', { replace: true })
       } else {
@@ -168,7 +182,15 @@ export default function Login() {
           <div className="mt-4 pt-3 border-t border-slate-100 text-center">
             <p className="text-xs text-slate-600">
               Ainda não tem conta de cliente?{' '}
-              <Link to="/cadastro" className="font-bold text-[#145A32] hover:underline">
+              <Link
+                to={
+                  destination
+                    ? `/cadastro?redirect=${encodeURIComponent(destination)}`
+                    : '/cadastro'
+                }
+                state={location.state}
+                className="font-bold text-[#145A32] hover:underline"
+              >
                 Cadastre-se gratuitamente
               </Link>
             </p>

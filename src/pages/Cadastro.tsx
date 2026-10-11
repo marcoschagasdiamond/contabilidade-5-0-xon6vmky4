@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import {
   Lock,
   Mail,
@@ -25,15 +25,30 @@ export default function Cadastro() {
   const { signup, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
+
+  // Helper para obter o destino de retorno (state ou query param ?redirect=...)
+  const getDestination = (): string | null => {
+    const fromState = (location.state as { from?: { pathname: string; search?: string } })?.from
+    if (fromState) {
+      return `${fromState.pathname}${fromState.search || ''}`
+    }
+    const redirectParam = searchParams.get('redirect')
+    if (redirectParam && redirectParam.startsWith('/')) {
+      return redirectParam
+    }
+    return null
+  }
+
+  const destination = getDestination()
 
   // Se já estiver logado, redireciona
   React.useEffect(() => {
     if (isAuthenticated) {
-      const from =
-        (location.state as { from?: { pathname: string } })?.from?.pathname || '/minha-conta'
-      navigate(from, { replace: true })
+      const target = destination || '/minha-conta'
+      navigate(target, { replace: true })
     }
-  }, [isAuthenticated, navigate, location.state])
+  }, [isAuthenticated, navigate, destination])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,10 +68,9 @@ export default function Cadastro() {
 
     try {
       await signup(nome, email, password, passwordConfirm)
-      // Após cadastrar, direciona para Minha Conta / Dados da Empresa
-      const from =
-        (location.state as { from?: { pathname: string } })?.from?.pathname || '/dados-empresa'
-      navigate(from, { replace: true })
+      // Após cadastrar, direciona para o destino solicitado ou padrão Dados da Empresa
+      const target = destination || '/dados-empresa'
+      navigate(target, { replace: true })
     } catch (err: any) {
       console.error('Falha no cadastro:', err)
       if (err?.data?.data?.email?.message) {
@@ -223,7 +237,11 @@ export default function Cadastro() {
           <div className="mt-6 pt-5 border-t border-slate-100 text-center">
             <p className="text-xs text-slate-600">
               Já possui conta na plataforma?{' '}
-              <Link to="/login" className="font-bold text-[#145A32] hover:underline">
+              <Link
+                to={destination ? `/login?redirect=${encodeURIComponent(destination)}` : '/login'}
+                state={location.state}
+                className="font-bold text-[#145A32] hover:underline"
+              >
                 Entrar agora
               </Link>
             </p>

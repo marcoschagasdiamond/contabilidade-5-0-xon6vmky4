@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { DadosEmpresaPerfil, DADOS_EMPRESA_PADRAO } from '@/types/dadosEmpresa'
 import {
@@ -74,6 +75,10 @@ import {
   Phone,
   Mail,
   User,
+  LogIn,
+  UserPlus,
+  Cloud,
+  Lock,
 } from 'lucide-react'
 
 // Formatador de telefone brasileiro padrão (+55 XX XXXXX-XXXX)
@@ -94,6 +99,8 @@ const formatPhoneBR = (value: string) => {
 
 export default function DadosEmpresa() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth()
   const { dadosEmpresa, temDadosSalvos, salvoNoBanco, isSalvando, salvar, restaurarPadrao } =
     useDadosEmpresa()
 
@@ -103,6 +110,9 @@ export default function DadosEmpresa() {
   const destinoParam = searchParams.get('destino') || ''
   const destinoFinal =
     destinoParam === '/calculadora-ibs-cbs' || destinoParam === '/diagnostico' ? destinoParam : ''
+
+  // URL atual completa com query parameters para retorno pós-login
+  const currentPathWithSearch = `${location.pathname}${location.search}`
 
   const [salvoComSucesso, setSalvoComSucesso] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -254,6 +264,192 @@ export default function DadosEmpresa() {
       : 0
   const aliqIcmsUf = obterAliquotaIcmsUf(formData.ufOrigem)
   const infoCidade = obterAliquotaISS(formData.cidade)
+
+  // ESTADO DE CARREGAMENTO DE AUTENTICAÇÃO
+  if (authLoading) {
+    return (
+      <div className="bg-slate-50 min-h-screen">
+        <DiamondHeader
+          badge="DIAMOND GROUP • CADASTRO OPERACIONAL ÚNICO"
+          titulo="Dados da Empresa"
+          subtitulo="Preencha uma única vez os dados operacionais e parâmetros fiscais da sua empresa. Eles alimentam instantaneamente o Diagnóstico Tributário, a Calculadora Simples, o Comparativo de Regimes, o Simulador de Créditos e a Transição 2026–2033."
+          mostrarVoltar={true}
+          mostrarDiagnosticoBtn={true}
+        />
+        <div className="max-w-7xl mx-auto px-4 py-24 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 text-slate-500">
+            <div className="w-10 h-10 border-4 border-[#2ECC71] border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-medium">Verificando credenciais de acesso...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // REQUISITO: Se NÃO autenticado, exibir tela de acesso (sem o formulário) convidando a entrar ou criar conta
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-slate-50 min-h-screen">
+        {/* HEADER DIAMOND GROUP */}
+        <DiamondHeader
+          badge="DIAMOND GROUP • ÁREA DO CLIENTE"
+          titulo="Dados da Empresa"
+          subtitulo="Acesse sua conta para cadastrar e gerenciar o perfil operacional e fiscal da sua empresa com sincronização direta em nuvem."
+          mostrarVoltar={true}
+          mostrarDiagnosticoBtn={false}
+        />
+
+        {/* AVISO DO GATE SE O USUÁRIO VEIO REDIRECIONADO DA CALCULADORA OU DIAGNÓSTICO */}
+        {destinoFinal && (
+          <div className="bg-gradient-to-r from-[#07132B] via-[#0D2A1C] to-[#07132B] text-white border-b border-[#D4AF37]/40 py-3.5 px-4 sm:px-6">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs sm:text-sm">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37] animate-ping shrink-0" />
+                <Info className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                <span>
+                  <strong className="text-[#D4AF37]">Etapa Inicial Obrigatória:</strong> Para
+                  acessar o{' '}
+                  <strong>
+                    {destinoFinal === '/calculadora-ibs-cbs'
+                      ? 'Calculadora IBS/CBS'
+                      : 'Diagnóstico Tributário'}
+                  </strong>
+                  , faça login ou crie sua conta para preencher os dados da sua empresa.
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-400 bg-white/10 px-2.5 py-1 rounded-full whitespace-nowrap">
+                Retorno automático garantido após login
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* CONTAINER DA TELA DE ACESSO DIAMOND GROUP */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="bg-white rounded-[28px] border border-slate-200/90 shadow-2xl overflow-hidden">
+            {/* Header com estilo Diamond escuro */}
+            <div className="bg-gradient-to-r from-[#07132B] via-[#0A1A13] to-[#07132B] p-8 sm:p-10 text-white relative overflow-hidden border-b border-[#D4AF37]/30">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/15 border border-[#D4AF37]/30 mb-4 uppercase tracking-wider">
+                  <Lock className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  Acesso Restrito • Área do Cliente
+                </div>
+
+                <h2 className="font-heading font-extrabold text-2xl sm:text-3xl text-white tracking-tight leading-tight">
+                  Acesse sua conta para preencher os dados da sua empresa
+                </h2>
+
+                <p className="text-slate-300 text-sm sm:text-base mt-3 leading-relaxed">
+                  Seus dados ficam 100% salvos com segurança na nuvem, vinculados à sua conta e
+                  disponíveis em qualquer dispositivo — prontos para alimentar a Calculadora
+                  IBS/CBS, o Diagnóstico Tributário e o acompanhamento do seu time contábil.
+                </p>
+              </div>
+            </div>
+
+            {/* Conteúdo: Benefícios e Botões de Ação */}
+            <div className="p-8 sm:p-10 space-y-8 bg-slate-50/40">
+              {/* Grid de 3 benefícios chave */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#145A32] flex items-center justify-center shrink-0">
+                    <Cloud className="w-5 h-5 text-[#2ECC71]" />
+                  </div>
+                  <div>
+                    <strong className="text-xs font-bold text-slate-900 block">
+                      Armazenamento em Nuvem
+                    </strong>
+                    <span className="text-[11px] text-slate-500 leading-snug block mt-0.5">
+                      Nunca perca seus cálculos ao trocar de navegador ou fechar a aba.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#07132B]/5 text-[#07132B] flex items-center justify-center shrink-0">
+                    <Sparkles className="w-5 h-5 text-[#D4AF37]" />
+                  </div>
+                  <div>
+                    <strong className="text-xs font-bold text-slate-900 block">
+                      Multi-Módulos Integrados
+                    </strong>
+                    <span className="text-[11px] text-slate-500 leading-snug block mt-0.5">
+                      Alimenta simultaneamente Diagnóstico, Calculadora e Créditos.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 text-[#07132B] flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-5 h-5 text-[#145A32]" />
+                  </div>
+                  <div>
+                    <strong className="text-xs font-bold text-slate-900 block">
+                      Time Contábil Diamond
+                    </strong>
+                    <span className="text-[11px] text-slate-500 leading-snug block mt-0.5">
+                      Parâmetros revisados por nossos tributaristas credenciados.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botões de Ação Principais */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-center sm:text-left">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                    Escolha como deseja prosseguir
+                  </span>
+                  <span className="text-sm font-semibold text-slate-800">
+                    Entre com seu e-mail corporativo ou crie uma conta gratuita em 30 segundos
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
+                  <Link
+                    to={`/login?redirect=${encodeURIComponent(currentPathWithSearch)}`}
+                    className="flex-1 sm:flex-initial px-6 py-3.5 rounded-xl font-heading font-semibold text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-all text-center flex items-center justify-center gap-2"
+                  >
+                    <LogIn className="w-4 h-4 text-slate-600" />
+                    <span>Entrar</span>
+                  </Link>
+
+                  <Link
+                    to={`/cadastro?redirect=${encodeURIComponent(currentPathWithSearch)}`}
+                    className="flex-1 sm:flex-initial px-7 py-3.5 rounded-xl font-heading font-bold text-sm text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_4px_14px_rgba(46,204,113,0.35)] transition-all duration-200 hover:-translate-y-0.5 btn-press text-center flex items-center justify-center gap-2"
+                  >
+                    <UserPlus className="w-4 h-4 text-[#0A1A13]" />
+                    <span>Criar conta</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Nota sobre dados já preenchidos no navegador */}
+              {temDadosSalvos && (
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-3 text-xs text-[#145A32]">
+                  <CheckCircle2 className="w-5 h-5 text-[#2ECC71] shrink-0" />
+                  <span>
+                    <strong>Identificamos dados já salvos neste navegador!</strong> Ao fazer login
+                    ou criar sua conta, essas informações serão sincronizadas automaticamente com o
+                    seu perfil na nuvem.
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* FOOTER CTA DIAMOND */}
+        <DiamondFooterCTA
+          titulo="Dúvidas sobre o cadastro da sua empresa?"
+          subtitulo="Nosso time de consultores está pronto para auxiliar você no mapeamento fiscal preliminar e no uso da plataforma."
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="bg-slate-50 min-h-screen">

@@ -604,6 +604,13 @@ export default function Layout() {
                 <span>Horário: Seg a Sex, 8h às 18h</span>
                 <div className="flex items-center gap-3">
                   <Link
+                    to="/dados-empresa"
+                    className="text-slate-400 hover:text-[#D4AF37] transition-colors underline"
+                  >
+                    Dados da Empresa
+                  </Link>
+                  <span>•</span>
+                  <Link
                     to="/minha-conta"
                     className="text-slate-400 hover:text-[#2ECC71] transition-colors underline"
                   >
