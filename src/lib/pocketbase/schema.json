@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-10-11T17:53:29.182Z",
+  "generatedAt": "2026-10-11T18:31:21.240Z",
   "collections": [
     {
       "name": "users",
       "type": "auth",
       "apiRules": {
-        "list": "id = @request.auth.id",
-        "view": "id = @request.auth.id",
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
         "create": "",
         "update": "id = @request.auth.id",
         "delete": "id = @request.auth.id"
@@ -371,11 +371,214 @@
           "type": "number",
           "required": false,
           "system": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
         }
       ],
       "indexes": [
         "CREATE INDEX idx_diagnosticos_created ON diagnosticos (created DESC)",
         "CREATE INDEX idx_diagnosticos_email ON diagnosticos (email)"
+      ]
+    },
+    {
+      "name": "clientes_empresas",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.email = 'marcoschagasdiamond@icloud.com')",
+        "delete": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.email = 'marcoschagasdiamond@icloud.com')"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "nome_contato",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "nome_empresa",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "cnpj",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "telefone",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "uf_origem",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "cidade",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "segmento",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "Comércio",
+            "Serviços",
+            "Indústria",
+            "Saúde",
+            "Educação",
+            "Agro",
+            "Transporte",
+            "Tecnologia",
+            "Construção Civil",
+            "Bares e Restaurantes"
+          ]
+        },
+        {
+          "name": "regime_atual",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "funcionarios",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "emissao_nf",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "atividade_mista",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "faturamento_mensal",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "percentual_compras_vendas",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tipo_atividade",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "subatividade_servico",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "subatividade_industria",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "subatividade_comercio",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "proporcao_servico_misto",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "folha_pagamento_mensal",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "margem_lucro_estimada",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "despesas_creditos_mensais",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "percentual_exportacao",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ano_base_transicao",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_clientes_empresas_user ON clientes_empresas (user_id)",
+        "CREATE INDEX idx_clientes_empresas_email ON clientes_empresas (email)",
+        "CREATE INDEX idx_clientes_empresas_cnpj ON clientes_empresas (cnpj)",
+        "CREATE INDEX idx_clientes_empresas_created ON clientes_empresas (created DESC)"
       ]
     }
   ]

@@ -3,6 +3,7 @@ import type { RecordModel } from 'pocketbase'
 
 export interface Diagnostico {
   id?: string
+  user_id?: string
   nome: string
   email: string
   telefone: string

@@ -94,7 +94,8 @@ const formatPhoneBR = (value: string) => {
 
 export default function DadosEmpresa() {
   const navigate = useNavigate()
-  const { dadosEmpresa, temDadosSalvos, salvar, restaurarPadrao } = useDadosEmpresa()
+  const { dadosEmpresa, temDadosSalvos, salvoNoBanco, isSalvando, salvar, restaurarPadrao } =
+    useDadosEmpresa()
 
   // Estado local do formulário
   const [formData, setFormData] = useState<DadosEmpresaPerfil>(dadosEmpresa)
@@ -209,8 +210,14 @@ export default function DadosEmpresa() {
     }
 
     salvar(formData)
-    setSalvoComSucesso(true)
-    setTimeout(() => setSalvoComSucesso(false), 4000)
+      .then(() => {
+        setSalvoComSucesso(true)
+        setTimeout(() => setSalvoComSucesso(false), 4000)
+      })
+      .catch((err) => {
+        console.error('Erro ao salvar dados da empresa:', err)
+        setSalvoComSucesso(true)
+      })
   }
 
   const handleRestaurar = () => {
@@ -249,10 +256,13 @@ export default function DadosEmpresa() {
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-[#2ECC71] animate-pulse" />
             <span className="font-bold text-slate-200">Perfil Global:</span>
-            <span className="text-[#D4AF37] font-semibold">
-              {temDadosSalvos
-                ? 'Ativo e sincronizado com os 5 módulos'
-                : 'Utilizando parâmetros padrão da plataforma'}
+            <span className="text-[#D4AF37] font-semibold flex items-center gap-1.5">
+              {salvoNoBanco && <ShieldCheck className="w-3.5 h-3.5 text-[#2ECC71]" />}
+              {salvoNoBanco
+                ? 'Salvo na sua conta (nuvem) e sincronizado com os 5 módulos'
+                : temDadosSalvos
+                  ? 'Salvo no navegador (faça login ou cadastre-se para sincronizar na nuvem)'
+                  : 'Utilizando parâmetros padrão da plataforma'}
             </span>
           </div>
           <div className="flex items-center gap-3 text-slate-300">
@@ -1532,10 +1542,11 @@ export default function DadosEmpresa() {
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <Button
                 type="submit"
-                className="w-full sm:w-auto h-12 px-8 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_4px_14px_rgba(46,204,113,0.35)] hover:shadow-[0_6px_20px_rgba(46,204,113,0.5)] transition-all duration-200 hover:-translate-y-0.5 btn-press flex items-center justify-center gap-2"
+                disabled={isSalvando}
+                className="w-full sm:w-auto h-12 px-8 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_4px_14px_rgba(46,204,113,0.35)] hover:shadow-[0_6px_20px_rgba(46,204,113,0.5)] transition-all duration-200 hover:-translate-y-0.5 btn-press flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 <Save className="w-5 h-5 stroke-[2.5]" />
-                <span>Salvar Dados da Empresa</span>
+                <span>{isSalvando ? 'Salvando...' : 'Salvar Dados da Empresa'}</span>
               </Button>
             </div>
           </div>

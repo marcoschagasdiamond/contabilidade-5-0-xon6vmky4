@@ -57,6 +57,7 @@ import {
   TAXA_CBS_REFERENCIA,
   TAXA_IBS_REFERENCIA,
 } from '@/lib/reformaTributaria'
+import pb from '@/lib/pocketbase/client'
 import { createDiagnostico } from '@/services/diagnosticos'
 import { createLead } from '@/services/leads'
 import { formatarCNPJ, validarCNPJ, limparCNPJ } from '@/lib/cnpj'
@@ -477,9 +478,11 @@ export default function Diagnostico() {
           anoBase: formData.anoBase,
         })
 
-        // Persistir na coleção 'diagnosticos' incluindo novos campos da Reforma Tributária
+        // Persistir na coleção 'diagnosticos' incluindo novos campos da Reforma Tributária e vinculação de user_id
         try {
+          const authUserId = pb.authStore.record?.id || undefined
           await createDiagnostico({
+            user_id: authUserId,
             nome: formData.nome.trim(),
             email: formData.email.trim().toLowerCase(),
             telefone: formData.telefone.trim(),

@@ -1,25 +1,40 @@
 import React, { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { Lock, Mail, Loader2, AlertCircle, ArrowRight, TrendingUp } from 'lucide-react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import {
+  Lock,
+  Mail,
+  Loader2,
+  AlertCircle,
+  ArrowRight,
+  TrendingUp,
+  Sparkles,
+  Building2,
+} from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 export default function Login() {
-  const [email, setEmail] = useState('marcoschagasdiamond@icloud.com')
-  const [password, setPassword] = useState('Skip@Pass')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { login, isAuthenticated } = useAuth()
+  const { login, isAuthenticated, isAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Se já estiver logado, redireciona para /admin
+  // Se já estiver logado, redireciona adequadamente
   React.useEffect(() => {
     if (isAuthenticated) {
-      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/admin'
-      navigate(from, { replace: true })
+      const from = (location.state as { from?: { pathname: string } })?.from?.pathname
+      if (from) {
+        navigate(from, { replace: true })
+      } else if (isAdmin) {
+        navigate('/admin', { replace: true })
+      } else {
+        navigate('/minha-conta', { replace: true })
+      }
     }
-  }, [isAuthenticated, navigate, location.state])
+  }, [isAuthenticated, isAdmin, navigate, location.state])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,9 +42,15 @@ export default function Login() {
     setIsLoading(true)
 
     try {
-      await login(email, password)
-      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/admin'
-      navigate(from, { replace: true })
+      await login(email.trim().toLowerCase(), password)
+      const from = (location.state as { from?: { pathname: string } })?.from?.pathname
+      if (from) {
+        navigate(from, { replace: true })
+      } else if (email.trim().toLowerCase() === 'marcoschagasdiamond@icloud.com') {
+        navigate('/admin', { replace: true })
+      } else {
+        navigate('/minha-conta', { replace: true })
+      }
     } catch (err: unknown) {
       console.error('Falha no login:', err)
       setError('E-mail ou senha inválidos. Por favor, verifique suas credenciais.')
@@ -38,21 +59,27 @@ export default function Login() {
     }
   }
 
+  // Preencher credenciais de admin para teste rápido
+  const preencherAdmin = () => {
+    setEmail('marcoschagasdiamond@icloud.com')
+    setPassword('Skip@Pass')
+  }
+
   return (
-    <div className="min-h-screen pt-24 pb-16 flex items-center justify-center bg-slate-50 px-4 sm:px-6">
+    <div className="min-h-screen pt-28 pb-16 flex items-center justify-center bg-slate-50 px-4 sm:px-6">
       <div className="w-full max-w-md">
         {/* Card de Login */}
         <div className="bg-white rounded-[24px] p-8 border border-slate-200 shadow-xl">
           {/* Logo / Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#0A1A13] text-[#2ECC71] mb-4 shadow-md">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#07132B] text-[#2ECC71] mb-4 shadow-md border border-white/10">
               <TrendingUp className="w-6 h-6 stroke-[2.5]" />
             </div>
             <h1 className="font-heading font-bold text-2xl text-slate-900 tracking-tight">
-              Acesso ao Painel
+              Acesse sua Conta
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Área restrita para administradores da Contabilidade 5.0
+              Clientes e Administradores da Contabilidade 5.0
             </p>
           </div>
 
@@ -69,7 +96,7 @@ export default function Login() {
                 htmlFor="email"
                 className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
               >
-                E-mail de Acesso
+                E-mail
               </label>
               <div className="relative">
                 <Mail className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -79,7 +106,7 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@contabilidade5.com.br"
+                  placeholder="seu.email@empresa.com.br"
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
                 />
               </div>
@@ -106,14 +133,6 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-xs text-emerald-800">
-              <span className="font-semibold block mb-0.5">
-                Credenciais padrão pré-preenchidas:
-              </span>
-              <p>Email: marcoschagasdiamond@icloud.com</p>
-              <p>Senha: Skip@Pass</p>
-            </div>
-
             <button
               type="submit"
               disabled={isLoading}
@@ -126,12 +145,34 @@ export default function Login() {
                 </>
               ) : (
                 <>
-                  <span>Entrar no Painel</span>
+                  <span>Entrar na Plataforma</span>
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </>
               )}
             </button>
           </form>
+
+          {/* Atalho para Administrador */}
+          <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-slate-500">É o administrador?</span>
+            <button
+              type="button"
+              onClick={preencherAdmin}
+              className="font-medium text-[#145A32] hover:text-[#2ECC71] underline transition-colors"
+            >
+              Preencher credenciais do Admin
+            </button>
+          </div>
+
+          {/* Link para Criar Conta */}
+          <div className="mt-4 pt-3 border-t border-slate-100 text-center">
+            <p className="text-xs text-slate-600">
+              Ainda não tem conta de cliente?{' '}
+              <Link to="/cadastro" className="font-bold text-[#145A32] hover:underline">
+                Cadastre-se gratuitamente
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

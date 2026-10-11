@@ -18,6 +18,8 @@ import Contato from './pages/Contato'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import TermosDeUso from './pages/TermosDeUso'
 import Login from './pages/Login'
+import Cadastro from './pages/Cadastro'
+import MinhaConta from './pages/MinhaConta'
 import Admin from './pages/Admin'
 import Diagnostico from './pages/Diagnostico'
 import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
@@ -36,7 +38,7 @@ import SubpageDiagnosticoReforma from './pages/reforma/SubpageDiagnosticoReforma
 import SubpagePainelCarteira from './pages/reforma/SubpagePainelCarteira'
 import SubpageGlossarioFontes from './pages/reforma/SubpageGlossarioFontes'
 
-// Rota protegida para /admin
+// Rota protegida genérica (exige usuário logado)
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
   const location = useLocation()
@@ -51,6 +53,30 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  return <>{children}</>
+}
+
+// Rota protegida exclusiva para Admin
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, isAdmin } = useAuth()
+  const location = useLocation()
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-8 h-8 border-4 border-[#2ECC71] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/minha-conta" replace />
   }
 
   return <>{children}</>
@@ -103,16 +129,25 @@ const App = () => (
               <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
               <Route path="/termos-de-uso" element={<TermosDeUso />} />
 
-              {/* Login */}
+              {/* Autenticação & Conta do Cliente */}
               <Route path="/login" element={<Login />} />
+              <Route path="/cadastro" element={<Cadastro />} />
+              <Route
+                path="/minha-conta"
+                element={
+                  <ProtectedRoute>
+                    <MinhaConta />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Rota Protegida Admin */}
               <Route
                 path="/admin"
                 element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <Admin />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 }
               />
             </Route>

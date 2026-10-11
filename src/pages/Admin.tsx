@@ -16,11 +16,23 @@ import {
   Sparkles,
   DollarSign,
   Percent,
+  Briefcase,
+  Building2,
+  FileSpreadsheet,
+  CheckCircle2,
+  MapPin,
+  Calendar,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { getLeads, deleteLead, type LeadRecord } from '@/services/leads'
 import { getDiagnosticos, deleteDiagnostico, type DiagnosticoRecord } from '@/services/diagnosticos'
+import {
+  getTodosClientesEmpresas,
+  deleteClienteEmpresa,
+  type ClienteEmpresaRecord,
+} from '@/services/clientesEmpresas'
 import { useRealtime } from '@/hooks/use-realtime'
+import { formatarMoeda } from '@/lib/calculadoraUtils'
 import {
   Dialog,
   DialogContent,
@@ -31,11 +43,22 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
-type TabTipo = 'leads' | 'diagnosticos'
+type TabTipo = 'clientes' | 'leads' | 'diagnosticos'
 
 export default function Admin() {
   const { user, logout } = useAuth()
-  const [activeTab, setActiveTab] = useState<TabTipo>('leads')
+  const [activeTab, setActiveTab] = useState<TabTipo>('clientes')
+
+  // Clientes Empresas
+  const [clientes, setClientes] = useState<ClienteEmpresaRecord[]>([])
+  const [isLoadingClientes, setIsLoadingClientes] = useState(true)
+  const [clienteSearchTerm, setClienteSearchTerm] = useState('')
+  const [clienteFilterSegmento, setClienteFilterSegmento] = useState('todos')
+  const [clienteFilterRegime, setClienteFilterRegime] = useState('todos')
+  const [clienteFilterUf, setClienteFilterUf] = useState('todos')
+  const [clienteToDelete, setClienteToDelete] = useState<ClienteEmpresaRecord | null>(null)
+  const [isDeletingCliente, setIsDeletingCliente] = useState(false)
+  const [selectedCliente, setSelectedCliente] = useState<ClienteEmpresaRecord | null>(null)
 
   // Leads
   const [leads, setLeads] = useState<LeadRecord[]>([])
@@ -55,6 +78,18 @@ export default function Admin() {
   const [diagToDelete, setDiagToDelete] = useState<DiagnosticoRecord | null>(null)
   const [isDeletingDiag, setIsDeletingDiag] = useState(false)
   const [selectedDiag, setSelectedDiag] = useState<DiagnosticoRecord | null>(null)
+
+  const fetchClientes = async () => {
+    setIsLoadingClientes(true)
+    try {
+      const data = await getTodosClientesEmpresas()
+      setClientes(data)
+    } catch (err) {
+      console.error('Erro ao carregar clientes:', err)
+    } finally {
+      setIsLoadingClientes(false)
+    }
+  }
 
   const fetchLeads = async () => {
     setIsLoadingLeads(true)
@@ -81,9 +116,25 @@ export default function Admin() {
   }
 
   useEffect(() => {
+    fetchClientes()
     fetchLeads()
     fetchDiagnosticos()
   }, [])
+
+  // Inscrição em tempo real na coleção 'clientes_empresas'
+  useRealtime<ClienteEmpresaRecord>(
+    'clientes_empresas',
+    (e) => {
+      if (e.action === 'create') {
+        setClientes((prev) => [e.record, ...prev.filter((item) => item.id !== e.record.id)])
+      } else if (e.action === 'update') {
+        setClientes((prev) => prev.map((item) => (item.id === e.record.id ? e.record : item)))
+      } else if (e.action === 'delete') {
+        setClientes((prev) => prev.filter((item) => item.id !== e.record.id))
+      }
+    },
+    true,
+  )
 
   // Inscrição em tempo real na coleção 'leads'
   useRealtime<LeadRecord>(
@@ -149,6 +200,48 @@ export default function Admin() {
     }
   }
 
+  const handleDeleteClienteConfirm = async () => {
+    if (!clienteToDelete?.id) return
+    setIsDeletingCliente(true)
+    try {
+      await deleteClienteEmpresa(clienteToDelete.id)
+      setClientes((prev) => prev.filter((c) => c.id !== clienteToDelete.id))
+      setClienteToDelete(null)
+      if (selectedCliente?.id === clienteToDelete.id) {
+        setSelectedCliente(null)
+      }
+    } catch (err) {
+      console.error('Erro ao excluir cliente:', err)
+    } finally {
+      setIsDeletingCliente(false)
+    }
+  }
+
+  // Filtragem dos clientes
+  const filteredClientes = clientes.filter((item) => {
+    const term = clienteSearchTerm.toLowerCase()
+    const matchesSearch =
+      item.nome_contato?.toLowerCase().includes(term) ||
+      item.nome_empresa?.toLowerCase().includes(term) ||
+      item.email?.toLowerCase().includes(term) ||
+      item.cnpj?.toLowerCase().includes(term) ||
+      item.telefone?.includes(term) ||
+      item.cidade?.toLowerCase().includes(term)
+
+    const matchesSegmento =
+      clienteFilterSegmento === 'todos' ||
+      item.segmento?.toLowerCase() === clienteFilterSegmento.toLowerCase()
+
+    const matchesRegime =
+      clienteFilterRegime === 'todos' ||
+      item.regime_atual?.toLowerCase() === clienteFilterRegime.toLowerCase()
+
+    const matchesUf =
+      clienteFilterUf === 'todos' || item.uf_origem?.toUpperCase() === clienteFilterUf.toUpperCase()
+
+    return matchesSearch && matchesSegmento && matchesRegime && matchesUf
+  })
+
   // Filtragem dos leads
   const filteredLeads = leads.filter((item) => {
     const term = searchTerm.toLowerCase()
@@ -184,6 +277,71 @@ export default function Admin() {
 
     return matchesSearch && matchesRegime && matchesSegmento
   })
+
+  // Exportar Clientes CSV
+  const handleExportClientesCSV = () => {
+    if (clientes.length === 0) return
+    const headers = [
+      'ID',
+      'NomeContato',
+      'NomeEmpresa',
+      'CNPJ',
+      'Email',
+      'Telefone',
+      'UF',
+      'Cidade',
+      'Segmento',
+      'RegimeAtual',
+      'Funcionarios',
+      'EmissaoNF',
+      'FaturamentoMensal',
+      'FaturamentoAnual',
+      'FolhaMensal',
+      'MargemLucroEstimada',
+      'DespesasCreditos',
+      'PercentualExportacao',
+      'AnoBaseTransicao',
+      'DataCadastro',
+    ]
+    const rows = clientes.map((c) => {
+      const fatMensal = c.faturamento_mensal || 0
+      return [
+        c.id,
+        `"${c.nome_contato || ''}"`,
+        `"${c.nome_empresa || ''}"`,
+        `"${c.cnpj || ''}"`,
+        `"${c.email || ''}"`,
+        `"${c.telefone || ''}"`,
+        `"${c.uf_origem || ''}"`,
+        `"${c.cidade || ''}"`,
+        `"${c.segmento || ''}"`,
+        `"${c.regime_atual || ''}"`,
+        `"${c.funcionarios || ''}"`,
+        `"${c.emissao_nf || ''}"`,
+        fatMensal,
+        fatMensal * 12,
+        c.folha_pagamento_mensal || 0,
+        c.margem_lucro_estimada || 0,
+        c.despesas_creditos_mensais || 0,
+        c.percentual_exportacao || 0,
+        c.ano_base_transicao || 2026,
+        c.created ? new Date(c.created).toLocaleDateString('pt-BR') : '',
+      ]
+    })
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute(
+      'download',
+      `clientes_empresas_contabilidade50_${new Date().toISOString().slice(0, 10)}.csv`,
+    )
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   // Exportar Leads CSV
   const handleExportLeadsCSV = () => {
@@ -333,6 +491,7 @@ export default function Admin() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
+                fetchClientes()
                 fetchLeads()
                 fetchDiagnosticos()
               }}
@@ -340,16 +499,34 @@ export default function Admin() {
               title="Recarregar dados"
             >
               <RefreshCw
-                className={`w-4 h-4 ${isLoadingLeads || isLoadingDiagnosticos ? 'animate-spin' : ''}`}
+                className={`w-4 h-4 ${isLoadingClientes || isLoadingLeads || isLoadingDiagnosticos ? 'animate-spin' : ''}`}
               />
             </button>
             <button
-              onClick={activeTab === 'leads' ? handleExportLeadsCSV : handleExportDiagCSV}
-              disabled={activeTab === 'leads' ? leads.length === 0 : diagnosticos.length === 0}
+              onClick={
+                activeTab === 'clientes'
+                  ? handleExportClientesCSV
+                  : activeTab === 'leads'
+                    ? handleExportLeadsCSV
+                    : handleExportDiagCSV
+              }
+              disabled={
+                activeTab === 'clientes'
+                  ? clientes.length === 0
+                  : activeTab === 'leads'
+                    ? leads.length === 0
+                    : diagnosticos.length === 0
+              }
               className="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
-              Exportar CSV ({activeTab === 'leads' ? 'Leads' : 'Diagnósticos'})
+              Exportar CSV (
+              {activeTab === 'clientes'
+                ? 'Clientes'
+                : activeTab === 'leads'
+                  ? 'Leads'
+                  : 'Diagnósticos'}
+              )
             </button>
             <button
               onClick={logout}
@@ -361,8 +538,29 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* NAVEGAÇÃO DE ABAS: LEADS vs. DIAGNÓSTICOS */}
-        <div className="flex items-center gap-3 mb-6 border-b border-slate-200 pb-2">
+        {/* NAVEGAÇÃO DE ABAS: CLIENTES vs. LEADS vs. DIAGNÓSTICOS */}
+        <div className="flex items-center gap-3 mb-6 border-b border-slate-200 pb-2 flex-wrap">
+          <button
+            onClick={() => setActiveTab('clientes')}
+            className={`px-5 py-2.5 rounded-xl text-sm font-heading font-bold flex items-center gap-2 transition-all ${
+              activeTab === 'clientes'
+                ? 'bg-[#07132B] text-white shadow-sm ring-2 ring-[#D4AF37]/40'
+                : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Building2 className="w-4 h-4 text-[#D4AF37]" />
+            <span>Clientes & Empresas</span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full ${
+                activeTab === 'clientes'
+                  ? 'bg-[#D4AF37] text-[#07132B] font-bold'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              {clientes.length}
+            </span>
+          </button>
+
           <button
             onClick={() => setActiveTab('leads')}
             className={`px-5 py-2.5 rounded-xl text-sm font-heading font-bold flex items-center gap-2 transition-all ${
@@ -405,6 +603,325 @@ export default function Admin() {
             </span>
           </button>
         </div>
+
+        {/* ========================================================= */}
+        {/* CONTEÚDO DA ABA 0: CLIENTES & EMPRESAS */}
+        {/* ========================================================= */}
+        {activeTab === 'clientes' && (
+          <>
+            {/* METRICS CARDS CLIENTES */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold text-slate-500 uppercase">
+                    Total de Clientes
+                  </span>
+                  <div className="w-9 h-9 rounded-xl bg-slate-900 text-[#D4AF37] flex items-center justify-center">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                </div>
+                <p className="font-heading font-extrabold text-3xl text-slate-900">
+                  {clientes.length}
+                </p>
+                <span className="text-[11px] text-[#2ECC71] font-semibold mt-1 inline-block">
+                  Contas cadastradas no portal
+                </span>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold text-slate-500 uppercase">
+                    Faturamento Somado
+                  </span>
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#145A32] flex items-center justify-center">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                </div>
+                <p className="font-heading font-extrabold text-2xl text-slate-900">
+                  {formatarMoeda(clientes.reduce((acc, c) => acc + (c.faturamento_mensal || 0), 0))}
+                </p>
+                <span className="text-[11px] text-slate-400 mt-1 inline-block">
+                  Receita mensal consolidada da carteira
+                </span>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold text-slate-500 uppercase">
+                    Folha Somada
+                  </span>
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <Users className="w-5 h-5" />
+                  </div>
+                </div>
+                <p className="font-heading font-extrabold text-2xl text-slate-900">
+                  {formatarMoeda(
+                    clientes.reduce((acc, c) => acc + (c.folha_pagamento_mensal || 0), 0),
+                  )}
+                </p>
+                <span className="text-[11px] text-slate-400 mt-1 inline-block">
+                  Folha mensal total informada
+                </span>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold text-slate-500 uppercase">
+                    Simples Nacional
+                  </span>
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                </div>
+                <p className="font-heading font-extrabold text-3xl text-slate-900">
+                  {clientes.filter((c) => c.regime_atual === 'Simples Nacional').length}
+                </p>
+                <span className="text-[11px] text-slate-400 mt-1 inline-block">
+                  {clientes.length > 0
+                    ? `${Math.round(
+                        (clientes.filter((c) => c.regime_atual === 'Simples Nacional').length /
+                          clientes.length) *
+                          100,
+                      )}% da base de clientes`
+                    : '0%'}
+                </span>
+              </div>
+            </div>
+
+            {/* BUSCA E FILTROS DE CLIENTES */}
+            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm mb-6 flex flex-col lg:flex-row gap-4 items-center justify-between">
+              <div className="relative w-full lg:w-96">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Buscar por contato, empresa, CNPJ, e-mail ou cidade..."
+                  value={clienteSearchTerm}
+                  onChange={(e) => setClienteSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-900 input-focus-ring"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-slate-500 font-medium">Segmento:</span>
+                  <select
+                    value={clienteFilterSegmento}
+                    onChange={(e) => setClienteFilterSegmento(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 bg-white input-focus-ring"
+                  >
+                    <option value="todos">Todos os Segmentos</option>
+                    <option value="Comércio">Comércio</option>
+                    <option value="Serviços">Serviços</option>
+                    <option value="Indústria">Indústria</option>
+                    <option value="Saúde">Saúde</option>
+                    <option value="Educação">Educação</option>
+                    <option value="Agro">Agro</option>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Tecnologia">Tecnologia</option>
+                    <option value="Construção Civil">Construção Civil</option>
+                    <option value="Bares e Restaurantes">Bares e Restaurantes</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-slate-500 font-medium">Regime:</span>
+                  <select
+                    value={clienteFilterRegime}
+                    onChange={(e) => setClienteFilterRegime(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 bg-white input-focus-ring"
+                  >
+                    <option value="todos">Todos os Regimes</option>
+                    <option value="Simples Nacional">Simples Nacional</option>
+                    <option value="Lucro Presumido">Lucro Presumido</option>
+                    <option value="Lucro Real">Lucro Real</option>
+                    <option value="MEI">MEI</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-slate-500 font-medium">UF:</span>
+                  <select
+                    value={clienteFilterUf}
+                    onChange={(e) => setClienteFilterUf(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 bg-white input-focus-ring"
+                  >
+                    <option value="todos">Todas as UFs</option>
+                    <option value="SP">SP</option>
+                    <option value="RJ">RJ</option>
+                    <option value="MG">MG</option>
+                    <option value="PR">PR</option>
+                    <option value="SC">SC</option>
+                    <option value="RS">RS</option>
+                    <option value="BA">BA</option>
+                    <option value="GO">GO</option>
+                    <option value="DF">DF</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* TABELA DE CLIENTES */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              {isLoadingClientes ? (
+                <div className="p-12 text-center text-slate-500">
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#D4AF37]" />
+                  <p className="text-sm">Carregando base de clientes...</p>
+                </div>
+              ) : filteredClientes.length === 0 ? (
+                <div className="p-12 text-center text-slate-500">
+                  <Building2 className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+                  <p className="font-semibold text-slate-700">Nenhum cliente encontrado</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Os visitantes cadastrados pelo formulário de conta aparecerão aqui com todos os
+                    dados salvos.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider border-b border-slate-200">
+                      <tr>
+                        <th className="py-4 px-6">Empresa & Contato</th>
+                        <th className="py-4 px-6">Segmento & Local</th>
+                        <th className="py-4 px-6">Faturamento & Folha</th>
+                        <th className="py-4 px-6">Regime Atual</th>
+                        <th className="py-4 px-6">Diagnósticos</th>
+                        <th className="py-4 px-6">Data Cadastro</th>
+                        <th className="py-4 px-6 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredClientes.map((item) => {
+                        // Encontra diagnósticos vinculados por user_id, email ou CNPJ
+                        const diagsVinculados = diagnosticos.filter(
+                          (d) =>
+                            (item.user_id && (d as any).user_id === item.user_id) ||
+                            (item.email && d.email?.toLowerCase() === item.email.toLowerCase()) ||
+                            (item.cnpj && d.cnpj && d.cnpj === item.cnpj),
+                        )
+                        const ultimoDiag = diagsVinculados[0]
+
+                        return (
+                          <tr
+                            key={item.id}
+                            className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
+                            onClick={() => setSelectedCliente(item)}
+                          >
+                            <td className="py-4 px-6">
+                              <div className="font-bold text-slate-900 group-hover:text-[#145A32] transition-colors flex items-center gap-1.5">
+                                <span>{item.nome_empresa}</span>
+                              </div>
+                              <div className="text-xs font-mono text-slate-500">
+                                CNPJ: {item.cnpj || 'Não informado'}
+                              </div>
+                              <div className="text-xs text-slate-600 mt-1 flex items-center gap-2">
+                                <span>{item.nome_contato}</span>
+                                <span>•</span>
+                                <span>{item.email}</span>
+                              </div>
+                              <div className="text-xs text-slate-500">{item.telefone}</div>
+                            </td>
+
+                            <td className="py-4 px-6">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#07132B]/5 text-[#07132B] border border-slate-200">
+                                {item.segmento}
+                              </span>
+                              <div className="text-xs text-slate-600 mt-1 font-medium flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-slate-400" />
+                                <span>
+                                  {item.cidade || 'São Paulo'} / {item.uf_origem || 'SP'}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td className="py-4 px-6">
+                              <div className="font-bold text-slate-900">
+                                {formatarMoeda(item.faturamento_mensal || 0)}
+                                <span className="text-[10px] font-normal text-slate-400">/mês</span>
+                              </div>
+                              <div className="text-[11px] text-slate-500">
+                                Anual: {formatarMoeda((item.faturamento_mensal || 0) * 12)}
+                              </div>
+                              <div className="text-[11px] text-slate-600 mt-0.5">
+                                Folha: {formatarMoeda(item.folha_pagamento_mensal || 0)}/mês
+                              </div>
+                            </td>
+
+                            <td className="py-4 px-6">
+                              <span
+                                className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                  item.regime_atual === 'Simples Nacional'
+                                    ? 'bg-emerald-100 text-[#145A32]'
+                                    : item.regime_atual === 'Lucro Presumido'
+                                      ? 'bg-amber-100 text-amber-900'
+                                      : 'bg-purple-100 text-purple-900'
+                                }`}
+                              >
+                                {item.regime_atual || 'Não inf.'}
+                              </span>
+                              {item.funcionarios && (
+                                <div className="text-[11px] text-slate-500 mt-1">
+                                  {item.funcionarios}
+                                </div>
+                              )}
+                            </td>
+
+                            <td className="py-4 px-6">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold text-slate-800">
+                                  {diagsVinculados.length}
+                                </span>
+                                <span className="text-xs text-slate-500">diagnóstico(s)</span>
+                              </div>
+                              {ultimoDiag && (
+                                <div className="text-[11px] text-[#145A32] font-semibold mt-0.5">
+                                  Recom.:{' '}
+                                  {ultimoDiag.sistema_recomendado_novo ||
+                                    ultimoDiag.regime_recomendado}
+                                </div>
+                              )}
+                            </td>
+
+                            <td className="py-4 px-6 text-xs text-slate-500">
+                              {item.created
+                                ? new Date(item.created).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                  })
+                                : '—'}
+                            </td>
+
+                            <td
+                              className="py-4 px-6 text-right"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => setSelectedCliente(item)}
+                                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                                >
+                                  Ver perfil
+                                </button>
+                                <button
+                                  onClick={() => setClienteToDelete(item)}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-[#E74C3C] hover:bg-red-50 transition-colors"
+                                  title="Excluir cliente"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         {/* ========================================================= */}
         {/* CONTEÚDO DA ABA 1: LEADS */}
@@ -1372,6 +1889,268 @@ export default function Admin() {
                 className="bg-[#E74C3C] hover:bg-red-700 text-white rounded-xl"
               >
                 {isDeletingLead ? 'Excluindo...' : 'Excluir Lead'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* MODAL DETALHES DO CLIENTE */}
+      {selectedCliente && (
+        <Dialog open={!!selectedCliente} onOpenChange={(open) => !open && setSelectedCliente(null)}>
+          <DialogContent className="sm:max-w-2xl bg-white rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-heading font-bold text-xl text-slate-900 flex items-center justify-between">
+                <span>Perfil Completo do Cliente</span>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-[#145A32]">
+                  {selectedCliente.regime_atual || 'Regime não inf.'}
+                </span>
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                Cadastrado em{' '}
+                {selectedCliente.created
+                  ? new Date(selectedCliente.created).toLocaleString('pt-BR')
+                  : '—'}
+                {selectedCliente.user_id && ` • ID do Usuário: ${selectedCliente.user_id}`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 my-4 text-sm">
+              {/* BLOCO 1: DADOS CADASTRAIS & LOCALIZAÇÃO */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase block">
+                    Razão / Empresa
+                  </span>
+                  <strong className="text-slate-900">{selectedCliente.nome_empresa}</strong>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase block">CNPJ</span>
+                  <strong className="text-slate-900 font-mono">
+                    {selectedCliente.cnpj || 'Não informado'}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase block">
+                    Nome do Contato
+                  </span>
+                  <span className="text-slate-800 font-medium">{selectedCliente.nome_contato}</span>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase block">
+                    E-mail
+                  </span>
+                  <a
+                    href={`mailto:${selectedCliente.email}`}
+                    className="text-[#145A32] underline hover:text-[#2ECC71] break-all"
+                  >
+                    {selectedCliente.email}
+                  </a>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase block">
+                    WhatsApp / Telefone
+                  </span>
+                  <a
+                    href={`https://wa.me/${selectedCliente.telefone.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#145A32] underline hover:text-[#2ECC71]"
+                  >
+                    {selectedCliente.telefone}
+                  </a>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase block">
+                    Cidade / UF
+                  </span>
+                  <span className="text-slate-800 font-medium">
+                    {selectedCliente.cidade} / {selectedCliente.uf_origem}
+                  </span>
+                </div>
+              </div>
+
+              {/* BLOCO 2: DADOS OPERACIONAIS E FATURAMENTO */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-xs font-semibold text-slate-400 uppercase block mb-3">
+                  Parâmetros Financeiros & Tributários (Dados da Empresa)
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-500 block">Faturamento Mensal:</span>
+                    <strong className="text-slate-900 text-sm">
+                      {formatarMoeda(selectedCliente.faturamento_mensal || 0)}
+                    </strong>
+                    <span className="text-[10px] text-slate-400 block">
+                      RBT12: {formatarMoeda((selectedCliente.faturamento_mensal || 0) * 12)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Folha Mensal:</span>
+                    <strong className="text-slate-900 text-sm">
+                      {formatarMoeda(selectedCliente.folha_pagamento_mensal || 0)}
+                    </strong>
+                    <span className="text-[10px] text-slate-400 block">
+                      12m: {formatarMoeda((selectedCliente.folha_pagamento_mensal || 0) * 12)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Margem Estimada:</span>
+                    <strong className="text-[#145A32] text-sm">
+                      {selectedCliente.margem_lucro_estimada ?? 20}%
+                    </strong>
+                    <span className="text-[10px] text-slate-400 block">Lucro operacional</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Despesas c/ Créditos:</span>
+                    <strong className="text-slate-900 text-sm">
+                      {formatarMoeda(selectedCliente.despesas_creditos_mensais || 0)}
+                    </strong>
+                    <span className="text-[10px] text-slate-400 block">Para IBS/CBS</span>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-slate-200/70 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-500 block">Segmento:</span>
+                    <strong className="text-slate-800">{selectedCliente.segmento}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Equipe:</span>
+                    <strong className="text-slate-800">
+                      {selectedCliente.funcionarios || 'Não inf.'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Emissão NF:</span>
+                    <strong className="text-slate-800">
+                      {selectedCliente.emissao_nf || 'Predominante B2B'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Exportação:</span>
+                    <strong className="text-slate-800">
+                      {selectedCliente.percentual_exportacao || 0}%
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOCO 3: DIAGNÓSTICOS VINCULADOS */}
+              {(() => {
+                const diags = diagnosticos.filter(
+                  (d) =>
+                    (selectedCliente.user_id && (d as any).user_id === selectedCliente.user_id) ||
+                    (selectedCliente.email &&
+                      d.email?.toLowerCase() === selectedCliente.email.toLowerCase()) ||
+                    (selectedCliente.cnpj && d.cnpj && d.cnpj === selectedCliente.cnpj),
+                )
+                return (
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-slate-400 uppercase">
+                        Diagnósticos Vinculados ({diags.length})
+                      </span>
+                    </div>
+
+                    {diags.length === 0 ? (
+                      <p className="text-xs text-slate-500 italic">
+                        Nenhum diagnóstico vinculado até o momento.
+                      </p>
+                    ) : (
+                      <div className="space-y-2 mt-2">
+                        {diags.map((d) => (
+                          <div
+                            key={d.id}
+                            className="p-3 rounded-lg bg-white border border-slate-200 text-xs flex items-center justify-between gap-3"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900">
+                                  {d.sistema_recomendado_novo || d.regime_recomendado}
+                                </span>
+                                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-[#145A32] font-semibold">
+                                  Economia:{' '}
+                                  {formatarMoeda(d.economia_anual_novo || d.economia_anual || 0)}
+                                  /ano
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-500 mt-0.5">
+                                Realizado em {new Date(d.created || '').toLocaleDateString(
+                                  'pt-BR',
+                                )}{' '}
+                                • Ano-base {d.ano_base || 2026}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedCliente(null)
+                                setSelectedDiag(d)
+                              }}
+                              className="px-2.5 py-1 rounded-md border border-slate-200 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+                            >
+                              Ver diagnóstico
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+            </div>
+
+            <DialogFooter className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedCliente(null)}
+                className="rounded-xl"
+              >
+                Fechar
+              </Button>
+              <a
+                href={`https://wa.me/${selectedCliente.telefone.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60]"
+              >
+                Contato via WhatsApp
+              </a>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* DIÁLOGO CONFIRMAÇÃO DE EXCLUSÃO CLIENTE */}
+      {clienteToDelete && (
+        <Dialog open={!!clienteToDelete} onOpenChange={(open) => !open && setClienteToDelete(null)}>
+          <DialogContent className="sm:max-w-md bg-white rounded-2xl p-6 shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="font-heading font-bold text-lg text-slate-900">
+                Confirmar exclusão de cliente
+              </DialogTitle>
+              <DialogDescription className="text-slate-600 text-sm mt-2">
+                Tem certeza que deseja excluir o cadastro da empresa{' '}
+                <strong className="text-slate-900">{clienteToDelete.nome_empresa}</strong> (
+                {clienteToDelete.nome_contato})? Esta ação não pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogFooter className="mt-6 flex justify-end gap-3">
+              <Button
+                variant="outline"
+                disabled={isDeletingCliente}
+                onClick={() => setClienteToDelete(null)}
+                className="rounded-xl"
+              >
+                Cancelar
+              </Button>
+              <Button
+                disabled={isDeletingCliente}
+                onClick={handleDeleteClienteConfirm}
+                className="bg-[#E74C3C] hover:bg-red-700 text-white rounded-xl"
+              >
+                {isDeletingCliente ? 'Excluindo...' : 'Excluir Cliente'}
               </Button>
             </DialogFooter>
           </DialogContent>

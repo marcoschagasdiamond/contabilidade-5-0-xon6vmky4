@@ -7,7 +7,9 @@ interface AuthContextType {
   token: string | null
   isLoading: boolean
   isAuthenticated: boolean
+  isAdmin: boolean
   login: (email: string, pass: string) => Promise<void>
+  signup: (nome: string, email: string, pass: string, passConfirm: string) => Promise<void>
   logout: () => void
 }
 
@@ -41,11 +43,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(pb.authStore.token)
   }
 
+  const signup = async (nome: string, email: string, pass: string, passConfirm: string) => {
+    await pb.collection('users').create({
+      name: nome.trim(),
+      email: email.trim().toLowerCase(),
+      password: pass,
+      passwordConfirm: passConfirm,
+    })
+    // Auto-login após o cadastro
+    await pb.collection('users').authWithPassword(email.trim().toLowerCase(), pass)
+    setUser(pb.authStore.record)
+    setToken(pb.authStore.token)
+  }
+
   const logout = () => {
     pb.authStore.clear()
     setUser(null)
     setToken(null)
   }
+
+  const isAdmin = user?.email === 'marcoschagasdiamond@icloud.com'
 
   return (
     <AuthContext.Provider
@@ -54,7 +71,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token,
         isLoading,
         isAuthenticated: !!token && !!user,
+        isAdmin,
         login,
+        signup,
         logout,
       }}
     >
