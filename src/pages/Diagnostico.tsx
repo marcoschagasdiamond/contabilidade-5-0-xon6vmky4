@@ -575,6 +575,7 @@ export default function Diagnostico() {
         }
 
         setResultado(diagResult)
+        setAnoSimulacao(formData.anoBase)
         setEtapa(5)
         window.scrollTo({ top: 120, behavior: 'smooth' })
       } catch (err) {
@@ -2512,7 +2513,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   {/* Botões segmentados responsivos com identidade Diamond Group */}
                   <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none max-w-full">
                     {anosOpcoesSimulacao.map((ano) => {
-                      const ativo = resultado.anoBase === ano
+                      const ativo = (anoSimulacao || resultado.anoBase) === ano
                       return (
                         <button
                           key={`curva-ano-${ano}`}
@@ -2640,9 +2641,9 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
 
                     {/* Seletor de Ano sincronizado (2027 a 2033) junto ao título do ranking */}
                     {(visaoSistema === 'novo' || visaoSistema === 'comparativo') && (
-                      <div className="inline-flex items-center gap-1 p-1 bg-[#07132B] rounded-xl border border-[#D4AF37]/40 shadow-sm overflow-x-auto max-w-full">
+                      <div className="flex items-center gap-1 p-1 bg-[#07132B] rounded-xl border border-[#D4AF37]/40 shadow-sm overflow-x-auto max-w-full scrollbar-none">
                         {anosOpcoesSimulacao.map((ano) => {
-                          const ativo = resultado.anoBase === ano
+                          const ativo = (anoSimulacao || resultado.anoBase) === ano
                           return (
                             <button
                               key={`ranking-ano-${ano}`}
@@ -2656,6 +2657,13 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                               title={`Simular ranking para o ano de ${ano}`}
                             >
                               <span>{ano}</span>
+                              {ano === 2026 && (
+                                <span
+                                  className={`text-[9px] font-semibold ${ativo ? 'text-[#07132B]' : 'text-[#D4AF37]'}`}
+                                >
+                                  (Teste)
+                                </span>
+                              )}
                               {ano === 2033 && (
                                 <span className="text-[9px] opacity-80">(Pleno)</span>
                               )}
