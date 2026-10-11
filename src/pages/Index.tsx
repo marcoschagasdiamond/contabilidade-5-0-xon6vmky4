@@ -4,8 +4,6 @@ import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import {
   CheckCircle2,
   ArrowRight,
-  TrendingUp,
-  TrendingDown,
   Calculator,
   Receipt,
   Users,
@@ -35,21 +33,6 @@ export default function Index() {
     'AlphaFin',
     'Biotech Brasil',
     'UrbanLog',
-  ]
-
-  const monthlyBars = [
-    { m: 'Jan', h: 45 },
-    { m: 'Fev', h: 52 },
-    { m: 'Mar', h: 58 },
-    { m: 'Abr', h: 63 },
-    { m: 'Mai', h: 70 },
-    { m: 'Jun', h: 68 },
-    { m: 'Jul', h: 76 },
-    { m: 'Ago', h: 82 },
-    { m: 'Set', h: 85 },
-    { m: 'Out', h: 89 },
-    { m: 'Nov', h: 94 },
-    { m: 'Dez', h: 100 },
   ]
 
   const services = [
@@ -122,194 +105,101 @@ export default function Index() {
         <div className="absolute bottom-10 right-0 w-96 h-96 bg-[#145A32]/40 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-            {/* Coluna Esquerda: Conteúdo */}
-            <div className="lg:col-span-7 flex flex-col items-start">
-              {/* Badge com efeito de brilho */}
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#2ECC71]/40 bg-[#145A32]/50 text-xs sm:text-sm font-medium text-emerald-300 mb-6 backdrop-blur-md shadow-sm relative overflow-hidden group">
-                <span className="w-2 h-2 rounded-full bg-[#2ECC71] animate-ping" />
-                <Sparkles className="w-3.5 h-3.5 text-[#2ECC71]" />
-                <span className="relative z-10">Contabilidade 5.0 para o seu negócio digital</span>
-                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-              </div>
-
-              {/* H1 */}
-              <h1 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-[48px] leading-[1.15] text-white tracking-tight mb-6">
-                Contabilidade que{' '}
-                <span className="text-[#2ECC71] underline decoration-[#2ECC71]/30 underline-offset-4">
-                  impulsiona
-                </span>{' '}
-                a era{' '}
-                <span className="text-[#2ECC71] underline decoration-[#2ECC71]/30 underline-offset-4">
-                  digital
-                </span>{' '}
-                do seu negócio
-              </h1>
-
-              {/* Subtítulo */}
-              <p className="text-base sm:text-lg text-slate-300 font-normal leading-relaxed mb-8 max-w-xl">
-                Soluções completas em gestão contábil, fiscal e trabalhista com tecnologia avançada,
-                automação e atendimento humano de verdade.
-              </p>
-
-              {/* Botões de Ação */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-6">
-                <a
-                  href="/diagnostico"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    if (!temDadosSalvos) {
-                      navigate('/dados-empresa?destino=%2Fdiagnostico')
-                    } else {
-                      navigate('/diagnostico')
-                    }
-                  }}
-                  className="px-7 py-4 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-1 btn-press flex items-center justify-center gap-2"
-                >
-                  Fazer Diagnóstico Tributário
-                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() => scrollToSection('servicos')}
-                  className="px-7 py-4 rounded-xl font-heading font-medium text-base text-white border border-white/30 hover:border-white hover:bg-white hover:text-[#145A32] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
-                >
-                  Conhecer Serviços
-                </button>
-              </div>
-
-              {/* Chamada sutil para a série do blog e calculadora */}
-              <div className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-300">
-                <span className="text-[#D4AF37] font-semibold flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  Reforma 2026:
-                </span>
-                <Link
-                  to="/blog/apresentamos-a-calculadora-ibs-cbs-simule-o-impacto"
-                  className="hover:text-white underline underline-offset-2 decoration-[#D4AF37]/50"
-                >
-                  Conheça a Calculadora IBS/CBS no Blog
-                </Link>
-                <span>•</span>
-                <Link
-                  to="/blog"
-                  className="text-emerald-300 hover:text-white underline underline-offset-2"
-                >
-                  Ver série completa (5 partes) →
-                </Link>
-              </div>
-
-              {/* Barra de Confiança */}
-              <div className="pt-6 border-t border-white/10 w-full flex flex-wrap items-center gap-x-6 gap-y-3 text-xs sm:text-sm text-slate-300">
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
-                  </div>
-                  <span>Proteção de dados LGPD</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
-                  </div>
-                  <span>Certificação Digital</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
-                  </div>
-                  <span>Atendimento em até 24h</span>
-                </div>
-              </div>
+          <div className="max-w-3xl flex flex-col items-start">
+            {/* Badge com efeito de brilho */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#2ECC71]/40 bg-[#145A32]/50 text-xs sm:text-sm font-medium text-emerald-300 mb-6 backdrop-blur-md shadow-sm relative overflow-hidden group">
+              <span className="w-2 h-2 rounded-full bg-[#2ECC71] animate-ping" />
+              <Sparkles className="w-3.5 h-3.5 text-[#2ECC71]" />
+              <span className="relative z-10">Contabilidade 5.0 para o seu negócio digital</span>
+              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             </div>
 
-            {/* Coluna Direita: Card de Projeção / Mini Dashboard */}
-            <div className="lg:col-span-5 flex justify-center lg:justify-end">
-              <div className="w-full max-w-md bg-white/[0.08] backdrop-blur-xl border border-white/20 rounded-[24px] p-6 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.35)] animate-float">
-                {/* Header do Card */}
-                <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
-                  <div>
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
-                      Painel Contábil 5.0
-                    </span>
-                    <h3 className="font-heading font-bold text-lg text-white">
-                      Resumo Financeiro de Dezembro
-                    </h3>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#2ECC71]/20 text-[#2ECC71] border border-[#2ECC71]/30">
-                    Ao Vivo
-                  </span>
+            {/* H1 */}
+            <h1 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-[48px] leading-[1.15] text-white tracking-tight mb-6">
+              Contabilidade que{' '}
+              <span className="text-[#2ECC71] underline decoration-[#2ECC71]/30 underline-offset-4">
+                impulsiona
+              </span>{' '}
+              a era{' '}
+              <span className="text-[#2ECC71] underline decoration-[#2ECC71]/30 underline-offset-4">
+                digital
+              </span>{' '}
+              do seu negócio
+            </h1>
+
+            {/* Subtítulo */}
+            <p className="text-base sm:text-lg text-slate-300 font-normal leading-relaxed mb-8 max-w-2xl">
+              Soluções completas em gestão contábil, fiscal e trabalhista com tecnologia avançada,
+              automação e atendimento humano de verdade.
+            </p>
+
+            {/* Botões de Ação */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-6">
+              <a
+                href="/diagnostico"
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (!temDadosSalvos) {
+                    navigate('/dados-empresa?destino=%2Fdiagnostico')
+                  } else {
+                    navigate('/diagnostico')
+                  }
+                }}
+                className="px-7 py-4 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-1 btn-press flex items-center justify-center gap-2"
+              >
+                Fazer Diagnóstico Tributário
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+              </a>
+
+              <button
+                type="button"
+                onClick={() => scrollToSection('servicos')}
+                className="px-7 py-4 rounded-xl font-heading font-medium text-base text-white border border-white/30 hover:border-white hover:bg-white hover:text-[#145A32] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
+              >
+                Conhecer Serviços
+              </button>
+            </div>
+
+            {/* Chamada sutil para a série do blog e calculadora */}
+            <div className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+              <span className="text-[#D4AF37] font-semibold flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                Reforma 2026:
+              </span>
+              <Link
+                to="/blog/apresentamos-a-calculadora-ibs-cbs-simule-o-impacto"
+                className="hover:text-white underline underline-offset-2 decoration-[#D4AF37]/50"
+              >
+                Conheça a Calculadora IBS/CBS no Blog
+              </Link>
+              <span>•</span>
+              <Link
+                to="/blog"
+                className="text-emerald-300 hover:text-white underline underline-offset-2"
+              >
+                Ver série completa (5 partes) →
+              </Link>
+            </div>
+
+            {/* Barra de Confiança */}
+            <div className="pt-6 border-t border-white/10 w-full flex flex-wrap items-center gap-x-6 gap-y-3 text-xs sm:text-sm text-slate-300">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
                 </div>
-
-                {/* Três Métricas Principais */}
-                <div className="space-y-3 mb-6">
-                  {/* Receita */}
-                  <div className="p-3.5 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs text-slate-300 block">Receita Bruta</span>
-                      <span className="font-heading font-bold text-xl text-white">R$ 320.500</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs font-semibold text-[#2ECC71] bg-[#2ECC71]/15 px-2.5 py-1 rounded-full">
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      <span>+12,5% vs. Nov</span>
-                    </div>
-                  </div>
-
-                  {/* Despesas */}
-                  <div className="p-3.5 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs text-slate-300 block">Despesas Operacionais</span>
-                      <span className="font-heading font-bold text-xl text-white">R$ 145.200</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs font-semibold text-emerald-300 bg-emerald-500/15 px-2.5 py-1 rounded-full">
-                      <TrendingDown className="w-3.5 h-3.5" />
-                      <span>-3,2% economia</span>
-                    </div>
-                  </div>
-
-                  {/* Lucro Líquido */}
-                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#2ECC71]/20 to-transparent border border-[#2ECC71]/30 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs text-emerald-200 block">Lucro Líquido Real</span>
-                      <span className="font-heading font-bold text-xl text-[#2ECC71]">
-                        R$ 175.300
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs font-semibold text-[#2ECC71] bg-[#2ECC71]/20 px-2.5 py-1 rounded-full">
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      <span>+28,4% YTD</span>
-                    </div>
-                  </div>
+                <span>Proteção de dados LGPD</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
                 </div>
-
-                {/* Mini Gráfico de Barras (12 barras de Jan a Dez) */}
-                <div>
-                  <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-                    <span>Evolução de Faturamento Anual</span>
-                    <span className="text-emerald-400 font-medium">Jan — Dez</span>
-                  </div>
-                  <div className="h-24 flex items-end justify-between gap-1.5 pt-2 border-b border-white/10 pb-1">
-                    {monthlyBars.map((bar) => (
-                      <div key={bar.m} className="flex-1 flex flex-col items-center gap-1 group">
-                        <div
-                          className="w-full rounded-t transition-all duration-300 bg-gradient-to-t from-[#145A32] to-[#2ECC71] group-hover:brightness-125"
-                          style={{ height: `${bar.h}%` }}
-                          title={`${bar.m}: ${bar.h}%`}
-                        />
-                        <span className="text-[9px] text-slate-400 uppercase">{bar.m}</span>
-                      </div>
-                    ))}
-                  </div>
+                <span>Certificação Digital</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
                 </div>
-
-                {/* Status indicator */}
-                <div className="mt-4 pt-3 flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#2ECC71]"></span>
-                    Conformidade Fiscal 100%
-                  </span>
-                  <span>SPED & eSocial Ok</span>
-                </div>
+                <span>Atendimento em até 24h</span>
               </div>
             </div>
           </div>
