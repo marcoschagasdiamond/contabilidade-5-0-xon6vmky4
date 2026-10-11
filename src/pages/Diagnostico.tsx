@@ -40,6 +40,7 @@ import {
 import { gerarRelatorioDiagnosticoPDF } from '@/lib/pdfRelatorio'
 import {
   executarDiagnosticoTributario,
+  executarDiagnosticoTributario as calcularDiagnostico,
   type SegmentoEmpresa,
   type ResultadoDiagnosticoCompleto,
   LISTA_SEGMENTOS,
@@ -109,6 +110,12 @@ export default function Diagnostico() {
   const [isCalculando, setIsCalculando] = useState(false)
   const [resultado, setResultado] = useState<ResultadoDiagnosticoCompleto | null>(null)
 
+  // Estado React local da simulação de ano da transição (default: anoBase do formulário/diagnóstico, tipicamente 2027)
+  const [anoSimulacao, setAnoSimulacao] = useState<AnoBaseSimulacao>(() => {
+    const anoInicial = perfilEmpresaInicial.anoBaseTransicao || 2027
+    return (anoInicial >= 2026 && anoInicial <= 2033 ? anoInicial : 2027) as AnoBaseSimulacao
+  })
+
   // Valores iniciais calculados do perfil
   const fatAnualInicial = perfilEmpresaInicial.faturamentoMensal
     ? perfilEmpresaInicial.faturamentoMensal * 12
@@ -169,6 +176,37 @@ export default function Diagnostico() {
 
   // Visualização ativa na tela de resultado: 'novo' (Reforma IBS/CBS), 'atual' (Legislação Atual) ou 'comparativo' (lado a lado)
   const [visaoSistema, setVisaoSistema] = useState<'novo' | 'comparativo' | 'atual'>('novo')
+
+  // Lista de anos para o seletor da transição na tela de resultado: 2027 a 2033 (inclui 2026 se for o ano base inicial/salvo)
+  const anosOpcoesSimulacao = React.useMemo<AnoBaseSimulacao[]>(() => {
+    const anosBase: AnoBaseSimulacao[] = [2027, 2028, 2029, 2030, 2031, 2032, 2033]
+    if (formData.anoBase === 2026 || (resultado && resultado.anoBase === 2026)) {
+      return [2026, ...anosBase]
+    }
+    return anosBase
+  }, [formData.anoBase, resultado?.anoBase])
+
+  // Recálculo imediato do diagnóstico ao trocar o ano na tela de resultado (mantendo anoSimulacao sincronizado)
+  const handleTrocarAnoSimulado = (ano: AnoBaseSimulacao) => {
+    setAnoSimulacao(ano)
+    const recalculado = executarDiagnosticoTributario({
+      segmento: formData.segmento,
+      rbt12: formData.rbt12,
+      folha12: formData.folha12,
+      folhaMensal: formData.folhaMensal,
+      despesasCreditosMensais: formData.despesasCreditos,
+      percentualExportacao: formData.percentualExportacao,
+      ufOrigem: formData.ufOrigem,
+      margemLucro: formData.margemLucro,
+      funcionarios: formData.funcionarios,
+      emissaoNf: formData.emissaoNf,
+      atividadeMista: formData.atividadeMista,
+      regimeAtual: formData.regimeAtual,
+      cidade: formData.cidade,
+      anoBase: ano,
+    })
+    setResultado(recalculado)
+  }
 
   // Inputs raw em string para facilitar digitação com formatação
   const [rbt12Input, setRbt12Input] = useState(() =>
@@ -2004,29 +2042,12 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-xs text-slate-500 font-medium">Ano da Reforma:</span>
                 <select
-                  value={formData.anoBase}
+                  value={resultado.anoBase}
                   onChange={(e) => {
                     const novoAno = parseInt(e.target.value) as AnoBaseSimulacao
-                    setFormData((prev) => ({ ...prev, anoBase: novoAno }))
-                    const recalculado = executarDiagnosticoTributario({
-                      segmento: formData.segmento,
-                      rbt12: formData.rbt12,
-                      folha12: formData.folha12,
-                      folhaMensal: formData.folhaMensal,
-                      despesasCreditosMensais: formData.despesasCreditos,
-                      percentualExportacao: formData.percentualExportacao,
-                      ufOrigem: formData.ufOrigem,
-                      margemLucro: formData.margemLucro,
-                      funcionarios: formData.funcionarios,
-                      emissaoNf: formData.emissaoNf,
-                      atividadeMista: formData.atividadeMista,
-                      regimeAtual: formData.regimeAtual,
-                      cidade: formData.cidade,
-                      anoBase: novoAno,
-                    })
-                    setResultado(recalculado)
+                    handleTrocarAnoSimulado(novoAno)
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-900 bg-emerald-50/50"
+                  className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/50 text-xs font-bold text-slate-900 bg-amber-50/60 hover:border-[#D4AF37] transition-colors"
                 >
                   {ANOS_SIMULACAO_DISPONIVEIS.map((a) => (
                     <option key={a} value={a}>
@@ -2330,15 +2351,17 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                       return (
                         <tr
                           key={p.ano}
-                          className={`hover:bg-slate-50/70 transition-colors ${
-                            isAnoAtual ? 'bg-emerald-50/80 font-bold' : ''
+                          onClick={() => handleTrocarAnoSimulado(p.ano as AnoBaseSimulacao)}
+                          className={`hover:bg-slate-50/70 transition-colors cursor-pointer ${
+                            isAnoAtual ? 'bg-amber-50/80 font-bold' : ''
                           }`}
+                          title={`Clique para simular o ano ${p.ano}`}
                         >
                           <td className="py-3 px-3 font-heading font-bold text-slate-900">
                             {p.ano}
                             {isAnoAtual && (
-                              <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] bg-[#145A32] text-white">
-                                Atual
+                              <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/50 font-black">
+                                Ativo
                               </span>
                             )}
                           </td>
@@ -2464,9 +2487,64 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     (IBS/CBS) atua no ano de {resultado.anoBase}.
                   </p>
                 </div>
-                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-[#145A32] border border-emerald-300">
-                  EC 132/2023 · LC 214/2025
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-[#145A32] border border-emerald-300">
+                    EC 132/2023 · LC 214/2025
+                  </span>
+                </div>
+              </div>
+
+              {/* Seletor de Ano da Transição (2027 a 2033) */}
+              <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#07132B] via-[#0E2442] to-[#07132B] text-white border border-[#D4AF37]/40 shadow-lg">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-[#D4AF37] block">
+                        Simular Ano da Transição IBS / CBS ({anosOpcoesSimulacao[0]} a 2033)
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-300 block mt-0.5">
+                      Recalcula na hora: alíquotas CBS/IBS, impostos residuais, comparativo de
+                      regimes e recomendação oficial.
+                    </span>
+                  </div>
+                  {/* Botões segmentados responsivos com identidade Diamond Group */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none max-w-full">
+                    {anosOpcoesSimulacao.map((ano) => {
+                      const ativo = resultado.anoBase === ano
+                      return (
+                        <button
+                          key={`curva-ano-${ano}`}
+                          type="button"
+                          onClick={() => handleTrocarAnoSimulado(ano)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1 ${
+                            ativo
+                              ? 'bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-[#07132B] shadow-md ring-2 ring-[#D4AF37]/60 scale-105 font-black'
+                              : 'bg-white/10 text-slate-200 border border-white/10 hover:bg-white/20 hover:text-white hover:border-[#D4AF37]/40'
+                          }`}
+                          title={`Simular transição no ano de ${ano}`}
+                        >
+                          <span>{ano}</span>
+                          {ano === 2026 && (
+                            <span
+                              className={`text-[9px] font-semibold opacity-90 ${ativo ? 'text-[#07132B]' : 'text-[#D4AF37]'}`}
+                            >
+                              (Teste)
+                            </span>
+                          )}
+                          {ano === 2033 && (
+                            <span
+                              className={`text-[9px] font-semibold opacity-90 ${ativo ? 'text-[#07132B]' : 'text-[#D4AF37]'}`}
+                            >
+                              (Pleno)
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/* Indicadores de alíquotas do ano selecionado */}
@@ -2545,22 +2623,55 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
 
             {/* 3. RANKING COMPLETO DOS REGIMES (DO 1º AO 3º COLOCADO NO SISTEMA ESCOLHIDO) */}
             <div className="bg-white rounded-[24px] p-6 sm:p-8 shadow-xl border border-slate-200">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-100">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Scale className="w-5 h-5 text-[#145A32]" />
-                    <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight">
-                      Ranking dos Regimes Tributários{' '}
-                      {visaoSistema === 'novo'
-                        ? `(Novo Sistema · ${resultado.anoBase})`
-                        : '(Sistema Atual)'}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+                <div className="w-full lg:w-auto">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <Scale className="w-5 h-5 text-[#07132B] shrink-0" />
+                    <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight flex flex-wrap items-center gap-1.5">
+                      <span>Ranking dos Regimes Tributários</span>
+                      <span className="text-[#07132B] font-extrabold">
+                        {visaoSistema === 'novo'
+                          ? `(Novo Sistema — ${resultado.anoBase})`
+                          : visaoSistema === 'comparativo'
+                            ? `(Novo Sistema — ${resultado.anoBase})`
+                            : '(Sistema Atual)'}
+                      </span>
                     </h3>
+
+                    {/* Seletor de Ano sincronizado (2027 a 2033) junto ao título do ranking */}
+                    {(visaoSistema === 'novo' || visaoSistema === 'comparativo') && (
+                      <div className="inline-flex items-center gap-1 p-1 bg-[#07132B] rounded-xl border border-[#D4AF37]/40 shadow-sm overflow-x-auto max-w-full">
+                        {anosOpcoesSimulacao.map((ano) => {
+                          const ativo = resultado.anoBase === ano
+                          return (
+                            <button
+                              key={`ranking-ano-${ano}`}
+                              type="button"
+                              onClick={() => handleTrocarAnoSimulado(ano)}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-0.5 ${
+                                ativo
+                                  ? 'bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-[#07132B] shadow-sm font-black ring-1 ring-[#D4AF37]'
+                                  : 'text-slate-300 hover:text-white hover:bg-white/10'
+                              }`}
+                              title={`Simular ranking para o ano de ${ano}`}
+                            >
+                              <span>{ano}</span>
+                              {ano === 2033 && (
+                                <span className="text-[9px] opacity-80">(Pleno)</span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                    Comparação ordenada da menor para a maior carga tributária calculada.
+                  <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                    {visaoSistema === 'atual'
+                      ? 'Comparação ordenada da menor para a maior carga tributária calculada nas regras vigentes.'
+                      : `Comparação ordenada da menor para a maior carga tributária recalculada para o ano de ${resultado.anoBase} da Reforma Tributária (LC 214/2025).`}
                   </p>
                 </div>
-                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600">
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600 self-start lg:self-center shrink-0">
                   3 regimes avaliados
                 </span>
               </div>
