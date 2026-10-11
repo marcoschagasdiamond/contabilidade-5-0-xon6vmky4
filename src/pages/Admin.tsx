@@ -249,6 +249,7 @@ export default function Admin() {
       item.nome?.toLowerCase().includes(term) ||
       item.email?.toLowerCase().includes(term) ||
       item.empresa?.toLowerCase().includes(term) ||
+      item.cnpj?.toLowerCase().includes(term) ||
       item.telefone?.includes(term)
 
     const matchesSegment =
@@ -352,6 +353,7 @@ export default function Admin() {
       'Email',
       'Telefone',
       'Empresa',
+      'CNPJ',
       'Segmento',
       'Funcionários',
       'Data',
@@ -362,6 +364,7 @@ export default function Admin() {
       `"${l.email || ''}"`,
       `"${l.telefone || ''}"`,
       `"${l.empresa || ''}"`,
+      `"${l.cnpj || ''}"`,
       `"${l.segmento || ''}"`,
       `"${l.funcionarios || ''}"`,
       l.created ? new Date(l.created).toLocaleDateString('pt-BR') : '',
@@ -1013,8 +1016,8 @@ export default function Admin() {
                 <input
                   type="text"
                   placeholder="Buscar por nome, empresa, CNPJ ou telefone..."
-                  value={diagSearchTerm}
-                  onChange={(e) => setDiagSearchTerm(e.target.value)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-900 input-focus-ring"
                 />{' '}
               </div>
@@ -1091,6 +1094,11 @@ export default function Admin() {
 
                           <td className="py-4 px-6">
                             <div className="font-semibold text-slate-800">{item.empresa}</div>
+                            {item.cnpj && (
+                              <div className="text-xs font-mono text-slate-600 mt-0.5">
+                                CNPJ: {item.cnpj}
+                              </div>
+                            )}
                             <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-[#145A32] border border-emerald-200">
                               {item.segmento}
                             </span>
@@ -1482,6 +1490,12 @@ export default function Admin() {
                     Empresa
                   </span>
                   <span className="font-semibold text-slate-900">{selectedLead.empresa}</span>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase block">CNPJ</span>
+                  <span className="font-semibold text-slate-900 font-mono">
+                    {selectedLead.cnpj || 'Não informado'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-xs font-semibold text-slate-400 uppercase block">

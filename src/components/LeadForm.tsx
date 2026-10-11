@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CheckCircle2, Loader2, Send, AlertCircle } from 'lucide-react'
 import { createLead } from '@/services/leads'
+import { formatarCNPJ, limparCNPJ, validarCNPJ } from '@/lib/cnpj'
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ interface FormErrors {
   email?: string
   telefone?: string
   empresa?: string
+  cnpj?: string
   segmento?: string
   funcionarios?: string
 }
@@ -26,6 +28,7 @@ export default function LeadForm({ className = '' }: { className?: string }) {
     email: '',
     telefone: '',
     empresa: '',
+    cnpj: '',
     segmento: '',
     funcionarios: '',
     mensagem: '',
@@ -65,6 +68,16 @@ export default function LeadForm({ className = '' }: { className?: string }) {
 
     if (errors.telefone) {
       setErrors((prev) => ({ ...prev, telefone: undefined }))
+    }
+  }
+
+  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value
+    const formatted = formatarCNPJ(raw)
+    setFormData((prev) => ({ ...prev, cnpj: formatted }))
+
+    if (errors.cnpj) {
+      setErrors((prev) => ({ ...prev, cnpj: undefined }))
     }
   }
 
@@ -108,6 +121,13 @@ export default function LeadForm({ className = '' }: { className?: string }) {
       newErrors.empresa = 'Nome da empresa é obrigatório'
     }
 
+    const cleanCnpj = limparCNPJ(formData.cnpj)
+    if (!cleanCnpj) {
+      newErrors.cnpj = 'Informe um CNPJ válido'
+    } else if (cleanCnpj.length !== 14 || !validarCNPJ(cleanCnpj)) {
+      newErrors.cnpj = 'CNPJ inválido — verifique os 14 dígitos'
+    }
+
     if (!formData.segmento) {
       newErrors.segmento = 'Selecione o segmento da empresa'
     }
@@ -136,6 +156,7 @@ export default function LeadForm({ className = '' }: { className?: string }) {
         email: formData.email.trim().toLowerCase(),
         telefone: formData.telefone.trim(),
         empresa: formData.empresa.trim(),
+        cnpj: formData.cnpj.trim(),
         segmento: formData.segmento,
         funcionarios: formData.funcionarios,
         mensagem: formData.mensagem.trim() || undefined,
@@ -147,6 +168,7 @@ export default function LeadForm({ className = '' }: { className?: string }) {
         email: '',
         telefone: '',
         empresa: '',
+        cnpj: '',
         segmento: '',
         funcionarios: '',
         mensagem: '',
@@ -286,6 +308,33 @@ export default function LeadForm({ className = '' }: { className?: string }) {
             />
             {errors.empresa && (
               <p className="mt-1 text-xs text-[#E74C3C] font-medium">{errors.empresa}</p>
+            )}
+          </div>
+
+          {/* CNPJ */}
+          <div>
+            <label
+              htmlFor="cnpj"
+              className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+            >
+              CNPJ *
+            </label>
+            <input
+              id="cnpj"
+              type="text"
+              name="cnpj"
+              value={formData.cnpj}
+              onChange={handleCnpjChange}
+              placeholder="00.000.000/0000-00"
+              maxLength={18}
+              className={`w-full px-4 py-3 rounded-xl border text-sm font-mono text-slate-900 bg-slate-50/50 transition-colors input-focus-ring ${
+                errors.cnpj
+                  ? 'border-[#E74C3C] bg-red-50/30'
+                  : 'border-slate-200 hover:border-slate-300'
+              }`}
+            />
+            {errors.cnpj && (
+              <p className="mt-1 text-xs text-[#E74C3C] font-medium">{errors.cnpj}</p>
             )}
           </div>
 
