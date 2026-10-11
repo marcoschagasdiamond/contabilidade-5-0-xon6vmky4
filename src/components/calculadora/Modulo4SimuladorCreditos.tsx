@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import { Card, CardContent } from '@/components/ui/card'
@@ -12,7 +13,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Coins, Sparkles, TrendingUp, RotateCcw, AlertCircle, CheckCircle } from 'lucide-react'
+import {
+  Coins,
+  Sparkles,
+  TrendingUp,
+  RotateCcw,
+  AlertCircle,
+  CheckCircle,
+  Building2,
+} from 'lucide-react'
 
 export default function Modulo4SimuladorCreditos() {
   const {
@@ -21,6 +30,8 @@ export default function Modulo4SimuladorCreditos() {
     resetDespesasCreditos,
     resultadoCreditos,
     config,
+    origemDadosEmpresa,
+    restaurarDadosEmpresaNoModulo,
   } = useCalculadoraIbsCbs()
 
   const handleValorChange = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,15 +63,55 @@ export default function Modulo4SimuladorCreditos() {
               custos.
             </p>
           </div>
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => restaurarDadosEmpresaNoModulo(4)}
+              className="border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/20 bg-emerald-500/10 text-xs font-semibold gap-1.5"
+              title="Recalcula as categorias de crédito com base nas despesas com créditos dos Dados da Empresa"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Restaurar dados da empresa
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetDespesasCreditos}
+              className="border-[#D4AF37]/40 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:text-white bg-transparent text-xs"
+            >
+              Padrão da Tabela
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* AVISO INFORMATIVO COM ATALHO PARA DADOS DA EMPRESA */}
+      <div className="bg-slate-100 border border-slate-200 rounded-xl p-3 px-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-700">
+        <div className="flex items-center gap-2">
+          <Building2 className="w-4 h-4 text-[#D4AF37] shrink-0" />
+          <span>
+            Os valores abaixo são calibrados a partir das despesas mensais com créditos informadas
+            nos <strong>Dados da Empresa</strong>. Você pode editar individualmente cada categoria
+            para esta simulação.
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
           <Button
-            type="button"
-            variant="outline"
-            onClick={resetDespesasCreditos}
-            className="self-start sm:self-center border-[#D4AF37]/40 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:text-white bg-transparent"
+            size="sm"
+            variant="ghost"
+            onClick={() => restaurarDadosEmpresaNoModulo(4)}
+            className="h-6 px-2 text-xs font-semibold text-slate-700 hover:text-[#07132B]"
           >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Restaurar Valores Padrão
+            <RotateCcw className="w-3 h-3 mr-1" />
+            Restaurar
           </Button>
+          <Link
+            to="/dados-empresa"
+            className="text-xs font-bold text-[#07132B] hover:text-[#D4AF37] underline"
+          >
+            Editar perfil da empresa →
+          </Link>
         </div>
       </div>
 

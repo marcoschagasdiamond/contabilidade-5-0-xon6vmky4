@@ -131,6 +131,17 @@ export default function Layout() {
               Reforma Tributária
             </Link>
             <Link
+              to="/dados-empresa"
+              className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                location.pathname === '/dados-empresa'
+                  ? 'text-[#D4AF37] font-semibold active'
+                  : 'text-slate-200 hover:text-white'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+              Dados da Empresa
+            </Link>
+            <Link
               to="/calculadora-ibs-cbs"
               className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 location.pathname === '/calculadora-ibs-cbs'
@@ -265,6 +276,18 @@ export default function Layout() {
                 >
                   <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
                   Reforma Tributária
+                </Link>
+                <Link
+                  to="/dados-empresa"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
+                    location.pathname === '/dados-empresa'
+                      ? 'text-[#D4AF37] font-bold'
+                      : 'text-slate-200 hover:text-[#D4AF37]'
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+                  Dados da Empresa
                 </Link>
                 <Link
                   to="/calculadora-ibs-cbs"
@@ -441,6 +464,15 @@ export default function Layout() {
                   >
                     <ArrowRight className="w-3.5 h-3.5 text-[#F59E0B]" />
                     Reforma Tributária
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/dados-empresa"
+                    className="text-slate-400 hover:text-[#D4AF37] transition-colors flex items-center gap-1.5 font-medium"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    Dados da Empresa
                   </Link>
                 </li>
                 <li>

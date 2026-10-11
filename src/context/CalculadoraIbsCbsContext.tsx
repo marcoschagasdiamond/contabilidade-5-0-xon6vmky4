@@ -15,6 +15,13 @@ import {
   InfoSubatividade,
 } from '@/types/calculadoraIbsCbs'
 import { TABELAS_SIMPLES } from '@/lib/regimes'
+import {
+  carregarDadosEmpresa,
+  salvarDadosEmpresa,
+  existeDadosEmpresaSalvos,
+  DadosEmpresaPerfil,
+  STORAGE_EVENT,
+} from '@/types/dadosEmpresa'
 
 interface CalculadoraContextType {
   // Módulo 1 - Configurações Gerais
@@ -77,6 +84,10 @@ interface CalculadoraContextType {
   setPeriodoDashboard: (p: 'mensal' | 'anual') => void
   regimeAtualFiltro: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
   setRegimeAtualFiltro: (r: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional') => void
+
+  // Integração Dados da Empresa
+  origemDadosEmpresa: boolean
+  restaurarDadosEmpresaNoModulo: (modulo: 2 | 3 | 4 | 5) => void
 
   // Resultados calculados derivados
   resultadoSimples: {
@@ -200,6 +211,12 @@ interface CalculadoraContextType {
 const CalculadoraContext = createContext<CalculadoraContextType | undefined>(undefined)
 
 export function CalculadoraProvider({ children }: { children: React.ReactNode }) {
+  // Carrega perfil inicial de Dados da Empresa
+  const perfilInicial = useMemo(() => carregarDadosEmpresa(), [])
+  const [origemDadosEmpresa, setOrigemDadosEmpresa] = useState<boolean>(() =>
+    existeDadosEmpresaSalvos(),
+  )
+
   // Módulo 1: Configurações Gerais
   const [config, setConfig] = useState<ConfiguracoesGerais>(CONFIGURACOES_PADRAO)
 
@@ -218,36 +235,67 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   const resetConfig = () => setConfig(CONFIGURACOES_PADRAO)
 
-  // Módulo 2: Calculadora Simples
-  const [valorOperacao, setValorOperacao] = useState<number>(50000)
+  // Módulo 2: Calculadora Simples (inicializado a partir dos Dados da Empresa)
+  const [valorOperacao, setValorOperacao] = useState<number>(
+    () => perfilInicial.faturamentoMensal || 50000,
+  )
   const [regimeOperacao, setRegimeOperacao] = useState<RegimeDiferenciadoTipo>('padrao')
-  const [percentualComprasVendasSimples, setPercentualComprasVendasSimples] = useState<number>(40)
+  const [percentualComprasVendasSimples, setPercentualComprasVendasSimples] = useState<number>(
+    () => perfilInicial.percentualComprasVendas ?? 40,
+  )
 
-  // Módulo 3: Comparativo por Regime
-  const [faturamentoMensal, setFaturamentoMensal] = useState<number>(200000)
-  const [tipoAtividade, setTipoAtividade] = useState<TipoAtividade>('servico')
+  // Módulo 3: Comparativo por Regime (inicializado a partir dos Dados da Empresa)
+  const [faturamentoMensal, setFaturamentoMensal] = useState<number>(
+    () => perfilInicial.faturamentoMensal || 200000,
+  )
+  const [tipoAtividade, setTipoAtividade] = useState<TipoAtividade>(
+    () => perfilInicial.tipoAtividade || 'servico',
+  )
   // Subatividades por ramo
-  const [subatividadeServico, setSubatividadeServico] =
-    useState<SubatividadeServico>('servico_comum')
-  const [subatividadeIndustria, setSubatividadeIndustria] =
-    useState<SubatividadeIndustria>('industria_comum')
-  const [subatividadeComercio, setSubatividadeComercio] =
-    useState<SubatividadeComercio>('varejo_comum')
+  const [subatividadeServico, setSubatividadeServico] = useState<SubatividadeServico>(
+    () => perfilInicial.subatividadeServico || 'servico_comum',
+  )
+  const [subatividadeIndustria, setSubatividadeIndustria] = useState<SubatividadeIndustria>(
+    () => perfilInicial.subatividadeIndustria || 'industria_comum',
+  )
+  const [subatividadeComercio, setSubatividadeComercio] = useState<SubatividadeComercio>(
+    () => perfilInicial.subatividadeComercio || 'varejo_comum',
+  )
   const [aliquotaImpostoSeletivo, setAliquotaImpostoSeletivo] = useState<number>(10)
 
-  const [proporcaoServicoMisto, setProporcaoServicoMisto] = useState<number>(50)
+  const [proporcaoServicoMisto, setProporcaoServicoMisto] = useState<number>(
+    () => perfilInicial.proporcaoServicoMisto ?? 50,
+  )
   const [percentualComprasVendasComparativo, setPercentualComprasVendasComparativo] =
-    useState<number>(40)
-  // Novos campos solicitados para o Módulo 3
-  const [folhaPagamentoMensal, setFolhaPagamentoMensal] = useState<number>(50000)
-  const [margemLucroEstimada, setMargemLucroEstimada] = useState<number>(20) // %
-  const [despesasComCreditosMensais, setDespesasComCreditosMensais] = useState<number>(30000)
-  const [percentualExportacao, setPercentualExportacao] = useState<number>(0)
-  const [ufOrigem, setUfOrigem] = useState<string>('')
+    useState<number>(() => perfilInicial.percentualComprasVendas ?? 40)
+  // Campos refinados do Módulo 3
+  const [folhaPagamentoMensal, setFolhaPagamentoMensal] = useState<number>(
+    () => perfilInicial.folhaPagamentoMensal || 50000,
+  )
+  const [margemLucroEstimada, setMargemLucroEstimada] = useState<number>(
+    () => perfilInicial.margemLucroEstimada ?? 20,
+  ) // %
+  const [despesasComCreditosMensais, setDespesasComCreditosMensais] = useState<number>(
+    () => perfilInicial.despesasComCreditosMensais || 30000,
+  )
+  const [percentualExportacao, setPercentualExportacao] = useState<number>(
+    () => perfilInicial.percentualExportacao ?? 0,
+  )
+  const [ufOrigem, setUfOrigem] = useState<string>(() => perfilInicial.ufOrigem || 'SP')
 
-  // Módulo 4: Simulador de Créditos
+  // Módulo 4: Simulador de Créditos (proporcionaliza categorias quando houver perfil)
+  const gerarCategoriasIniciais = (): CategoriaDespesaCredito[] => {
+    const despesaPerfil = perfilInicial.despesasComCreditosMensais || 30000
+    // O padrão soma 33.000. Se o perfil tiver valor diferente, escala proporcionalmente
+    const proporcao = despesaPerfil / 33000
+    return CATEGORIAS_CREDITO_PADRAO.map((item) => ({
+      ...item,
+      valorMensal: Math.round(item.valorMensal * proporcao),
+    }))
+  }
+
   const [despesasCreditos, setDespesasCreditos] =
-    useState<CategoriaDespesaCredito[]>(CATEGORIAS_CREDITO_PADRAO)
+    useState<CategoriaDespesaCredito[]>(gerarCategoriasIniciais)
 
   const updateDespesaCredito = (id: string, updates: Partial<CategoriaDespesaCredito>) => {
     setDespesasCreditos((prev) =>
@@ -257,15 +305,67 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   const resetDespesasCreditos = () => setDespesasCreditos(CATEGORIAS_CREDITO_PADRAO)
 
-  // Módulo 5: Transição
-  const [faturamentoAnualProjetado, setFaturamentoAnualProjetado] = useState<number>(2400000)
-  const [setorTransicao, setSetorTransicao] = useState<TipoAtividade>('servico')
+  // Módulo 5: Transição (faturamento anual = faturamentoMensal * 12)
+  const [faturamentoAnualProjetado, setFaturamentoAnualProjetado] = useState<number>(() =>
+    perfilInicial.faturamentoMensal ? perfilInicial.faturamentoMensal * 12 : 2400000,
+  )
+  const [setorTransicao, setSetorTransicao] = useState<TipoAtividade>(
+    () => perfilInicial.tipoAtividade || 'servico',
+  )
 
   // Módulo 6: Dashboard filtros
   const [periodoDashboard, setPeriodoDashboard] = useState<'mensal' | 'anual'>('mensal')
   const [regimeAtualFiltro, setRegimeAtualFiltro] = useState<
     'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
-  >('Lucro Presumido')
+  >(() => {
+    if (perfilInicial.regimeAtual?.includes('Real')) return 'Lucro Real'
+    if (perfilInicial.regimeAtual?.includes('Simples')) return 'Simples Nacional'
+    return 'Lucro Presumido'
+  })
+
+  // Listener para sincronização automática se o usuário salvar dados em outra aba ou na página /dados-empresa
+  React.useEffect(() => {
+    const handleSync = () => {
+      const p = carregarDadosEmpresa()
+      setOrigemDadosEmpresa(existeDadosEmpresaSalvos())
+    }
+    window.addEventListener(STORAGE_EVENT, handleSync)
+    return () => window.removeEventListener(STORAGE_EVENT, handleSync)
+  }, [])
+
+  // Função para restaurar os dados da empresa especificamente para um módulo
+  const restaurarDadosEmpresaNoModulo = (modulo: 2 | 3 | 4 | 5) => {
+    const p = carregarDadosEmpresa()
+    if (modulo === 2) {
+      setValorOperacao(p.faturamentoMensal || 50000)
+      setPercentualComprasVendasSimples(p.percentualComprasVendas ?? 40)
+    } else if (modulo === 3) {
+      setFaturamentoMensal(p.faturamentoMensal || 200000)
+      setTipoAtividade(p.tipoAtividade || 'servico')
+      setSubatividadeServico(p.subatividadeServico || 'servico_comum')
+      setSubatividadeIndustria(p.subatividadeIndustria || 'industria_comum')
+      setSubatividadeComercio(p.subatividadeComercio || 'varejo_comum')
+      setProporcaoServicoMisto(p.proporcaoServicoMisto ?? 50)
+      setPercentualComprasVendasComparativo(p.percentualComprasVendas ?? 40)
+      setFolhaPagamentoMensal(p.folhaPagamentoMensal || 50000)
+      setMargemLucroEstimada(p.margemLucroEstimada ?? 20)
+      setDespesasComCreditosMensais(p.despesasComCreditosMensais || 30000)
+      setPercentualExportacao(p.percentualExportacao ?? 0)
+      setUfOrigem(p.ufOrigem || 'SP')
+    } else if (modulo === 4) {
+      const despesaPerfil = p.despesasComCreditosMensais || 30000
+      const proporcao = despesaPerfil / 33000
+      setDespesasCreditos(
+        CATEGORIAS_CREDITO_PADRAO.map((item) => ({
+          ...item,
+          valorMensal: Math.round(item.valorMensal * proporcao),
+        })),
+      )
+    } else if (modulo === 5) {
+      setFaturamentoAnualProjetado(p.faturamentoMensal ? p.faturamentoMensal * 12 : 2400000)
+      setSetorTransicao(p.tipoAtividade || 'servico')
+    }
+  }
 
   // ==========================================
   // CÁLCULO MÓDULO 2 (Calculadora Simples)
@@ -1063,6 +1163,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         setPeriodoDashboard,
         regimeAtualFiltro,
         setRegimeAtualFiltro,
+
+        origemDadosEmpresa,
+        restaurarDadosEmpresaNoModulo,
 
         resultadoSimples,
         resultadoComparativo,

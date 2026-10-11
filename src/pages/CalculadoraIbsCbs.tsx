@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalculadoraProvider, useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
+import { Building2 } from 'lucide-react'
 import Modulo1Configuracoes from '@/components/calculadora/Modulo1Configuracoes'
 import Modulo2CalculadoraSimples from '@/components/calculadora/Modulo2CalculadoraSimples'
 import Modulo3ComparativoRegimes from '@/components/calculadora/Modulo3ComparativoRegimes'
@@ -123,12 +124,33 @@ function CalculadoraConteudo() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* MENU LATERAL / NAVEGAÇÃO DE ABAS */}
-          <aside className="w-full lg:w-72 shrink-0 bg-white border border-slate-200 rounded-2xl p-3 shadow-md lg:sticky lg:top-24">
-            <div className="px-3 py-2 border-b border-slate-100 mb-2">
+          <aside className="w-full lg:w-72 shrink-0 bg-white border border-slate-200 rounded-2xl p-3 shadow-md lg:sticky lg:top-24 space-y-3">
+            {/* BOTÃO DE DESTAQUE: DADOS DA EMPRESA */}
+            <Link
+              to="/dados-empresa"
+              className="p-3 rounded-xl bg-gradient-to-r from-[#07132B] to-[#122347] text-white flex items-center justify-between gap-2.5 hover:from-[#0D1D3A] hover:to-[#1a3363] border border-[#D4AF37]/40 shadow-sm transition-all group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-[#D4AF37] text-[#07132B] flex items-center justify-center shrink-0 font-bold group-hover:scale-105 transition-transform">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-[#D4AF37] block truncate">
+                    Dados da Empresa
+                  </span>
+                  <span className="text-[10px] text-slate-300 block truncate">
+                    Perfil Global Integrado
+                  </span>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-[#D4AF37] shrink-0 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+
+            <div className="px-3 py-1.5 border-b border-slate-100">
               <span className="text-xs font-bold text-[#07132B] uppercase tracking-wider block">
                 6 Módulos Interligados
               </span>
-              <span className="text-[11px] text-slate-500">Selecione para simular</span>
+              <span className="text-[11px] text-slate-500">Alimentados pelo seu perfil</span>
             </div>
 
             <nav className="space-y-1.5 flex flex-col">

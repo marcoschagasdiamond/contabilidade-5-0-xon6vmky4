@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import { TipoAtividade } from '@/types/calculadoraIbsCbs'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -12,7 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Calendar, AlertTriangle, TrendingUp, CheckCircle, Clock, ShieldAlert } from 'lucide-react'
+import {
+  Calendar,
+  AlertTriangle,
+  TrendingUp,
+  CheckCircle,
+  Clock,
+  ShieldAlert,
+  RotateCcw,
+  Building2,
+} from 'lucide-react'
 import {
   LineChart,
   Line,
@@ -32,6 +43,8 @@ export default function Modulo5TransicaoCronograma() {
     setSetorTransicao,
     resultadoTransicao,
     config,
+    origemDadosEmpresa,
+    restaurarDadosEmpresaNoModulo,
   } = useCalculadoraIbsCbs()
 
   const [anoSelecionado, setAnoSelecionado] = useState<number>(2027)
@@ -71,11 +84,25 @@ export default function Modulo5TransicaoCronograma() {
       {/* Cabeçalho do Módulo */}
       <div className="bg-[#07132B] border border-[#D4AF37]/30 rounded-2xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xl">
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 tracking-wider uppercase">
-            <Calendar className="w-3.5 h-3.5" />
-            Módulo 5 • Cronograma Legal LC 214/2025
+        <div className="relative space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 tracking-wider uppercase">
+              <Calendar className="w-3.5 h-3.5" />
+              Módulo 5 • Cronograma Legal LC 214/2025
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => restaurarDadosEmpresaNoModulo(5)}
+              className="h-7 text-xs bg-white/10 hover:bg-white/20 text-white border-white/20 gap-1"
+              title="Restaura faturamento anual projetado (fat. mensal × 12) e setor a partir dos Dados da Empresa"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Restaurar dados da empresa
+            </Button>
           </div>
+
           <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white">
             Transição Tributária 2026 a 2033
           </h2>
@@ -83,6 +110,34 @@ export default function Modulo5TransicaoCronograma() {
             Acompanhe o cronograma de 8 anos da reforma constitucional. Simule o desembolso ano a
             ano e monitore os anos críticos da substituição do ICMS, ISS e PIS/COFINS por IBS e CBS.
           </p>
+        </div>
+      </div>
+
+      {/* AVISO INFORMATIVO COM ATALHO PARA DADOS DA EMPRESA */}
+      <div className="bg-slate-100 border border-slate-200 rounded-xl p-3 px-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-700">
+        <div className="flex items-center gap-2">
+          <Building2 className="w-4 h-4 text-[#D4AF37] shrink-0" />
+          <span>
+            Faturamento anual e setor iniciam calibrados com os <strong>Dados da Empresa</strong>.
+            Você pode testar outros cenários de crescimento nesta simulação.
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => restaurarDadosEmpresaNoModulo(5)}
+            className="h-6 px-2 text-xs font-semibold text-slate-700 hover:text-[#07132B]"
+          >
+            <RotateCcw className="w-3 h-3 mr-1" />
+            Restaurar
+          </Button>
+          <Link
+            to="/dados-empresa"
+            className="text-xs font-bold text-[#07132B] hover:text-[#D4AF37] underline"
+          >
+            Editar perfil da empresa →
+          </Link>
         </div>
       </div>
 

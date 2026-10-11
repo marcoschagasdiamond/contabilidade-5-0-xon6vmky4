@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
+import { DadosEmpresaProvider } from '@/context/DadosEmpresaContext'
 import Layout from './components/Layout'
 
 // Pages
@@ -20,6 +21,7 @@ import Login from './pages/Login'
 import Admin from './pages/Admin'
 import Diagnostico from './pages/Diagnostico'
 import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
+import DadosEmpresa from './pages/DadosEmpresa'
 import NotFound from './pages/NotFound'
 
 // Reforma Tributária (Diamond Group)
@@ -58,58 +60,67 @@ const App = () => (
   <BrowserRouter>
     <AuthProvider>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          <Route element={<Layout />}>
-            {/* Landing page principal */}
-            <Route path="/" element={<Index />} />
+        <DadosEmpresaProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route element={<Layout />}>
+              {/* Landing page principal */}
+              <Route path="/" element={<Index />} />
 
-            {/* Páginas institucionais */}
-            <Route path="/sobre" element={<Sobre />} />
-            <Route path="/servicos" element={<Servicos />} />
-            <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
-            <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
-            <Route path="/reforma-tributaria/visao-geral" element={<SubpageVisaoGeral />} />
-            <Route path="/reforma-tributaria/calendario" element={<SubpageCalendario />} />
-            <Route path="/reforma-tributaria/dicionario" element={<SubpageDicionario />} />
-            <Route path="/reforma-tributaria/impacto-por-setor" element={<SubpageImpactoSetor />} />
-            <Route path="/reforma-tributaria/excecoes" element={<SubpageExcecoes />} />
-            <Route path="/reforma-tributaria/comparador" element={<SubpageComparador />} />
-            <Route
-              path="/reforma-tributaria/diagnostico-reforma"
-              element={<SubpageDiagnosticoReforma />}
-            />
-            <Route path="/reforma-tributaria/painel-carteira" element={<SubpagePainelCarteira />} />
-            <Route
-              path="/reforma-tributaria/kit-precificacao"
-              element={<Navigate to="/reforma-tributaria" replace />}
-            />
-            <Route path="/reforma-tributaria/glossario" element={<SubpageGlossarioFontes />} />
-            <Route path="/diagnostico" element={<Diagnostico />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:slug" element={<BlogPost />} />
-            <Route path="/contato" element={<Contato />} />
-            <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
-            <Route path="/termos-de-uso" element={<TermosDeUso />} />
+              {/* Páginas institucionais */}
+              <Route path="/sobre" element={<Sobre />} />
+              <Route path="/servicos" element={<Servicos />} />
+              <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
+              <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
+              <Route path="/dados-empresa" element={<DadosEmpresa />} />
+              <Route path="/reforma-tributaria/visao-geral" element={<SubpageVisaoGeral />} />
+              <Route path="/reforma-tributaria/calendario" element={<SubpageCalendario />} />
+              <Route path="/reforma-tributaria/dicionario" element={<SubpageDicionario />} />
+              <Route
+                path="/reforma-tributaria/impacto-por-setor"
+                element={<SubpageImpactoSetor />}
+              />
+              <Route path="/reforma-tributaria/excecoes" element={<SubpageExcecoes />} />
+              <Route path="/reforma-tributaria/comparador" element={<SubpageComparador />} />
+              <Route
+                path="/reforma-tributaria/diagnostico-reforma"
+                element={<SubpageDiagnosticoReforma />}
+              />
+              <Route
+                path="/reforma-tributaria/painel-carteira"
+                element={<SubpagePainelCarteira />}
+              />
+              <Route
+                path="/reforma-tributaria/kit-precificacao"
+                element={<Navigate to="/reforma-tributaria" replace />}
+              />
+              <Route path="/reforma-tributaria/glossario" element={<SubpageGlossarioFontes />} />
+              <Route path="/diagnostico" element={<Diagnostico />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
+              <Route path="/contato" element={<Contato />} />
+              <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+              <Route path="/termos-de-uso" element={<TermosDeUso />} />
 
-            {/* Login */}
-            <Route path="/login" element={<Login />} />
+              {/* Login */}
+              <Route path="/login" element={<Login />} />
 
-            {/* Rota Protegida Admin */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <Admin />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
+              {/* Rota Protegida Admin */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <Admin />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </DadosEmpresaProvider>
       </TooltipProvider>
     </AuthProvider>
   </BrowserRouter>

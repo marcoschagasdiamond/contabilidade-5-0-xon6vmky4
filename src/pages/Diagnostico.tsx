@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import {
   Building2,
   DollarSign,
@@ -68,6 +68,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { carregarDadosEmpresa, existeDadosEmpresaSalvos } from '@/types/dadosEmpresa'
 
 interface FormErrors {
   nome?: string
@@ -87,10 +88,26 @@ interface FormErrors {
 export default function Diagnostico() {
   const navigate = useNavigate()
 
+  // Carrega dados da empresa salvos para pré-preenchimento
+  const perfilEmpresaInicial = React.useMemo(() => carregarDadosEmpresa(), [])
+  const [temPerfilSalvo, setTemPerfilSalvo] = useState(() => existeDadosEmpresaSalvos())
+
   // Wizard state (etapa 1 a 4; etapa 5 = resultado)
   const [etapa, setEtapa] = useState<number>(1)
   const [isCalculando, setIsCalculando] = useState(false)
   const [resultado, setResultado] = useState<ResultadoDiagnosticoCompleto | null>(null)
+
+  // Valores iniciais calculados do perfil
+  const fatAnualInicial = perfilEmpresaInicial.faturamentoMensal
+    ? perfilEmpresaInicial.faturamentoMensal * 12
+    : 600000
+  const folhaAnualInicial = perfilEmpresaInicial.folhaPagamentoMensal
+    ? perfilEmpresaInicial.folhaPagamentoMensal * 12
+    : 120000
+  const folhaMensalInicial = perfilEmpresaInicial.folhaPagamentoMensal || 10000
+  const despesasCreditosInicial = perfilEmpresaInicial.despesasComCreditosMensais || 15000
+  const margemLucroInicial = perfilEmpresaInicial.margemLucroEstimada ?? 25
+  const exportacaoInicial = perfilEmpresaInicial.percentualExportacao ?? 0
 
   // Formulário
   const [formData, setFormData] = useState<{
@@ -113,38 +130,99 @@ export default function Diagnostico() {
     atividadeMista: boolean
     regimeAtual: string
     anoBase: AnoBaseSimulacao
-  }>({
+  }>(() => ({
     nome: '',
     email: '',
     telefone: '',
-    empresa: '',
-    cnpj: '',
-    cidade: 'sp-sao-paulo',
-    segmento: 'Comércio',
-    rbt12: 600000,
-    folha12: 120000,
-    folhaMensal: 10000,
-    despesasCreditos: 15000,
-    percentualExportacao: 0,
-    ufOrigem: 'SP',
-    margemLucro: 25,
+    empresa: perfilEmpresaInicial.nomeEmpresa || '',
+    cnpj: perfilEmpresaInicial.cnpj || '',
+    cidade: perfilEmpresaInicial.cidade || 'sp-sao-paulo',
+    segmento: (perfilEmpresaInicial.segmento as SegmentoEmpresa) || 'Comércio',
+    rbt12: fatAnualInicial,
+    folha12: folhaAnualInicial,
+    folhaMensal: folhaMensalInicial,
+    despesasCreditos: despesasCreditosInicial,
+    percentualExportacao: exportacaoInicial,
+    ufOrigem: perfilEmpresaInicial.ufOrigem || 'SP',
+    margemLucro: margemLucroInicial,
     funcionarios: '1 a 5 funcionários',
     emissaoNf: 'Predominante para Pessoas Jurídicas (B2B)',
-    atividadeMista: false,
-    regimeAtual: 'Simples Nacional',
-    anoBase: 2026,
-  })
+    atividadeMista: perfilEmpresaInicial.tipoAtividade === 'misto',
+    regimeAtual: perfilEmpresaInicial.regimeAtual || 'Simples Nacional',
+    anoBase: perfilEmpresaInicial.anoBaseTransicao || 2026,
+  }))
 
   // Visualização ativa na tela de resultado: 'novo' (Reforma IBS/CBS), 'atual' (Legislação Atual) ou 'comparativo' (lado a lado)
   const [visaoSistema, setVisaoSistema] = useState<'novo' | 'comparativo' | 'atual'>('novo')
 
   // Inputs raw em string para facilitar digitação com formatação
-  const [rbt12Input, setRbt12Input] = useState('600.000,00')
-  const [folha12Input, setFolha12Input] = useState('120.000,00')
-  const [folhaMensalInput, setFolhaMensalInput] = useState('10.000,00')
-  const [despesasCreditosInput, setDespesasCreditosInput] = useState('15.000,00')
-  const [exportacaoInput, setExportacaoInput] = useState('0')
-  const [margemInput, setMargemInput] = useState('25')
+  const [rbt12Input, setRbt12Input] = useState(() =>
+    fatAnualInicial.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  )
+  const [folha12Input, setFolha12Input] = useState(() =>
+    folhaAnualInicial.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+  )
+  const [folhaMensalInput, setFolhaMensalInput] = useState(() =>
+    folhaMensalInicial.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+  )
+  const [despesasCreditosInput, setDespesasCreditosInput] = useState(() =>
+    despesasCreditosInicial.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+  )
+  const [exportacaoInput, setExportacaoInput] = useState(() => String(exportacaoInicial))
+  const [margemInput, setMargemInput] = useState(() => String(margemLucroInicial))
+
+  // Função para restaurar os dados originais do perfil da empresa
+  const restaurarDadosDaEmpresaNoDiagnostico = () => {
+    const p = carregarDadosEmpresa()
+    const rbt = p.faturamentoMensal ? p.faturamentoMensal * 12 : 600000
+    const fMensal = p.folhaPagamentoMensal || 10000
+    const f12 = fMensal * 12
+    const dCred = p.despesasComCreditosMensais || 15000
+    const marg = p.margemLucroEstimada ?? 25
+    const exp = p.percentualExportacao ?? 0
+
+    setFormData((prev) => ({
+      ...prev,
+      empresa: p.nomeEmpresa || prev.empresa,
+      cnpj: p.cnpj || prev.cnpj,
+      cidade: p.cidade || prev.cidade,
+      segmento: (p.segmento as SegmentoEmpresa) || prev.segmento,
+      rbt12: rbt,
+      folha12: f12,
+      folhaMensal: fMensal,
+      despesasCreditos: dCred,
+      percentualExportacao: exp,
+      ufOrigem: p.ufOrigem || prev.ufOrigem,
+      margemLucro: marg,
+      atividadeMista: p.tipoAtividade === 'misto',
+      regimeAtual: p.regimeAtual || prev.regimeAtual,
+      anoBase: p.anoBaseTransicao || prev.anoBase,
+    }))
+
+    setRbt12Input(
+      rbt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    )
+    setFolha12Input(
+      f12.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    )
+    setFolhaMensalInput(
+      fMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    )
+    setDespesasCreditosInput(
+      dCred.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    )
+    setExportacaoInput(String(exp))
+    setMargemInput(String(marg))
+  }
 
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLeadSubmitting, setIsLeadSubmitting] = useState(false)
@@ -562,6 +640,51 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
 
       {/* CONTAINER PRINCIPAL DO WIZARD / RESULTADO */}
       <div className="max-w-[1000px] mx-auto px-4 sm:px-6 -mt-6">
+        {/* AVISO DE DADOS DA EMPRESA INTEGRADOS (quando etapa <= 4) */}
+        {etapa <= 4 && (
+          <div className="mb-4 bg-white border border-[#D4AF37]/40 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#07132B] text-[#D4AF37] flex items-center justify-center shrink-0">
+                <Building2 className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-[#07132B] block">
+                  {temPerfilSalvo
+                    ? 'Formulário pré-preenchido com seus Dados da Empresa'
+                    : 'Usando valores padrão da plataforma Contabilidade 5.0'}
+                </span>
+                <span className="text-slate-500 text-[11px] block">
+                  {temPerfilSalvo
+                    ? 'As alterações feitas neste wizard valem apenas para este diagnóstico.'
+                    : 'Cadastre sua empresa uma única vez para preencher todos os módulos automaticamente.'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+              {temPerfilSalvo && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={restaurarDadosDaEmpresaNoDiagnostico}
+                  className="h-8 text-xs border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold gap-1.5"
+                  title="Restaura os valores do perfil global de Dados da Empresa"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-[#07132B]" />
+                  Restaurar dados da empresa
+                </Button>
+              )}
+              <Link
+                to="/dados-empresa"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#07132B] hover:text-[#D4AF37] underline"
+              >
+                {temPerfilSalvo ? 'Ver perfil cadastrado →' : 'Preencher Dados da Empresa →'}
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* BARRA DE PROGRESSO DO WIZARD (se etapa <= 4) */}
         {etapa <= 4 && (
           <div className="bg-white rounded-2xl p-6 sm:p-7 shadow-lg border border-slate-200 mb-8">
