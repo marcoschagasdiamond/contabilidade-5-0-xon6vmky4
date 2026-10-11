@@ -1,10 +1,14 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import { TipoAtividade } from '@/types/calculadoraIbsCbs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
+import { gerarRelatorioSimulacaoPDF } from '@/lib/pdfSimulacaoCalculadora'
+import { ModalSalvarSimulacao } from '@/components/calculadora/ModalSalvarSimulacao'
 import {
   Select,
   SelectContent,
@@ -36,6 +40,8 @@ import {
   Filter,
   ArrowRight,
   ShieldAlert,
+  BookmarkPlus,
+  FileDown,
 } from 'lucide-react'
 
 const CORES_PIZZA = ['#07132B', '#D4AF37', '#10B981', '#3B82F6', '#6366F1', '#EC4899', '#8B5CF6']
@@ -57,7 +63,40 @@ export default function Modulo6Dashboard() {
     resultadoCreditos,
     resultadoTransicao,
     despesasCreditos,
+    obterSnapshotParametros,
+    obterSnapshotResultados,
   } = useCalculadoraIbsCbs()
+
+  const { toast } = useToast()
+  const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
+  const [gerandoPdf, setGerandoPdf] = useState(false)
+
+  const handleBaixarPdfDashboard = () => {
+    try {
+      setGerandoPdf(true)
+      const params = obterSnapshotParametros()
+      const res = obterSnapshotResultados()
+      gerarRelatorioSimulacaoPDF({
+        nomeSimulacao: 'Simulação Executiva - Dashboard',
+        parametros: params,
+        resultados: res,
+        empresa: params.empresa,
+        cnpj: params.cnpj,
+      })
+      toast({
+        title: 'Relatório PDF gerado!',
+        description: 'Download do relatório completo com a identidade Diamond Group iniciado.',
+      })
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao gerar PDF',
+        description: err?.message || 'Falha ao compilar relatório.',
+        variant: 'destructive',
+      })
+    } finally {
+      setGerandoPdf(false)
+    }
+  }
 
   const {
     aliquotaEfetivaAtual,
@@ -129,13 +168,37 @@ export default function Modulo6Dashboard() {
             <LayoutDashboard className="w-3.5 h-3.5" />
             Módulo 6 • Painel Executivo Integrado
           </div>
-          <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white">
-            Dashboard Executivo da Reforma Tributária
-          </h2>
-          <p className="text-slate-300 text-sm sm:text-base max-w-2xl">
-            Visão gerencial consolidada que consome todos os módulos anteriores. Visualize KPIs de
-            impacto, gráficos comparativos de regimes e evolução temporal das obrigações fiscais.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white">
+                Dashboard Executivo da Reforma Tributária
+              </h2>
+              <p className="text-slate-300 text-sm sm:text-base max-w-2xl mt-1">
+                Visão gerencial consolidada que consome todos os módulos anteriores. Visualize KPIs
+                de impacto, gráficos comparativos de regimes e evolução temporal das obrigações
+                fiscais.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <Button
+                type="button"
+                onClick={() => setModalSalvarAberto(true)}
+                className="bg-[#D4AF37] hover:bg-[#E5C158] text-[#07132B] font-bold text-xs h-9 shadow-md flex items-center gap-1.5"
+              >
+                <BookmarkPlus className="w-4 h-4" />
+                Salvar Simulação
+              </Button>
+              <Button
+                type="button"
+                onClick={handleBaixarPdfDashboard}
+                disabled={gerandoPdf}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs h-9 shadow-md flex items-center gap-1.5"
+              >
+                <FileDown className="w-4 h-4" />
+                {gerandoPdf ? 'Gerando...' : 'Baixar Relatório PDF'}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -661,6 +724,15 @@ export default function Modulo6Dashboard() {
           </table>
         </div>
       </Card>
+
+      {/* Modal Salvar Simulação invocado a partir do Dashboard */}
+      <ModalSalvarSimulacao
+        open={modalSalvarAberto}
+        onOpenChange={setModalSalvarAberto}
+        parametros={obterSnapshotParametros()}
+        resultados={obterSnapshotResultados()}
+        onSalvoComSucesso={() => {}}
+      />
     </div>
   )
 }

@@ -22,6 +22,10 @@ import {
   DadosEmpresaPerfil,
   STORAGE_EVENT,
 } from '@/types/dadosEmpresa'
+import type {
+  ParametrosSimulacaoCalculadora,
+  ResultadosSimulacaoCalculadora,
+} from '@/types/simulacaoCalculadora'
 
 interface CalculadoraContextType {
   // Módulo 1 - Configurações Gerais
@@ -88,6 +92,11 @@ interface CalculadoraContextType {
   // Integração Dados da Empresa
   origemDadosEmpresa: boolean
   restaurarDadosEmpresaNoModulo: (modulo: 2 | 3 | 4 | 5) => void
+
+  // Salvar / Restaurar Simulação Completa
+  obterSnapshotParametros: () => ParametrosSimulacaoCalculadora
+  obterSnapshotResultados: () => ResultadosSimulacaoCalculadora
+  restaurarSimulacao: (parametros: ParametrosSimulacaoCalculadora) => void
 
   // Resultados calculados derivados
   resultadoSimples: {
@@ -332,6 +341,75 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     window.addEventListener(STORAGE_EVENT, handleSync)
     return () => window.removeEventListener(STORAGE_EVENT, handleSync)
   }, [])
+
+  // Função para obter o snapshot dos parâmetros de entrada atuais
+  const obterSnapshotParametros = (): ParametrosSimulacaoCalculadora => {
+    const perfil = carregarDadosEmpresa()
+    return {
+      config,
+      valorOperacao,
+      regimeOperacao,
+      percentualComprasVendasSimples,
+      faturamentoMensal,
+      tipoAtividade,
+      subatividadeServico,
+      subatividadeIndustria,
+      subatividadeComercio,
+      aliquotaImpostoSeletivo,
+      proporcaoServicoMisto,
+      percentualComprasVendasComparativo,
+      folhaPagamentoMensal,
+      margemLucroEstimada,
+      despesasComCreditosMensais,
+      percentualExportacao,
+      ufOrigem,
+      despesasCreditos,
+      faturamentoAnualProjetado,
+      setorTransicao,
+      periodoDashboard,
+      regimeAtualFiltro,
+      empresa: perfil.nomeEmpresa,
+      cnpj: perfil.cnpj,
+      nomeContato: perfil.nomeContato,
+    }
+  }
+
+  // Função para restaurar integralmente o estado da calculadora a partir de uma simulação salva
+  const restaurarSimulacao = (p: ParametrosSimulacaoCalculadora) => {
+    if (p.config) setConfig(p.config)
+    if (p.valorOperacao !== undefined) setValorOperacao(p.valorOperacao)
+    if (p.regimeOperacao) setRegimeOperacao(p.regimeOperacao)
+    if (p.percentualComprasVendasSimples !== undefined)
+      setPercentualComprasVendasSimples(p.percentualComprasVendasSimples)
+
+    if (p.faturamentoMensal !== undefined) setFaturamentoMensal(p.faturamentoMensal)
+    if (p.tipoAtividade) setTipoAtividade(p.tipoAtividade)
+    if (p.subatividadeServico) setSubatividadeServico(p.subatividadeServico)
+    if (p.subatividadeIndustria) setSubatividadeIndustria(p.subatividadeIndustria)
+    if (p.subatividadeComercio) setSubatividadeComercio(p.subatividadeComercio)
+    if (p.aliquotaImpostoSeletivo !== undefined)
+      setAliquotaImpostoSeletivo(p.aliquotaImpostoSeletivo)
+    if (p.proporcaoServicoMisto !== undefined) setProporcaoServicoMisto(p.proporcaoServicoMisto)
+    if (p.percentualComprasVendasComparativo !== undefined)
+      setPercentualComprasVendasComparativo(p.percentualComprasVendasComparativo)
+    if (p.folhaPagamentoMensal !== undefined) setFolhaPagamentoMensal(p.folhaPagamentoMensal)
+    if (p.margemLucroEstimada !== undefined) setMargemLucroEstimada(p.margemLucroEstimada)
+    if (p.despesasComCreditosMensais !== undefined)
+      setDespesasComCreditosMensais(p.despesasComCreditosMensais)
+    if (p.percentualExportacao !== undefined) setPercentualExportacao(p.percentualExportacao)
+    if (p.ufOrigem) setUfOrigem(p.ufOrigem)
+
+    if (p.despesasCreditos && Array.isArray(p.despesasCreditos)) {
+      setDespesasCreditos(p.despesasCreditos)
+    }
+
+    if (p.faturamentoAnualProjetado !== undefined)
+      setFaturamentoAnualProjetado(p.faturamentoAnualProjetado)
+    if (p.setorTransicao) setSetorTransicao(p.setorTransicao)
+
+    if (p.periodoDashboard) setPeriodoDashboard(p.periodoDashboard)
+    if (p.regimeAtualFiltro) setRegimeAtualFiltro(p.regimeAtualFiltro)
+  }
 
   // Função para restaurar os dados da empresa especificamente para um módulo
   const restaurarDadosEmpresaNoModulo = (modulo: 2 | 3 | 4 | 5) => {
@@ -1109,6 +1187,56 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     }
   }, [faturamentoMensal, regimeAtualFiltro, resultadoComparativo])
 
+  // Função para obter o snapshot dos resultados derivados atuais
+  const obterSnapshotResultados = (): ResultadosSimulacaoCalculadora => {
+    return {
+      resultadoSimples,
+      resultadoComparativo: {
+        lucroReal: {
+          totalEfetivo: resultadoComparativo.lucroReal.totalEfetivo,
+          aliquotaEfetiva: resultadoComparativo.lucroReal.aliquotaEfetiva,
+          totalNominal: resultadoComparativo.lucroReal.totalNominal,
+          creditos: resultadoComparativo.lucroReal.creditos,
+        },
+        lucroPresumido: {
+          totalEfetivo: resultadoComparativo.lucroPresumido.totalEfetivo,
+          aliquotaEfetiva: resultadoComparativo.lucroPresumido.aliquotaEfetiva,
+          totalNominal: resultadoComparativo.lucroPresumido.totalNominal,
+          creditos: resultadoComparativo.lucroPresumido.creditos,
+        },
+        simplesNacional: {
+          totalEfetivo: resultadoComparativo.simplesNacional.totalEfetivo,
+          aliquotaEfetiva: resultadoComparativo.simplesNacional.aliquotaEfetiva,
+          totalNominal: resultadoComparativo.simplesNacional.totalNominal,
+          creditos: resultadoComparativo.simplesNacional.creditos,
+          anexoUtilizado: resultadoComparativo.simplesNacional.anexoUtilizado,
+          faixaEncontrada: resultadoComparativo.simplesNacional.faixaEncontrada,
+        },
+        ibsCbs: {
+          totalEfetivo: resultadoComparativo.ibsCbs.totalEfetivo,
+          aliquotaEfetiva: resultadoComparativo.ibsCbs.aliquotaEfetiva,
+          totalNominal: resultadoComparativo.ibsCbs.totalNominal,
+          creditos: resultadoComparativo.ibsCbs.creditos,
+          impostoSeletivo: resultadoComparativo.ibsCbs.impostoSeletivo,
+        },
+        regimeMaisVantajoso: resultadoComparativo.regimeMaisVantajoso,
+        piorCenario: resultadoComparativo.piorCenario,
+        economiaVersusPior: resultadoComparativo.economiaVersusPior,
+        economiaPercentual: resultadoComparativo.economiaPercentual,
+      },
+      resultadoCreditos,
+      resultadoTransicao: resultadoTransicao.map((t) => ({
+        ano: t.ano,
+        fase: t.fase,
+        aliquotaCbs: t.aliquotaCbs,
+        aliquotaIbs: t.aliquotaIbs,
+        impostoEstimado: t.impostoEstimado,
+        aliquotaEfetivaTotal: t.aliquotaEfetivaTotal,
+      })),
+      resultadoDashboard,
+    }
+  }
+
   return (
     <CalculadoraContext.Provider
       value={{
@@ -1166,6 +1294,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
         origemDadosEmpresa,
         restaurarDadosEmpresaNoModulo,
+
+        obterSnapshotParametros,
+        obterSnapshotResultados,
+        restaurarSimulacao,
 
         resultadoSimples,
         resultadoComparativo,

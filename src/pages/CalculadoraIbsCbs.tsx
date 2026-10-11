@@ -2,25 +2,37 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalculadoraProvider, useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
-import { Building2 } from 'lucide-react'
+import {
+  Building2,
+  BookmarkPlus,
+  FileDown,
+  FolderOpen,
+  Scale,
+  Sparkles,
+  CheckCircle2,
+  Sliders,
+  Calculator,
+  Coins,
+  Calendar,
+  LayoutDashboard,
+  ShieldAlert,
+  ArrowRight,
+  Info,
+} from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import { useToast } from '@/hooks/use-toast'
+import { listarSimulacoes } from '@/services/simulacoesCalculadora'
+import { gerarRelatorioSimulacaoPDF } from '@/lib/pdfSimulacaoCalculadora'
+import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
+import { ModalSalvarSimulacao } from '@/components/calculadora/ModalSalvarSimulacao'
+import { ModalCompararSimulacoes } from '@/components/calculadora/ModalCompararSimulacoes'
+import { ListaSimulacoes } from '@/components/calculadora/ListaSimulacoes'
 import Modulo1Configuracoes from '@/components/calculadora/Modulo1Configuracoes'
 import Modulo2CalculadoraSimples from '@/components/calculadora/Modulo2CalculadoraSimples'
 import Modulo3ComparativoRegimes from '@/components/calculadora/Modulo3ComparativoRegimes'
 import Modulo4SimuladorCreditos from '@/components/calculadora/Modulo4SimuladorCreditos'
 import Modulo5TransicaoCronograma from '@/components/calculadora/Modulo5TransicaoCronograma'
 import Modulo6Dashboard from '@/components/calculadora/Modulo6Dashboard'
-import {
-  Sliders,
-  Calculator,
-  Scale,
-  Coins,
-  Calendar,
-  LayoutDashboard,
-  ShieldAlert,
-  ArrowRight,
-  Sparkles,
-  Info,
-} from 'lucide-react'
 
 type ModuloId = 'modulo1' | 'modulo2' | 'modulo3' | 'modulo4' | 'modulo5' | 'modulo6'
 
@@ -79,7 +91,100 @@ const MODULOS_NAV: NavItem[] = [
 
 function CalculadoraConteudo() {
   const [moduloAtivo, setModuloAtivo] = useState<ModuloId>('modulo6') // Inicia no Dashboard ou Módulo 1
-  const { resultadoDashboard } = useCalculadoraIbsCbs()
+  const {
+    resultadoDashboard,
+    obterSnapshotParametros,
+    obterSnapshotResultados,
+    restaurarSimulacao,
+  } = useCalculadoraIbsCbs()
+  const { user } = useAuth()
+  const { toast } = useToast()
+
+  // Estados de simulações
+  const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
+  const [modalCompararAberto, setModalCompararAberto] = useState(false)
+  const [simulacoes, setSimulacoes] = useState<SimulacaoCalculadora[]>([])
+  const [carregandoSimulacoes, setCarregandoSimulacoes] = useState(false)
+  const [selecionadasComparar, setSelecionadasComparar] = useState<string[]>([])
+  const [gerandoPdf, setGerandoPdf] = useState(false)
+
+  // Carrega simulações do usuário ou locais
+  const recarregarSimulacoes = async () => {
+    try {
+      setCarregandoSimulacoes(true)
+      const lista = await listarSimulacoes(user?.id)
+      setSimulacoes(lista)
+    } finally {
+      setCarregandoSimulacoes(false)
+    }
+  }
+
+  React.useEffect(() => {
+    recarregarSimulacoes()
+  }, [user?.id])
+
+  const handleToggleSelecionada = (id: string) => {
+    setSelecionadasComparar((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((item) => item !== id)
+      }
+      if (prev.length >= 3) {
+        toast({
+          title: 'Limite de comparação',
+          description: 'Você pode comparar no máximo 3 cenários simultaneamente.',
+        })
+        return prev
+      }
+      return [...prev, id]
+    })
+  }
+
+  const handleCarregarSimulacao = (sim: SimulacaoCalculadora) => {
+    try {
+      restaurarSimulacao(sim.parametros)
+      toast({
+        title: 'Cenário restaurado!',
+        description: `Todos os parâmetros de "${sim.nome}" foram carregados nos 6 módulos.`,
+      })
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao restaurar',
+        description: err?.message || 'Falha ao aplicar parâmetros salvos.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleBaixarPdfAtual = () => {
+    try {
+      setGerandoPdf(true)
+      const params = obterSnapshotParametros()
+      const res = obterSnapshotResultados()
+
+      gerarRelatorioSimulacaoPDF({
+        nomeSimulacao: 'Simulação Vigente na Tela',
+        parametros: params,
+        resultados: res,
+        empresa: params.empresa,
+        cnpj: params.cnpj,
+      })
+
+      toast({
+        title: 'Relatório PDF gerado!',
+        description: 'O download com os resultados dos 6 módulos foi iniciado com sucesso.',
+      })
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao gerar relatório',
+        description: err?.message || 'Não foi possível compilar o PDF.',
+        variant: 'destructive',
+      })
+    } finally {
+      setGerandoPdf(false)
+    }
+  }
+
+  const simulacoesParaComparar = simulacoes.filter((s) => selecionadasComparar.includes(s.id))
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -102,8 +207,8 @@ function CalculadoraConteudo() {
               CBS 8,80% + IBS 17,70% = 26,50% (Soma de Referência)
             </span>
           </div>
-          <div className="flex items-center gap-4 text-slate-300">
-            <span>
+          <div className="flex items-center gap-3 text-slate-300">
+            <span className="hidden sm:inline">
               Regime Recomendado:{' '}
               <strong className="text-emerald-400 font-mono">
                 {resultadoDashboard.regimeRecomendado}
@@ -116,6 +221,27 @@ function CalculadoraConteudo() {
                 {resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%
               </strong>
             </span>
+
+            {/* BOTÕES DE AÇÃO RÁPIDA: SALVAR E BAIXAR PDF */}
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                type="button"
+                onClick={() => setModalSalvarAberto(true)}
+                className="px-2.5 py-1 rounded-lg bg-[#D4AF37] text-[#07132B] font-bold hover:bg-[#E5C158] transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                <BookmarkPlus className="w-3.5 h-3.5" />
+                <span>Salvar Simulação</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleBaixarPdfAtual}
+                disabled={gerandoPdf}
+                className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-500 transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                <span>{gerandoPdf ? 'Gerando...' : 'Baixar PDF'}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -208,14 +334,26 @@ function CalculadoraConteudo() {
               })}
             </nav>
 
-            <div className="mt-4 pt-3 border-t border-slate-100 px-3 py-2 bg-slate-50/70 rounded-xl">
+            {/* LISTA LATERAL: MINHAS SIMULAÇÕES */}
+            <div className="mt-4 pt-3 border-t border-slate-100 px-1">
+              <ListaSimulacoes
+                simulacoes={simulacoes}
+                onCarregarSimulacao={handleCarregarSimulacao}
+                onSimulacaoAtualizada={recarregarSimulacoes}
+                selecionadasParaComparar={selecionadasComparar}
+                onToggleSelecionada={handleToggleSelecionada}
+                onAbrirComparador={() => setModalCompararAberto(true)}
+              />
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 px-3 py-2 bg-slate-50/70 rounded-xl">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#07132B]">
                 <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-                Dados Compartilhados
+                Cenários Salvos
               </div>
               <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                Qualquer alteração em alíquotas ou faturamento repercute instantaneamente nos outros
-                5 módulos.
+                Marque 2 ou 3 simulações na lista acima para comparar os regimes e economias lado a
+                lado.
               </p>
             </div>
           </aside>
@@ -258,6 +396,25 @@ function CalculadoraConteudo() {
       <DiamondFooterCTA
         titulo="Quer validar o planejamento da sua empresa com nossos tributaristas?"
         subtitulo="Nossa equipe analisa seus balancetes, histórico de compras e parametrização fiscal para blindar seu caixa antes da entrada da CBS em 2027."
+      />
+
+      {/* MODAL SALVAR SIMULAÇÃO */}
+      <ModalSalvarSimulacao
+        open={modalSalvarAberto}
+        onOpenChange={setModalSalvarAberto}
+        parametros={obterSnapshotParametros()}
+        resultados={obterSnapshotResultados()}
+        onSalvoComSucesso={() => {
+          recarregarSimulacoes()
+        }}
+      />
+
+      {/* MODAL COMPARADOR LADO A LADO */}
+      <ModalCompararSimulacoes
+        open={modalCompararAberto}
+        onOpenChange={setModalCompararAberto}
+        simulacoes={simulacoesParaComparar}
+        onCarregarSimulacao={handleCarregarSimulacao}
       />
     </div>
   )
