@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import {
   Building2,
@@ -92,6 +92,17 @@ export default function Diagnostico() {
   const perfilEmpresaInicial = React.useMemo(() => carregarDadosEmpresa(), [])
   const [temPerfilSalvo, setTemPerfilSalvo] = useState(() => existeDadosEmpresaSalvos())
 
+  // Sincroniza em tempo real se o perfil de Dados da Empresa for atualizado
+  useEffect(() => {
+    const handleAtualizacaoPerfil = () => {
+      setTemPerfilSalvo(existeDadosEmpresaSalvos())
+    }
+    window.addEventListener('contabilidade5_dados_empresa_updated', handleAtualizacaoPerfil)
+    return () => {
+      window.removeEventListener('contabilidade5_dados_empresa_updated', handleAtualizacaoPerfil)
+    }
+  }, [])
+
   // Wizard state (etapa 1 a 4; etapa 5 = resultado)
   const [etapa, setEtapa] = useState<number>(1)
   const [isCalculando, setIsCalculando] = useState(false)
@@ -109,7 +120,7 @@ export default function Diagnostico() {
   const margemLucroInicial = perfilEmpresaInicial.margemLucroEstimada ?? 25
   const exportacaoInicial = perfilEmpresaInicial.percentualExportacao ?? 0
 
-  // Formulário
+  // Formulário pré-preenchido com o perfil completo de Dados da Empresa
   const [formData, setFormData] = useState<{
     nome: string
     email: string
@@ -131,13 +142,13 @@ export default function Diagnostico() {
     regimeAtual: string
     anoBase: AnoBaseSimulacao
   }>(() => ({
-    nome: '',
-    email: '',
-    telefone: '',
+    nome: perfilEmpresaInicial.nomeContato || '',
+    email: perfilEmpresaInicial.email || '',
+    telefone: perfilEmpresaInicial.telefone || '',
     empresa: perfilEmpresaInicial.nomeEmpresa || '',
     cnpj: perfilEmpresaInicial.cnpj || '',
     cidade: perfilEmpresaInicial.cidade || 'sp-sao-paulo',
-    segmento: (perfilEmpresaInicial.segmento as SegmentoEmpresa) || 'Comércio',
+    segmento: (perfilEmpresaInicial.segmento as SegmentoEmpresa) || 'Serviços',
     rbt12: fatAnualInicial,
     folha12: folhaAnualInicial,
     folhaMensal: folhaMensalInicial,
@@ -145,9 +156,12 @@ export default function Diagnostico() {
     percentualExportacao: exportacaoInicial,
     ufOrigem: perfilEmpresaInicial.ufOrigem || 'SP',
     margemLucro: margemLucroInicial,
-    funcionarios: '1 a 5 funcionários',
-    emissaoNf: 'Predominante para Pessoas Jurídicas (B2B)',
-    atividadeMista: perfilEmpresaInicial.tipoAtividade === 'misto',
+    funcionarios: perfilEmpresaInicial.funcionarios || '1 a 5 funcionários',
+    emissaoNf: perfilEmpresaInicial.emissaoNf || 'Predominante para Pessoas Jurídicas (B2B)',
+    atividadeMista:
+      typeof perfilEmpresaInicial.atividadeMista === 'boolean'
+        ? perfilEmpresaInicial.atividadeMista
+        : perfilEmpresaInicial.tipoAtividade === 'misto',
     regimeAtual: perfilEmpresaInicial.regimeAtual || 'Simples Nacional',
     anoBase: perfilEmpresaInicial.anoBaseTransicao || 2026,
   }))
@@ -192,6 +206,9 @@ export default function Diagnostico() {
 
     setFormData((prev) => ({
       ...prev,
+      nome: p.nomeContato || prev.nome,
+      email: p.email || prev.email,
+      telefone: p.telefone || prev.telefone,
       empresa: p.nomeEmpresa || prev.empresa,
       cnpj: p.cnpj || prev.cnpj,
       cidade: p.cidade || prev.cidade,
@@ -203,7 +220,10 @@ export default function Diagnostico() {
       percentualExportacao: exp,
       ufOrigem: p.ufOrigem || prev.ufOrigem,
       margemLucro: marg,
-      atividadeMista: p.tipoAtividade === 'misto',
+      funcionarios: p.funcionarios || prev.funcionarios,
+      emissaoNf: p.emissaoNf || prev.emissaoNf,
+      atividadeMista:
+        typeof p.atividadeMista === 'boolean' ? p.atividadeMista : p.tipoAtividade === 'misto',
       regimeAtual: p.regimeAtual || prev.regimeAtual,
       anoBase: p.anoBaseTransicao || prev.anoBase,
     }))

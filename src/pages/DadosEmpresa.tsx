@@ -17,11 +17,13 @@ import {
   LISTA_SEGMENTOS,
   CIDADES_ISS_MAPA,
   RegimeAtualEmpresa,
+  PorteFuncionarios,
+  EmissaoNotaFiscal,
   obterAliquotaISS,
   obterAliquotaIcmsUf,
 } from '@/lib/regimes'
 import { ANOS_SIMULACAO_DISPONIVEIS, AnoBaseSimulacao } from '@/lib/reformaTributaria'
-import { formatarCNPJ, limparCNPJ } from '@/lib/cnpj'
+import { formatarCNPJ, limparCNPJ, validarCNPJ } from '@/lib/cnpj'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import { Card, CardContent } from '@/components/ui/card'
@@ -58,7 +60,37 @@ import {
   Tag,
   ShieldCheck,
   AlertCircle,
+  ShoppingCart,
+  Briefcase,
+  Factory,
+  HeartPulse,
+  GraduationCap,
+  Sprout,
+  Truck,
+  Cpu,
+  Hammer,
+  UtensilsCrossed,
+  Info,
+  Phone,
+  Mail,
+  User,
 } from 'lucide-react'
+
+// Formatador de telefone brasileiro padrão (+55 XX XXXXX-XXXX)
+const formatPhoneBR = (value: string) => {
+  let digits = value.replace(/\D/g, '')
+  if (digits.startsWith('55') && digits.length > 2) {
+    digits = digits.slice(2)
+  }
+  digits = digits.slice(0, 11)
+  if (digits.length === 0) return ''
+  if (digits.length <= 2) return `+55 (${digits}`
+  if (digits.length <= 6) return `+55 (${digits.slice(0, 2)}) ${digits.slice(2)}`
+  if (digits.length <= 10) {
+    return `+55 (${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+  }
+  return `+55 (${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`
+}
 
 export default function DadosEmpresa() {
   const navigate = useNavigate()
@@ -67,6 +99,7 @@ export default function DadosEmpresa() {
   // Estado local do formulário
   const [formData, setFormData] = useState<DadosEmpresaPerfil>(dadosEmpresa)
   const [salvoComSucesso, setSalvoComSucesso] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Sincroniza quando os dados do contexto mudarem
   useEffect(() => {
@@ -95,10 +128,86 @@ export default function DadosEmpresa() {
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatarCNPJ(e.target.value)
     setFormData((prev) => ({ ...prev, cnpj: formatted }))
+    if (errors.cnpj) {
+      setErrors((prev) => ({ ...prev, cnpj: '' }))
+    }
+  }
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneBR(e.target.value)
+    setFormData((prev) => ({ ...prev, telefone: formatted }))
+    if (errors.telefone) {
+      setErrors((prev) => ({ ...prev, telefone: '' }))
+    }
+  }
+
+  const validarFormulario = (): boolean => {
+    const novosErros: Record<string, string> = {}
+
+    // Nome Completo *
+    if (!formData.nomeContato?.trim()) {
+      novosErros.nomeContato = 'Nome é obrigatório (mínimo 3 caracteres)'
+    } else if (formData.nomeContato.trim().length < 3) {
+      novosErros.nomeContato = 'Informe seu nome completo'
+    }
+
+    // Nome da Empresa *
+    if (!formData.nomeEmpresa?.trim()) {
+      novosErros.nomeEmpresa = 'Nome da empresa é obrigatório'
+    }
+
+    // CNPJ da Empresa * (com validação real de dígitos)
+    const cnpjLimpo = limparCNPJ(formData.cnpj || '')
+    if (!formData.cnpj?.trim()) {
+      novosErros.cnpj = 'Informe um CNPJ válido com 14 dígitos'
+    } else if (cnpjLimpo.length !== 14 || !validarCNPJ(formData.cnpj)) {
+      novosErros.cnpj = 'Informe um CNPJ válido com 14 dígitos'
+    }
+
+    // E-mail corporativo *
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!formData.email?.trim()) {
+      novosErros.email = 'E-mail corporativo é obrigatório'
+    } else if (!emailRegex.test(formData.email.trim())) {
+      novosErros.email = 'Informe um e-mail válido (ex: seu.nome@empresa.com.br)'
+    }
+
+    // Telefone / WhatsApp *
+    const digitsOnly = (formData.telefone || '').replace(/\D/g, '')
+    const cleanDigits = digitsOnly.startsWith('55') ? digitsOnly.slice(2) : digitsOnly
+    if (!formData.telefone?.trim()) {
+      novosErros.telefone = 'Telefone/WhatsApp é obrigatório'
+    } else if (cleanDigits.length < 10) {
+      novosErros.telefone = 'Informe um telefone válido com DDD (mínimo 10 dígitos)'
+    }
+
+    // Segmento *
+    if (!formData.segmento) {
+      novosErros.segmento = 'Selecione o segmento principal de atuação'
+    }
+
+    // UF de Origem *
+    if (!formData.ufOrigem) {
+      novosErros.ufOrigem = 'UF de origem é obrigatória'
+    }
+
+    // Cidade / ISS *
+    if (!formData.cidade) {
+      novosErros.cidade = 'Cidade para alíquota de ISS é obrigatória'
+    }
+
+    setErrors(novosErros)
+    return Object.keys(novosErros).length === 0
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validarFormulario()) {
+      // Scroll até o primeiro erro se houver
+      window.scrollTo({ top: 320, behavior: 'smooth' })
+      return
+    }
+
     salvar(formData)
     setSalvoComSucesso(true)
     setTimeout(() => setSalvoComSucesso(false), 4000)
@@ -275,20 +384,21 @@ export default function DadosEmpresa() {
           </div>
 
           {/* ========================================================================= */}
-          {/* BLOCO 1: DADOS OPERACIONAIS DA EMPRESA */}
+          {/* BLOCO 1: DADOS OPERACIONAIS DA EMPRESA (ESPELHO DO PASSO 1 DO DIAGNÓSTICO) */}
           {/* ========================================================================= */}
           <Card className="border border-slate-200/90 shadow-md overflow-hidden bg-white rounded-2xl">
             <div className="bg-slate-50 border-b border-slate-200 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#D4AF37] flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#07132B]" />
-                  Bloco Obrigatório
+                  Passo 1 • Diagnóstico Tributário & Módulos
                 </span>
                 <h3 className="text-xl font-heading font-extrabold text-[#07132B]">
                   1. Dados operacionais da empresa
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Base comercial, faturamento bruto mensal, cadeia de compras, setor e localidade.
+                  Identificação do titular, empresa, CNPJ, localização, 10 segmentos de atuação e
+                  perfil operacional.
                 </p>
               </div>
               <span className="text-xs font-mono font-bold text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-xl self-start sm:self-auto">
@@ -297,454 +407,864 @@ export default function DadosEmpresa() {
             </div>
 
             <CardContent className="p-6 sm:p-8 space-y-6">
-              {/* Linha 0: Identificação opcional da empresa */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-6 border-b border-slate-100">
-                <div className="space-y-2">
-                  <Label htmlFor="nomeEmpresa" className="text-sm font-bold text-[#07132B]">
-                    Nome / Razão Social da Empresa (opcional)
+              {/* SUB-BLOCO A: IDENTIFICAÇÃO (Passo 1 Diagnóstico) */}
+              <div className="space-y-5">
+                {/* Nome Completo */}
+                <div>
+                  <Label
+                    htmlFor="nomeContato"
+                    className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+                  >
+                    Seu Nome Completo *
                   </Label>
                   <Input
-                    id="nomeEmpresa"
+                    id="nomeContato"
                     type="text"
-                    value={formData.nomeEmpresa || ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, nomeEmpresa: e.target.value }))
-                    }
-                    placeholder="Ex: Grupo Alpha Comércio & Tecnologia Ltda"
-                    className="h-12 bg-white border-slate-300 font-medium"
+                    value={formData.nomeContato || ''}
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, nomeContato: e.target.value }))
+                      if (errors.nomeContato) setErrors((prev) => ({ ...prev, nomeContato: '' }))
+                    }}
+                    placeholder="Ex: Carlos Eduardo Silva"
+                    className={`h-12 bg-white font-medium ${
+                      errors.nomeContato ? 'border-red-400 bg-red-50/30' : 'border-slate-300'
+                    }`}
                   />
-                  <span className="text-[11px] text-slate-500">
-                    Utilizado para personalizar seu diagnóstico e relatórios.
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="cnpjEmpresa" className="text-sm font-bold text-[#07132B]">
-                      CNPJ (opcional)
-                    </Label>
-                    <span className="text-[11px] text-slate-400">14 dígitos</span>
-                  </div>
-                  <Input
-                    id="cnpjEmpresa"
-                    type="text"
-                    value={formData.cnpj || ''}
-                    onChange={handleCnpjChange}
-                    maxLength={18}
-                    placeholder="00.000.000/0000-00"
-                    className="h-12 bg-white border-slate-300 font-mono font-medium"
-                  />
-                  <span className="text-[11px] text-slate-500">
-                    Facilita o preenchimento automático no Diagnóstico Tributário.
-                  </span>
-                </div>
-              </div>
-
-              {/* Linha 1: Faturamento, % de Compras sobre Vendas e O Que Vende (Ramo) */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Campo 1.1: Faturamento Mensal */}
-                <div className="space-y-2">
-                  <Label htmlFor="fatMensal" className="text-sm font-bold text-[#07132B]">
-                    Faturamento Mensal (R$) *
-                  </Label>
-                  <Input
-                    id="fatMensal"
-                    type="text"
-                    value={formData.faturamentoMensal.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })}
-                    onChange={handleFaturamentoChange}
-                    className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm"
-                  />
-                  <span className="text-[11px] text-slate-500 block">
-                    Receita bruta mensal. RBT12 calculada:{' '}
-                    <strong>{formatarMoeda(faturamentoAnual)}</strong>.
-                  </span>
-                </div>
-
-                {/* Campo 1.2: % de Compras sobre Vendas */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="pctCompras" className="text-sm font-bold text-[#07132B]">
-                      % de Compras sobre Vendas *
-                    </Label>
-                    <span className="text-xs font-mono font-bold text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded">
-                      {formData.percentualComprasVendas}%
+                  {errors.nomeContato ? (
+                    <p className="mt-1 text-xs text-red-600 font-medium">{errors.nomeContato}</p>
+                  ) : (
+                    <span className="text-[11px] text-slate-500 mt-1 block">
+                      Responsável pelo cadastro e titular das simulações tributárias.
                     </span>
-                  </div>
-                  <div className="relative">
+                  )}
+                </div>
+
+                {/* Razão Social / Nome da Empresa e CNPJ da Empresa */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label
+                      htmlFor="nomeEmpresa"
+                      className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+                    >
+                      Nome da Empresa *
+                    </Label>
                     <Input
-                      id="pctCompras"
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={formData.percentualComprasVendas}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          percentualComprasVendas: Number(e.target.value),
-                        }))
-                      }
-                      className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm pr-10"
+                      id="nomeEmpresa"
+                      type="text"
+                      value={formData.nomeEmpresa || ''}
+                      onChange={(e) => {
+                        setFormData((prev) => ({ ...prev, nomeEmpresa: e.target.value }))
+                        if (errors.nomeEmpresa) setErrors((prev) => ({ ...prev, nomeEmpresa: '' }))
+                      }}
+                      placeholder="Ex: Inova Tecnologia & Consultoria Ltda"
+                      className={`h-12 bg-white font-medium ${
+                        errors.nomeEmpresa ? 'border-red-400 bg-red-50/30' : 'border-slate-300'
+                      }`}
                     />
-                    <span className="absolute right-4 top-3 text-slate-400 font-bold">%</span>
+                    {errors.nomeEmpresa ? (
+                      <p className="mt-1 text-xs text-red-600 font-medium">{errors.nomeEmpresa}</p>
+                    ) : (
+                      <span className="text-[11px] text-slate-500 mt-1 block">
+                        Razão social ou nome fantasia utilizado em todos os módulos e relatórios.
+                      </span>
+                    )}
                   </div>
-                  <span className="text-[11px] text-slate-500 block">
-                    Insumos e mercadorias que geram crédito no IVA Dual e Lucro Real.
-                  </span>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label
+                        htmlFor="cnpjEmpresa"
+                        className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+                      >
+                        CNPJ da Empresa *
+                      </Label>
+                      <span className="text-[11px] text-slate-400">14 dígitos</span>
+                    </div>
+                    <Input
+                      id="cnpjEmpresa"
+                      type="text"
+                      value={formData.cnpj || ''}
+                      onChange={handleCnpjChange}
+                      maxLength={18}
+                      placeholder="00.000.000/0000-00"
+                      className={`h-12 bg-white font-mono font-medium ${
+                        errors.cnpj ? 'border-red-400 bg-red-50/30' : 'border-slate-300'
+                      }`}
+                    />
+                    {errors.cnpj ? (
+                      <p className="mt-1 text-xs text-red-600 font-medium">{errors.cnpj}</p>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Aceita com ou sem máscara (ex: 00.000.000/0000-00). Validação de dígitos
+                        verificadores ativa.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                {/* Campo 1.3: O que vende (Ramo) */}
-                <div className="space-y-2">
-                  <Label htmlFor="tipoAtividade" className="text-sm font-bold text-[#07132B]">
-                    O Que Vende (Ramo) *
-                  </Label>
-                  <Select
-                    value={formData.tipoAtividade}
-                    onValueChange={(val) =>
-                      setFormData((prev) => ({ ...prev, tipoAtividade: val as TipoAtividade }))
-                    }
-                  >
-                    <SelectTrigger
-                      id="tipoAtividade"
-                      className="h-12 bg-white border-slate-300 shadow-sm font-medium text-slate-800"
+                {/* E-mail Corporativo e Telefone / WhatsApp */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label
+                      htmlFor="emailCorporativo"
+                      className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
                     >
-                      <SelectValue placeholder="Selecione o ramo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="servico">Serviço (ISS / Presunção 32% ou 16%)</SelectItem>
-                      <SelectItem value="comercio">
-                        Comércio (ICMS / ICMS-ST / Presunção 8%)
-                      </SelectItem>
-                      <SelectItem value="industria">
-                        Indústria (IPI / Imposto Seletivo / Presunção 8%)
-                      </SelectItem>
-                      <SelectItem value="misto">
-                        Misto (Serviço + Comércio com proporção customizada)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className="text-[11px] text-slate-500 block">
-                    Define regras incidentes (ISS, IPI, ICMS) e o Anexo do Simples.
-                  </span>
+                      E-mail Corporativo *
+                    </Label>
+                    <Input
+                      id="emailCorporativo"
+                      type="email"
+                      value={formData.email || ''}
+                      onChange={(e) => {
+                        setFormData((prev) => ({ ...prev, email: e.target.value }))
+                        if (errors.email) setErrors((prev) => ({ ...prev, email: '' }))
+                      }}
+                      placeholder="carlos@empresa.com.br"
+                      className={`h-12 bg-white font-medium ${
+                        errors.email ? 'border-red-400 bg-red-50/30' : 'border-slate-300'
+                      }`}
+                    />
+                    {errors.email ? (
+                      <p className="mt-1 text-xs text-red-600 font-medium">{errors.email}</p>
+                    ) : (
+                      <span className="text-[11px] text-slate-500 mt-1 block">
+                        Destino para envio do relatório detalhado do Diagnóstico em PDF.
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="telefoneWhatsapp"
+                      className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+                    >
+                      Telefone / WhatsApp *
+                    </Label>
+                    <Input
+                      id="telefoneWhatsapp"
+                      type="tel"
+                      value={formData.telefone || ''}
+                      onChange={handlePhoneChange}
+                      placeholder="+55 (11) 99999-9999"
+                      className={`h-12 bg-white font-medium ${
+                        errors.telefone ? 'border-red-400 bg-red-50/30' : 'border-slate-300'
+                      }`}
+                    />
+                    {errors.telefone ? (
+                      <p className="mt-1 text-xs text-red-600 font-medium">{errors.telefone}</p>
+                    ) : (
+                      <span className="text-[11px] text-slate-500 mt-1 block">
+                        Com DDD e máscara automática (+55).
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* SELETOR DE SUBATIVIDADE CONFORME O RAMO ESCOLHIDO */}
-              <div className="p-4 sm:p-5 rounded-2xl border bg-slate-50/70 border-slate-200">
-                {formData.tipoAtividade === 'servico' && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+              {/* SUB-BLOCO B: LOCALIZAÇÃO (UF de Origem & Cidade ISS com box explicativo) */}
+              <div className="pt-5 border-t border-slate-100 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Seletor UF de Origem */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
                       <Label
-                        htmlFor="subServico"
-                        className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                        htmlFor="ufOrigem"
+                        className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
                       >
-                        <Tag className="w-4 h-4 text-[#D4AF37]" />
-                        Subatividade de Serviço (Presunção IRPJ/CSLL & Reduções IBS/CBS) *
+                        UF de Origem (ICMS Estadual) *
                       </Label>
-                      <span className="text-xs text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full font-semibold border border-blue-200">
-                        5 perfis regulatórios
+                      <span className="text-[11px] font-bold text-[#145A32] bg-emerald-100/70 px-2 py-0.5 rounded-md border border-emerald-300/60">
+                        ICMS: {aliqIcmsUf.toFixed(1)}%
                       </span>
                     </div>
                     <Select
-                      value={formData.subatividadeServico}
-                      onValueChange={(val) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          subatividadeServico: val as SubatividadeServico,
-                        }))
-                      }
+                      value={formData.ufOrigem}
+                      onValueChange={(val) => {
+                        setFormData((prev) => ({ ...prev, ufOrigem: val }))
+                        if (errors.ufOrigem) setErrors((prev) => ({ ...prev, ufOrigem: '' }))
+                      }}
                     >
                       <SelectTrigger
-                        id="subServico"
-                        className="h-12 bg-white border-blue-300 font-medium"
+                        id="ufOrigem"
+                        className="h-12 bg-white border-slate-300 font-medium text-slate-800"
                       >
-                        <SelectValue />
+                        <SelectValue placeholder="Selecione a UF" />
                       </SelectTrigger>
-                      <SelectContent>
-                        {SUBATIVIDADES_SERVICO.map((item) => (
-                          <SelectItem key={item.id} value={item.id} className="py-2">
-                            <div>
-                              <span className="font-bold text-slate-900 block">{item.label}</span>
-                              <span className="text-xs text-slate-500 block">{item.descricao}</span>
-                            </div>
+                      <SelectContent className="max-h-60">
+                        {LISTA_UFS_ICMS.map((ufItem) => (
+                          <SelectItem key={ufItem.uf} value={ufItem.uf}>
+                            {ufItem.uf} — {ufItem.nome} ({ufItem.aliquotaInternaPadrao.toFixed(1)}%
+                            ICMS)
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Define a alíquota interna padrão de ICMS estadual sobre comércio e indústria.
+                    </p>
                   </div>
-                )}
 
-                {formData.tipoAtividade === 'industria' && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+                  {/* Seletor Cidade/ISS */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
                       <Label
-                        htmlFor="subIndustria"
-                        className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                        htmlFor="cidadeIss"
+                        className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
                       >
-                        <Tag className="w-4 h-4 text-[#D4AF37]" />
-                        Subatividade Industrial (IPI & Imposto Seletivo) *
+                        Cidade / UF (Alíquota de ISS) *
                       </Label>
-                      <span className="text-xs text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full font-semibold border border-amber-200">
-                        Ajusta alíquotas industriais
+                      <span className="text-[11px] font-bold text-[#145A32] bg-emerald-100/70 px-2 py-0.5 rounded-md border border-emerald-300/60">
+                        ISS: {infoCidade.aliquota.toFixed(1)}%
                       </span>
                     </div>
                     <Select
-                      value={formData.subatividadeIndustria}
-                      onValueChange={(val) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          subatividadeIndustria: val as SubatividadeIndustria,
-                        }))
-                      }
+                      value={formData.cidade}
+                      onValueChange={(val) => {
+                        setFormData((prev) => ({ ...prev, cidade: val }))
+                        if (errors.cidade) setErrors((prev) => ({ ...prev, cidade: '' }))
+                      }}
                     >
                       <SelectTrigger
-                        id="subIndustria"
-                        className="h-12 bg-white border-amber-300 font-medium"
+                        id="cidadeIss"
+                        className="h-12 bg-white border-slate-300 font-medium text-slate-800"
                       >
-                        <SelectValue />
+                        <SelectValue placeholder="Selecione a cidade" />
                       </SelectTrigger>
-                      <SelectContent>
-                        {SUBATIVIDADES_INDUSTRIA.map((item) => (
-                          <SelectItem key={item.id} value={item.id} className="py-2">
-                            <div>
-                              <span className="font-bold text-slate-900 block">{item.label}</span>
-                              <span className="text-xs text-slate-500 block">{item.descricao}</span>
-                            </div>
+                      <SelectContent className="max-h-60">
+                        {CIDADES_ISS_MAPA.map((cid) => (
+                          <SelectItem key={cid.id} value={cid.id}>
+                            {cid.descricao || `${cid.nome}/${cid.uf} (${cid.aliquota.toFixed(1)}%)`}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Define o ISS municipal aplicado aos cálculos de serviços e transporte.
+                    </p>
                   </div>
-                )}
+                </div>
 
-                {formData.tipoAtividade === 'comercio' && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label
-                        htmlFor="subComercio"
-                        className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                {/* Box explicativo UF & ICMS */}
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-[#145A32] shrink-0 mt-0.5" />
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    <strong>Impacto no cálculo:</strong> A UF de origem determina o ICMS no sistema
+                    atual (Lucro Presumido e Real) e serve de base para calibrar a substituição
+                    gradual pelo IBS durante a transição 2029–2032.
+                  </p>
+                </div>
+              </div>
+
+              {/* SUB-BLOCO C: SEGMENTO PRINCIPAL DE ATIVIDADE (Grade com 10 opções exatas) */}
+              <div className="pt-5 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Segmento Principal de Atividade *
+                  </Label>
+                  <span className="text-[11px] text-slate-400">Selecione 1 das 10 opções</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                  {[
+                    {
+                      id: 'Comércio' as SegmentoEmpresa,
+                      icon: ShoppingCart,
+                      desc: 'Varejo e atacado de mercadorias (Anexo I / ICMS)',
+                    },
+                    {
+                      id: 'Serviços' as SegmentoEmpresa,
+                      icon: Briefcase,
+                      desc: 'Prestação de serviços e consultoria (ISS / Fator R)',
+                    },
+                    {
+                      id: 'Indústria' as SegmentoEmpresa,
+                      icon: Factory,
+                      desc: 'Fabricação e transformação fabril (Anexo II / ICMS)',
+                    },
+                    {
+                      id: 'Saúde' as SegmentoEmpresa,
+                      icon: HeartPulse,
+                      desc: 'Clínicas, consultórios e laboratórios (ISS)',
+                    },
+                    {
+                      id: 'Educação' as SegmentoEmpresa,
+                      icon: GraduationCap,
+                      desc: 'Escolas, faculdades e cursos livres (ISS)',
+                    },
+                    {
+                      id: 'Agro' as SegmentoEmpresa,
+                      icon: Sprout,
+                      desc: 'Produção rural e agronegócio (Base 8%)',
+                    },
+                    {
+                      id: 'Transporte' as SegmentoEmpresa,
+                      icon: Truck,
+                      desc: 'Cargas e passageiros (Presunção 16% IRPJ)',
+                    },
+                    {
+                      id: 'Tecnologia' as SegmentoEmpresa,
+                      icon: Cpu,
+                      desc: 'Software, SaaS e TI (ISS / Fator R)',
+                    },
+                    {
+                      id: 'Construção Civil' as SegmentoEmpresa,
+                      icon: Hammer,
+                      desc: 'Obras, reformas e engenharia civil (ISS)',
+                    },
+                    {
+                      id: 'Bares e Restaurantes' as SegmentoEmpresa,
+                      icon: UtensilsCrossed,
+                      desc: 'Alimentação e bebidas (Presunção 8% / ICMS)',
+                    },
+                  ].map((item) => {
+                    const isSelected = formData.segmento === item.id
+                    const IconComponent = item.icon
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          // Sincroniza também tipoAtividade aproximado para a calculadora caso não seja misto
+                          let autoTipo: TipoAtividade = formData.tipoAtividade
+                          if (!formData.atividadeMista) {
+                            if (item.id === 'Comércio') autoTipo = 'comercio'
+                            else if (item.id === 'Indústria') autoTipo = 'industria'
+                            else autoTipo = 'servico'
+                          }
+                          setFormData((prev) => ({
+                            ...prev,
+                            segmento: item.id,
+                            tipoAtividade: autoTipo,
+                          }))
+                          if (errors.segmento) setErrors((prev) => ({ ...prev, segmento: '' }))
+                        }}
+                        className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-[#2ECC71] bg-emerald-50/70 ring-2 ring-[#2ECC71]/30 shadow-sm'
+                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                        }`}
                       >
-                        <Tag className="w-4 h-4 text-[#D4AF37]" />
-                        Subatividade de Comércio (ICMS Próprio vs ICMS-ST / Atacado) *
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                                isSelected
+                                  ? 'bg-[#2ECC71] text-[#0A1A13]'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              <IconComponent className="w-4 h-4" />
+                            </div>
+                            {isSelected && <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />}
+                          </div>
+                          <span
+                            className={`font-heading font-bold text-xs sm:text-sm block leading-tight ${
+                              isSelected ? 'text-[#145A32]' : 'text-slate-800'
+                            }`}
+                          >
+                            {item.id}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 leading-snug mt-1.5">
+                          {item.desc}
+                        </p>
+                      </button>
+                    )
+                  })}
+                </div>
+                {errors.segmento && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium">{errors.segmento}</p>
+                )}
+              </div>
+
+              {/* SUB-BLOCO D: PERFIL OPERACIONAL DA EMPRESA (Passo 1 Diagnóstico) */}
+              <div className="pt-5 border-t border-slate-100 space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#2ECC71]" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                    Perfil Operacional da Empresa
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Regime Atual */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label
+                        htmlFor="regimeAtual"
+                        className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+                      >
+                        Regime Tributário Atual
                       </Label>
-                      <span className="text-xs text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full font-semibold border border-emerald-200">
-                        Presunção de 8%
-                      </span>
+                      <span className="text-[11px] text-slate-400">Como tributa hoje</span>
                     </div>
                     <Select
-                      value={formData.subatividadeComercio}
+                      value={formData.regimeAtual}
                       onValueChange={(val) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          subatividadeComercio: val as SubatividadeComercio,
-                        }))
+                        setFormData((prev) => ({ ...prev, regimeAtual: val }))
                       }
                     >
                       <SelectTrigger
-                        id="subComercio"
-                        className="h-12 bg-white border-emerald-300 font-medium"
+                        id="regimeAtual"
+                        className="h-12 bg-white border-slate-300 font-medium text-slate-800"
                       >
-                        <SelectValue />
+                        <SelectValue placeholder="Selecione o regime atual" />
                       </SelectTrigger>
                       <SelectContent>
-                        {SUBATIVIDADES_COMERCIO.map((item) => (
-                          <SelectItem key={item.id} value={item.id} className="py-2">
-                            <div>
-                              <span className="font-bold text-slate-900 block">{item.label}</span>
-                              <span className="text-xs text-slate-500 block">{item.descricao}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="Simples Nacional">Simples Nacional</SelectItem>
+                        <SelectItem value="Lucro Presumido">Lucro Presumido</SelectItem>
+                        <SelectItem value="Lucro Real">Lucro Real</SelectItem>
+                        <SelectItem value="MEI (Microempreendedor)">
+                          MEI (Microempreendedor)
+                        </SelectItem>
+                        <SelectItem value="Nova empresa / Ainda não optante">
+                          Nova empresa / Ainda não optante
+                        </SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Serve para compararmos o regime atual com a oportunidade identificada.
+                    </p>
                   </div>
-                )}
 
-                {formData.tipoAtividade === 'misto' && (
-                  <div className="space-y-4">
+                  {/* Quantidade de funcionários */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label
+                        htmlFor="funcionarios"
+                        className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+                      >
+                        Quadro de Colaboradores
+                      </Label>
+                      <span className="text-[11px] text-slate-400">Equipe</span>
+                    </div>
+                    <Select
+                      value={formData.funcionarios}
+                      onValueChange={(val) =>
+                        setFormData((prev) => ({ ...prev, funcionarios: val }))
+                      }
+                    >
+                      <SelectTrigger
+                        id="funcionarios"
+                        className="h-12 bg-white border-slate-300 font-medium text-slate-800"
+                      >
+                        <SelectValue placeholder="Selecione o porte da equipe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Apenas sócios (sem funcionários)">
+                          Apenas sócios (sem funcionários CLT)
+                        </SelectItem>
+                        <SelectItem value="1 a 5 funcionários">1 a 5 funcionários</SelectItem>
+                        <SelectItem value="6 a 15 funcionários">6 a 15 funcionários</SelectItem>
+                        <SelectItem value="16 a 50 funcionários">16 a 50 funcionários</SelectItem>
+                        <SelectItem value="Mais de 50 funcionários">
+                          Mais de 50 funcionários
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Influencia o peso da CPP (contribuição patronal previdenciária de 20%).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  {/* Emissão de Nota Fiscal PF / PJ */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label
+                        htmlFor="emissaoNf"
+                        className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+                      >
+                        Perfil dos Clientes / Emissão de NF
+                      </Label>
+                      <span className="text-[11px] text-slate-400">B2B ou B2C</span>
+                    </div>
+                    <Select
+                      value={formData.emissaoNf}
+                      onValueChange={(val) => setFormData((prev) => ({ ...prev, emissaoNf: val }))}
+                    >
+                      <SelectTrigger
+                        id="emissaoNf"
+                        className="h-12 bg-white border-slate-300 font-medium text-slate-800"
+                      >
+                        <SelectValue placeholder="Selecione o perfil de emissão" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Predominante para Pessoas Jurídicas (B2B)">
+                          Predominante para Pessoas Jurídicas (B2B)
+                        </SelectItem>
+                        <SelectItem value="Predominante para Consumidor Final / PF (B2C)">
+                          Predominante para Consumidor Final / PF (B2C)
+                        </SelectItem>
+                        <SelectItem value="Equilibrado (PF e PJ)">Equilibrado (PF e PJ)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Clientes PJ costumam exigir créditos fiscais ou reter impostos na fonte.
+                    </p>
+                  </div>
+
+                  {/* Operação mista de comércio e serviço */}
+                  <div>
+                    <Label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Atividade Mista (Comércio + Serviço)
+                    </Label>
+                    <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.atividadeMista}
+                        onChange={(e) => {
+                          const isMisto = e.target.checked
+                          setFormData((prev) => ({
+                            ...prev,
+                            atividadeMista: isMisto,
+                            tipoAtividade: isMisto
+                              ? 'misto'
+                              : prev.tipoAtividade === 'misto'
+                                ? 'servico'
+                                : prev.tipoAtividade,
+                          }))
+                        }}
+                        className="mt-1 w-4 h-4 rounded text-[#2ECC71] focus:ring-[#2ECC71] border-slate-300"
+                      />
+                      <div className="text-xs">
+                        <span className="font-semibold text-slate-800 block">
+                          Minha empresa fatura tanto venda de mercadorias quanto serviços
+                        </span>
+                        <span className="text-slate-500 text-[11px] block mt-0.5">
+                          Ex: oficina mecânica que vende autopeças, empresa de TI que comercializa
+                          equipamentos.
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* SUB-BLOCO E: PARÂMETROS OPERACIONAIS COMPLEMENTARES PARA CALCULADORAS */}
+              <div className="pt-5 border-t border-slate-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#07132B]" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                      Parâmetros Econômicos Operacionais (Calculadoras e Motores)
+                    </h4>
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    Alimenta o Passo 2 do Diagnóstico e Módulos 2 a 6
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Faturamento Mensal */}
+                  <div className="space-y-2">
+                    <Label htmlFor="fatMensal" className="text-sm font-bold text-[#07132B]">
+                      Faturamento Mensal (R$) *
+                    </Label>
+                    <Input
+                      id="fatMensal"
+                      type="text"
+                      value={formData.faturamentoMensal.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      })}
+                      onChange={handleFaturamentoChange}
+                      className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm"
+                    />
+                    <span className="text-[11px] text-slate-500 block">
+                      Receita bruta mensal. RBT12 calculada:{' '}
+                      <strong>{formatarMoeda(faturamentoAnual)}</strong>.
+                    </span>
+                  </div>
+
+                  {/* % de Compras sobre Vendas */}
+                  <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <Label className="text-sm font-bold text-[#07132B] flex items-center gap-2">
-                        <Tag className="w-4 h-4 text-[#D4AF37]" />
-                        Proporção no Ramo Misto:
+                      <Label htmlFor="pctCompras" className="text-sm font-bold text-[#07132B]">
+                        % de Compras sobre Vendas *
                       </Label>
-                      <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded">
-                        {formData.proporcaoServicoMisto}% Serviço |{' '}
-                        {100 - formData.proporcaoServicoMisto}% Comércio
+                      <span className="text-xs font-mono font-bold text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded">
+                        {formData.percentualComprasVendas}%
                       </span>
                     </div>
-                    <Slider
-                      value={[formData.proporcaoServicoMisto]}
-                      min={0}
-                      max={100}
-                      step={5}
-                      onValueChange={(val) =>
-                        setFormData((prev) => ({ ...prev, proporcaoServicoMisto: val[0] }))
-                      }
-                    />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                      <div className="space-y-1.5 bg-white p-3 rounded-lg border border-slate-200">
-                        <Label className="text-xs font-bold text-slate-800">
-                          Subatividade da parte de Serviço:
-                        </Label>
-                        <Select
-                          value={formData.subatividadeServico}
-                          onValueChange={(val) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              subatividadeServico: val as SubatividadeServico,
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="h-10 text-xs font-medium">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {SUBATIVIDADES_SERVICO.map((item) => (
-                              <SelectItem key={item.id} value={item.id} className="text-xs">
-                                {item.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="relative">
+                      <Input
+                        id="pctCompras"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.percentualComprasVendas}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            percentualComprasVendas: Number(e.target.value),
+                          }))
+                        }
+                        className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm pr-10"
+                      />
+                      <span className="absolute right-4 top-3 text-slate-400 font-bold">%</span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 block">
+                      Insumos e mercadorias que geram crédito no IVA Dual e Lucro Real.
+                    </span>
+                  </div>
 
-                      <div className="space-y-1.5 bg-white p-3 rounded-lg border border-slate-200">
-                        <Label className="text-xs font-bold text-slate-800">
-                          Subatividade da parte de Comércio:
-                        </Label>
-                        <Select
-                          value={formData.subatividadeComercio}
-                          onValueChange={(val) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              subatividadeComercio: val as SubatividadeComercio,
-                            }))
-                          }
+                  {/* O que vende (Ramo para a calculadora) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="tipoAtividade" className="text-sm font-bold text-[#07132B]">
+                      Ramo para Enquadramento Geral *
+                    </Label>
+                    <Select
+                      value={formData.tipoAtividade}
+                      onValueChange={(val) => {
+                        const novoTipo = val as TipoAtividade
+                        setFormData((prev) => ({
+                          ...prev,
+                          tipoAtividade: novoTipo,
+                          atividadeMista: novoTipo === 'misto',
+                        }))
+                      }}
+                    >
+                      <SelectTrigger
+                        id="tipoAtividade"
+                        className="h-12 bg-white border-slate-300 shadow-sm font-medium text-slate-800"
+                      >
+                        <SelectValue placeholder="Selecione o ramo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="servico">
+                          Serviço (ISS / Presunção 32% ou 16%)
+                        </SelectItem>
+                        <SelectItem value="comercio">
+                          Comércio (ICMS / ICMS-ST / Presunção 8%)
+                        </SelectItem>
+                        <SelectItem value="industria">
+                          Indústria (IPI / Imposto Seletivo / Presunção 8%)
+                        </SelectItem>
+                        <SelectItem value="misto">
+                          Misto (Serviço + Comércio com proporção customizada)
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <span className="text-[11px] text-slate-500 block">
+                      Define regras incidentes (ISS, IPI, ICMS) e o Anexo do Simples.
+                    </span>
+                  </div>
+                </div>
+
+                {/* Subatividade detalhada conforme o ramo */}
+                <div className="p-4 sm:p-5 rounded-2xl border bg-slate-50/70 border-slate-200 mt-2">
+                  {formData.tipoAtividade === 'servico' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label
+                          htmlFor="subServico"
+                          className="text-sm font-bold text-[#07132B] flex items-center gap-2"
                         >
-                          <SelectTrigger className="h-10 text-xs font-medium">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {SUBATIVIDADES_COMERCIO.map((item) => (
-                              <SelectItem key={item.id} value={item.id} className="text-xs">
-                                {item.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          <Tag className="w-4 h-4 text-[#D4AF37]" />
+                          Subatividade de Serviço (Presunção IRPJ/CSLL & Reduções IBS/CBS) *
+                        </Label>
+                        <span className="text-xs text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full font-semibold border border-blue-200">
+                          5 perfis regulatórios
+                        </span>
+                      </div>
+                      <Select
+                        value={formData.subatividadeServico}
+                        onValueChange={(val) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            subatividadeServico: val as SubatividadeServico,
+                          }))
+                        }
+                      >
+                        <SelectTrigger
+                          id="subServico"
+                          className="h-12 bg-white border-blue-300 font-medium"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SUBATIVIDADES_SERVICO.map((item) => (
+                            <SelectItem key={item.id} value={item.id} className="py-2">
+                              <div>
+                                <span className="font-bold text-slate-900 block">{item.label}</span>
+                                <span className="text-xs text-slate-500 block">
+                                  {item.descricao}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {formData.tipoAtividade === 'industria' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label
+                          htmlFor="subIndustria"
+                          className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                        >
+                          <Tag className="w-4 h-4 text-[#D4AF37]" />
+                          Subatividade Industrial (IPI & Imposto Seletivo) *
+                        </Label>
+                        <span className="text-xs text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full font-semibold border border-amber-200">
+                          Ajusta alíquotas industriais
+                        </span>
+                      </div>
+                      <Select
+                        value={formData.subatividadeIndustria}
+                        onValueChange={(val) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            subatividadeIndustria: val as SubatividadeIndustria,
+                          }))
+                        }
+                      >
+                        <SelectTrigger
+                          id="subIndustria"
+                          className="h-12 bg-white border-amber-300 font-medium"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SUBATIVIDADES_INDUSTRIA.map((item) => (
+                            <SelectItem key={item.id} value={item.id} className="py-2">
+                              <div>
+                                <span className="font-bold text-slate-900 block">{item.label}</span>
+                                <span className="text-xs text-slate-500 block">
+                                  {item.descricao}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {formData.tipoAtividade === 'comercio' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label
+                          htmlFor="subComercio"
+                          className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                        >
+                          <Tag className="w-4 h-4 text-[#D4AF37]" />
+                          Subatividade de Comércio (ICMS Próprio vs ICMS-ST / Atacado) *
+                        </Label>
+                        <span className="text-xs text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full font-semibold border border-emerald-200">
+                          Presunção de 8%
+                        </span>
+                      </div>
+                      <Select
+                        value={formData.subatividadeComercio}
+                        onValueChange={(val) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            subatividadeComercio: val as SubatividadeComercio,
+                          }))
+                        }
+                      >
+                        <SelectTrigger
+                          id="subComercio"
+                          className="h-12 bg-white border-emerald-300 font-medium"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SUBATIVIDADES_COMERCIO.map((item) => (
+                            <SelectItem key={item.id} value={item.id} className="py-2">
+                              <div>
+                                <span className="font-bold text-slate-900 block">{item.label}</span>
+                                <span className="text-xs text-slate-500 block">
+                                  {item.descricao}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {formData.tipoAtividade === 'misto' && (
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <Label className="text-sm font-bold text-[#07132B] flex items-center gap-2">
+                          <Tag className="w-4 h-4 text-[#D4AF37]" />
+                          Proporção no Ramo Misto:
+                        </Label>
+                        <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded">
+                          {formData.proporcaoServicoMisto}% Serviço |{' '}
+                          {100 - formData.proporcaoServicoMisto}% Comércio
+                        </span>
+                      </div>
+                      <Slider
+                        value={[formData.proporcaoServicoMisto]}
+                        min={0}
+                        max={100}
+                        step={5}
+                        onValueChange={(val) =>
+                          setFormData((prev) => ({ ...prev, proporcaoServicoMisto: val[0] }))
+                        }
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <div className="space-y-1.5 bg-white p-3 rounded-lg border border-slate-200">
+                          <Label className="text-xs font-bold text-slate-800">
+                            Subatividade da parte de Serviço:
+                          </Label>
+                          <Select
+                            value={formData.subatividadeServico}
+                            onValueChange={(val) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                subatividadeServico: val as SubatividadeServico,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="h-10 text-xs font-medium">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SUBATIVIDADES_SERVICO.map((item) => (
+                                <SelectItem key={item.id} value={item.id} className="text-xs">
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1.5 bg-white p-3 rounded-lg border border-slate-200">
+                          <Label className="text-xs font-bold text-slate-800">
+                            Subatividade da parte de Comércio:
+                          </Label>
+                          <Select
+                            value={formData.subatividadeComercio}
+                            onValueChange={(val) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                subatividadeComercio: val as SubatividadeComercio,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="h-10 text-xs font-medium">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SUBATIVIDADES_COMERCIO.map((item) => (
+                                <SelectItem key={item.id} value={item.id} className="text-xs">
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Linha 2: Localidade (UF de Origem + Cidade para ISS) e Segmento */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
-                {/* Campo 1.4: UF de Origem */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label
-                      htmlFor="ufOrigem"
-                      className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
-                    >
-                      <MapPin className="w-4 h-4 text-[#D4AF37]" />
-                      UF de Origem *
-                    </Label>
-                    <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      ICMS: {aliqIcmsUf.toFixed(1)}%
-                    </span>
-                  </div>
-                  <Select
-                    value={formData.ufOrigem}
-                    onValueChange={(val) => setFormData((prev) => ({ ...prev, ufOrigem: val }))}
-                  >
-                    <SelectTrigger
-                      id="ufOrigem"
-                      className="h-12 bg-white border-slate-300 font-medium text-slate-800"
-                    >
-                      <SelectValue placeholder="Selecione a UF" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {LISTA_UFS_ICMS.map((item) => (
-                        <SelectItem key={item.uf} value={item.uf}>
-                          {item.uf} — {item.nome} ({item.aliquotaInternaPadrao.toFixed(1)}% ICMS)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <span className="text-[11px] text-slate-500 block">
-                    Define a alíquota interna oficial de ICMS estadual.
-                  </span>
-                </div>
-
-                {/* Campo 1.5: Cidade (se aplicável ao ISS) */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label
-                      htmlFor="cidadeIss"
-                      className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
-                    >
-                      <Building2 className="w-4 h-4 text-[#D4AF37]" />
-                      Cidade (ISS Municipal) *
-                    </Label>
-                    <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      ISS: {infoCidade.aliquota.toFixed(1)}%
-                    </span>
-                  </div>
-                  <Select
-                    value={formData.cidade}
-                    onValueChange={(val) => setFormData((prev) => ({ ...prev, cidade: val }))}
-                  >
-                    <SelectTrigger
-                      id="cidadeIss"
-                      className="h-12 bg-white border-slate-300 font-medium text-slate-800"
-                    >
-                      <SelectValue placeholder="Selecione a cidade" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {CIDADES_ISS_MAPA.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.descricao ||
-                            `${item.nome}/${item.uf} (${item.aliquota.toFixed(1)}%)`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <span className="text-[11px] text-slate-500 block">
-                    Alíquota municipal de ISS para serviços e transporte.
-                  </span>
-                </div>
-
-                {/* Campo 1.6: Segmento */}
-                <div className="space-y-2">
-                  <Label htmlFor="segmento" className="text-sm font-bold text-[#07132B]">
-                    Segmento de Atuação *
-                  </Label>
-                  <Select
-                    value={formData.segmento}
-                    onValueChange={(val) =>
-                      setFormData((prev) => ({ ...prev, segmento: val as SegmentoEmpresa }))
-                    }
-                  >
-                    <SelectTrigger
-                      id="segmento"
-                      className="h-12 bg-white border-slate-300 font-medium text-slate-800"
-                    >
-                      <SelectValue placeholder="Selecione o segmento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LISTA_SEGMENTOS.map((seg) => (
-                        <SelectItem key={seg} value={seg}>
-                          {seg}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <span className="text-[11px] text-slate-500 block">
-                    Segmento econômico aplicado ao Diagnóstico Tributário.
-                  </span>
+                  )}
                 </div>
               </div>
             </CardContent>
