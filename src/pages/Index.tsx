@@ -15,6 +15,10 @@ import {
   Star,
   Sparkles,
   ChevronRight,
+  ShieldCheck,
+  Cpu,
+  Award,
+  Headphones,
 } from 'lucide-react'
 import LeadForm from '@/components/LeadForm'
 
@@ -346,6 +350,203 @@ export default function Index() {
         </div>
       </section>
 
+      {/* NOVA SEÇÃO: SOBRE NÓS (#sobre) — Posicionada após a hero e parceiros, antes dos Serviços */}
+      <section
+        id="sobre"
+        className="py-20 md:py-24 bg-gradient-to-b from-[#07132B] via-[#0B1E3F] to-[#07132B] text-white relative overflow-hidden border-b border-[#D4AF37]/20"
+      >
+        {/* Glow de fundo Diamond Group (dourado e azul profundo) */}
+        <div
+          className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[#1A365D] blur-3xl opacity-50 pointer-events-none"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-[#D4AF37] blur-3xl opacity-20 pointer-events-none"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 pointer-events-none opacity-5 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:28px_28px]"
+          aria-hidden="true"
+        />
+
+        <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            {/* Coluna Esquerda: Apresentação da empresa e credenciais */}
+            <div className="lg:col-span-7">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 uppercase mb-4 backdrop-blur-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse" />
+                Diamond Group • Sobre Nós
+              </div>
+
+              <h2 className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-white tracking-tight leading-tight mb-5">
+                Inteligência contábil de vanguarda e rigor técnico para o seu negócio
+              </h2>
+
+              <p className="text-slate-200 text-base sm:text-lg leading-relaxed mb-6 font-normal">
+                Com mais de 15 anos de atuação sólida e credenciamento ativo no CRC/CFC, a
+                Contabilidade 5.0 une o rigor técnico da legislação brasileira à velocidade de
+                automações inteligentes e análise de dados em tempo real. Nosso propósito é
+                descomplicar a rotina fiscal e transformar a contabilidade de empresas em um motor
+                estratégico de rentabilidade e governança.
+              </p>
+
+              {/* Grid dos 3 Diferenciais Diamond Group em destaque visual */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                {/* Diferencial 1: Tecnologia */}
+                <div className="p-4 rounded-xl bg-white/[0.05] border border-white/10 hover:border-[#D4AF37]/50 hover:bg-white/[0.08] transition-all group">
+                  <div className="w-10 h-10 rounded-lg bg-[#D4AF37]/15 border border-[#D4AF37]/30 flex items-center justify-center text-[#D4AF37] mb-3 group-hover:scale-110 transition-transform">
+                    <Cpu className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-heading font-bold text-sm text-white mb-1">
+                    Tecnologia Avançada
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Integração bancária via API, leitura automatizada de XMLs e painéis financeiros
+                    em tempo real.
+                  </p>
+                </div>
+
+                {/* Diferencial 2: Conformidade Fiscal */}
+                <div className="p-4 rounded-xl bg-white/[0.05] border border-white/10 hover:border-[#2ECC71]/50 hover:bg-white/[0.08] transition-all group">
+                  <div className="w-10 h-10 rounded-lg bg-[#2ECC71]/15 border border-[#2ECC71]/30 flex items-center justify-center text-[#2ECC71] mb-3 group-hover:scale-110 transition-transform">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-heading font-bold text-sm text-white mb-1">
+                    Conformidade Fiscal
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Preparação total para a Reforma Tributária (IBS/CBS), SPED, eSocial e blindagem
+                    jurídica.
+                  </p>
+                </div>
+
+                {/* Diferencial 3: Atendimento Digital Humanizado */}
+                <div className="p-4 rounded-xl bg-white/[0.05] border border-white/10 hover:border-[#D4AF37]/50 hover:bg-white/[0.08] transition-all group">
+                  <div className="w-10 h-10 rounded-lg bg-[#D4AF37]/15 border border-[#D4AF37]/30 flex items-center justify-center text-[#D4AF37] mb-3 group-hover:scale-110 transition-transform">
+                    <Headphones className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-heading font-bold text-sm text-white mb-1">
+                    Atendimento Consultivo
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Sem robôs impessoais: contadores e tributaristas seniores dedicados ao dia a dia
+                    da sua empresa.
+                  </p>
+                </div>
+              </div>
+
+              {/* Botões de Ação na seção */}
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => scrollToSection('servicos')}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-heading font-semibold text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                >
+                  Conhecer Nossos Serviços
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToSection('contato')}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-heading font-medium text-sm text-white border border-white/20 hover:border-white/50 hover:bg-white/10 transition-all duration-200"
+                >
+                  Falar com um Especialista
+                </button>
+              </div>
+            </div>
+
+            {/* Coluna Direita: Card de Credenciais Diamond Group */}
+            <div className="lg:col-span-5">
+              <div className="relative rounded-2xl bg-gradient-to-br from-white/[0.09] via-white/[0.05] to-white/[0.02] border border-[#D4AF37]/30 backdrop-blur-xl p-6 sm:p-8 shadow-2xl">
+                {/* Header do Card */}
+                <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37]">
+                      <Award className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#D4AF37] block">
+                        Credenciais Diamond
+                      </span>
+                      <span className="font-heading font-bold text-base text-white">
+                        Solidez & Reconhecimento
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#2ECC71]/20 text-[#2ECC71] border border-[#2ECC71]/30">
+                    Ativo
+                  </span>
+                </div>
+
+                {/* Lista de Credenciais */}
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/10">
+                    <CheckCircle2 className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-sm font-semibold text-white block">
+                        Registro CRC / CFC Regularizado
+                      </span>
+                      <span className="text-xs text-slate-300">
+                        Responsáveis técnicos certificados pelo Conselho Regional de Contabilidade e
+                        normas IFRS.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/10">
+                    <CheckCircle2 className="w-5 h-5 text-[#2ECC71] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-sm font-semibold text-white block">
+                        15+ Anos de Experiência Corporativa
+                      </span>
+                      <span className="text-xs text-slate-300">
+                        Histórico comprovado em reestruturações tributárias, defesas fiscais e
+                        auditorias.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/10">
+                    <CheckCircle2 className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-sm font-semibold text-white block">
+                        +500 Empresas Atendidas em todo o Brasil
+                      </span>
+                      <span className="text-xs text-slate-300">
+                        De scale-ups de tecnologia a indústrias, serviços e comércio de médio e
+                        grande porte.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/10">
+                    <CheckCircle2 className="w-5 h-5 text-[#2ECC71] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-sm font-semibold text-white block">
+                        100% de Sigilo e Conformidade LGPD
+                      </span>
+                      <span className="text-xs text-slate-300">
+                        Criptografia de ponta a ponta e governança avançada na custódia de dados
+                        fiscais.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Selo inferior */}
+                <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
+                  <span className="flex items-center gap-1.5 text-[#D4AF37] font-semibold">
+                    <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                    Padrão de Excelência Diamond
+                  </span>
+                  <span className="text-slate-400">Desde 2010</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 3. SEÇÃO DE SERVIÇOS (#servicos) */}
       <section id="servicos" className="py-24 bg-white text-slate-900">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
@@ -406,136 +607,6 @@ export default function Index() {
               Ver todos os detalhes e recursos de cada serviço
               <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. SEÇÃO SOBRE NÓS (#sobre) */}
-      <section
-        id="sobre"
-        className="py-24 bg-gradient-to-b from-[#F3F4F6] via-white to-white text-slate-900"
-      >
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-            {/* Coluna Esquerda: Imagem com moldura decorativa */}
-            <div className="lg:col-span-5 relative">
-              {/* Moldura absoluta verde decorativa */}
-              <div
-                className="absolute -top-4 -left-4 w-full h-full rounded-[28px] border-2 border-[#2ECC71] pointer-events-none -z-0 opacity-80"
-                aria-hidden="true"
-              />
-              <div
-                className="absolute -bottom-4 -right-4 w-32 h-32 bg-[#A3E4D7]/40 rounded-full blur-2xl -z-0 pointer-events-none"
-                aria-hidden="true"
-              />
-
-              {/* Card de Imagem */}
-              <div className="relative z-10 rounded-[24px] overflow-hidden shadow-2xl border border-slate-200 bg-white">
-                <img
-                  src="https://img.usecurling.com/p/800/900?q=modern%20accounting%20team%20office&color=emerald"
-                  alt="Equipe da Contabilidade 5.0 em escritório moderno"
-                  className="w-full h-[420px] object-cover transition-transform duration-500 hover:scale-105"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A1A13]/80 via-transparent to-transparent flex items-end p-6">
-                  <div className="text-white">
-                    <span className="text-xs font-semibold text-[#2ECC71] uppercase tracking-wider block">
-                      Autoridade e Confiança
-                    </span>
-                    <p className="font-heading font-bold text-lg">
-                      15+ anos transformando a contabilidade de empresas
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Coluna Direita: Informações */}
-            <div className="lg:col-span-7">
-              <span className="inline-block px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-[#145A32] bg-[#A3E4D7]/30 border border-[#2ECC71]/30 mb-3">
-                Sobre a Contabilidade 5.0
-              </span>
-
-              <h2 className="font-heading font-bold text-3xl sm:text-[32px] leading-tight text-slate-900 tracking-tight mb-6">
-                Mais de 15 anos de experiência, agora com a tecnologia do futuro
-              </h2>
-
-              <p className="text-base text-slate-600 leading-relaxed mb-6">
-                Nascemos para romper com a contabilidade tradicional, burocrática e lenta. Unimos a
-                segurança jurídica e fiscal acumulada em mais de uma década à agilidade da automação
-                de dados e dashboards em tempo real.
-              </p>
-
-              {/* 4 Diferenciais com Check verde */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800">
-                      Time multidisciplinar qualificado
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Contadores, tributaristas e analistas dedicados.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800">
-                      Processos otimizados por automação
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Zero retrabalho e integração bancária ágil.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800">
-                      Atendimento próximo e consultivo
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Sem robôs frios: atendimento humano de verdade.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800">
-                      Relatórios em tempo real
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Indicadores claros para sua tomada de decisão.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Botão Saiba Mais */}
-              <div>
-                <Link
-                  to="/sobre"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-heading font-semibold text-sm text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_4px_14px_rgba(46,204,113,0.35)] hover:shadow-[0_6px_20px_rgba(46,204,113,0.5)] transition-all duration-200 hover:-translate-y-0.5 btn-press"
-                >
-                  Saiba Mais Sobre a Empresa
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
           </div>
         </div>
       </section>

@@ -10,7 +10,6 @@ import Layout from './components/Layout'
 
 // Pages
 import Index from './pages/Index'
-import Sobre from './pages/Sobre'
 import Servicos from './pages/Servicos'
 import Blog from './pages/Blog'
 import BlogPost from './pages/BlogPost'
@@ -94,8 +93,10 @@ const App = () => (
               {/* Landing page principal */}
               <Route path="/" element={<Index />} />
 
+              {/* Redirecionamento da URL antiga /sobre para a seção na Home /#sobre */}
+              <Route path="/sobre" element={<Navigate to="/#sobre" replace />} />
+
               {/* Páginas institucionais */}
-              <Route path="/sobre" element={<Sobre />} />
               <Route path="/servicos" element={<Servicos />} />
               <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
               <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />

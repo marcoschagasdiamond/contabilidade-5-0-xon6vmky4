@@ -134,16 +134,6 @@ export default function Layout() {
               Home
             </Link>
             <Link
-              to="/sobre"
-              className={`nav-link-hover text-sm font-medium transition-colors ${
-                location.pathname === '/sobre'
-                  ? 'text-[#2ECC71] font-semibold active'
-                  : 'text-slate-200 hover:text-white'
-              }`}
-            >
-              Sobre Nós
-            </Link>
-            <Link
               to="/servicos"
               className={`nav-link-hover text-sm font-medium transition-colors ${
                 location.pathname === '/servicos'
@@ -303,17 +293,6 @@ export default function Layout() {
                   }`}
                 >
                   Home
-                </Link>
-                <Link
-                  to="/sobre"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`text-base font-medium py-2 border-b border-white/5 ${
-                    location.pathname === '/sobre'
-                      ? 'text-[#2ECC71] font-bold'
-                      : 'text-slate-200 hover:text-[#2ECC71]'
-                  }`}
-                >
-                  Sobre Nós
                 </Link>
                 <Link
                   to="/servicos"
@@ -517,13 +496,14 @@ export default function Layout() {
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    to="/sobre"
-                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
+                  <a
+                    href="/#sobre"
+                    onClick={(e) => handleNavClick(e, 'sobre')}
+                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
                     Sobre Nós
-                  </Link>
+                  </a>
                 </li>
                 <li>
                   <Link
