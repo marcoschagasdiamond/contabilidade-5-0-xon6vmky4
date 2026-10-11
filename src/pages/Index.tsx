@@ -1,5 +1,6 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import {
   CheckCircle2,
   ArrowRight,
@@ -12,14 +13,15 @@ import {
   FolderOpen,
   ShieldAlert,
   Star,
-  Award,
-  Clock,
   Sparkles,
   ChevronRight,
 } from 'lucide-react'
 import LeadForm from '@/components/LeadForm'
 
 export default function Index() {
+  const navigate = useNavigate()
+  const { temDadosSalvos } = useDadosEmpresa()
+
   const partners = [
     'TechCorp',
     'InovaSoft',
@@ -91,30 +93,6 @@ export default function Index() {
     },
   ]
 
-  const testimonials = [
-    {
-      quote:
-        'A Contabilidade 5.0 simplificou nossa rotina fiscal. Economizamos horas de trabalho e temos certeza de que estamos 100% dentro da lei.',
-      author: 'Ana Beatriz',
-      role: 'CEO da TechCorp',
-      avatar: 'https://img.usecurling.com/ppl/medium?gender=female&seed=12',
-    },
-    {
-      quote:
-        'A equipe é incrivelmente atenciosa. Sempre disponível para tirar dúvidas e oferecer as melhores soluções.',
-      author: 'Carlos Mendes',
-      role: 'Diretor Financeiro da LogiPrime',
-      avatar: 'https://img.usecurling.com/ppl/medium?gender=male&seed=34',
-    },
-    {
-      quote:
-        'O dashboard em tempo real mudou a forma como gerenciamos o financeiro. Recomendo a todo empresário que quer crescer com segurança.',
-      author: 'Juliana Costa',
-      role: 'Fundadora da GreenFarm',
-      avatar: 'https://img.usecurling.com/ppl/medium?gender=female&seed=56',
-    },
-  ]
-
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id)
     if (el) {
@@ -172,13 +150,21 @@ export default function Index() {
 
               {/* Botões de Ação */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-6">
-                <Link
-                  to="/diagnostico"
+                <a
+                  href="/diagnostico"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (!temDadosSalvos) {
+                      navigate('/dados-empresa?destino=%2Fdiagnostico')
+                    } else {
+                      navigate('/diagnostico')
+                    }
+                  }}
                   className="px-7 py-4 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-1 btn-press flex items-center justify-center gap-2"
                 >
                   Fazer Diagnóstico Tributário
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                </Link>
+                </a>
 
                 <button
                   type="button"
@@ -554,68 +540,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* 5. SEÇÃO DE DEPOIMENTOS (#depoimentos) */}
-      <section id="depoimentos" className="py-24 bg-white text-slate-900">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="inline-block px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-[#145A32] bg-[#A3E4D7]/30 border border-[#2ECC71]/30 mb-3">
-              Depoimentos
-            </span>
-            <h2 className="font-heading font-bold text-3xl sm:text-[32px] tracking-tight text-slate-900 mb-4">
-              O que nossos clientes dizem
-            </h2>
-            <p className="text-base text-slate-600 leading-relaxed">
-              Descubra por que mais de 500 empresas confiam na nossa equipe para gerenciar sua
-              contabilidade e impulsionar seus resultados.
-            </p>
-          </div>
-
-          {/* Grade 3 colunas */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((item) => (
-              <div
-                key={item.author}
-                className="p-8 rounded-[16px] bg-white border border-[#E5E7EB] hover:border-[#2ECC71]/50 hover:shadow-[0_20px_40px_rgba(16,53,31,0.08)] transition-all duration-300 hover:-translate-y-2 flex flex-col justify-between"
-              >
-                <div>
-                  {/* Avatar + Estrelas */}
-                  <div className="flex items-center gap-4 mb-6">
-                    <img
-                      src={item.avatar}
-                      alt={item.author}
-                      className="w-14 h-14 rounded-full object-cover border-2 border-[#2ECC71]"
-                      loading="lazy"
-                    />
-                    <div>
-                      {/* 5 Estrelas #F1C40F */}
-                      <div className="flex items-center gap-1 mb-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className="w-4 h-4 fill-[#F1C40F] text-[#F1C40F]" />
-                        ))}
-                      </div>
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        Cliente Verificado
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Texto do Depoimento */}
-                  <p className="text-slate-700 text-sm leading-relaxed italic mb-6">
-                    "{item.quote}"
-                  </p>
-                </div>
-
-                {/* Autoria */}
-                <div className="pt-4 border-t border-slate-100">
-                  <h4 className="font-heading font-bold text-base text-slate-900">{item.author}</h4>
-                  <p className="text-xs text-slate-500 font-medium">{item.role}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* BANNER CTA: DIAGNÓSTICO TRIBUTÁRIO */}
       <section className="py-14 bg-gradient-to-r from-[#0D2A1C] via-[#145A32] to-[#0A1A13] text-white relative overflow-hidden border-y border-white/10">
         <div className="absolute top-0 right-1/4 w-80 h-80 bg-[#2ECC71]/15 rounded-full blur-3xl pointer-events-none" />
@@ -636,13 +560,21 @@ export default function Index() {
               </p>
             </div>
             <div className="shrink-0 w-full sm:w-auto">
-              <Link
-                to="/diagnostico"
+              <a
+                href="/diagnostico"
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (!temDadosSalvos) {
+                    navigate('/dados-empresa?destino=%2Fdiagnostico')
+                  } else {
+                    navigate('/diagnostico')
+                  }
+                }}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl font-heading font-bold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-0.5 btn-press whitespace-nowrap"
               >
                 <span>Fazer Diagnóstico Agora</span>
                 <ArrowRight className="w-5 h-5 stroke-[2.5]" />
-              </Link>
+              </a>
             </div>
           </div>
         </div>

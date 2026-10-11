@@ -1,5 +1,6 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import {
   ArrowLeft,
   ArrowRight,
@@ -26,12 +27,24 @@ interface DiamondHeaderProps {
 }
 
 export function DiamondHeader({
-  badge = 'DIAMOND GROUP • GUIA DA REFORMA',
+  badge,
   titulo,
   subtitulo,
   mostrarVoltar = true,
   mostrarDiagnosticoBtn = true,
 }: DiamondHeaderProps) {
+  const navigate = useNavigate()
+  const { temDadosSalvos } = useDadosEmpresa()
+
+  const handleDiagnosticoNav = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!temDadosSalvos) {
+      navigate('/dados-empresa?destino=%2Fdiagnostico')
+    } else {
+      navigate('/diagnostico')
+    }
+  }
+
   return (
     <div className="relative bg-[#07132B] text-white pt-28 pb-16 px-4 sm:px-6 lg:px-8 border-b border-[#D4AF37]/20 overflow-hidden">
       {/* Background patterns: Diamond geometric glow */}
@@ -71,14 +84,15 @@ export function DiamondHeader({
 
           {mostrarDiagnosticoBtn && (
             <div className="shrink-0 flex flex-col sm:flex-row gap-3">
-              <Link
-                to="/diagnostico"
-                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-sm sm:text-base text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-[0_4px_20px_rgba(212,175,55,0.35)] transition-all duration-200 hover:-translate-y-0.5"
+              <a
+                href="/diagnostico"
+                onClick={handleDiagnosticoNav}
+                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-sm sm:text-base text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-[0_4px_20px_rgba(212,175,55,0.35)] transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
               >
                 <ClipboardCheck className="w-5 h-5 text-[#07132B]" />
                 Fazer diagnóstico gratuito
                 <ArrowRight className="w-4 h-4 text-[#07132B]" />
-              </Link>
+              </a>
             </div>
           )}
         </div>
@@ -96,6 +110,18 @@ export function DiamondFooterCTA({
   titulo = 'Descubra exatamente o impacto financeiro na sua empresa',
   subtitulo = 'Nossa ferramenta calcula a transição 2026-2033, simula IBS, CBS e compara o Simples Nacional com o Regime Normal em menos de 3 minutos.',
 }: DiamondFooterCTAProps) {
+  const navigate = useNavigate()
+  const { temDadosSalvos } = useDadosEmpresa()
+
+  const handleDiagnosticoNav = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!temDadosSalvos) {
+      navigate('/dados-empresa?destino=%2Fdiagnostico')
+    } else {
+      navigate('/diagnostico')
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 my-16">
       <div className="relative rounded-2xl bg-gradient-to-br from-[#07132B] via-[#0E2442] to-[#14345C] text-white p-8 sm:p-12 border border-[#D4AF37]/30 shadow-2xl overflow-hidden">
@@ -114,13 +140,14 @@ export function DiamondFooterCTA({
           </div>
 
           <div className="shrink-0 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-            <Link
-              to="/diagnostico"
-              className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl font-bold text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-lg shadow-[#D4AF37]/20 transition-all hover:scale-105"
+            <a
+              href="/diagnostico"
+              onClick={handleDiagnosticoNav}
+              className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl font-bold text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-lg shadow-[#D4AF37]/20 transition-all hover:scale-105 cursor-pointer"
             >
               <FileCheck2 className="w-5 h-5 text-[#07132B]" />
               Fazer diagnóstico gratuito
-            </Link>
+            </a>
           </div>
         </div>
       </div>

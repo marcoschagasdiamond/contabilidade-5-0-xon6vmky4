@@ -19,6 +19,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 
 export default function Layout() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -26,6 +27,18 @@ export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { isAuthenticated, user, isAdmin } = useAuth()
+  const { temDadosSalvos } = useDadosEmpresa()
+
+  const handleToolNav = (e: React.MouseEvent<HTMLAnchorElement>, destino: string) => {
+    e.preventDefault()
+    setIsMobileMenuOpen(false)
+    if (!temDadosSalvos) {
+      // Leva ao formulário de dados da empresa com retorno configurado
+      navigate(`/dados-empresa?destino=${encodeURIComponent(destino)}`)
+    } else {
+      navigate(destino)
+    }
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -110,20 +123,36 @@ export default function Layout() {
 
           {/* DESKTOP NAV */}
           <nav className="hidden md:flex items-center gap-7">
-            <a
-              href="/#inicio"
-              onClick={(e) => handleNavClick(e, 'inicio')}
-              className="nav-link-hover text-sm font-medium text-slate-200 hover:text-white transition-colors"
+            <Link
+              to="/"
+              className={`nav-link-hover text-sm font-medium transition-colors ${
+                location.pathname === '/' && !location.hash
+                  ? 'text-[#2ECC71] font-semibold active'
+                  : 'text-slate-200 hover:text-white'
+              }`}
             >
-              Início
-            </a>
-            <a
-              href="/#servicos"
-              onClick={(e) => handleNavClick(e, 'servicos')}
-              className="nav-link-hover text-sm font-medium text-slate-200 hover:text-white transition-colors"
+              Home
+            </Link>
+            <Link
+              to="/sobre"
+              className={`nav-link-hover text-sm font-medium transition-colors ${
+                location.pathname === '/sobre'
+                  ? 'text-[#2ECC71] font-semibold active'
+                  : 'text-slate-200 hover:text-white'
+              }`}
+            >
+              Sobre Nós
+            </Link>
+            <Link
+              to="/servicos"
+              className={`nav-link-hover text-sm font-medium transition-colors ${
+                location.pathname === '/servicos'
+                  ? 'text-[#2ECC71] font-semibold active'
+                  : 'text-slate-200 hover:text-white'
+              }`}
             >
               Serviços
-            </a>
+            </Link>
             <Link
               to="/reforma-tributaria"
               className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
@@ -135,19 +164,9 @@ export default function Layout() {
               <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
               Reforma Tributária
             </Link>
-            <Link
-              to="/dados-empresa"
-              className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                location.pathname === '/dados-empresa'
-                  ? 'text-[#D4AF37] font-semibold active'
-                  : 'text-slate-200 hover:text-white'
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-              Dados da Empresa
-            </Link>
-            <Link
-              to="/calculadora-ibs-cbs"
+            <a
+              href="/calculadora-ibs-cbs"
+              onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
               className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 location.pathname === '/calculadora-ibs-cbs'
                   ? 'text-[#D4AF37] font-semibold active'
@@ -156,9 +175,10 @@ export default function Layout() {
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
               Calculadora IBS/CBS
-            </Link>
-            <Link
-              to="/diagnostico"
+            </a>
+            <a
+              href="/diagnostico"
+              onClick={(e) => handleToolNav(e, '/diagnostico')}
               className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 location.pathname === '/diagnostico'
                   ? 'text-[#2ECC71] font-semibold active'
@@ -167,20 +187,6 @@ export default function Layout() {
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#2ECC71] animate-pulse" />
               Diagnóstico Tributário
-            </Link>
-            <a
-              href="/#sobre"
-              onClick={(e) => handleNavClick(e, 'sobre')}
-              className="nav-link-hover text-sm font-medium text-slate-200 hover:text-white transition-colors"
-            >
-              Sobre Nós
-            </a>
-            <a
-              href="/#depoimentos"
-              onClick={(e) => handleNavClick(e, 'depoimentos')}
-              className="nav-link-hover text-sm font-medium text-slate-200 hover:text-white transition-colors"
-            >
-              Depoimentos
             </a>
             <Link
               to="/blog"
@@ -192,13 +198,6 @@ export default function Layout() {
             >
               Blog
             </Link>
-            <a
-              href="/#contato"
-              onClick={(e) => handleNavClick(e, 'contato')}
-              className="nav-link-hover text-sm font-medium text-slate-200 hover:text-white transition-colors"
-            >
-              Contato
-            </a>
           </nav>
 
           {/* CTA BUTTON & AUTH LINKS */}
@@ -294,20 +293,39 @@ export default function Layout() {
 
               {/* Links */}
               <div className="flex flex-col gap-4 mt-6">
-                <a
-                  href="/#inicio"
-                  onClick={(e) => handleNavClick(e, 'inicio')}
-                  className="text-base font-medium text-slate-200 hover:text-[#2ECC71] py-2 border-b border-white/5"
+                <Link
+                  to="/"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-base font-medium py-2 border-b border-white/5 ${
+                    location.pathname === '/' && !location.hash
+                      ? 'text-[#2ECC71] font-bold'
+                      : 'text-slate-200 hover:text-[#2ECC71]'
+                  }`}
                 >
-                  Início
-                </a>
-                <a
-                  href="/#servicos"
-                  onClick={(e) => handleNavClick(e, 'servicos')}
-                  className="text-base font-medium text-slate-200 hover:text-[#2ECC71] py-2 border-b border-white/5"
+                  Home
+                </Link>
+                <Link
+                  to="/sobre"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-base font-medium py-2 border-b border-white/5 ${
+                    location.pathname === '/sobre'
+                      ? 'text-[#2ECC71] font-bold'
+                      : 'text-slate-200 hover:text-[#2ECC71]'
+                  }`}
+                >
+                  Sobre Nós
+                </Link>
+                <Link
+                  to="/servicos"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-base font-medium py-2 border-b border-white/5 ${
+                    location.pathname === '/servicos'
+                      ? 'text-[#2ECC71] font-bold'
+                      : 'text-slate-200 hover:text-[#2ECC71]'
+                  }`}
                 >
                   Serviços
-                </a>
+                </Link>
                 <Link
                   to="/reforma-tributaria"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -320,21 +338,9 @@ export default function Layout() {
                   <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
                   Reforma Tributária
                 </Link>
-                <Link
-                  to="/dados-empresa"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
-                    location.pathname === '/dados-empresa'
-                      ? 'text-[#D4AF37] font-bold'
-                      : 'text-slate-200 hover:text-[#D4AF37]'
-                  }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
-                  Dados da Empresa
-                </Link>
-                <Link
-                  to="/calculadora-ibs-cbs"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                <a
+                  href="/calculadora-ibs-cbs"
+                  onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
                   className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
                     location.pathname === '/calculadora-ibs-cbs'
                       ? 'text-[#D4AF37] font-bold'
@@ -343,10 +349,10 @@ export default function Layout() {
                 >
                   <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
                   Calculadora IBS/CBS
-                </Link>
-                <Link
-                  to="/diagnostico"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                </a>
+                <a
+                  href="/diagnostico"
+                  onClick={(e) => handleToolNav(e, '/diagnostico')}
                   className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
                     location.pathname === '/diagnostico'
                       ? 'text-[#2ECC71] font-bold'
@@ -355,35 +361,18 @@ export default function Layout() {
                 >
                   <span className="w-2 h-2 rounded-full bg-[#2ECC71]" />
                   Diagnóstico Tributário
-                </Link>
-                <a
-                  href="/#sobre"
-                  onClick={(e) => handleNavClick(e, 'sobre')}
-                  className="text-base font-medium text-slate-200 hover:text-[#2ECC71] py-2 border-b border-white/5"
-                >
-                  Sobre Nós
-                </a>
-                <a
-                  href="/#depoimentos"
-                  onClick={(e) => handleNavClick(e, 'depoimentos')}
-                  className="text-base font-medium text-slate-200 hover:text-[#2ECC71] py-2 border-b border-white/5"
-                >
-                  Depoimentos
                 </a>
                 <Link
                   to="/blog"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-base font-medium text-slate-200 hover:text-[#2ECC71] py-2 border-b border-white/5"
+                  className={`text-base font-medium py-2 border-b border-white/5 ${
+                    location.pathname.startsWith('/blog')
+                      ? 'text-[#2ECC71] font-bold'
+                      : 'text-slate-200 hover:text-[#2ECC71]'
+                  }`}
                 >
                   Blog
                 </Link>
-                <a
-                  href="/#contato"
-                  onClick={(e) => handleNavClick(e, 'contato')}
-                  className="text-base font-medium text-slate-200 hover:text-[#2ECC71] py-2 border-b border-white/5"
-                >
-                  Contato
-                </a>
               </div>
             </div>
             {/* Bottom action inside mobile drawer */}
@@ -519,14 +508,22 @@ export default function Layout() {
               </h3>
               <ul className="space-y-3 text-sm">
                 <li>
-                  <a
-                    href="/#inicio"
-                    onClick={(e) => handleNavClick(e, 'inicio')}
+                  <Link
+                    to="/"
                     className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
                   >
                     <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
-                    Início
-                  </a>
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/sobre"
+                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
+                    Sobre Nós
+                  </Link>
                 </li>
                 <li>
                   <Link
@@ -547,50 +544,33 @@ export default function Layout() {
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    to="/dados-empresa"
-                    className="text-slate-400 hover:text-[#D4AF37] transition-colors flex items-center gap-1.5 font-medium"
-                  >
-                    <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37]" />
-                    Dados da Empresa
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/calculadora-ibs-cbs"
-                    className="text-slate-400 hover:text-[#D4AF37] transition-colors flex items-center gap-1.5 font-medium"
+                  <a
+                    href="/calculadora-ibs-cbs"
+                    onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
+                    className="text-slate-400 hover:text-[#D4AF37] transition-colors flex items-center gap-1.5 font-medium cursor-pointer"
                   >
                     <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37]" />
                     Calculadora IBS/CBS
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/diagnostico"
-                    className="text-slate-400 hover:text-[#2ECC71] transition-colors flex items-center gap-1.5 font-medium"
-                  >
-                    <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
-                    Diagnóstico Tributário
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/sobre"
-                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
-                  >
-                    <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
-                    Sobre Nós
-                  </Link>
+                  </a>
                 </li>
                 <li>
                   <a
-                    href="/#depoimentos"
-                    onClick={(e) => handleNavClick(e, 'depoimentos')}
-                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
+                    href="/diagnostico"
+                    onClick={(e) => handleToolNav(e, '/diagnostico')}
+                    className="text-slate-400 hover:text-[#2ECC71] transition-colors flex items-center gap-1.5 font-medium cursor-pointer"
                   >
                     <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
-                    Depoimentos
+                    Diagnóstico Tributário
                   </a>
+                </li>
+                <li>
+                  <Link
+                    to="/blog"
+                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 font-medium"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
+                    Blog
+                  </Link>
                 </li>
                 <li>
                   <Link

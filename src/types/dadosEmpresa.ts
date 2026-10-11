@@ -133,7 +133,16 @@ export function salvarDadosEmpresa(dados: Partial<DadosEmpresaPerfil>): DadosEmp
 export function existeDadosEmpresaSalvos(): boolean {
   if (typeof window === 'undefined') return false
   try {
-    return localStorage.getItem(STORAGE_KEY) !== null
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return false
+    const parsed = JSON.parse(raw)
+    // Para ser considerado realmente preenchido/salvo pelo usuário,
+    // verifica se possui campos de identificação mínimos preenchidos
+    const temNome = typeof parsed.nomeContato === 'string' && parsed.nomeContato.trim().length > 0
+    const temEmpresa =
+      typeof parsed.nomeEmpresa === 'string' && parsed.nomeEmpresa.trim().length > 0
+    const temCnpj = typeof parsed.cnpj === 'string' && parsed.cnpj.trim().length > 0
+    return temNome && temEmpresa && temCnpj
   } catch {
     return false
   }

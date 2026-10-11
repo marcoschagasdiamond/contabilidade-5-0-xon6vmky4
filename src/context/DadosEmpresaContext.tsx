@@ -58,25 +58,28 @@ export function DadosEmpresaProvider({ children }: { children: React.ReactNode }
           const perfilDoBanco = recordToPerfil(registroBanco)
           salvarNoStorage(perfilDoBanco)
           setDadosEmpresa(perfilDoBanco)
-          setTemDadosSalvos(true)
+          const temDadosValidos =
+            Boolean(perfilDoBanco.nomeEmpresa?.trim()) && Boolean(perfilDoBanco.cnpj?.trim())
+          setTemDadosSalvos(temDadosValidos || existeDadosEmpresaSalvos())
           setSalvoNoBanco(true)
         } else {
-          // Usuário autenticado mas ainda sem registro no banco:
-          // Se houver dados no localStorage (mesmo padrão editado), salva no banco vinculado à conta
-          const dadosAtuais = carregarDadosEmpresa()
-          // Preenche email/nome do usuário caso estejam vazios
-          const dadosCompletos: DadosEmpresaPerfil = {
-            ...dadosAtuais,
-            email: dadosAtuais.email || user.email || '',
-            nomeContato: dadosAtuais.nomeContato || (user as any).name || '',
+          // Usuário autenticado mas sem registro no banco ainda:
+          // Se já preencheu os dados no navegador, sincroniza para a conta
+          if (existeDadosEmpresaSalvos()) {
+            const dadosAtuais = carregarDadosEmpresa()
+            const dadosCompletos: DadosEmpresaPerfil = {
+              ...dadosAtuais,
+              email: dadosAtuais.email || user.email || '',
+              nomeContato: dadosAtuais.nomeContato || (user as any).name || '',
+            }
+            const salvo = await salvarClienteEmpresaNoBanco(dadosCompletos, user.id)
+            if (cancelado) return
+            const perfilSalvo = recordToPerfil(salvo)
+            salvarNoStorage(perfilSalvo)
+            setDadosEmpresa(perfilSalvo)
+            setTemDadosSalvos(true)
+            setSalvoNoBanco(true)
           }
-          const salvo = await salvarClienteEmpresaNoBanco(dadosCompletos, user.id)
-          if (cancelado) return
-          const perfilSalvo = recordToPerfil(salvo)
-          salvarNoStorage(perfilSalvo)
-          setDadosEmpresa(perfilSalvo)
-          setTemDadosSalvos(true)
-          setSalvoNoBanco(true)
         }
       } catch (err) {
         console.warn('Erro ao sincronizar dados com o banco:', err)

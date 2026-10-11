@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { DadosEmpresaPerfil, DADOS_EMPRESA_PADRAO } from '@/types/dadosEmpresa'
 import {
@@ -99,6 +99,11 @@ export default function DadosEmpresa() {
 
   // Estado local do formulário
   const [formData, setFormData] = useState<DadosEmpresaPerfil>(dadosEmpresa)
+  const [searchParams] = useSearchParams()
+  const destinoParam = searchParams.get('destino') || ''
+  const destinoFinal =
+    destinoParam === '/calculadora-ibs-cbs' || destinoParam === '/diagnostico' ? destinoParam : ''
+
   const [salvoComSucesso, setSalvoComSucesso] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -212,11 +217,22 @@ export default function DadosEmpresa() {
     salvar(formData)
       .then(() => {
         setSalvoComSucesso(true)
-        setTimeout(() => setSalvoComSucesso(false), 4000)
+        if (destinoFinal) {
+          setTimeout(() => {
+            navigate(destinoFinal)
+          }, 1200)
+        } else {
+          setTimeout(() => setSalvoComSucesso(false), 4000)
+        }
       })
       .catch((err) => {
         console.error('Erro ao salvar dados da empresa:', err)
         setSalvoComSucesso(true)
+        if (destinoFinal) {
+          setTimeout(() => {
+            navigate(destinoFinal)
+          }, 1500)
+        }
       })
   }
 
@@ -249,6 +265,32 @@ export default function DadosEmpresa() {
         mostrarVoltar={true}
         mostrarDiagnosticoBtn={true}
       />
+
+      {/* AVISO DO GATE SE O USUÁRIO VEIO REDIRECIONADO */}
+      {destinoFinal && !temDadosSalvos && (
+        <div className="bg-gradient-to-r from-[#07132B] via-[#0D2A1C] to-[#07132B] text-white border-b border-[#D4AF37]/40 py-3.5 px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs sm:text-sm">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37] animate-ping shrink-0" />
+              <Info className="w-4 h-4 text-[#D4AF37] shrink-0" />
+              <span>
+                <strong className="text-[#D4AF37]">Etapa Inicial Obrigatória:</strong> Para acessar
+                o{' '}
+                <strong>
+                  {destinoFinal === '/calculadora-ibs-cbs'
+                    ? 'Calculadora IBS/CBS'
+                    : 'Diagnóstico Tributário'}
+                </strong>
+                , preencha os dados da sua empresa abaixo uma única vez. Eles alimentam
+                automaticamente a calculadora e o diagnóstico!
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-400 bg-white/10 px-2.5 py-1 rounded-full whitespace-nowrap">
+              Redirecionamento automático após salvar
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* BARRA SUPERIOR DE KPI RÁPIDO */}
       <div className="bg-[#0A140F] text-white border-b border-[#D4AF37]/30 py-3 px-4 sm:px-6">
@@ -294,18 +336,23 @@ export default function DadosEmpresa() {
                   Dados da Empresa salvos com sucesso!
                 </strong>
                 <span className="text-xs text-emerald-100">
-                  Diagnóstico Tributário, Calculadora Simples, Comparativo de Regimes, Créditos e
-                  Transição já foram atualizados com seus valores.
+                  {destinoFinal
+                    ? `Redirecionando você para ${
+                        destinoFinal === '/calculadora-ibs-cbs'
+                          ? 'a Calculadora IBS/CBS'
+                          : 'o Diagnóstico Tributário'
+                      }...`
+                    : 'Diagnóstico Tributário, Calculadora Simples, Comparativo de Regimes, Créditos e Transição já foram atualizados com seus valores.'}
                 </span>
               </div>
             </div>
             <Button
               size="sm"
               variant="outline"
-              onClick={() => navigate('/calculadora-ibs-cbs')}
+              onClick={() => navigate(destinoFinal || '/calculadora-ibs-cbs')}
               className="bg-white text-emerald-800 hover:bg-emerald-50 border-white shrink-0 font-bold"
             >
-              Ir para Calculadora
+              {destinoFinal === '/diagnostico' ? 'Ir para Diagnóstico' : 'Ir para Calculadora'}
               <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
