@@ -6,6 +6,13 @@ import {
   TipoAtividade,
   CategoriaDespesaCredito,
   CATEGORIAS_CREDITO_PADRAO,
+  SubatividadeServico,
+  SubatividadeIndustria,
+  SubatividadeComercio,
+  SUBATIVIDADES_SERVICO,
+  SUBATIVIDADES_INDUSTRIA,
+  SUBATIVIDADES_COMERCIO,
+  InfoSubatividade,
 } from '@/types/calculadoraIbsCbs'
 import { TABELAS_SIMPLES } from '@/lib/regimes'
 
@@ -28,6 +35,16 @@ interface CalculadoraContextType {
   setFaturamentoMensal: (v: number) => void
   tipoAtividade: TipoAtividade
   setTipoAtividade: (t: TipoAtividade) => void
+  // Subatividades por ramo
+  subatividadeServico: SubatividadeServico
+  setSubatividadeServico: (s: SubatividadeServico) => void
+  subatividadeIndustria: SubatividadeIndustria
+  setSubatividadeIndustria: (s: SubatividadeIndustria) => void
+  subatividadeComercio: SubatividadeComercio
+  setSubatividadeComercio: (s: SubatividadeComercio) => void
+  // Alíquota de Imposto Seletivo customizada (padrão 10%)
+  aliquotaImpostoSeletivo: number
+  setAliquotaImpostoSeletivo: (v: number) => void
   proporcaoServicoMisto: number // % serviço no misto (restante comércio)
   setProporcaoServicoMisto: (p: number) => void
   percentualComprasVendasComparativo: number
@@ -112,12 +129,14 @@ interface CalculadoraContextType {
     ibsCbs: {
       pisOuCbs: number // CBS
       cofinsOuIbs: number // IBS
-      ipiOuIcmsOuIss: number // 0
+      ipiOuIcmsOuIss: number // 0 (ou Imposto Seletivo se aplicável)
+      impostoSeletivo: number
       totalNominal: number
       creditos: number
       totalEfetivo: number
       aliquotaEfetiva: number
       detalheImpostos: string
+      reducaoAplicadaPercentual: number
     }
     regimeMaisVantajoso: string
     piorCenario: string
@@ -134,6 +153,14 @@ interface CalculadoraContextType {
       origemIcms: string
       receitaExportacaoIsenta: number
       receitaTributavelInterna: number
+      subatividadeAtivaNome: string
+      presuncaoIrpjAplicada: number
+      presuncaoCsllAplicada: number
+      irpjCsllPresumidoEstimado: number
+      irpjCsllRealEstimado: number
+      sujeitoImpostoSeletivo: boolean
+      isIcmsSubstituicaoTributaria: boolean
+      impactosDidaticosSubatividade: string[]
     }
   }
 
@@ -199,12 +226,21 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   // Módulo 3: Comparativo por Regime
   const [faturamentoMensal, setFaturamentoMensal] = useState<number>(200000)
   const [tipoAtividade, setTipoAtividade] = useState<TipoAtividade>('servico')
+  // Subatividades por ramo
+  const [subatividadeServico, setSubatividadeServico] =
+    useState<SubatividadeServico>('servico_comum')
+  const [subatividadeIndustria, setSubatividadeIndustria] =
+    useState<SubatividadeIndustria>('industria_comum')
+  const [subatividadeComercio, setSubatividadeComercio] =
+    useState<SubatividadeComercio>('varejo_comum')
+  const [aliquotaImpostoSeletivo, setAliquotaImpostoSeletivo] = useState<number>(10)
+
   const [proporcaoServicoMisto, setProporcaoServicoMisto] = useState<number>(50)
   const [percentualComprasVendasComparativo, setPercentualComprasVendasComparativo] =
     useState<number>(40)
   // Novos campos solicitados para o Módulo 3
   const [folhaPagamentoMensal, setFolhaPagamentoMensal] = useState<number>(50000)
-  const [margemLucroEstimada, setMargemLucroEstimada] = useState<number>(20)
+  const [margemLucroEstimada, setMargemLucroEstimada] = useState<number>(20) // %
   const [despesasComCreditosMensais, setDespesasComCreditosMensais] = useState<number>(30000)
   const [percentualExportacao, setPercentualExportacao] = useState<number>(0)
   const [ufOrigem, setUfOrigem] = useState<string>('')
@@ -344,34 +380,154 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       }
     }
 
-    // Alíquotas do Antigo conforme tipo de atividade:
-    // Serviço: ISS (Módulo 1: config.lucroRealIss / config.lucroPresumidoIss)
-    // Indústria: IPI (config.lucroRealIpi / config.lucroPresumidoIpi)
-    // Comércio: ICMS (UF selecionada ou Módulo 1)
-    // Misto: proporção configurável entre Serviço e Comércio
+    // Identificação das subatividades ativas
+    const infoSubServico =
+      SUBATIVIDADES_SERVICO.find((s) => s.id === subatividadeServico) || SUBATIVIDADES_SERVICO[0]
+    const infoSubIndustria =
+      SUBATIVIDADES_INDUSTRIA.find((s) => s.id === subatividadeIndustria) ||
+      SUBATIVIDADES_INDUSTRIA[0]
+    const infoSubComercio =
+      SUBATIVIDADES_COMERCIO.find((s) => s.id === subatividadeComercio) || SUBATIVIDADES_COMERCIO[0]
+
+    // Determinar dados conforme o ramo e a subatividade
+    let subatividadeNome = ''
+    let presuncaoIrpj = 32
+    let presuncaoCsll = 32
     let taxaIpiIcmsIssReal = 0
     let taxaIpiIcmsIssPresumido = 0
     let nomeImpostoIndireto = ''
+    let reducaoIbsCbsPct = 0
+    let temImpostoSeletivo = false
+    let isIcmsSt = false
+    const impactosDidaticos: string[] = []
 
     if (tipoAtividade === 'servico') {
+      subatividadeNome = infoSubServico.label
+      presuncaoIrpj = infoSubServico.presuncaoIrpj
+      presuncaoCsll = infoSubServico.presuncaoCsll
+      reducaoIbsCbsPct = infoSubServico.reducaoIbsCbsPercentual || 0
+
       taxaIpiIcmsIssReal = config.lucroRealIss
       taxaIpiIcmsIssPresumido = config.lucroPresumidoIss
-      nomeImpostoIndireto = 'ISS'
+      nomeImpostoIndireto = `ISS (${config.lucroPresumidoIss}%)`
+
+      if (presuncaoIrpj === 16) {
+        impactosDidaticos.push(
+          'Transporte tem presunção de IRPJ favorecida de 16% (contra 32% dos serviços em geral) no Lucro Presumido.',
+        )
+      } else {
+        impactosDidaticos.push('Presunção padrão de 32% para serviços em geral no Lucro Presumido.')
+      }
+
+      if (reducaoIbsCbsPct === 60) {
+        impactosDidaticos.push(
+          'Benefício do Regime Diferenciado no IBS/CBS: redução legal de 60% na alíquota padrão (EC 132/2023).',
+        )
+      } else if (reducaoIbsCbsPct === 30) {
+        impactosDidaticos.push(
+          'Benefício do Regime Diferenciado de Transporte no IBS/CBS: redução legal de 30% na alíquota padrão.',
+        )
+      }
     } else if (tipoAtividade === 'industria') {
-      taxaIpiIcmsIssReal = config.lucroRealIpi
-      taxaIpiIcmsIssPresumido = config.lucroPresumidoIpi
-      nomeImpostoIndireto = 'IPI'
+      subatividadeNome = infoSubIndustria.label
+      presuncaoIrpj = infoSubIndustria.presuncaoIrpj
+      presuncaoCsll = infoSubIndustria.presuncaoCsll
+      reducaoIbsCbsPct = infoSubIndustria.reducaoIbsCbsPercentual || 0
+      temImpostoSeletivo = !!infoSubIndustria.sujeitoImpostoSeletivo
+
+      const aliqIpi =
+        infoSubIndustria.aliquotaIpi !== undefined
+          ? infoSubIndustria.aliquotaIpi
+          : config.lucroRealIpi
+      taxaIpiIcmsIssReal = aliqIpi
+      taxaIpiIcmsIssPresumido = aliqIpi
+      nomeImpostoIndireto = `IPI (${aliqIpi}%)`
+
+      impactosDidaticos.push(
+        `Alíquota de IPI configurada em ${aliqIpi}% para o setor industrial (com crédito integral na compra de insumos no Lucro Real).`,
+      )
+      if (temImpostoSeletivo) {
+        impactosDidaticos.push(
+          `Produto sujeito ao Imposto Seletivo ("imposto do pecado" — ${aliquotaImpostoSeletivo}%), mantido no novo sistema sobre bens prejudiciais à saúde/ambiente.`,
+        )
+      }
     } else if (tipoAtividade === 'comercio') {
-      taxaIpiIcmsIssReal = aliqIcmsReal
-      taxaIpiIcmsIssPresumido = aliqIcmsPresumido
-      nomeImpostoIndireto = `ICMS (${aliqIcmsReal}%)`
+      subatividadeNome = infoSubComercio.label
+      presuncaoIrpj = infoSubComercio.presuncaoIrpj
+      presuncaoCsll = infoSubComercio.presuncaoCsll
+      reducaoIbsCbsPct = infoSubComercio.reducaoIbsCbsPercentual || 0
+
+      if (infoSubComercio.id === 'com_icms_st') {
+        isIcmsSt = true
+        // No ICMS-ST, o ICMS próprio da revenda é praticamente 0% (já recolhido na fonte pelo fabricante)
+        taxaIpiIcmsIssReal = 0
+        taxaIpiIcmsIssPresumido = 0
+        nomeImpostoIndireto = 'ICMS Próprio ≈ 0% (ICMS-ST retido na origem)'
+        impactosDidaticos.push(
+          'Como sua atividade é comércio com ICMS-ST, o ICMS próprio no sistema antigo é praticamente zero — o imposto já foi pago antecipadamente pelo fabricante. No entanto, o custo vem embutido no preço de compra.',
+        )
+      } else if (infoSubComercio.aliquotaIcmsOverride !== undefined) {
+        taxaIpiIcmsIssReal = infoSubComercio.aliquotaIcmsOverride
+        taxaIpiIcmsIssPresumido = infoSubComercio.aliquotaIcmsOverride
+        nomeImpostoIndireto = `ICMS Atacado (${infoSubComercio.aliquotaIcmsOverride}%)`
+        impactosDidaticos.push(
+          `Atacado/Distribuição com alíquota interestadual/reduzida de ICMS (${infoSubComercio.aliquotaIcmsOverride}%).`,
+        )
+      } else {
+        taxaIpiIcmsIssReal = aliqIcmsReal
+        taxaIpiIcmsIssPresumido = aliqIcmsPresumido
+        nomeImpostoIndireto = `ICMS Varejo (${aliqIcmsReal}%)`
+        impactosDidaticos.push(
+          `Comércio varejista com ICMS padrão de ${aliqIcmsReal}% (${origemIcms}) e presunção de 8% no Lucro Presumido.`,
+        )
+      }
     } else {
-      // Misto: Serviço + Comércio
+      // Misto: Serviço + Comércio ponderado pela proporção configurável
       const pServ = Math.max(0, Math.min(100, proporcaoServicoMisto)) / 100
       const pCom = 1 - pServ
-      taxaIpiIcmsIssReal = config.lucroRealIss * pServ + aliqIcmsReal * pCom
-      taxaIpiIcmsIssPresumido = config.lucroPresumidoIss * pServ + aliqIcmsPresumido * pCom
-      nomeImpostoIndireto = `ISS (${Math.round(pServ * 100)}%) + ICMS (${Math.round(pCom * 100)}% @ ${aliqIcmsReal}%)`
+
+      subatividadeNome = `Misto: ${infoSubServico.label} (${Math.round(pServ * 100)}%) + ${infoSubComercio.label} (${Math.round(pCom * 100)}%)`
+      presuncaoIrpj = Number(
+        (infoSubServico.presuncaoIrpj * pServ + infoSubComercio.presuncaoIrpj * pCom).toFixed(2),
+      )
+      presuncaoCsll = Number(
+        (infoSubServico.presuncaoCsll * pServ + infoSubComercio.presuncaoCsll * pCom).toFixed(2),
+      )
+      reducaoIbsCbsPct = Number(
+        (
+          (infoSubServico.reducaoIbsCbsPercentual || 0) * pServ +
+          (infoSubComercio.reducaoIbsCbsPercentual || 0) * pCom
+        ).toFixed(2),
+      )
+
+      let aliqComercioReal = aliqIcmsReal
+      let aliqComercioPres = aliqIcmsPresumido
+      if (infoSubComercio.id === 'com_icms_st') {
+        aliqComercioReal = 0
+        aliqComercioPres = 0
+        isIcmsSt = true
+      } else if (infoSubComercio.aliquotaIcmsOverride !== undefined) {
+        aliqComercioReal = infoSubComercio.aliquotaIcmsOverride
+        aliqComercioPres = infoSubComercio.aliquotaIcmsOverride
+      }
+
+      taxaIpiIcmsIssReal = config.lucroRealIss * pServ + aliqComercioReal * pCom
+      taxaIpiIcmsIssPresumido = config.lucroPresumidoIss * pServ + aliqComercioPres * pCom
+      nomeImpostoIndireto = `ISS (${Math.round(pServ * 100)}%) + ICMS (${Math.round(pCom * 100)}%)`
+
+      impactosDidaticos.push(
+        `Atividade mista calculada proporcionalmente: ${Math.round(pServ * 100)}% Serviço (presunção ${infoSubServico.presuncaoIrpj}%) e ${Math.round(pCom * 100)}% Comércio (presunção ${infoSubComercio.presuncaoIrpj}%).`,
+      )
+      if (reducaoIbsCbsPct > 0) {
+        impactosDidaticos.push(
+          `Redução ponderada do IBS/CBS na parte de serviço: ${reducaoIbsCbsPct}% de redução média sobre a receita.`,
+        )
+      }
+      if (isIcmsSt) {
+        impactosDidaticos.push(
+          'A fração do comércio opera sob regime de ICMS-ST, reduzindo a incidência direta do ICMS próprio para ≈ 0%.',
+        )
+      }
     }
 
     // ----------------------------------------------------
@@ -394,10 +550,13 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
     // Créditos Lucro Real:
     // a) Compras de insumos/mercadorias (PIS 1,65% + COFINS 7,60% + ICMS/IPI conforme atividade)
+    // Se for ICMS-ST, as compras de revenda não geram crédito de ICMS próprio destacado
     const aliqCreditoRealCompras =
       tipoAtividade === 'servico'
         ? config.lucroRealPis + config.lucroRealCofins
-        : config.lucroRealPis + config.lucroRealCofins + taxaIpiIcmsIssReal
+        : isIcmsSt
+          ? config.lucroRealPis + config.lucroRealCofins
+          : config.lucroRealPis + config.lucroRealCofins + taxaIpiIcmsIssReal
     const creditosComprasReal = (comprasValor * aliqCreditoRealCompras) / 100
 
     // b) Despesas com créditos mensais (energia, aluguel, insumos operacionais - PIS 1,65% + COFINS 7,60% = 9,25%)
@@ -407,6 +566,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const lrCreditosTotal = creditosComprasReal + creditosDespesasReal
     const lrTotalEfetivo = Math.max(0, lrTotalNominal - lrCreditosTotal)
     const lrAliqEfetiva = faturamentoBruto > 0 ? (lrTotalEfetivo / faturamentoBruto) * 100 : 0
+
+    // IRPJ/CSLL no Lucro Real (alíquotas oficiais: IRPJ 15% + adicional 10% sobre excedente a 20k + CSLL 9% = ~24% sobre o lucro contábil)
+    const irpjCsllRealEstimado =
+      lucroOperacionalEfetivo > 0
+        ? lucroOperacionalEfetivo * 0.15 +
+          Math.max(0, lucroOperacionalEfetivo - 20000) * 0.1 +
+          lucroOperacionalEfetivo * 0.09
+        : 0
 
     // ----------------------------------------------------
     // 2. LUCRO PRESUMIDO (Regime cumulativo)
@@ -419,6 +586,15 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const lpCreditos = 0 // Cumulativo: não gera créditos
     const lpTotalEfetivo = lpTotalNominal
     const lpAliqEfetiva = faturamentoBruto > 0 ? (lpTotalEfetivo / faturamentoBruto) * 100 : 0
+
+    // IRPJ e CSLL no Lucro Presumido com base na presunção da subatividade
+    // Base IRPJ = Receita * presunção IRPJ %; IRPJ = 15% + 10% adicional
+    // Base CSLL = Receita * presunção CSLL %; CSLL = 9%
+    const basePresumidaIrpj = (faturamentoInternoTributavel * presuncaoIrpj) / 100
+    const basePresumidaCsll = (faturamentoInternoTributavel * presuncaoCsll) / 100
+    const irpjPresumido = basePresumidaIrpj * 0.15 + Math.max(0, basePresumidaIrpj - 20000) * 0.1
+    const csllPresumido = basePresumidaCsll * 0.09
+    const irpjCsllPresumidoEstimado = irpjPresumido + csllPresumido
 
     // ----------------------------------------------------
     // 3. SIMPLES NACIONAL (com Fator R real e Anexos III vs V)
@@ -500,14 +676,25 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     // 4. IBS / CBS (Novo IVA Dual)
     // ----------------------------------------------------
     // Incide sobre o faturamento tributável interno (exportações são 100% imunes com manutenção plena de créditos)
-    const ibsCbsTotalNominal = (faturamentoInternoTributavel * config.totalIvaDual) / 100
-    const cbsNominal = (faturamentoInternoTributavel * config.cbsPadrao) / 100
-    const ibsNominal = (faturamentoInternoTributavel * config.ibsPadrao) / 100
+    // Aplicar a redução legal do regime diferenciado se a subatividade tiver redução (ex: 60% saúde/educação/TI, 30% transporte)
+    const fatorAliquotaIbsCbs = Math.max(0, 1 - reducaoIbsCbsPct / 100)
+    const aliquotaCbsEfetivaSaida = config.cbsPadrao * fatorAliquotaIbsCbs
+    const aliquotaIbsEfetivaSaida = config.ibsPadrao * fatorAliquotaIbsCbs
+    const aliquotaIvaDualEfetivaSaida = config.totalIvaDual * fatorAliquotaIbsCbs
+
+    const cbsNominal = (faturamentoInternoTributavel * aliquotaCbsEfetivaSaida) / 100
+    const ibsNominal = (faturamentoInternoTributavel * aliquotaIbsEfetivaSaida) / 100
+
+    // Imposto Seletivo: caso a subatividade seja produto com IS
+    const aliqIsEfetiva = temImpostoSeletivo ? Math.max(0, aliquotaImpostoSeletivo) : 0
+    const valorImpostoSeletivo = (faturamentoInternoTributavel * aliqIsEfetiva) / 100
+
+    const ibsCbsTotalNominal = cbsNominal + ibsNominal + valorImpostoSeletivo
 
     // Créditos plenos do IVA Dual:
-    // a) Compras sobre vendas (comprasValor × taxa total do IVA Dual)
+    // a) Compras sobre vendas (comprasValor × taxa total do IVA Dual padrão - creditamento amplo)
     const creditosComprasIbsCbs = (comprasValor * config.totalIvaDual) / 100
-    // b) Despesas com créditos informadas (despesas × taxa total do IVA Dual)
+    // b) Despesas com créditos informadas (despesas × taxa total do IVA Dual padrão)
     const creditosDespesasIbsCbs = (despesasCreditos * config.totalIvaDual) / 100
     const ibsCbsCreditosTotal = creditosComprasIbsCbs + creditosDespesasIbsCbs
 
@@ -566,12 +753,17 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       ibsCbs: {
         pisOuCbs: cbsNominal,
         cofinsOuIbs: ibsNominal,
-        ipiOuIcmsOuIss: 0,
+        ipiOuIcmsOuIss: valorImpostoSeletivo,
+        impostoSeletivo: valorImpostoSeletivo,
         totalNominal: ibsCbsTotalNominal,
         creditos: ibsCbsCreditosTotal,
         totalEfetivo: ibsCbsTotalEfetivo,
         aliquotaEfetiva: ibsCbsAliqEfetiva,
-        detalheImpostos: `CBS ${config.cbsPadrao}% + IBS ${config.ibsPadrao}% (Crédito amplo de compras e despesas)`,
+        reducaoAplicadaPercentual: reducaoIbsCbsPct,
+        detalheImpostos:
+          reducaoIbsCbsPct > 0
+            ? `CBS (${aliquotaCbsEfetivaSaida.toFixed(2)}%) + IBS (${aliquotaIbsEfetivaSaida.toFixed(2)}%) com redução de ${reducaoIbsCbsPct}%${temImpostoSeletivo ? ` + IS (${aliqIsEfetiva}%)` : ''}`
+            : `CBS ${config.cbsPadrao}% + IBS ${config.ibsPadrao}%${temImpostoSeletivo ? ` + IS (${aliqIsEfetiva}%)` : ''} (Crédito amplo)`,
       },
       regimeMaisVantajoso: melhor.nome,
       piorCenario: pior.nome,
@@ -588,12 +780,24 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         origemIcms,
         receitaExportacaoIsenta: receitaExportacao,
         receitaTributavelInterna: faturamentoInternoTributavel,
+        subatividadeAtivaNome: subatividadeNome,
+        presuncaoIrpjAplicada: presuncaoIrpj,
+        presuncaoCsllAplicada: presuncaoCsll,
+        irpjCsllPresumidoEstimado,
+        irpjCsllRealEstimado,
+        sujeitoImpostoSeletivo: temImpostoSeletivo,
+        isIcmsSubstituicaoTributaria: isIcmsSt,
+        impactosDidaticosSubatividade: impactosDidaticos,
       },
     }
   }, [
     config,
     faturamentoMensal,
     tipoAtividade,
+    subatividadeServico,
+    subatividadeIndustria,
+    subatividadeComercio,
+    aliquotaImpostoSeletivo,
     proporcaoServicoMisto,
     percentualComprasVendasComparativo,
     folhaPagamentoMensal,
@@ -823,6 +1027,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         setFaturamentoMensal,
         tipoAtividade,
         setTipoAtividade,
+        subatividadeServico,
+        setSubatividadeServico,
+        subatividadeIndustria,
+        setSubatividadeIndustria,
+        subatividadeComercio,
+        setSubatividadeComercio,
+        aliquotaImpostoSeletivo,
+        setAliquotaImpostoSeletivo,
         proporcaoServicoMisto,
         setProporcaoServicoMisto,
         percentualComprasVendasComparativo,

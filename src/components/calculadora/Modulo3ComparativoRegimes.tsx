@@ -1,10 +1,20 @@
 import React from 'react'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
-import { TipoAtividade, LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
+import {
+  TipoAtividade,
+  LISTA_UFS_ICMS,
+  SUBATIVIDADES_SERVICO,
+  SUBATIVIDADES_INDUSTRIA,
+  SUBATIVIDADES_COMERCIO,
+  SubatividadeServico,
+  SubatividadeIndustria,
+  SubatividadeComercio,
+} from '@/types/calculadoraIbsCbs'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -35,6 +45,10 @@ import {
   MapPin,
   CheckCircle2,
   Info,
+  Tag,
+  Sparkles,
+  Flame,
+  ShieldCheck,
 } from 'lucide-react'
 
 export default function Modulo3ComparativoRegimes() {
@@ -43,6 +57,14 @@ export default function Modulo3ComparativoRegimes() {
     setFaturamentoMensal,
     tipoAtividade,
     setTipoAtividade,
+    subatividadeServico,
+    setSubatividadeServico,
+    subatividadeIndustria,
+    setSubatividadeIndustria,
+    subatividadeComercio,
+    setSubatividadeComercio,
+    aliquotaImpostoSeletivo,
+    setAliquotaImpostoSeletivo,
     proporcaoServicoMisto,
     setProporcaoServicoMisto,
     percentualComprasVendasComparativo,
@@ -134,10 +156,10 @@ export default function Modulo3ComparativoRegimes() {
               </span>
             </div>
 
-            {/* Campo: O que vende */}
+            {/* Campo: O que vende (Ramo Principal) */}
             <div className="space-y-2">
               <Label htmlFor="tipoAtividade" className="text-sm font-bold text-[#07132B]">
-                O que Vende (Atividade)
+                O que Vende (Ramo Principal)
               </Label>
               <Select
                 value={tipoAtividade}
@@ -150,11 +172,11 @@ export default function Modulo3ComparativoRegimes() {
                   <SelectValue placeholder="Selecione o tipo de atividade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="servico">Serviço (Aplica ISS no antigo)</SelectItem>
-                  <SelectItem value="industria">Indústria (Aplica IPI no antigo)</SelectItem>
-                  <SelectItem value="comercio">Comércio (Aplica ICMS no antigo)</SelectItem>
+                  <SelectItem value="servico">Serviço (ISS / Presunção 32% ou 16%)</SelectItem>
+                  <SelectItem value="industria">Indústria (IPI / Imposto Seletivo)</SelectItem>
+                  <SelectItem value="comercio">Comércio (ICMS / ICMS-ST / Presunção 8%)</SelectItem>
                   <SelectItem value="misto">
-                    Misto (Proporção configurável Serviço / Comércio)
+                    Misto (Serviço + Comércio com proporção customizada)
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -189,26 +211,264 @@ export default function Modulo3ComparativoRegimes() {
                 Base de compras diretas para apropriação de créditos.
               </span>
             </div>
+          </div>
 
-            {/* Seletor extra se Misto for selecionado */}
-            {tipoAtividade === 'misto' && (
-              <div className="md:col-span-3 bg-amber-50/70 border border-amber-200 p-4 rounded-xl space-y-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-bold text-amber-900">
-                    Divisão da Receita Mista: {proporcaoServicoMisto}% Serviço |{' '}
-                    {100 - proporcaoServicoMisto}% Comércio
+          {/* REQUISITO 1: SELETOR DE SUBATIVIDADE CONFORME O RAMO */}
+          <div className="pt-2 border-t border-slate-200">
+            {/* 1.1 Seletor Ramo Serviço */}
+            {tipoAtividade === 'servico' && (
+              <div className="bg-gradient-to-r from-blue-50/70 to-indigo-50/50 border border-blue-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label
+                    htmlFor="subServico"
+                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                  >
+                    <Tag className="w-4 h-4 text-[#D4AF37]" />
+                    Subatividade de Serviço (Refina Presunção IRPJ/CSLL e Reduções IBS/CBS)
                   </Label>
-                  <span className="text-xs font-mono text-amber-800 font-semibold">
-                    ISS sobre {proporcaoServicoMisto}% / ICMS sobre {100 - proporcaoServicoMisto}%
+                  <span className="text-[11px] text-blue-700 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-blue-200">
+                    5 perfis regulatórios disponíveis
                   </span>
                 </div>
+                <Select
+                  value={subatividadeServico}
+                  onValueChange={(val) => setSubatividadeServico(val as SubatividadeServico)}
+                >
+                  <SelectTrigger
+                    id="subServico"
+                    className="h-12 bg-white border-blue-300 shadow-sm font-medium text-slate-800"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade de serviço" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_SERVICO.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2.5">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block">{item.label}</span>
+                          <span className="text-xs text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2 text-xs text-blue-900/80 bg-blue-100/50 p-2.5 rounded-lg">
+                  <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                  <span>
+                    {subatividadeServico === 'tecnologia_software' ||
+                    subatividadeServico === 'saude_educacao'
+                      ? '✓ Aplica redução de 60% na alíquota padrão do IBS/CBS (regime diferenciado).'
+                      : subatividadeServico === 'transporte'
+                        ? '✓ Presunção de 16% no Lucro Presumido + redução de 30% no IBS/CBS.'
+                        : '✓ Presunção integral de 32% sobre a receita e ISS municipal cheio.'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* 1.2 Seletor Ramo Indústria */}
+            {tipoAtividade === 'industria' && (
+              <div className="bg-gradient-to-r from-amber-50/70 to-orange-50/50 border border-amber-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label
+                    htmlFor="subIndustria"
+                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                  >
+                    <Tag className="w-4 h-4 text-[#D4AF37]" />
+                    Subatividade Industrial (Ajusta IPI e Imposto Seletivo)
+                  </Label>
+                  <span className="text-[11px] text-amber-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-amber-200">
+                    Impacta Lucro Real, Presumido e IVA Dual
+                  </span>
+                </div>
+                <Select
+                  value={subatividadeIndustria}
+                  onValueChange={(val) => setSubatividadeIndustria(val as SubatividadeIndustria)}
+                >
+                  <SelectTrigger
+                    id="subIndustria"
+                    className="h-12 bg-white border-amber-300 shadow-sm font-medium text-slate-800"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade industrial" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_INDUSTRIA.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2.5">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block">{item.label}</span>
+                          <span className="text-xs text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Bloco editável se for produto com Imposto Seletivo */}
+                {subatividadeIndustria === 'produto_imposto_seletivo' && (
+                  <div className="bg-rose-50/80 border border-rose-200 p-3.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
+                        <Flame className="w-4 h-4 text-rose-600" />
+                        Alíquota de Referência do Imposto Seletivo (IS):
+                      </span>
+                      <p className="text-[11px] text-rose-700 leading-tight">
+                        Incidência monofásica/adicional no novo sistema sobre bens nocivos à
+                        saúde/meio ambiente.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="relative w-28">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={aliquotaImpostoSeletivo}
+                          onChange={(e) => setAliquotaImpostoSeletivo(Number(e.target.value))}
+                          className="h-10 bg-white font-mono font-bold text-rose-900 border-rose-300 pr-7 text-right"
+                        />
+                        <span className="absolute right-2.5 top-2.5 text-xs text-rose-500 font-bold">
+                          %
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 text-xs text-amber-900/80 bg-amber-100/50 p-2.5 rounded-lg">
+                  <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                  <span>
+                    {subatividadeIndustria === 'industria_ipi_alto'
+                      ? '✓ IPI elevado em 15% entra como débito e permite crédito nas aquisições produtivas.'
+                      : subatividadeIndustria === 'industria_ipi_baixo_zero'
+                        ? '✓ IPI zerado (0%) sem impacto de imposto sobre produtos industrializados.'
+                        : subatividadeIndustria === 'produto_imposto_seletivo'
+                          ? `✓ Aplica ${aliquotaImpostoSeletivo}% de Imposto Seletivo no cenário IBS/CBS mantido no novo sistema.`
+                          : '✓ IPI padrão de 5% aplicado no Lucro Real e Presumido.'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* 1.3 Seletor Ramo Comércio */}
+            {tipoAtividade === 'comercio' && (
+              <div className="bg-gradient-to-r from-emerald-50/70 to-teal-50/50 border border-emerald-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label
+                    htmlFor="subComercio"
+                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                  >
+                    <Tag className="w-4 h-4 text-[#D4AF37]" />
+                    Subatividade de Comércio (ICMS Próprio vs ICMS-ST / Atacado)
+                  </Label>
+                  <span className="text-[11px] text-emerald-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Ajusta presunção de 8% e alíquotas de saída
+                  </span>
+                </div>
+                <Select
+                  value={subatividadeComercio}
+                  onValueChange={(val) => setSubatividadeComercio(val as SubatividadeComercio)}
+                >
+                  <SelectTrigger
+                    id="subComercio"
+                    className="h-12 bg-white border-emerald-300 shadow-sm font-medium text-slate-800"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade de comércio" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_COMERCIO.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2.5">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block">{item.label}</span>
+                          <span className="text-xs text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2 text-xs text-emerald-900/80 bg-emerald-100/50 p-2.5 rounded-lg">
+                  <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                  <span>
+                    {subatividadeComercio === 'com_icms_st'
+                      ? '✓ No ICMS-ST, o ICMS próprio da saída cai para ≈ 0% (já recolhido na fábrica). No novo IBS/CBS a ST é extinta em prol do split payment.'
+                      : subatividadeComercio === 'atacado_distribuicao'
+                        ? '✓ Atacado/distribuição com ICMS reduzido de ~12% (operações interestaduais/benefícios fiscais).'
+                        : '✓ Varejo comum com ICMS integral estadual e presunção padrão de 8% no Lucro Presumido.'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* 1.4 Seletor Ramo Misto: Proporção + Subatividades das duas partes */}
+            {tipoAtividade === 'misto' && (
+              <div className="bg-amber-50/70 border border-amber-200 p-5 rounded-xl space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-bold text-amber-950 flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-[#D4AF37]" />
+                    Atividade Mista: Calibração das Duas Partes Proporcionais
+                  </Label>
+                  <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded">
+                    {proporcaoServicoMisto}% Serviço | {100 - proporcaoServicoMisto}% Comércio
+                  </span>
+                </div>
+
                 <Slider
                   value={[proporcaoServicoMisto]}
                   min={0}
                   max={100}
                   step={5}
                   onValueChange={(val) => setProporcaoServicoMisto(val[0])}
+                  className="py-1"
                 />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-1.5 bg-white p-3.5 rounded-lg border border-amber-200">
+                    <Label className="text-xs font-bold text-slate-800">
+                      Subatividade para a parte de Serviço ({proporcaoServicoMisto}%):
+                    </Label>
+                    <Select
+                      value={subatividadeServico}
+                      onValueChange={(val) => setSubatividadeServico(val as SubatividadeServico)}
+                    >
+                      <SelectTrigger className="h-10 bg-slate-50 border-slate-300 text-xs font-medium">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUBATIVIDADES_SERVICO.map((item) => (
+                          <SelectItem key={item.id} value={item.id} className="text-xs">
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5 bg-white p-3.5 rounded-lg border border-amber-200">
+                    <Label className="text-xs font-bold text-slate-800">
+                      Subatividade para a parte de Comércio ({100 - proporcaoServicoMisto}%):
+                    </Label>
+                    <Select
+                      value={subatividadeComercio}
+                      onValueChange={(val) => setSubatividadeComercio(val as SubatividadeComercio)}
+                    >
+                      <SelectTrigger className="h-10 bg-slate-50 border-slate-300 text-xs font-medium">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUBATIVIDADES_COMERCIO.map((item) => (
+                          <SelectItem key={item.id} value={item.id} className="text-xs">
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -449,6 +709,64 @@ export default function Modulo3ComparativoRegimes() {
         </Card>
       </div>
 
+      {/* REQUISITO 3: BADGE / CARD EM DESTAQUE COM A SUBATIVIDADE SELECIONADA PERTO DA TABELA */}
+      <div className="bg-gradient-to-r from-slate-900 via-[#07132B] to-slate-900 text-white border border-[#D4AF37]/40 p-4 sm:p-5 rounded-2xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] uppercase tracking-wider font-bold text-[#D4AF37] flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Subatividade Ativa no Diagnóstico:
+            </span>
+            <Badge className="bg-[#D4AF37] text-[#07132B] font-bold hover:bg-[#D4AF37]/90 text-xs px-2.5 py-0.5">
+              {dadosAdicionais?.subatividadeAtivaNome || tipoAtividade}
+            </Badge>
+          </div>
+          <p className="text-xs text-slate-300">
+            Presunção de IRPJ:{' '}
+            <strong className="text-white">{dadosAdicionais?.presuncaoIrpjAplicada}%</strong> |
+            CSLL: <strong className="text-white">{dadosAdicionais?.presuncaoCsllAplicada}%</strong>
+            {ibsCbs.reducaoAplicadaPercentual > 0 && (
+              <>
+                {' '}
+                • Redução IBS/CBS:{' '}
+                <strong className="text-emerald-400">
+                  -{ibsCbs.reducaoAplicadaPercentual}% (Regime Diferenciado)
+                </strong>
+              </>
+            )}
+            {dadosAdicionais?.sujeitoImpostoSeletivo && (
+              <>
+                {' '}
+                • Imposto Seletivo:{' '}
+                <strong className="text-rose-400">
+                  +{aliquotaImpostoSeletivo}% (Bens Nocivos)
+                </strong>
+              </>
+            )}
+            {dadosAdicionais?.isIcmsSubstituicaoTributaria && (
+              <>
+                {' '}
+                • ICMS-ST:{' '}
+                <strong className="text-amber-300">
+                  ICMS Próprio ≈ 0% (Retenção pelo Fabricante)
+                </strong>
+              </>
+            )}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0 self-start md:self-auto">
+          <div className="text-right">
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
+              Alíquota Efetiva IBS/CBS
+            </span>
+            <span className="text-lg font-mono font-extrabold text-[#D4AF37]">
+              {formatarPorcentagem(ibsCbs.aliquotaEfetiva)}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Tabela Comparativa com as 4 Colunas Conforme Especificação */}
       <Card className="border-slate-200 shadow-lg overflow-hidden">
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -536,11 +854,19 @@ export default function Modulo3ComparativoRegimes() {
                 </TableCell>
               </TableRow>
 
-              {/* Linha 3: IPI / ICMS / ISS */}
+              {/* Linha 3: IPI / ICMS / ISS / Imposto Seletivo */}
               <TableRow className="hover:bg-slate-50/60">
                 <TableCell className="font-medium text-slate-700">
-                  <div className="font-bold">IPI / ICMS / ISS</div>
-                  <div className="text-[11px] text-slate-400">Tributos Antigos Extintos</div>
+                  <div className="font-bold">
+                    {dadosAdicionais?.sujeitoImpostoSeletivo
+                      ? 'IPI / ICMS / ISS / Imposto Seletivo (IS)'
+                      : 'IPI / ICMS / ISS'}
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    {dadosAdicionais?.sujeitoImpostoSeletivo
+                      ? 'Antigos extintos no IBS/CBS; IS incidente'
+                      : 'Tributos Antigos Extintos no IBS/CBS'}
+                  </div>
                 </TableCell>
                 <TableCell className="text-center font-mono text-slate-700">
                   {formatarMoeda(lucroReal.ipiOuIcmsOuIss)}
@@ -551,11 +877,24 @@ export default function Modulo3ComparativoRegimes() {
                 <TableCell className="text-center font-mono text-slate-700">
                   {formatarMoeda(simplesNacional.ipiOuIcmsOuIss)}
                 </TableCell>
-                <TableCell className="text-center font-mono font-bold text-emerald-600 bg-[#D4AF37]/5 border-x-2 border-[#D4AF37]/40">
-                  R$ 0,00
-                  <span className="block text-[10px] text-emerald-700 font-semibold">
-                    100% Extintos
-                  </span>
+                <TableCell className="text-center font-mono font-bold bg-[#D4AF37]/5 border-x-2 border-[#D4AF37]/40">
+                  {dadosAdicionais?.sujeitoImpostoSeletivo ? (
+                    <div>
+                      <span className="text-rose-700 font-extrabold">
+                        {formatarMoeda(ibsCbs.impostoSeletivo)}
+                      </span>
+                      <span className="block text-[10px] text-rose-600 font-medium">
+                        IS ({aliquotaImpostoSeletivo}%) no Sistema Novo
+                      </span>
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="text-emerald-600">R$ 0,00</span>
+                      <span className="block text-[10px] text-emerald-700 font-semibold">
+                        100% Extintos
+                      </span>
+                    </div>
+                  )}
                 </TableCell>
               </TableRow>
 
@@ -673,7 +1012,28 @@ export default function Modulo3ComparativoRegimes() {
             Entenda como cada campo novo refinou os 4 regimes
           </span>
         </div>
-        <CardContent className="p-5 space-y-3">
+        <CardContent className="p-5 space-y-4">
+          {/* REQUISITO 3: Bloco em linguagem simples ("sem juridiquês") explicando o que a subatividade mudou */}
+          {dadosAdicionais?.impactosDidaticosSubatividade &&
+            dadosAdicionais.impactosDidaticosSubatividade.length > 0 && (
+              <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                  <span className="text-xs font-bold uppercase tracking-wide text-amber-950">
+                    O que a Subatividade Escolhida Mudou no Seu Cálculo (Sem Juridiquês)
+                  </span>
+                </div>
+                <ul className="space-y-1.5 text-xs text-amber-950">
+                  {dadosAdicionais.impactosDidaticosSubatividade.map((impacto, idx) => (
+                    <li key={idx} className="flex items-start gap-2 leading-relaxed">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] mt-1.5 shrink-0" />
+                      <span>{impacto}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
             {/* Item 1: Folha & Fator R */}
             <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/60 flex items-start gap-2.5">
@@ -712,18 +1072,21 @@ export default function Modulo3ComparativoRegimes() {
               </div>
             </div>
 
-            {/* Item 2: Margem de Lucro no Lucro Real */}
+            {/* Item 2: Margem de Lucro e Presunção no Lucro Real e Presumido */}
             <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/60 flex items-start gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <div>
                 <strong className="text-slate-900 block font-semibold mb-0.5">
-                  2. Margem de Lucro Estimada:
+                  2. Margem de Lucro e Presunção de IRPJ/CSLL:
                 </strong>
                 <p className="text-slate-600 leading-relaxed">
-                  No Lucro Real, o IRPJ e a CSLL incidem sobre o lucro contábil estimado (
-                  {margemLucroEstimada}% de margem ={' '}
-                  {formatarMoeda((faturamentoMensal * margemLucroEstimada) / 100)}/mês), e não sobre
-                  o faturamento bruto. Margens menores tornam o Lucro Real mais competitivo.
+                  No Lucro Presumido, a base de presunção é de{' '}
+                  <strong className="text-[#07132B]">
+                    {dadosAdicionais?.presuncaoIrpjAplicada}%
+                  </strong>{' '}
+                  (conforme a subatividade). Já no Lucro Real, o imposto incide sobre a margem de
+                  lucro contábil informada ({margemLucroEstimada}% ={' '}
+                  {formatarMoeda((faturamentoMensal * margemLucroEstimada) / 100)}/mês).
                 </p>
               </div>
             </div>

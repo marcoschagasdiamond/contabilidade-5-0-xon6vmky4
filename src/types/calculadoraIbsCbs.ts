@@ -2,6 +2,162 @@ export type RegimeDiferenciadoTipo = 'padrao' | 'saude_educacao' | 'transporte' 
 
 export type TipoAtividade = 'servico' | 'industria' | 'comercio' | 'misto'
 
+export type SubatividadeServico =
+  | 'servico_comum'
+  | 'tecnologia_software'
+  | 'saude_educacao'
+  | 'transporte'
+  | 'intermediacao'
+
+export type SubatividadeIndustria =
+  | 'industria_comum'
+  | 'industria_ipi_alto'
+  | 'industria_ipi_baixo_zero'
+  | 'produto_imposto_seletivo'
+
+export type SubatividadeComercio = 'varejo_comum' | 'com_icms_st' | 'atacado_distribuicao'
+
+export type SubatividadeTipo = SubatividadeServico | SubatividadeIndustria | SubatividadeComercio
+
+export interface InfoSubatividade {
+  id: string
+  label: string
+  descricao: string
+  presuncaoIrpj: number // % ex: 32, 16, 8
+  presuncaoCsll: number // % ex: 32, 12
+  aliquotaIpi?: number // % ex: 5, 15, 0
+  aliquotaIcmsProprioReducao?: number // fator multiplicador ou override (ex: 0 para ICMS-ST)
+  aliquotaIcmsOverride?: number // ex: 12% para atacado
+  reducaoIbsCbsPercentual?: number // % ex: 60 para saúde/TI, 30 para transporte
+  sujeitoImpostoSeletivo?: boolean
+  aliquotaSeletivoPadrao?: number // % ex: 10
+}
+
+export const SUBATIVIDADES_SERVICO: InfoSubatividade[] = [
+  {
+    id: 'servico_comum',
+    label: 'Serviço comum (presunção 32%, ISS cheio)',
+    descricao:
+      'Prestação de serviços em geral com presunção de 32% no Lucro Presumido e ISS municipal cheio.',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 0,
+  },
+  {
+    id: 'tecnologia_software',
+    label: 'Tecnologia/Software (redução 60% no IBS/CBS)',
+    descricao:
+      'Desenvolvimento de software, licenciamento e serviços digitais qualificados com redução de 60% no regime diferenciado.',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 60,
+  },
+  {
+    id: 'saude_educacao',
+    label: 'Saúde/Educação (presunção 32%, redução 60%)',
+    descricao:
+      'Serviços de saúde e ensino regulamentados, contemplados com redução de 60% da alíquota padrão no IBS/CBS.',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 60,
+  },
+  {
+    id: 'transporte',
+    label: 'Transporte de passageiros/cargas (presunção 16%, redução 30%)',
+    descricao:
+      'Transporte coletivo ou de cargas com presunção especial de 16% no Lucro Presumido e redução de 30% no IBS/CBS.',
+    presuncaoIrpj: 16,
+    presuncaoCsll: 12,
+    reducaoIbsCbsPercentual: 30,
+  },
+  {
+    id: 'intermediacao',
+    label: 'Intermediação / Corretagem (sem redução, ISS cheio)',
+    descricao:
+      'Intermediação de negócios, agenciamento e representação com presunção integral (32%) e sem desonerações no novo IVA.',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 0,
+  },
+]
+
+export const SUBATIVIDADES_INDUSTRIA: InfoSubatividade[] = [
+  {
+    id: 'industria_comum',
+    label: 'Indústria comum (IPI 5%)',
+    descricao:
+      'Transformação padrão de bens de consumo duráveis ou semi-duráveis com IPI de referência de 5%.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    aliquotaIpi: 5,
+    reducaoIbsCbsPercentual: 0,
+  },
+  {
+    id: 'industria_ipi_alto',
+    label: 'Indústria com IPI alto (15%)',
+    descricao:
+      'Produtos industrializados com carga seletiva ou ad valorem elevada (ex: químicos, cosméticos, eletroeletrônicos).',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    aliquotaIpi: 15,
+    reducaoIbsCbsPercentual: 0,
+  },
+  {
+    id: 'industria_ipi_baixo_zero',
+    label: 'Indústria com IPI baixo/zero (0%)',
+    descricao:
+      'Bens de capital, insumos agropecuários ou produtos da cesta básica beneficiados com alíquota 0% de IPI.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    aliquotaIpi: 0,
+    reducaoIbsCbsPercentual: 0,
+  },
+  {
+    id: 'produto_imposto_seletivo',
+    label: 'Produto com Imposto Seletivo (bebida/veículo/cigarro — IS 10%)',
+    descricao:
+      'Bens prejudiciais à saúde ou meio ambiente sujeitos ao Imposto Seletivo (art. 153, VIII da CF/88) cumulativo no IBS/CBS.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    aliquotaIpi: 10,
+    sujeitoImpostoSeletivo: true,
+    aliquotaSeletivoPadrao: 10,
+    reducaoIbsCbsPercentual: 0,
+  },
+]
+
+export const SUBATIVIDADES_COMERCIO: InfoSubatividade[] = [
+  {
+    id: 'varejo_comum',
+    label: 'Varejo comum (ICMS 18%)',
+    descricao:
+      'Venda a consumidor final com tributação normal de ICMS na saída e apuração padrão no Lucro Presumido (presunção 8%).',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    reducaoIbsCbsPercentual: 0,
+  },
+  {
+    id: 'com_icms_st',
+    label: 'Com ICMS-ST (substituição tributária — ICMS próprio ≈ 0%, ST repassado)',
+    descricao:
+      'Produtos submetidos à Substituição Tributária (ex: autopeças, cosméticos, bebidas, fármacos). O ICMS próprio da revenda é zero pois foi recolhido antes pelo fabricante.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    aliquotaIcmsProprioReducao: 0,
+    reducaoIbsCbsPercentual: 0,
+  },
+  {
+    id: 'atacado_distribuicao',
+    label: 'Atacado/distribuição (ICMS reduzido ~12%)',
+    descricao:
+      'Operações interestaduais e centros de distribuição atacadistas com benefícios fiscais ou alíquotas reduzidas de ICMS (~12%).',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    aliquotaIcmsOverride: 12,
+    reducaoIbsCbsPercentual: 0,
+  },
+]
+
 export interface ItemUfIcms {
   uf: string
   nome: string
