@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import {
   Calculator,
   Receipt,
@@ -13,11 +14,6 @@ import {
   Building2,
   BookOpen,
   Layers,
-  FileSpreadsheet,
-  Repeat,
-  BarChart3,
-  Boxes,
-  Globe2,
 } from 'lucide-react'
 
 export default function Servicos() {
@@ -172,49 +168,6 @@ export default function Servicos() {
     },
   ]
 
-  const contabilidade5Itens = [
-    {
-      id: 'balanco-dre',
-      icon: FileSpreadsheet,
-      badge: 'Fechamento Mensal',
-      title: 'Balanço Patrimonial e DRE mensais digitalizados',
-      description:
-        'Demonstrações contábeis completas, geradas e entregues todos os meses em ambiente digital — sem papéis, sem retrabalho e sempre prontas para sócios, bancos e investidores. Sua empresa enxerga a própria saúde financeira com a regularidade que a decisão de negócio exige.',
-    },
-    {
-      id: 'conciliacao-bancaria',
-      icon: Repeat,
-      badge: 'Automação Contábil',
-      title: 'Conciliação bancária automatizada e sem papéis',
-      description:
-        'Movimento bancário e escrituração conversando automaticamente: cada entrada, saída e tarifa conferida por tecnologia, com divergências sinalizadas antes de virarem problema. O resultado é um fechamento mais rápido, confiável e auditável.',
-    },
-    {
-      id: 'dashboard-kpis',
-      icon: BarChart3,
-      badge: 'Gestão em Tempo Real',
-      title: 'Dashboard gerencial com indicadores-chave (KPIs)',
-      description:
-        'Os números que importam — margem, inadimplência, capital de giro, carga tributária — em um painel visual e atualizado, no computador ou no celular. Gestão que deixa de ser reativa: a informação chega antes da decisão, não depois.',
-    },
-    {
-      id: 'controle-patrimonial',
-      icon: Boxes,
-      badge: 'Gestão de Ativos',
-      title: 'Controle patrimonial e depreciação de ativos',
-      description:
-        'Registro e acompanhamento completo do acervo de ativos da empresa, com cálculo de depreciação em conformidade fiscal e contábil. Você sabe exatamente o que possui, quanto vale e quanto cada bem gera de benefício fiscal — evitando distorções no resultado e no imposto.',
-    },
-    {
-      id: 'relatorios-ifrs',
-      icon: Globe2,
-      badge: 'Padrão Internacional',
-      title: 'Emissão de relatórios em conformidade com as normas IFRS',
-      description:
-        'Relatórios elaborados segundo os padrões internacionais de contabilidade (IFRS), prontos para investidores, auditorias externas, créditos no exterior e estruturas societárias. Sua contabilidade fala o idioma do mercado global — sem precisar refazer nada depois.',
-    },
-  ]
-
   return (
     <div className="pt-24 pb-20">
       {/* 1. HEADER COM GRADIENTE VERDE */}
@@ -322,131 +275,29 @@ export default function Servicos() {
                     ))}
                   </div>
 
-                  <a
-                    href="/#contato"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-md transition-all duration-200 hover:-translate-y-0.5 btn-press"
-                  >
-                    Contratar este Serviço
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <a
+                      href="/#contato"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-md transition-all duration-200 hover:-translate-y-0.5 btn-press"
+                    >
+                      Contratar este Serviço
+                      <ArrowRight className="w-4 h-4" />
+                    </a>
+
+                    {service.id === 'contabilidade-digital' && (
+                      <Link
+                        to="/servicos/contabilidade-digital"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#145A32]" />
+                        Ver Página Completa & Pilares 5.0
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             )
           })}
-        </div>
-      </section>
-
-      {/* SEÇÃO INTEGRADA: PILARES DA CONTABILIDADE DIGITAL 5.0 */}
-      <section
-        id="pilares-contabilidade-digital"
-        className="py-20 bg-gradient-to-b from-[#0A1A13] via-[#0E2E1E] to-[#0A1A13] text-white relative overflow-hidden border-y border-[#2ECC71]/20"
-      >
-        {/* Efeitos de iluminação ambiente Diamond Group */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-5 bg-[radial-gradient(#2ECC71_1px,transparent_1px)] [background-size:24px_24px]"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute top-0 right-1/4 w-96 h-96 bg-[#2ECC71]/10 rounded-full blur-3xl pointer-events-none"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute bottom-0 left-10 w-96 h-96 bg-[#145A32]/30 rounded-full blur-3xl pointer-events-none"
-          aria-hidden="true"
-        />
-
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 relative z-10">
-          {/* Cabeçalho da seção */}
-          <div className="text-center max-w-3xl mx-auto mb-14">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-emerald-300 bg-white/10 border border-emerald-400/30 mb-4 backdrop-blur-sm">
-              <Sparkles className="w-3.5 h-3.5 text-[#2ECC71]" />
-              <span>Contabilidade Digital 5.0</span>
-            </div>
-
-            <h2 className="font-heading font-extrabold text-2xl sm:text-4xl text-white tracking-tight mb-4">
-              Os 5 pilares da contabilidade moderna e orientada a dados
-            </h2>
-
-            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-              Mais do que cumprir prazos fiscais: uma infraestrutura digital que transforma dados
-              bancários e contábeis em inteligência para a tomada de decisão em tempo real.
-            </p>
-          </div>
-
-          {/* Grade de 5 cards compactos com texto visível */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {contabilidade5Itens.map((item, idx) => {
-              const ItemIcon = item.icon
-              const isSpanTwo = idx === 3 && contabilidade5Itens.length === 5
-
-              return (
-                <div
-                  key={item.id}
-                  className={`group relative p-6 sm:p-7 rounded-[20px] bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-[#2ECC71]/60 shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between backdrop-blur-sm ${
-                    isSpanTwo ? 'lg:col-span-1' : ''
-                  }`}
-                >
-                  <div>
-                    {/* Topo do card: Ícone + Badge compacto */}
-                    <div className="flex items-center justify-between gap-3 mb-5">
-                      <div className="w-12 h-12 rounded-xl bg-[#2ECC71]/15 border border-[#2ECC71]/30 flex items-center justify-center text-[#2ECC71] group-hover:bg-[#2ECC71] group-hover:text-[#0A1A13] transition-all duration-300 group-hover:scale-105 shadow-sm">
-                        <ItemIcon className="w-6 h-6 stroke-[2.2]" />
-                      </div>
-
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-300/90 px-2.5 py-1 rounded-full bg-white/5 border border-white/10">
-                        {item.badge}
-                      </span>
-                    </div>
-
-                    {/* Título do Card */}
-                    <h3 className="font-heading font-bold text-lg sm:text-xl text-white mb-3 group-hover:text-[#2ECC71] transition-colors leading-snug">
-                      {item.title}
-                    </h3>
-
-                    {/* Texto completo VISÍVEL — sem tooltip */}
-                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
-                      {item.description}
-                    </p>
-                  </div>
-
-                  {/* Detalhe de acabamento inferior */}
-                  <div className="pt-4 mt-5 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-                    <span className="flex items-center gap-1.5 text-[#2ECC71] font-medium">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Incluso na Contabilidade Digital
-                    </span>
-                    <span className="text-[11px] font-bold text-white/40">0{idx + 1}</span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Faixa complementar de chamada integrada */}
-          <div className="mt-12 p-6 sm:p-8 rounded-[20px] bg-white/[0.03] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4 text-left">
-              <div className="w-12 h-12 rounded-xl bg-[#2ECC71]/20 text-[#2ECC71] flex items-center justify-center shrink-0">
-                <Calculator className="w-6 h-6 stroke-[2]" />
-              </div>
-              <div>
-                <h4 className="font-heading font-bold text-base sm:text-lg text-white">
-                  Pronto para migrar sua empresa para a Contabilidade 5.0?
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                  Processo de transição 100% digital, sem interrupção na sua rotina e com suporte
-                  dedicado.
-                </p>
-              </div>
-            </div>
-
-            <a
-              href="/#contato"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-heading font-semibold text-sm text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-md transition-all duration-200 hover:-translate-y-0.5 btn-press shrink-0"
-            >
-              Falar com Nossos Especialistas
-              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-            </a>
-          </div>
         </div>
       </section>
 

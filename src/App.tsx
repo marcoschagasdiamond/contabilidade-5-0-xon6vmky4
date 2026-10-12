@@ -11,6 +11,7 @@ import Layout from './components/Layout'
 // Pages
 import Index from './pages/Index'
 import Servicos from './pages/Servicos'
+import ContabilidadeDigital from './pages/ContabilidadeDigital'
 import Blog from './pages/Blog'
 import BlogPost from './pages/BlogPost'
 import Contato from './pages/Contato'
@@ -100,6 +101,11 @@ const App = () => (
               <Route path="/sobre" element={<Navigate to="/#sobre" replace />} />
               {/* Páginas institucionais */}
               <Route path="/servicos" element={<Servicos />} />
+              <Route path="/servicos/contabilidade-digital" element={<ContabilidadeDigital />} />
+              <Route
+                path="/contabilidade-digital"
+                element={<Navigate to="/servicos/contabilidade-digital" replace />}
+              />
               <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
               <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
               <Route path="/dados-empresa" element={<DadosEmpresa />} />

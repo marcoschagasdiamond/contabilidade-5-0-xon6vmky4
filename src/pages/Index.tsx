@@ -42,7 +42,7 @@ export default function Index() {
       title: 'Contabilidade Digital',
       description:
         'Escrituração contábil completa, demonstrações financeiras e relatórios gerenciais inteligentes.',
-      link: '/servicos#contabilidade-digital',
+      link: '/servicos/contabilidade-digital',
     },
     {
       icon: Receipt,
