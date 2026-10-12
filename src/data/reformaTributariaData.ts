@@ -101,8 +101,20 @@ export const MODULOS_REFORMA: ModuloReforma[] = [
     destaque: 'Retenção na liquidação bancária',
   },
   {
-    id: 'glossario',
+    id: 'reforma-na-pratica',
     numero: 8,
+    slug: 'reforma-na-pratica',
+    titulo: 'Reforma na Prática — Operação e Cálculo',
+    subtitulo: 'A ordem de 6 etapas, base de cálculo, exemplos práticos e créditos',
+    descricao:
+      'Guia operacional com o caminho do cálculo em 6 etapas, composição da base, exemplos no comércio, serviços e indústria, apuração de créditos, NF-e, DeRE e mapa de decisão.',
+    icone: 'Calculator',
+    tag: 'Operação & Cálculo',
+    destaque: '6 etapas + exemplos por setor',
+  },
+  {
+    id: 'glossario',
+    numero: 9,
     slug: 'glossario',
     titulo: 'Glossário e Fontes',
     subtitulo: 'Quadro comparativo de confusões e legislação oficial',

@@ -17,6 +17,7 @@ import {
   FileText,
   Globe,
   Split,
+  Calculator,
 } from 'lucide-react'
 
 interface DiamondHeaderProps {
@@ -180,6 +181,8 @@ export function getIconComponent(iconName: string) {
       return <Split className="w-6 h-6 text-[#D4AF37]" />
     case 'FileText':
       return <FileText className="w-6 h-6 text-[#D4AF37]" />
+    case 'Calculator':
+      return <Calculator className="w-6 h-6 text-[#D4AF37]" />
     default:
       return <Globe className="w-6 h-6 text-[#D4AF37]" />
   }
