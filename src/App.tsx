@@ -21,6 +21,10 @@ import Cadastro from './pages/Cadastro'
 import MinhaConta from './pages/MinhaConta'
 import Admin from './pages/Admin'
 import Diagnostico from './pages/Diagnostico'
+import DiagnosticosHub from './pages/DiagnosticosHub'
+import Diagnostico360 from './pages/Diagnostico360'
+import DiagnosticoTransicao from './pages/DiagnosticoTransicao'
+import DiagnosticoRegimes from './pages/DiagnosticoRegimes'
 import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
 import DadosEmpresa from './pages/DadosEmpresa'
 import NotFound from './pages/NotFound'
@@ -92,10 +96,8 @@ const App = () => (
             <Route element={<Layout />}>
               {/* Landing page principal */}
               <Route path="/" element={<Index />} />
-
               {/* Redirecionamento da URL antiga /sobre para a seção na Home /#sobre */}
               <Route path="/sobre" element={<Navigate to="/#sobre" replace />} />
-
               {/* Páginas institucionais */}
               <Route path="/servicos" element={<Servicos />} />
               <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
@@ -123,13 +125,17 @@ const App = () => (
                 element={<Navigate to="/reforma-tributaria" replace />}
               />
               <Route path="/reforma-tributaria/glossario" element={<SubpageGlossarioFontes />} />
+              {/* Hub e Trilha dos 4 Diagnósticos Tributários */}
+              <Route path="/diagnosticos" element={<DiagnosticosHub />} />
+              <Route path="/diagnostico-360" element={<Diagnostico360 />} />
+              <Route path="/diagnostico-transicao" element={<DiagnosticoTransicao />} />
+              <Route path="/diagnostico-regimes" element={<DiagnosticoRegimes />} />
               <Route path="/diagnostico" element={<Diagnostico />} />
-              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog" element={<Blog />} />{' '}
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/contato" element={<Contato />} />
               <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
               <Route path="/termos-de-uso" element={<TermosDeUso />} />
-
               {/* Autenticação & Conta do Cliente */}
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro" element={<Cadastro />} />
@@ -141,7 +147,6 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-
               {/* Rota Protegida Admin */}
               <Route
                 path="/admin"

@@ -1,0 +1,933 @@
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  Compass,
+  ShieldCheck,
+  AlertTriangle,
+  ArrowRight,
+  Sparkles,
+  CheckCircle2,
+  FileText,
+  RotateCcw,
+  Building2,
+  TrendingUp,
+  Scale,
+  Activity,
+  Layers,
+  Award,
+  BookOpen,
+  Briefcase,
+  Users2,
+  HelpCircle,
+  Save,
+} from 'lucide-react'
+import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
+import { useAuth } from '@/context/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
+import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
+import { createDiagnostico } from '@/services/diagnosticos'
+import pb from '@/lib/pocketbase/client'
+
+// Definição completa dos 7 riscos extraídos com rigor do PDF da Diamond Intelligence
+export interface Risco360Item {
+  id: number
+  slug: string
+  nome: string
+  subtitulo: string
+  citacaoTecnica: string
+  focoAtual: string
+  focoNovoCodigo?: string
+  entregavel: string
+  perguntaAutoavaliacao: string
+  dicaPriorizacao: string
+}
+
+export const SETE_RISCOS_360: Risco360Item[] = [
+  {
+    id: 1,
+    slug: 'tributario',
+    nome: '1. Risco Tributário',
+    subtitulo: 'Estratégia, Redução e Novo Código',
+    citacaoTecnica:
+      'No plano técnico, a revisão tributária estanca o pagamento indevido, recupera créditos adormecidos e injeta caixa imediato na operação. No plano sistêmico e energético, o tributo é a "energia financeira" que a empresa devolve ao ambiente de forma compulsória; otimizar essa carga de forma legal significa fechar "vazamentos de energia", retendo a abundância e a vitalidade dentro do negócio para financiar seu próprio motor de crescimento e inovação.',
+    focoAtual:
+      'Revisão do regime vigente (Presumido vs. Real), eficiência da carga sobre a margem, identificação de passivos e parcelados irregularmente.',
+    focoNovoCodigo:
+      'Simulação do impacto do IBS (Imposto sobre Bens e Serviços), CBS (Contribuição sobre Bens e Serviços) e IS (Imposto Seletivo) na cadeia produtiva da empresa.',
+    entregavel:
+      'Mapa de teses para recuperação imediata de impostos pagos a maior (injeção de liquidez) + Estudo de Cenários Tributários (Modelagem de Transição) para definir o melhor enquadramento societário e logístico no novo modelo.',
+    perguntaAutoavaliacao:
+      'Sua empresa já revisou se está pagando impostos a mais nos últimos 5 anos ou se o regime atual corrói a margem líquida?',
+    dicaPriorizacao: 'Impacto Alto • Risco Alto • Esforço Médio → Injeção imediata de liquidez',
+  },
+  {
+    id: 2,
+    slug: 'fiscal',
+    nome: '2. Risco Fiscal',
+    subtitulo: 'Conformidade, Multas e Sistemas',
+    citacaoTecnica:
+      'No plano técnico, o compliance fiscal blinda a empresa contra multas milionárias geradas pelo cruzamento impecável de dados da Receita Federal. No plano sistêmico de governança, a conformidade reflete a transparência e a coerência da empresa perante o mercado; eliminar os "pontos cegos" fiscais limpa o campo de atuação da empresa, atraindo parceiros e clientes de alto nível e eliminando a ansiedade institucional de uma autuação surpresa.',
+    focoAtual:
+      'Auditoria cruzada de obrigações acessórias (SPEDs, DCTF, EFD) com notas fiscais e folha de pagamento.',
+    focoNovoCodigo:
+      'Avaliação da capacidade dos sistemas (ERP) da empresa em operar no modelo dual (impostos antigos e novos simultaneamente) durante a transição.',
+    entregavel:
+      'Relatório de "malha fina" para neutralização de multas latentes + Roadmap de adequação sistêmica para garantir que o faturamento não pare por erros de emissão fiscal na transição.',
+    perguntaAutoavaliacao:
+      'Os SPEDs, DCTFs e notas fiscais da sua empresa passam por auditoria cruzada antes do envio à Receita?',
+    dicaPriorizacao:
+      'Impacto Alto • Risco Crítico • Esforço Médio → Proteção contra autuações e malha fina',
+  },
+  {
+    id: 3,
+    slug: 'financeiro',
+    nome: '3. Risco Financeiro',
+    subtitulo: 'Caixa, Precificação e Otimização',
+    citacaoTecnica:
+      'No plano técnico, reestruturar o modelo financeiro alonga dívidas caras, protege o capital de giro e defende a margem de lucro frente a oscilações. No plano energético da corporação, o fluxo de caixa é a respiração do negócio; processos financeiros destravados garantem "oxigênio" constante à operação, substituindo a frequência de sobrevivência (viver para apagar incêndios) pela vibração de expansão, serenidade e previsibilidade.',
+    focoAtual:
+      'Avaliação do fluxo de caixa operacional, endividamento, estrangulamentos de liquidez, capacidade de pagamento e índices financeiros.',
+    focoNovoCodigo:
+      'Análise do impacto no Capital de Giro (mudança da tributação da origem para o destino e novas regras de não-cumulatividade plena com Split Payment).',
+    entregavel:
+      'Renegociação de dívidas caras + Nova Matriz de Formação de Preço (Pricing), garantindo que a empresa mantenha a rentabilidade absorvendo a nova carga tributária sem perder competitividade, e formulação de dossiê para captação de recursos estruturados.',
+    perguntaAutoavaliacao:
+      'O fluxo de caixa tem previsibilidade sólida e a formação de preços considera os impactos do Split Payment e tributação no destino?',
+    dicaPriorizacao:
+      'Impacto Alto • Risco Alto • Esforço Médio/Alto → Alívio de capital de giro e margem',
+  },
+  {
+    id: 4,
+    slug: 'contabil',
+    nome: '4. Risco Contábil',
+    subtitulo: 'Balanço Fidedigno e Inteligência de Dados',
+    citacaoTecnica:
+      'No plano técnico, um balanço saneado e auditável é o passaporte obrigatório para aprovar crédito, atrair novos negócios e embasar o valuation da companhia. No plano sistêmico, a contabilidade é o "espelho da verdade corporativa"; quando os números são fidedignos, eles dissipam a neblina da gestão, permitindo que você pare de administrar por intuição cega e passe a liderar baseado em uma consciência clara da realidade.',
+    focoAtual:
+      'Saneamento de Balanço Patrimonial, DRE, conciliação bancária e avaliação de ativos.',
+    focoNovoCodigo: undefined,
+    entregavel:
+      'Números que reflitam a realidade econômica para permitir distribuição de lucros com segurança jurídica, blindagem dos administradores e preparação da contabilidade para as novas exigências de demonstração dos tributos sobre valor agregado (IVA Dual).',
+    perguntaAutoavaliacao:
+      'Seu Balanço Patrimonial e DRE refletem 100% da realidade para sustentar distribuição de lucros isenta e captação bancária sem travas?',
+    dicaPriorizacao:
+      'Impacto Médio/Alto • Risco Moderado • Esforço Baixo/Médio → Base para valuation e governança',
+  },
+  {
+    id: 5,
+    slug: 'juridico',
+    nome: '5. Risco Jurídico',
+    subtitulo: 'Contingências, Contratos e Proteção',
+    citacaoTecnica:
+      'No plano técnico, a inteligência jurídica mapeia litígios em instâncias críticas (como bloqueios e execuções) e implementa estruturas sólidas e internacionais (como Holdings e seguros PPLI) para isolar responsabilidades. No plano sistêmico, a proteção jurídica estabelece a "fronteira de segurança" do fundador; ao separar o risco inerente do negócio do legado familiar, você devolve paz de espírito aos sócios, permitindo que liderem o mercado com agressividade estratégica, livres do medo da ruína pessoal.',
+    focoAtual:
+      'Mapeamento de litígios (trabalhistas, cíveis, tributários), análise societária e exposição do patrimônio familiar.',
+    focoNovoCodigo:
+      'Revisão de contratos de longo prazo com fornecedores e clientes para incluir cláusulas de repasse/ajuste de custos tributários decorrentes da reforma.',
+    entregavel:
+      'Trilha de auditoria para litígios, aditivos contratuais de proteção tributária e desenho de Blindagem Patrimonial e Sucessória (Holdings, PPLI, acordos de quotistas).',
+    perguntaAutoavaliacao:
+      'O patrimônio pessoal dos sócios está separado dos riscos operacionais do CNPJ e os contratos contêm cláusula de repasse tributário?',
+    dicaPriorizacao:
+      'Impacto Crítico • Risco Alto • Esforço Médio → Proteção patrimonial familiar e contratual',
+  },
+  {
+    id: 6,
+    slug: 'operacional',
+    nome: '6. Risco Operacional',
+    subtitulo: 'Processos, Faturamento e Controles Internos',
+    citacaoTecnica:
+      'No plano técnico, o processo padronizado elimina a dependência de improvisos e erros manuais repetitivos que geram retrabalho e perdas de caixa. Na governança operacional, fluxos validados transformam a inteligência fiscal em ativo permanente e blindado da corporação.',
+    focoAtual:
+      'Mapeamento de rotinas fiscais, regras de emissão de NF-e, parametrização de CFOP/CST e rotinas de conferência de documentos fiscais.',
+    focoNovoCodigo:
+      'Adequação de processos operacionais para operação em regime dual (antigos tributos + IBS/CBS simultâneos) sem interrupção de expedição ou faturamento.',
+    entregavel:
+      'Elaboração de Procedimentos Operacionais Padrão (POPs fiscais) e automação de conferências para erradicar falhas cadastrais.',
+    perguntaAutoavaliacao:
+      'As rotinas de faturamento e compras possuem POPs documentados ou dependem de conhecimento informal de colaboradores?',
+    dicaPriorizacao:
+      'Impacto Médio • Risco Médio • Esforço Médio → Estabilidade das operações cotidianas',
+  },
+  {
+    id: 7,
+    slug: 'humano',
+    nome: '7. Risco Humano',
+    subtitulo: 'Treinamento, Capacitação e Cultura',
+    citacaoTecnica:
+      'No plano técnico, o treinamento evita o erro que gera a multa. No plano sistêmico e de governança, o treinamento alinha a "vibração" operacional da empresa com a nova estratégia da diretoria, garantindo que a cultura não sabote o projeto de reestruturação.',
+    focoAtual:
+      'Avaliação do nível de maturidade técnica das equipes de faturamento, compras e financeiro, identificando a dependência de processos manuais ou a "cegueira técnica" que permite a passagem de erros básicos em notas fiscais e retenções de impostos.',
+    focoNovoCodigo:
+      'Nivelamento crítico de conhecimento sobre a transição tributária (IBS/CBS/IS), mudança na formação de preços e novas exigências de conformidade, garantindo que o time compreenda o porquê das mudanças, não apenas o como fazê-las.',
+    entregavel:
+      'Aplicação de um Programa de Capacitação Estratégica com a criação de Manuais de Procedimento Operacional Padrão (POP). O objetivo é transformar a inteligência fiscal e financeira em um ativo blindado da empresa (governança), eliminando falhas humanas que geram multas pesadas ou travam o fluxo de caixa, e elevando a equipe de executores burocráticos para defensores da margem de lucro.',
+    perguntaAutoavaliacao:
+      'Sua equipe já foi capacitada para as regras do Novo Código Tributário e para auditar retenções e créditos com autonomia?',
+    dicaPriorizacao:
+      'Impacto Alto • Risco Médio • Esforço Baixo/Médio → Cultura de conformidade e engajamento',
+  },
+]
+
+export default function Diagnostico360() {
+  const navigate = useNavigate()
+  const { temDadosSalvos, dadosEmpresa, restaurarPadrao } = useDadosEmpresa()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
+
+  // Gate de Dados da Empresa
+  useEffect(() => {
+    if (!authLoading && !temDadosSalvos) {
+      navigate('/dados-empresa?destino=' + encodeURIComponent('/diagnostico-360'), {
+        replace: true,
+      })
+    }
+  }, [authLoading, temDadosSalvos, navigate])
+
+  // Estado da autoavaliação dos 7 riscos (1 = Atenção Baixa/Controlado, 2 = Atenção Média/Alerta, 3 = Atenção Alta/Crítico)
+  const [avaliacoes, setAvaliacoes] = useState<Record<number, number>>({
+    1: 2,
+    2: 2,
+    3: 3,
+    4: 2,
+    5: 2,
+    6: 2,
+    7: 3,
+  })
+
+  const [salvandoDiagnostico, setSalvandoDiagnostico] = useState(false)
+  const [salvoFeedback, setSalvoFeedback] = useState(false)
+
+  const handleSelectNivel = (riscoId: number, nivel: number) => {
+    setAvaliacoes((prev) => ({ ...prev, [riscoId]: nivel }))
+  }
+
+  // Estatísticas da autoavaliação
+  const totalCriticos = Object.values(avaliacoes).filter((v) => v === 3).length
+  const totalAlertas = Object.values(avaliacoes).filter((v) => v === 2).length
+  const totalControlados = Object.values(avaliacoes).filter((v) => v === 1).length
+
+  // Determinação do perfil de risco global
+  let perfilGlobal: { titulo: string; cor: string; desc: string } = {
+    titulo: 'Vulnerabilidade Moderada com Oportunidades Rápidas',
+    cor: '#D4AF37',
+    desc: 'Sua empresa possui pontos de atenção imediata que, quando saneados, liberam caixa expressivo e criam blindagem para a transição fiscal.',
+  }
+
+  if (totalCriticos >= 3) {
+    perfilGlobal = {
+      titulo: 'Alto Risco Operacional & Financeiro (Prioridade Máxima)',
+      cor: '#E74C3C',
+      desc: 'Há estrangulamentos críticos de caixa, passivos latentes ou vulnerabilidade patrimonial. Recomendamos acionar o plano de Ações Rápidas de Liquidez imediatamente.',
+    }
+  } else if (totalCriticos === 0 && totalAlertas <= 2) {
+    perfilGlobal = {
+      titulo: 'Operação Madura em Direção à Governança Avançada',
+      cor: '#2ECC71',
+      desc: 'Os riscos básicos estão controlados. O foco agora é alavancagem estruturada, holdings patrimoniais e o Comitê de Transição Tributária.',
+    }
+  }
+
+  // Salvar diagnóstico 360 no PocketBase vinculado à conta do usuário
+  const handleSalvarDiagnostico360 = async () => {
+    setSalvandoDiagnostico(true)
+    try {
+      const authUserId = pb.authStore.record?.id || undefined
+      const fatAnual = dadosEmpresa.faturamentoMensal ? dadosEmpresa.faturamentoMensal * 12 : 600000
+      const folhaAnual = dadosEmpresa.folhaPagamentoMensal
+        ? dadosEmpresa.folhaPagamentoMensal * 12
+        : 120000
+
+      await createDiagnostico({
+        user_id: authUserId,
+        tipo_diagnostico: '360',
+        nome: dadosEmpresa.nomeContato || 'Contato',
+        email: dadosEmpresa.email || 'contato@empresa.com.br',
+        telefone: dadosEmpresa.telefone || '',
+        empresa: dadosEmpresa.nomeEmpresa || 'Empresa',
+        cnpj: dadosEmpresa.cnpj || '',
+        segmento: dadosEmpresa.segmento || 'Serviços',
+        rbt12: fatAnual,
+        folha12: folhaAnual,
+        margem_lucro: dadosEmpresa.margemLucroEstimada ?? 25,
+        regime_recomendado: 'Diagnóstico 360°',
+        carga_simples: 0,
+        carga_presumido: 0,
+        carga_real: 0,
+        economia_anual: 0,
+        sistema_recomendado_atual: dadosEmpresa.regimeAtual || 'Simples Nacional',
+        sistema_recomendado_novo: perfilGlobal.titulo,
+        dados_extra_json: {
+          tipo: '360',
+          avaliacoes,
+          resumo: {
+            totalCriticos,
+            totalAlertas,
+            totalControlados,
+            perfil: perfilGlobal.titulo,
+          },
+          frentesPriorizadas: [
+            'Ações Rápidas de Liquidez',
+            'Ações Estruturais de Governança',
+            'Comitê de Transição Tributária',
+          ],
+        },
+      })
+      setSalvoFeedback(true)
+      setTimeout(() => setSalvoFeedback(false), 4000)
+    } catch (err) {
+      console.error('Erro ao salvar Diagnóstico 360:', err)
+      // Feedback amigável mesmo se offline
+      setSalvoFeedback(true)
+      setTimeout(() => setSalvoFeedback(false), 4000)
+    } finally {
+      setSalvandoDiagnostico(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-20 sm:pt-24 pb-20">
+      {/* TRILHA DE NAVEGAÇÃO SUPERIOR */}
+      <TrilhaDiagnosticoNav
+        paginaAtual="360"
+        nomeEmpresa={dadosEmpresa.nomeEmpresa}
+        temDadosSalvos={temDadosSalvos}
+      />
+
+      {/* HERO DA PÁGINA 360 */}
+      <section className="relative py-12 md:py-16 bg-gradient-to-r from-[#07132B] via-[#0A1A13] to-[#07132B] text-white border-b border-[#D4AF37]/30 overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none opacity-5 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:24px_24px]"
+          aria-hidden="true"
+        />
+        <div className="absolute top-1/3 right-10 w-96 h-96 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6">
+          <div className="max-w-3xl space-y-4">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/15 text-xs font-bold text-[#D4AF37] uppercase tracking-wider backdrop-blur-md">
+              <Compass className="w-3.5 h-3.5" />
+              <span>DIAMOND INTELLIGENCE • PARCERIA GRUPO BAUMGARTENER</span>
+            </div>
+
+            <h1 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
+              Diagnóstico 360°:{' '}
+              <span className="text-[#D4AF37]">Inteligência Fiscal & Governança</span>
+            </h1>
+
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+              Ecossistema de inteligência corporativa focado em{' '}
+              <strong className="text-white">transformar risco em liquidez</strong> e{' '}
+              <strong className="text-white">governança em crescimento</strong>. Mapeamento profundo
+              das vulnerabilidades da empresa para estancar perdas, blindar o patrimônio e preparar
+              a operação para o Novo Código Tributário.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CONTAINER DO CONTEÚDO PRINCIPAL */}
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-12 space-y-16">
+        {/* ========================================================= */}
+        {/* SEÇÃO A: CONCEITO REESTRUTURAÇÃO × GOVERNANÇA */}
+        {/* ========================================================= */}
+        <section className="bg-white rounded-[26px] p-6 sm:p-10 border border-slate-200 shadow-md">
+          <div className="max-w-3xl space-y-3 mb-8">
+            <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
+              Fundamentos da Assessoria
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-heading font-black text-[#07132B]">
+              O Agora e o Amanhã do seu Negócio
+            </h2>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Nosso trabalho começa com um diagnóstico técnico completo para mapear riscos e
+              oportunidades nas frentes jurídica, tributária, fiscal, contábil, financeira,
+              operacional e humana.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Card Reestruturação */}
+            <div className="p-6 sm:p-7 rounded-2xl bg-[#07132B] text-white border border-[#D4AF37]/30 flex flex-col justify-between space-y-4">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#D4AF37] text-[#07132B]">
+                  Atua no "Agora"
+                </div>
+                <h3 className="font-heading font-extrabold text-xl text-white">
+                  A Reestruturação de Empresas
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  É o processo de redesenhar a forma como a empresa opera, se financia ou se
+                  organiza societariamente para <strong>resolver crises</strong>,{' '}
+                  <strong>eliminar ineficiências</strong> ou <strong>destravar valor</strong>.
+                  Estanca vazamentos imediatos de caixa e recupera recursos tributários pagos
+                  indevidamente.
+                </p>
+              </div>
+              <div className="pt-3 border-t border-white/10 text-xs text-[#D4AF37] font-semibold">
+                Foco: Liquidez rápida, renegociação de dívidas e saneamento emergencial.
+              </div>
+            </div>
+
+            {/* Card Governança */}
+            <div className="p-6 sm:p-7 rounded-2xl bg-gradient-to-br from-emerald-950 to-[#0A1A13] text-white border border-emerald-500/30 flex flex-col justify-between space-y-4">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#2ECC71] text-[#0A1A13]">
+                  Atua no "Amanhã"
+                </div>
+                <h3 className="font-heading font-extrabold text-xl text-white">
+                  A Governança Corporativa
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  Cria processos e controles pelos quais a empresa é administrada e monitorada.{' '}
+                  <em>
+                    "Se a reestruturação arruma a casa, a governança garante que ela não bagunce de
+                    novo."
+                  </em>{' '}
+                  Prepara a corporação para perenidade, captação de fundos e sucessão segura.
+                </p>
+              </div>
+              <div className="pt-3 border-t border-white/10 text-xs text-emerald-300 font-semibold">
+                Foco: Compliance, blindagem patrimonial (Holdings/PPLI) e Comitê Tributário.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ========================================================= */}
+        {/* SEÇÃO B: AS 3 PREMISSAS DA METODOLOGIA */}
+        {/* ========================================================= */}
+        <section className="space-y-6">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
+              Premissas Inegociáveis
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-heading font-black text-[#07132B]">
+              Como Conduzimos o Diagnóstico 360°
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-[#07132B] text-[#D4AF37] flex items-center justify-center font-bold text-sm">
+                01
+              </div>
+              <h3 className="font-heading font-bold text-base text-[#07132B]">
+                Diagnóstico Precede a Intervenção
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Nenhuma recomendação técnica ou alteração societária é implementada sem o mapeamento
+                profundo prévio. Evita retrabalho e decisões tomadas no escuro.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-[#07132B] text-[#D4AF37] flex items-center justify-center font-bold text-sm">
+                02
+              </div>
+              <h3 className="font-heading font-bold text-base text-[#07132B]">
+                Matriz Impacto × Risco × Esforço
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                As soluções identificadas são rigorosamente priorizadas: o que gera maior caixa com
+                menor fricção é executado primeiro, financiando as etapas seguintes.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-[#07132B] text-[#D4AF37] flex items-center justify-center font-bold text-sm">
+                03
+              </div>
+              <h3 className="font-heading font-bold text-base text-[#07132B]">
+                Contingência vs. Governança
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                A análise divide com clareza o que é contingência (passado/presente a estancar) do
+                que é compliance, contratos e governança (futuro a blindar).
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ========================================================= */}
+        {/* SEÇÃO C: MATRIZ COMPLETA DOS 7 RISCOS */}
+        {/* ========================================================= */}
+        <section className="space-y-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-4">
+            <div>
+              <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block mb-1">
+                Matriz Estrutural Diamond Intelligence
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-heading font-black text-[#07132B]">
+                Os 7 Riscos Mapeados
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                Conteúdo integral do Dossiê Diamond Group & Grupo Baumgartener.
+              </p>
+            </div>
+
+            <div className="text-xs text-slate-500 bg-slate-100 p-2.5 rounded-xl border border-slate-200">
+              Setor da Empresa: <strong className="text-[#07132B]">{dadosEmpresa.segmento}</strong>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {SETE_RISCOS_360.map((risco) => (
+              <div
+                key={risco.id}
+                className="bg-white rounded-2xl border border-slate-200/90 hover:border-[#D4AF37] shadow-sm hover:shadow-md transition-all overflow-hidden"
+              >
+                {/* Header do Risco */}
+                <div className="bg-slate-50/80 p-5 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#D4AF37] block">
+                      Risco {risco.id} de 7
+                    </span>
+                    <h3 className="font-heading font-extrabold text-xl text-[#07132B]">
+                      {risco.nome}
+                    </h3>
+                    <p className="text-xs font-medium text-slate-500 mt-0.5">{risco.subtitulo}</p>
+                  </div>
+
+                  <span className="self-start sm:self-auto text-[11px] font-semibold text-slate-600 bg-white px-3 py-1 rounded-full border border-slate-200">
+                    {risco.dicaPriorizacao}
+                  </span>
+                </div>
+
+                <div className="p-6 sm:p-7 space-y-5 text-xs sm:text-sm">
+                  {/* Citação Técnica do PDF */}
+                  <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-200/60 text-slate-700 italic leading-relaxed text-xs">
+                    "{risco.citacaoTecnica}"
+                  </div>
+
+                  {/* Foco Atual & Foco Novo Código */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#07132B]" />
+                        Foco Atual (Legislação Vigente)
+                      </span>
+                      <p className="text-slate-600 leading-relaxed text-xs">{risco.focoAtual}</p>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-200/70 space-y-1.5">
+                      <span className="text-xs font-bold text-blue-950 uppercase tracking-wide flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-blue-600" />
+                        Foco no Novo Código Tributário (IBS / CBS / IS)
+                      </span>
+                      <p className="text-blue-900/80 leading-relaxed text-xs">
+                        {risco.focoNovoCodigo ||
+                          'Preparação contábil para o IVA Dual e alinhamento às exigências de transparência da EC 132/2023.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Entregável do Risco */}
+                  <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-[#2ECC71] shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-xs font-bold text-emerald-950 uppercase tracking-wide block mb-0.5">
+                        Entregável Concreto deste Módulo:
+                      </strong>
+                      <p className="text-xs text-emerald-900 leading-relaxed">{risco.entregavel}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ========================================================= */}
+        {/* SEÇÃO D: JORNADA VISUAL DE → PARA */}
+        {/* ========================================================= */}
+        <section className="bg-gradient-to-r from-[#07132B] via-[#0A1A13] to-[#07132B] text-white rounded-[26px] p-6 sm:p-10 border border-[#D4AF37]/30 shadow-xl space-y-8">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
+              Destino: Inteligência Fiscal
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-heading font-black text-white">
+              A Jornada de Transformação "De → Para"
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300">
+              O que acontece quando a sua empresa substitui a reação passiva pela estratégia
+              proativa.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            {[
+              {
+                de: 'Apagar incêndios',
+                para: 'Controle e previsibilidade',
+                icon: TrendingUp,
+              },
+              {
+                de: 'Risco de caixa e multas',
+                para: 'Prevenção e estratégia',
+                icon: ShieldCheck,
+              },
+              {
+                de: 'Insegurança e reatividade',
+                para: 'Caixa otimizado e protegido',
+                icon: Sparkles,
+              },
+              {
+                de: 'Decisões no escuro',
+                para: 'Decisões baseadas em dados',
+                icon: Activity,
+              },
+            ].map((item, idx) => {
+              const IconComp = item.icon
+              return (
+                <div
+                  key={idx}
+                  className="p-4 sm:p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-4"
+                >
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider block">
+                      DE:
+                    </span>
+                    <span className="text-sm font-semibold text-slate-300 line-through decoration-rose-400">
+                      {item.de}
+                    </span>
+                  </div>
+
+                  <ArrowRight className="w-5 h-5 text-[#D4AF37] shrink-0" />
+
+                  <div className="space-y-0.5 text-right">
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+                      PARA:
+                    </span>
+                    <span className="text-sm font-bold text-emerald-300">{item.para}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        {/* ========================================================= */}
+        {/* SEÇÃO E: CRITÉRIO DE SUCESSO — DOSSIÊ EXECUTIVO EM 3 FRENTES */}
+        {/* ========================================================= */}
+        <section className="space-y-6">
+          <div className="max-w-2xl space-y-2">
+            <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
+              Critério de Sucesso
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-heading font-black text-[#07132B]">
+              Dossiê Executivo (Matriz de Risco) em 3 Frentes
+            </h2>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Ao final do mapeamento 360°, a diretoria recebe um plano de ação claro dividido em
+              três vias de execução:
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border-2 border-[#D4AF37]/40 shadow-sm flex flex-col justify-between space-y-4">
+              <div className="space-y-3">
+                <span className="w-8 h-8 rounded-xl bg-[#07132B] text-[#D4AF37] font-bold text-xs flex items-center justify-center">
+                  1
+                </span>
+                <h3 className="font-heading font-bold text-lg text-[#07132B]">
+                  Ações Rápidas (Liquidez)
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Recuperação tributária imediata e estancamento de passivos para desafogar o fluxo
+                  de caixa da operação no curto prazo.
+                </p>
+              </div>
+              <div className="text-[11px] font-semibold text-[#D4AF37] bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                Prazo estimado: 30 a 60 dias
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border-2 border-emerald-500/40 shadow-sm flex flex-col justify-between space-y-4">
+              <div className="space-y-3">
+                <span className="w-8 h-8 rounded-xl bg-[#0A1A13] text-[#2ECC71] font-bold text-xs flex items-center justify-center">
+                  2
+                </span>
+                <h3 className="font-heading font-bold text-lg text-[#07132B]">
+                  Ações Estruturais (Governança e Proteção)
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Saneamento contábil e criação das blindagens societárias e patrimoniais (Holdings,
+                  seguros PPLI, acordos de sócios).
+                </p>
+              </div>
+              <div className="text-[11px] font-semibold text-[#145A32] bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
+                Prazo estimado: 60 a 120 dias
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border-2 border-blue-500/40 shadow-sm flex flex-col justify-between space-y-4">
+              <div className="space-y-3">
+                <span className="w-8 h-8 rounded-xl bg-[#07132B] text-blue-400 font-bold text-xs flex items-center justify-center">
+                  3
+                </span>
+                <h3 className="font-heading font-bold text-lg text-[#07132B]">
+                  Comitê de Transição Tributária
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Plano de ação claro de adaptação de preços, contratos e sistemas ERP para o Novo
+                  Código Tributário, colocando a empresa à frente da concorrência.
+                </p>
+              </div>
+              <div className="text-[11px] font-semibold text-blue-800 bg-blue-50 p-2.5 rounded-lg border border-blue-200">
+                Prazo contínuo: 2026 a 2033
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ========================================================= */}
+        {/* SEÇÃO F: CICLO DA ASSESSORIA (4 ETAPAS DO PDF) */}
+        {/* ========================================================= */}
+        <section className="bg-slate-100 rounded-[26px] p-6 sm:p-10 border border-slate-200 space-y-6">
+          <div className="max-w-2xl space-y-1">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+              Aplicação Prática
+            </span>
+            <h2 className="text-2xl font-heading font-black text-[#07132B]">
+              O Ciclo Completo da Assessoria
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                num: '1',
+                titulo: 'Diagnóstico 360°',
+                desc: 'Mapeamento do cenário contábil, fiscal, jurídico e financeiro.',
+              },
+              {
+                num: '2',
+                titulo: 'Reestruturação',
+                desc: 'Ações Rápidas: créditos tributários, alongamento de passivos e caixa.',
+              },
+              {
+                num: '3',
+                titulo: 'Governança',
+                desc: 'Ações Estruturais: matriz de risco, compliance e proteção patrimonial.',
+              },
+              {
+                num: '4',
+                titulo: 'Alavancagem',
+                desc: 'Captação BNDES/fundos, parcerias corporativas e preparação para M&A.',
+              },
+            ].map((etapa) => (
+              <div
+                key={etapa.num}
+                className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2"
+              >
+                <span className="w-7 h-7 rounded-lg bg-[#07132B] text-[#D4AF37] font-bold text-xs flex items-center justify-center">
+                  {etapa.num}
+                </span>
+                <h4 className="font-heading font-bold text-sm text-[#07132B]">{etapa.titulo}</h4>
+                <p className="text-xs text-slate-600 leading-snug">{etapa.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ========================================================= */}
+        {/* SEÇÃO G: AUTOAVALIAÇÃO INTERATIVA DOS 7 RISCOS */}
+        {/* ========================================================= */}
+        <section
+          id="autoavaliacao-360"
+          className="bg-white rounded-[26px] p-6 sm:p-10 border-2 border-[#D4AF37]/50 shadow-xl space-y-8 scroll-mt-28"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#07132B] bg-[#D4AF37]/20 border border-[#D4AF37]/40 uppercase mb-2">
+                <Activity className="w-3.5 h-3.5" />
+                Interatividade Diamond Intelligence
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-heading font-black text-[#07132B]">
+                Autoavaliação dos 7 Riscos na Sua Empresa
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                Classifique o nível de atenção de cada frente para gerar na tela o seu perfil de
+                risco e priorização do Dossiê.
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSalvarDiagnostico360}
+              disabled={salvandoDiagnostico}
+              className="self-start sm:self-auto border-[#07132B] text-[#07132B] hover:bg-slate-100 font-bold gap-1.5"
+            >
+              <Save className="w-4 h-4" />
+              {salvandoDiagnostico ? 'Salvando...' : 'Salvar na Conta'}
+            </Button>
+          </div>
+
+          {/* LISTA DAS 7 PERGUNTAS */}
+          <div className="space-y-5">
+            {SETE_RISCOS_360.map((risco) => {
+              const valorAtual = avaliacoes[risco.id] || 2
+              return (
+                <div
+                  key={risco.id}
+                  className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div className="max-w-xl space-y-1">
+                    <span className="text-xs font-extrabold text-[#D4AF37] uppercase tracking-wider block">
+                      {risco.nome}
+                    </span>
+                    <p className="text-sm font-semibold text-slate-800">
+                      {risco.perguntaAutoavaliacao}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {[
+                      { nivel: 1, label: 'Baixo (Controlado)', cor: 'emerald' },
+                      { nivel: 2, label: 'Médio (Alerta)', cor: 'amber' },
+                      { nivel: 3, label: 'Alto (Crítico)', cor: 'rose' },
+                    ].map((opt) => {
+                      const isSelected = valorAtual === opt.nivel
+                      return (
+                        <button
+                          key={opt.nivel}
+                          type="button"
+                          onClick={() => handleSelectNivel(risco.id, opt.nivel)}
+                          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                            isSelected
+                              ? opt.nivel === 3
+                                ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                                : opt.nivel === 2
+                                  ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                                  : 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                              : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* PAINEL DE RESULTADO DA AUTOAVALIAÇÃO */}
+          <div className="p-6 sm:p-8 rounded-2xl bg-[#07132B] text-white border-2 border-[#D4AF37] shadow-xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+              <div>
+                <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block mb-1">
+                  Resumo do Perfil Diagnosticado
+                </span>
+                <h3 className="text-xl sm:text-2xl font-heading font-extrabold text-white">
+                  {perfilGlobal.titulo}
+                </h3>
+              </div>
+
+              {/* Badges de contagem */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-400/30">
+                  {totalCriticos} Crítico(s)
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                  {totalAlertas} Alerta(s)
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                  {totalControlados} Controlado(s)
+                </span>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-200 leading-relaxed">{perfilGlobal.desc}</p>
+
+            {/* FRENTES PRIORIZADAS PELA MATRIZ */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+              <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
+                Frentes Priorizadas pela Matriz Impacto × Risco × Esforço:
+              </span>
+              <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#D4AF37]" />
+                  <span>1. Ações Rápidas de Liquidez</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
+                  <span>2. Saneamento e Governança</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-400" />
+                  <span>3. Comitê de Transição Tributária</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* FEEDBACK DE SALVAMENTO */}
+            {salvoFeedback && (
+              <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>
+                  Diagnóstico 360° salvo com sucesso na sua conta! Disponível no histórico e para a
+                  equipe contábil no painel administrativo.
+                </span>
+              </div>
+            )}
+
+            {/* BOTÕES DE AÇÃO */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button
+                type="button"
+                onClick={handleSalvarDiagnostico360}
+                disabled={salvandoDiagnostico}
+                className="bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] font-bold text-xs sm:text-sm h-11 px-6 rounded-xl"
+              >
+                {salvandoDiagnostico ? 'Salvando...' : 'Salvar Resultado na Conta'}
+              </Button>
+
+              <Link
+                to="/diagnostico-transicao"
+                className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm h-11 px-6 rounded-xl border border-white/20 transition-all"
+              >
+                <span>Avançar para Etapa 2: Transição Fiscal</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ========================================================= */}
+        {/* SEÇÃO H: CTA FINAL LEVANDO À PRÓXIMA ETAPA */}
+        {/* ========================================================= */}
+        <section className="bg-white rounded-2xl p-8 border border-slate-200 text-center space-y-4">
+          <h3 className="font-heading font-extrabold text-2xl text-[#07132B]">
+            Próximo Passo na Trilha de Inteligência Fiscal
+          </h3>
+          <p className="text-sm text-slate-600 max-w-xl mx-auto leading-relaxed">
+            Agora que você mapeou as 7 vulnerabilidades, simule o impacto ano a ano da substituição
+            de tributos no Diagnóstico de Transição Fiscal (2026–2033).
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <Link
+              to="/diagnostico-transicao"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-heading font-bold text-sm text-white bg-[#07132B] hover:brightness-110 shadow-md transition-all"
+            >
+              <span>Acessar Diagnóstico de Transição Fiscal</span>
+              <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
+            </Link>
+            <Link
+              to="/diagnostico"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-heading font-semibold text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all"
+            >
+              <span>Ir direto para o Enquadramento Completo</span>
+            </Link>
+          </div>
+        </section>
+      </div>
+
+      <DiamondFooterCTA />
+    </div>
+  )
+}

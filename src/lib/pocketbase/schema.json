@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-12T14:09:02.649Z",
+  "generatedAt": "2026-10-12T14:56:02.494Z",
   "collections": [
     {
       "name": "users",
@@ -391,6 +391,18 @@
           "required": false,
           "system": false,
           "collectionRef": "users"
+        },
+        {
+          "name": "tipo_diagnostico",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "dados_extra_json",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

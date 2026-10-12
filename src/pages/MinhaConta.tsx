@@ -313,8 +313,25 @@ export default function MinhaConta() {
                           <span className="font-heading font-bold text-slate-900 text-sm">
                             {diag.empresa || 'Empresa'}
                           </span>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-[#145A32] border border-emerald-200">
-                            Recomendado: {diag.sistema_recomendado_novo || diag.regime_recomendado}
+                          {diag.tipo_diagnostico === '360' ? (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#D4AF37]/20 text-[#07132B] border border-[#D4AF37]/40">
+                              🧭 Diagnóstico 360°
+                            </span>
+                          ) : diag.tipo_diagnostico === 'transicao' ? (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                              📅 Transição Fiscal
+                            </span>
+                          ) : diag.tipo_diagnostico === 'regimes' ? (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-300">
+                              ⚖️ Comparação de Regime
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-[#145A32] border border-emerald-200">
+                              📄 Enquadramento Completo
+                            </span>
+                          )}
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700">
+                            Parecer: {diag.sistema_recomendado_novo || diag.regime_recomendado}
                           </span>
                           {diag.ano_base && (
                             <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700">

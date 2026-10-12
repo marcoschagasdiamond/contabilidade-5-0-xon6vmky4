@@ -73,6 +73,7 @@ export default function Admin() {
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoRecord[]>([])
   const [isLoadingDiagnosticos, setIsLoadingDiagnosticos] = useState(true)
   const [diagSearchTerm, setDiagSearchTerm] = useState('')
+  const [diagFilterTipo, setDiagFilterTipo] = useState('todos')
   const [diagFilterRegime, setDiagFilterRegime] = useState('todos')
   const [diagFilterSegmento, setDiagFilterSegmento] = useState('todos')
   const [diagToDelete, setDiagToDelete] = useState<DiagnosticoRecord | null>(null)
@@ -269,6 +270,12 @@ export default function Admin() {
       item.telefone?.includes(term) ||
       item.segmento?.toLowerCase().includes(term)
 
+    const matchesTipo =
+      diagFilterTipo === 'todos' ||
+      (diagFilterTipo === 'enquadramento'
+        ? !item.tipo_diagnostico || item.tipo_diagnostico === 'enquadramento'
+        : item.tipo_diagnostico === diagFilterTipo)
+
     const matchesRegime =
       diagFilterRegime === 'todos' || item.regime_recomendado === diagFilterRegime
 
@@ -276,7 +283,7 @@ export default function Admin() {
       diagFilterSegmento === 'todos' ||
       item.segmento?.toLowerCase() === diagFilterSegmento.toLowerCase()
 
-    return matchesSearch && matchesRegime && matchesSegmento
+    return matchesSearch && matchesTipo && matchesRegime && matchesSegmento
   })
 
   // Exportar Clientes CSV
@@ -1245,6 +1252,21 @@ export default function Admin() {
 
               <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                 <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 font-medium shrink-0">Tipo:</span>
+                  <select
+                    value={diagFilterTipo}
+                    onChange={(e) => setDiagFilterTipo(e.target.value)}
+                    className="px-3 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 bg-white input-focus-ring"
+                  >
+                    <option value="todos">Todos os Tipos</option>
+                    <option value="360">1. Diagnóstico 360°</option>
+                    <option value="transicao">2. Transição Fiscal</option>
+                    <option value="regimes">3. Comparação de Regime</option>
+                    <option value="enquadramento">4. Enquadramento Completo</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-500 font-medium shrink-0">Regime:</span>
                   <select
                     value={diagFilterRegime}
@@ -1303,10 +1325,10 @@ export default function Admin() {
                     <thead className="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider border-b border-slate-200">
                       <tr>
                         <th className="py-4 px-6">Empresa & Contato</th>
+                        <th className="py-4 px-6">Tipo de Diagnóstico</th>
                         <th className="py-4 px-6">Segmento</th>
                         <th className="py-4 px-6">RBT12 (Receita)</th>
-                        <th className="py-4 px-6">Novo Sistema (IBS/CBS)</th>
-                        <th className="py-4 px-6">Sistema Atual</th>
+                        <th className="py-4 px-6">Recomendado / Parecer</th>
                         <th className="py-4 px-6">Economia Est.</th>
                         <th className="py-4 px-6">Data</th>
                         <th className="py-4 px-6 text-right">Ações</th>
@@ -1336,6 +1358,26 @@ export default function Admin() {
                                 📍 {item.cidade}{' '}
                                 {item.aliquota_iss ? `(ISS: ${item.aliquota_iss}%)` : ''}
                               </div>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-6">
+                            {item.tipo_diagnostico === '360' ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#D4AF37]/20 text-[#07132B] border border-[#D4AF37]/50">
+                                🧭 1. Diagnóstico 360°
+                              </span>
+                            ) : item.tipo_diagnostico === 'transicao' ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                📅 2. Transição Fiscal
+                              </span>
+                            ) : item.tipo_diagnostico === 'regimes' ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-300">
+                                ⚖️ 3. Comparação de Regime
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                📄 4. Enquadramento Completo
+                              </span>
                             )}
                           </td>
 
@@ -1574,10 +1616,17 @@ export default function Admin() {
           <DialogContent className="sm:max-w-xl bg-white rounded-2xl p-6 shadow-2xl">
             <DialogHeader>
               <DialogTitle className="font-heading font-bold text-xl text-slate-900 flex items-center justify-between">
-                <span>Diagnóstico Tributário</span>
+                <span>
+                  {selectedDiag.tipo_diagnostico === '360'
+                    ? 'Diagnóstico 360° (Diamond Intelligence)'
+                    : selectedDiag.tipo_diagnostico === 'transicao'
+                      ? 'Diagnóstico de Transição Fiscal'
+                      : selectedDiag.tipo_diagnostico === 'regimes'
+                        ? 'Diagnóstico de Comparação de Regime'
+                        : 'Diagnóstico de Enquadramento Completo'}
+                </span>
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-[#145A32]">
-                  Novo: {selectedDiag.sistema_recomendado_novo || selectedDiag.regime_recomendado} (
-                  {selectedDiag.ano_base || 2026})
+                  {selectedDiag.sistema_recomendado_novo || selectedDiag.regime_recomendado}
                 </span>
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500">

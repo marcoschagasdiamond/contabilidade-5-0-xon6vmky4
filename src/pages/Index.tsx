@@ -522,18 +522,18 @@ export default function Index() {
             </div>
             <div className="shrink-0 w-full sm:w-auto">
               <a
-                href="/diagnostico"
+                href="/diagnosticos"
                 onClick={(e) => {
                   e.preventDefault()
                   if (!temDadosSalvos) {
-                    navigate('/dados-empresa?destino=%2Fdiagnostico')
+                    navigate('/dados-empresa?destino=%2Fdiagnosticos')
                   } else {
-                    navigate('/diagnostico')
+                    navigate('/diagnosticos')
                   }
                 }}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl font-heading font-bold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-0.5 btn-press whitespace-nowrap"
               >
-                <span>Fazer Diagnóstico Agora</span>
+                <span>Conhecer Hub de Diagnósticos</span>
                 <ArrowRight className="w-5 h-5 stroke-[2.5]" />
               </a>
             </div>

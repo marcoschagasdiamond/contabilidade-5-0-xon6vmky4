@@ -71,6 +71,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { carregarDadosEmpresa, existeDadosEmpresaSalvos } from '@/types/dadosEmpresa'
+import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
 
 interface FormErrors {
   nome?: string
@@ -532,6 +533,7 @@ export default function Diagnostico() {
           const authUserId = pb.authStore.record?.id || undefined
           await createDiagnostico({
             user_id: authUserId,
+            tipo_diagnostico: 'enquadramento',
             nome: formData.nome.trim(),
             email: formData.email.trim().toLowerCase(),
             telefone: formData.telefone.trim(),
@@ -696,7 +698,15 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
     : 1
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-24 sm:pt-28 pb-20">
+    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-20 sm:pt-24 pb-20">
+      {/* TRILHA DE NAVEGAÇÃO DOS 4 DIAGNÓSTICOS */}
+      <TrilhaDiagnosticoNav
+        paginaAtual="enquadramento"
+        nomeEmpresa={formData.empresa}
+        temDadosSalvos={temPerfilSalvo}
+        onRestaurarDados={restaurarDadosDaEmpresaNoDiagnostico}
+      />
+
       {/* HERO SECTION DA FERRAMENTA */}
       <section className="relative py-12 md:py-16 bg-gradient-to-r from-[#0A1A13] via-[#0D2A1C] to-[#145A32] text-white border-b border-white/10 overflow-hidden">
         <div

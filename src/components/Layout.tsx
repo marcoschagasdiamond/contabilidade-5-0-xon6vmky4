@@ -167,17 +167,17 @@ export default function Layout() {
               Calculadora IBS/CBS
             </a>
             <a
-              href="/diagnostico"
-              onClick={(e) => handleToolNav(e, '/diagnostico')}
+              href="/diagnosticos"
+              onClick={(e) => handleToolNav(e, '/diagnosticos')}
               className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                location.pathname === '/diagnostico'
+                location.pathname.startsWith('/diagnostico')
                   ? 'text-[#2ECC71] font-semibold active'
                   : 'text-slate-200 hover:text-white'
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#2ECC71] animate-pulse" />
               Diagnóstico Tributário
-            </a>
+            </a>{' '}
             <Link
               to="/blog"
               className={`nav-link-hover text-sm font-medium transition-colors ${
@@ -330,17 +330,17 @@ export default function Layout() {
                   Calculadora IBS/CBS
                 </a>
                 <a
-                  href="/diagnostico"
-                  onClick={(e) => handleToolNav(e, '/diagnostico')}
+                  href="/diagnosticos"
+                  onClick={(e) => handleToolNav(e, '/diagnosticos')}
                   className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
-                    location.pathname === '/diagnostico'
+                    location.pathname.startsWith('/diagnostico')
                       ? 'text-[#2ECC71] font-bold'
                       : 'text-slate-200 hover:text-[#2ECC71]'
                   }`}
                 >
                   <span className="w-2 h-2 rounded-full bg-[#2ECC71]" />
                   Diagnóstico Tributário
-                </a>
+                </a>{' '}
                 <Link
                   to="/blog"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -535,14 +535,14 @@ export default function Layout() {
                 </li>
                 <li>
                   <a
-                    href="/diagnostico"
-                    onClick={(e) => handleToolNav(e, '/diagnostico')}
+                    href="/diagnosticos"
+                    onClick={(e) => handleToolNav(e, '/diagnosticos')}
                     className="text-slate-400 hover:text-[#2ECC71] transition-colors flex items-center gap-1.5 font-medium cursor-pointer"
                   >
                     <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
-                    Diagnóstico Tributário
+                    Diagnóstico Tributário (Hub)
                   </a>
-                </li>
+                </li>{' '}
                 <li>
                   <Link
                     to="/blog"

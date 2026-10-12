@@ -1,9 +1,12 @@
 import pb from '@/lib/pocketbase/client'
 import type { RecordModel } from 'pocketbase'
 
+export type TipoDiagnostico = '360' | 'transicao' | 'regimes' | 'enquadramento'
+
 export interface Diagnostico {
   id?: string
   user_id?: string
+  tipo_diagnostico?: TipoDiagnostico | string
   nome: string
   email: string
   telefone: string
@@ -38,6 +41,7 @@ export interface Diagnostico {
   carga_real_novo?: number
   economia_anual_novo?: number
   detalhes_reforma_json?: Record<string, any>
+  dados_extra_json?: Record<string, any>
   // Novos campos do Módulo 3
   folha_pagamento?: number // folha mensal
   despesas_creditos?: number // despesas com créditos mensais
