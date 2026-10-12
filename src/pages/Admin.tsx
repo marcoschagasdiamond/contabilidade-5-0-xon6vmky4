@@ -1875,7 +1875,7 @@ export default function Admin() {
                   selectedDiag.ranking_json.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-slate-200">
                       <span className="text-[11px] font-semibold text-slate-400 uppercase block mb-2">
-                        Ranking Calculado dos 3 Regimes
+                        Ranking Calculado dos Regimes
                       </span>
                       <div className="space-y-1.5">
                         {selectedDiag.ranking_json.map((rk) => (
@@ -1888,7 +1888,7 @@ export default function Admin() {
                             </span>
                             <span className="font-bold text-slate-900">
                               {rk.elegivel
-                                ? `R$ ${rk.cargaAnual?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${rk.aliquotaEfetiva}%)`
+                                ? `R$ ${rk.cargaAnual?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${rk.aliquotaEfetiva?.toFixed?.(2) ?? rk.aliquotaEfetiva}%)`
                                 : 'Inelegível'}
                             </span>
                           </div>
@@ -1896,6 +1896,44 @@ export default function Admin() {
                       </div>
                     </div>
                   )}
+
+                {/* Se houver dados_extra_json com parecer do Módulo 6 ou do Módulo 7 */}
+                {selectedDiag.dados_extra_json && (
+                  <div className="mt-3 pt-3 border-t border-slate-200 space-y-2 text-xs">
+                    {selectedDiag.dados_extra_json.regimeVencedorModulo6 && (
+                      <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-200">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900 block mb-0.5">
+                          Comparador Estratégico (Módulo 6):
+                        </span>
+                        <strong className="text-blue-950 font-bold block">
+                          {selectedDiag.dados_extra_json.regimeVencedorModulo6}
+                        </strong>
+                        {selectedDiag.dados_extra_json.justificativaModulo6 && (
+                          <p className="text-[11px] text-blue-900 mt-1 leading-relaxed">
+                            {selectedDiag.dados_extra_json.justificativaModulo6}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {selectedDiag.dados_extra_json.farolTitulo && (
+                      <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 block mb-0.5">
+                          Diagnóstico de Transição Fiscal (Módulo 7):
+                        </span>
+                        <strong className="text-amber-950 font-bold block">
+                          {selectedDiag.dados_extra_json.farolTitulo} (Score:{' '}
+                          {selectedDiag.dados_extra_json.totalScore} pts)
+                        </strong>
+                        {selectedDiag.dados_extra_json.servicoRecomendado && (
+                          <p className="text-[11px] text-amber-900 mt-1 leading-relaxed">
+                            Solução recomendada: {selectedDiag.dados_extra_json.servicoRecomendado}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
