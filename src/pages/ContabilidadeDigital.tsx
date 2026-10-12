@@ -452,13 +452,22 @@ export default function ContabilidadeDigital() {
                 Precisa de outras especialidades contábeis ou tributárias?
               </h3>
             </div>
-            <Link
-              to="/servicos"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/15 transition-all"
-            >
-              Ver Todos os Serviços
-              <ArrowUpRight className="w-4 h-4" />
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/servicos/gestao-fiscal-tributaria"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
+              >
+                <Sparkles className="w-4 h-4 text-[#2ECC71]" />
+                Gestão Fiscal 5.0
+              </Link>
+              <Link
+                to="/servicos"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/15 transition-all"
+              >
+                Ver Todos os Serviços
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
 
           <div className="text-center pt-12 max-w-xl mx-auto">

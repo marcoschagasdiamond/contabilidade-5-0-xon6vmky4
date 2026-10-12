@@ -46,10 +46,10 @@ export default function Index() {
     },
     {
       icon: Receipt,
-      title: 'Gestão Fiscal',
+      title: 'Gestão Fiscal & Tributária',
       description:
         'Apuração de impostos, planejamento tributário e conformidade com o eSocial e SPED.',
-      link: '/servicos#gestao-fiscal',
+      link: '/servicos/gestao-fiscal-tributaria',
     },
     {
       icon: Users,
@@ -77,7 +77,7 @@ export default function Index() {
       title: 'Assessoria Tributária',
       description:
         'Defesa em processos fiscais, recuperação de créditos tributários e auditoria preventiva.',
-      link: '/servicos#assessoria-tributaria',
+      link: '/servicos/gestao-fiscal-tributaria',
     },
     {
       icon: GraduationCap,
