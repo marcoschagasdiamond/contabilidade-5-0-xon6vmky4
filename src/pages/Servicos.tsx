@@ -8,8 +8,11 @@ import {
   ShieldAlert,
   CheckCircle2,
   ArrowRight,
-  FileCheck,
-  TrendingUp,
+  GraduationCap,
+  Sparkles,
+  Building2,
+  BookOpen,
+  Layers,
 } from 'lucide-react'
 
 export default function Servicos() {
@@ -122,6 +125,46 @@ export default function Servicos() {
         'https://img.usecurling.com/p/700/500?q=legal%20tax%20audit%20compliance&color=emerald',
       reverse: true,
     },
+    {
+      id: 'treinamento-capacitacao',
+      icon: GraduationCap,
+      category: 'Educação Corporativa',
+      title: 'Treinamento e Capacitação',
+      subtitle: 'Soluções educacionais sob medida para sua equipe e estratégia',
+      description:
+        'Para cada cliente, criamos um projeto único, personalizado e diferenciado. Não apenas entendemos a realidade e as necessidades específicas da empresa, como também desenvolvemos soluções educacionais alinhadas à sua estratégia, com o objetivo de atender às necessidades presentes e futuras, proporcionando impactos positivos para os profissionais e para as organizações.',
+      deliveryFormatsTitle: 'Formatos de entrega:',
+      deliveryFormats: [
+        {
+          title: 'Treinamentos in company (sob medida)',
+          description:
+            'Programas desenhados para o contexto, setor e desafios operacionais específicos da sua empresa.',
+          icon: Building2,
+        },
+        {
+          title: 'Workshops sobre a Reforma Tributária (IBS/CBS)',
+          description:
+            'Imersões práticas sobre as novas regras, transição tributária, split payment e impactos no seu modelo de negócio.',
+          icon: BookOpen,
+        },
+        {
+          title: 'Capacitação da equipe fiscal e contábil',
+          description:
+            'Atualização técnica contínua em SPED, eSocial, conciliação e melhores práticas de governança fiscal.',
+          icon: Layers,
+        },
+      ],
+      features: [
+        'Diagnóstico prévio das necessidades e nivelamento da equipe',
+        'Material didático exclusivo, prático e sem juridiquês',
+        'Instrutores seniores com vivência de mercado e cases reais',
+        'Certificado de conclusão e suporte pós-treinamento para dúvidas',
+        'Modalidades presencial in company ou online ao vivo interativo',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=corporate%20training%20workshop%20classroom&color=emerald',
+      reverse: false,
+    },
   ]
 
   return (
@@ -175,7 +218,7 @@ export default function Servicos() {
                 <div className={service.reverse ? 'lg:col-start-1' : ''}>
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-[#145A32] bg-emerald-50 border border-emerald-200 mb-3">
                     <IconComp className="w-3.5 h-3.5" />
-                    <span>Especialidade Contábil</span>
+                    <span>{service.category || 'Especialidade Contábil'}</span>
                   </div>
 
                   <h2 className="font-heading font-bold text-2xl sm:text-3xl text-slate-900 tracking-tight mb-2">
@@ -187,6 +230,39 @@ export default function Servicos() {
                   <p className="text-slate-600 leading-relaxed text-sm sm:text-base mb-6">
                     {service.description}
                   </p>
+
+                  {/* Formatos de entrega destacados quando presentes */}
+                  {service.deliveryFormats && service.deliveryFormats.length > 0 && (
+                    <div className="mb-6 space-y-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        {service.deliveryFormatsTitle || 'Formatos de entrega:'}
+                      </p>
+                      <div className="grid grid-cols-1 gap-2.5">
+                        {service.deliveryFormats.map((format, fIdx) => {
+                          const FIcon = format.icon || CheckCircle2
+                          return (
+                            <div
+                              key={fIdx}
+                              className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-[#2ECC71]/40 hover:bg-emerald-50/40 transition-all flex items-start gap-3"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-emerald-100/70 text-[#145A32] flex items-center justify-center shrink-0 mt-0.5">
+                                <FIcon className="w-4 h-4 stroke-[2.2]" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-semibold text-slate-900">
+                                  {format.title}
+                                </h4>
+                                <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                                  {format.description}
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Lista de recursos */}
                   <div className="space-y-2.5 mb-8">

@@ -17,6 +17,7 @@ import {
   Cpu,
   Award,
   Headphones,
+  GraduationCap,
 } from 'lucide-react'
 import LeadForm from '@/components/LeadForm'
 
@@ -77,6 +78,13 @@ export default function Index() {
       description:
         'Defesa em processos fiscais, recuperação de créditos tributários e auditoria preventiva.',
       link: '/servicos#assessoria-tributaria',
+    },
+    {
+      icon: GraduationCap,
+      title: 'Treinamento e Capacitação',
+      description:
+        'Projetos educacionais únicos sob medida, workshops sobre a Reforma Tributária e capacitação contábil e fiscal.',
+      link: '/servicos#treinamento-capacitacao',
     },
   ]
 
