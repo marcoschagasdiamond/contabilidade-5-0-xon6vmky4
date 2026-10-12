@@ -37,6 +37,7 @@ import SubpageDicionario from './pages/reforma/SubpageDicionario'
 import SubpageImpactoSetor from './pages/reforma/SubpageImpactoSetor'
 import SubpageExcecoes from './pages/reforma/SubpageExcecoes'
 import SubpagePainelCarteira from './pages/reforma/SubpagePainelCarteira'
+import SubpageSplitPayment from './pages/reforma/SubpageSplitPayment'
 import SubpageGlossarioFontes from './pages/reforma/SubpageGlossarioFontes'
 
 // Rota protegida genérica (exige usuário logado)
@@ -122,6 +123,7 @@ const App = () => (
                 path="/reforma-tributaria/painel-carteira"
                 element={<SubpagePainelCarteira />}
               />
+              <Route path="/reforma-tributaria/split-payment" element={<SubpageSplitPayment />} />
               <Route
                 path="/reforma-tributaria/kit-precificacao"
                 element={<Navigate to="/reforma-tributaria" replace />}

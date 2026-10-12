@@ -16,6 +16,7 @@ import {
   Coins,
   FileText,
   Globe,
+  Split,
 } from 'lucide-react'
 
 interface DiamondHeaderProps {
@@ -175,6 +176,8 @@ export function getIconComponent(iconName: string) {
       return <Kanban className="w-6 h-6 text-[#D4AF37]" />
     case 'Coins':
       return <Coins className="w-6 h-6 text-[#D4AF37]" />
+    case 'Split':
+      return <Split className="w-6 h-6 text-[#D4AF37]" />
     case 'FileText':
       return <FileText className="w-6 h-6 text-[#D4AF37]" />
     default:

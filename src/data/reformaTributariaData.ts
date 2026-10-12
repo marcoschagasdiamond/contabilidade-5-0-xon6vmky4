@@ -89,8 +89,20 @@ export const MODULOS_REFORMA: ModuloReforma[] = [
     destaque: '5 etapas de esteira contábil',
   },
   {
-    id: 'glossario',
+    id: 'split-payment',
     numero: 7,
+    slug: 'split-payment',
+    titulo: 'Split Payment',
+    subtitulo: 'A nova retenção automática no ato do pagamento',
+    descricao:
+      'Entenda como o imposto passa a ser retido na liquidação bancária, os impactos no capital de giro e fluxo de caixa, quem mais sente e como se preparar.',
+    icone: 'Split',
+    tag: 'Fluxo de Caixa',
+    destaque: 'Retenção na liquidação bancária',
+  },
+  {
+    id: 'glossario',
+    numero: 8,
     slug: 'glossario',
     titulo: 'Glossário e Fontes',
     subtitulo: 'Quadro comparativo de confusões e legislação oficial',
