@@ -13,6 +13,7 @@ import Index from './pages/Index'
 import Servicos from './pages/Servicos'
 import ContabilidadeDigital from './pages/ContabilidadeDigital'
 import GestaoFiscalTributaria from './pages/GestaoFiscalTributaria'
+import DepartamentoPessoal from './pages/DepartamentoPessoal'
 import Blog from './pages/Blog'
 import BlogPost from './pages/BlogPost'
 import Contato from './pages/Contato'
@@ -114,6 +115,11 @@ const App = () => (
               <Route
                 path="/gestao-fiscal-tributaria"
                 element={<Navigate to="/servicos/gestao-fiscal-tributaria" replace />}
+              />
+              <Route path="/servicos/departamento-pessoal" element={<DepartamentoPessoal />} />
+              <Route
+                path="/departamento-pessoal"
+                element={<Navigate to="/servicos/departamento-pessoal" replace />}
               />
               <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
               <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />

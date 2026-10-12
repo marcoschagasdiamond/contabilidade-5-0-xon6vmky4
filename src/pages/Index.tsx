@@ -56,7 +56,7 @@ export default function Index() {
       title: 'Departamento Pessoal',
       description:
         'Folha de pagamento, admissões, demissões e gestão de benefícios com pontualidade.',
-      link: '/servicos#departamento-pessoal',
+      link: '/servicos/departamento-pessoal',
     },
     {
       icon: PieChart,
