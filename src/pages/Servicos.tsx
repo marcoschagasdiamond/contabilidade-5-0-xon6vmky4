@@ -76,18 +76,19 @@ export default function Servicos() {
       id: 'consultoria-financeira',
       icon: PieChart,
       title: 'Consultoria Financeira Estratégica',
-      subtitle: 'BPO Financeiro e análises de fluxo de caixa para decisões seguras',
+      subtitle: 'BPO Financeiro completo, modelagem preditiva e captação de crédito',
       description:
-        'Não tome decisões às cegas. Com a nossa consultoria financeira e BPO, você terceiriza o contas a pagar e receber, tem controle total sobre o ciclo financeiro e projeta cenários de investimento para expandir o seu negócio com sustentabilidade.',
+        'Consultoria financeira completa de ponta a ponta: assumimos a rotina diária de contas a pagar, a receber e conciliação bancária, construímos modelos orçamentários dinâmicos, monitoramos pontos críticos de caixa, orientamos a captação estruturada de recursos e realizamos reuniões mensais com consultor sênior para apoiar a tomada de decisão.',
       features: [
-        'BPO Financeiro completo: contas a pagar, a receber e conciliação',
-        'Projeções orçamentárias e análise de fluxo de caixa projetado',
-        'Cálculo de margem de contribuição e ponto de equilíbrio',
+        'BPO Financeiro completo (contas a pagar, a receber e conciliação bancária)',
+        'Projeções orçamentárias e fluxo de caixa projetado contínuo',
+        'Margem de contribuição e apuração do ponto de equilíbrio',
+        'Controle dos índices financeiros e pontos críticos da empresa',
         'Orientação para captação de recursos e crédito bancário',
         'Reuniões mensais com consultor sênior para alinhamento estratégico',
       ],
       image:
-        'https://img.usecurling.com/p/700/500?q=financial%20chart%20growth%20graph&color=emerald',
+        'https://img.usecurling.com/p/700/500?q=financial%20analytics%20dashboard%20growth&color=emerald',
       reverse: true,
     },
     {
@@ -307,6 +308,16 @@ export default function Servicos() {
                     {service.id === 'departamento-pessoal' && (
                       <Link
                         to="/servicos/departamento-pessoal"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#145A32]" />
+                        Ver Página Completa & Pilares 5.0
+                      </Link>
+                    )}
+
+                    {service.id === 'consultoria-financeira' && (
+                      <Link
+                        to="/servicos/consultoria-financeira"
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
                       >
                         <Sparkles className="w-4 h-4 text-[#145A32]" />

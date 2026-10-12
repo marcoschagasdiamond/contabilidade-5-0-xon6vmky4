@@ -62,8 +62,8 @@ export default function Index() {
       icon: PieChart,
       title: 'Consultoria Financeira',
       description:
-        'Análise de indicadores, fluxo de caixa e planejamento financeiro estratégico para tomada de decisão.',
-      link: '/servicos#consultoria-financeira',
+        'BPO financeiro completo, projeções orçamentárias, controle de índices vitais e orientação para captação de recursos.',
+      link: '/servicos/consultoria-financeira',
     },
     {
       icon: FolderOpen,

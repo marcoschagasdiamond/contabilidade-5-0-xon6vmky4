@@ -14,6 +14,7 @@ import {
   ArrowUpRight,
   Calculator,
   Receipt,
+  PieChart,
   FileCheck2,
   ShieldAlert,
   Smartphone,
@@ -472,7 +473,7 @@ export default function DepartamentoPessoal() {
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
               >
                 <Calculator className="w-4 h-4 text-[#2ECC71]" />
-                Contabilidade Digital
+                Contabilidade Digital 5.0
               </Link>
               <Link
                 to="/servicos/gestao-fiscal-tributaria"
@@ -480,6 +481,13 @@ export default function DepartamentoPessoal() {
               >
                 <Receipt className="w-4 h-4 text-[#2ECC71]" />
                 Gestão Fiscal 5.0
+              </Link>
+              <Link
+                to="/servicos/consultoria-financeira"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
+              >
+                <PieChart className="w-4 h-4 text-[#2ECC71]" />
+                Consultoria Financeira 5.0
               </Link>
               <Link
                 to="/servicos"

@@ -19,6 +19,8 @@ import {
   Award,
   ArrowUpRight,
   Users,
+  Receipt,
+  PieChart,
 } from 'lucide-react'
 
 export default function ContabilidadeDigital() {
@@ -458,7 +460,7 @@ export default function ContabilidadeDigital() {
                 to="/servicos/gestao-fiscal-tributaria"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
               >
-                <Sparkles className="w-4 h-4 text-[#2ECC71]" />
+                <Receipt className="w-4 h-4 text-[#2ECC71]" />
                 Gestão Fiscal 5.0
               </Link>
               <Link
@@ -467,6 +469,13 @@ export default function ContabilidadeDigital() {
               >
                 <Users className="w-4 h-4 text-[#2ECC71]" />
                 Departamento Pessoal 5.0
+              </Link>
+              <Link
+                to="/servicos/consultoria-financeira"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
+              >
+                <PieChart className="w-4 h-4 text-[#2ECC71]" />
+                Consultoria Financeira 5.0
               </Link>
               <Link
                 to="/servicos"
