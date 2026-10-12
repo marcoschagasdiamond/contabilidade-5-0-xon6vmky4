@@ -324,6 +324,26 @@ export default function Servicos() {
                         Ver Página Completa & Pilares 5.0
                       </Link>
                     )}
+
+                    {service.id === 'planejamento-sucessorio-patrimonial' && (
+                      <Link
+                        to="/servicos/planejamento-sucessorio"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#145A32]" />
+                        Ver Página Completa & Pilares 5.0
+                      </Link>
+                    )}
+
+                    {service.id === 'treinamento-capacitacao' && (
+                      <Link
+                        to="/servicos/treinamento"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#145A32]" />
+                        Ver Página Completa & Pilares 5.0
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

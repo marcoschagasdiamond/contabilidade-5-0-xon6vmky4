@@ -69,7 +69,7 @@ export default function Index() {
       title: 'Planejamento Sucessório e Estruturação Patrimonial',
       description:
         'Estruturação de empresas nacionais e internacionais para proteger seu patrimônio e garantir a continuidade do negócio entre gerações.',
-      link: '/servicos#planejamento-sucessorio-patrimonial',
+      link: '/servicos/planejamento-sucessorio',
     },
     {
       icon: ShieldAlert,
@@ -83,7 +83,7 @@ export default function Index() {
       title: 'Treinamento e Capacitação',
       description:
         'Projetos educacionais únicos sob medida, workshops sobre a Reforma Tributária e capacitação contábil e fiscal.',
-      link: '/servicos#treinamento-capacitacao',
+      link: '/servicos/treinamento',
     },
   ]
 

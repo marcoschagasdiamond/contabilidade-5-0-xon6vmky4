@@ -15,6 +15,8 @@ import ContabilidadeDigital from './pages/ContabilidadeDigital'
 import GestaoFiscalTributaria from './pages/GestaoFiscalTributaria'
 import DepartamentoPessoal from './pages/DepartamentoPessoal'
 import ConsultoriaFinanceira from './pages/ConsultoriaFinanceira'
+import PlanejamentoSucessorio from './pages/PlanejamentoSucessorio'
+import TreinamentoCapacitacao from './pages/TreinamentoCapacitacao'
 import Blog from './pages/Blog'
 import BlogPost from './pages/BlogPost'
 import Contato from './pages/Contato'
@@ -126,6 +128,19 @@ const App = () => (
               <Route
                 path="/consultoria-financeira"
                 element={<Navigate to="/servicos/consultoria-financeira" replace />}
+              />
+              <Route
+                path="/servicos/planejamento-sucessorio"
+                element={<PlanejamentoSucessorio />}
+              />
+              <Route
+                path="/planejamento-sucessorio"
+                element={<Navigate to="/servicos/planejamento-sucessorio" replace />}
+              />
+              <Route path="/servicos/treinamento" element={<TreinamentoCapacitacao />} />
+              <Route
+                path="/treinamento"
+                element={<Navigate to="/servicos/treinamento" replace />}
               />
               <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
               <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />

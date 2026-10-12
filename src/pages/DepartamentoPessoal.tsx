@@ -15,6 +15,7 @@ import {
   Calculator,
   Receipt,
   PieChart,
+  GraduationCap,
   FileCheck2,
   ShieldAlert,
   Smartphone,
@@ -488,6 +489,20 @@ export default function DepartamentoPessoal() {
               >
                 <PieChart className="w-4 h-4 text-[#2ECC71]" />
                 Consultoria Financeira 5.0
+              </Link>
+              <Link
+                to="/servicos/planejamento-sucessorio"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
+              >
+                <ShieldCheck className="w-4 h-4 text-[#2ECC71]" />
+                Planejamento Sucessório 5.0
+              </Link>
+              <Link
+                to="/servicos/treinamento"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
+              >
+                <GraduationCap className="w-4 h-4 text-[#2ECC71]" />
+                Treinamento 5.0
               </Link>
               <Link
                 to="/servicos"
