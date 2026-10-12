@@ -490,11 +490,22 @@ export default function Diagnostico() {
   }
 
   const avancarEtapa = async () => {
-    if (!validarEtapa(etapa)) return
+    if (!validarEtapa(etapa)) {
+      const wizardContainer = document.getElementById('wizard-diagnostico-container')
+      if (wizardContainer) {
+        wizardContainer.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+      return
+    }
 
     if (etapa < 4) {
       setEtapa((prev) => prev + 1)
-      window.scrollTo({ top: 150, behavior: 'smooth' })
+      const wizardContainer = document.getElementById('wizard-diagnostico-container')
+      if (wizardContainer) {
+        wizardContainer.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
     } else {
       // Finalizar wizard: calcular diagnóstico e persistir no PocketBase
       setIsCalculando(true)
@@ -577,7 +588,12 @@ export default function Diagnostico() {
         setResultado(diagResult)
         setAnoSimulacao(formData.anoBase)
         setEtapa(5)
-        window.scrollTo({ top: 120, behavior: 'smooth' })
+        const wizardContainer = document.getElementById('wizard-diagnostico-container')
+        if (wizardContainer) {
+          wizardContainer.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        }
       } catch (err) {
         console.error('Erro ao calcular diagnóstico:', err)
       } finally {
@@ -589,7 +605,12 @@ export default function Diagnostico() {
   const voltarEtapa = () => {
     if (etapa > 1) {
       setEtapa((prev) => prev - 1)
-      window.scrollTo({ top: 150, behavior: 'smooth' })
+      const wizardContainer = document.getElementById('wizard-diagnostico-container')
+      if (wizardContainer) {
+        wizardContainer.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
     }
   }
 
@@ -597,7 +618,12 @@ export default function Diagnostico() {
     setResultado(null)
     setEtapa(1)
     setLeadEnviado(false)
-    window.scrollTo({ top: 120, behavior: 'smooth' })
+    const wizardContainer = document.getElementById('wizard-diagnostico-container')
+    if (wizardContainer) {
+      wizardContainer.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }
 
   // Falar com especialista: cria um lead na coleção 'leads' citando o diagnóstico
@@ -670,7 +696,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
     : 1
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-24 pb-20">
+    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-24 sm:pt-28 pb-20">
       {/* HERO SECTION DA FERRAMENTA */}
       <section className="relative py-12 md:py-16 bg-gradient-to-r from-[#0A1A13] via-[#0D2A1C] to-[#145A32] text-white border-b border-white/10 overflow-hidden">
         <div
@@ -701,7 +727,10 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
       </section>
 
       {/* CONTAINER PRINCIPAL DO WIZARD / RESULTADO */}
-      <div className="max-w-[1000px] mx-auto px-4 sm:px-6 -mt-6">
+      <div
+        id="wizard-diagnostico-container"
+        className="max-w-[1000px] mx-auto px-4 sm:px-6 -mt-6 scroll-mt-28"
+      >
         {/* AVISO DE DADOS DA EMPRESA INTEGRADOS (quando etapa <= 4) */}
         {etapa <= 4 && (
           <div className="mb-4 bg-white border border-[#D4AF37]/40 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">

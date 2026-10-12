@@ -220,7 +220,12 @@ export default function DadosEmpresa() {
     e.preventDefault()
     if (!validarFormulario()) {
       // Scroll até o primeiro erro se houver
-      window.scrollTo({ top: 320, behavior: 'smooth' })
+      const formTop = document.querySelector('form')
+      if (formTop) {
+        formTop.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
       return
     }
 
@@ -557,7 +562,7 @@ export default function DadosEmpresa() {
 
       {/* CONTEÚDO PRINCIPAL */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-8 scroll-mt-28">
           {/* BANNER EXPLICATIVO / HUB DE MÓDULOS ALIMENTADOS */}
           <div className="bg-gradient-to-r from-[#07132B] via-[#0D1D3A] to-[#07132B] rounded-2xl p-6 sm:p-8 text-white border border-[#D4AF37]/40 shadow-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
