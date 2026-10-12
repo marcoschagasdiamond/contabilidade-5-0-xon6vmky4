@@ -295,9 +295,19 @@ export default function Servicos() {
                       </Link>
                     )}
 
-                    {(service.id === 'gestao-fiscal' || service.id === 'assessoria-tributaria') && (
+                    {service.id === 'gestao-fiscal' && (
                       <Link
                         to="/servicos/gestao-fiscal-tributaria"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#145A32]" />
+                        Ver Página Completa & Pilares 5.0
+                      </Link>
+                    )}
+
+                    {service.id === 'assessoria-tributaria' && (
+                      <Link
+                        to="/servicos/assessoria-tributaria"
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
                       >
                         <Sparkles className="w-4 h-4 text-[#145A32]" />

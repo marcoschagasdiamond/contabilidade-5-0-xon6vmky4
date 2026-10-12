@@ -73,10 +73,10 @@ export default function Index() {
     },
     {
       icon: ShieldAlert,
-      title: 'Assessoria Tributária',
+      title: 'Assessoria Tributária Especializada',
       description:
-        'Defesa em processos fiscais, recuperação de créditos tributários e auditoria preventiva.',
-      link: '/servicos/gestao-fiscal-tributaria',
+        'Recuperação de créditos tributários, revisão de folha, negociação de dívida PGFN e defesa fiscal com auditoria de SPED.',
+      link: '/servicos/assessoria-tributaria',
     },
     {
       icon: GraduationCap,

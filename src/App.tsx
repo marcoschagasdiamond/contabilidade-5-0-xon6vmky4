@@ -16,6 +16,7 @@ import GestaoFiscalTributaria from './pages/GestaoFiscalTributaria'
 import DepartamentoPessoal from './pages/DepartamentoPessoal'
 import ConsultoriaFinanceira from './pages/ConsultoriaFinanceira'
 import PlanejamentoSucessorio from './pages/PlanejamentoSucessorio'
+import AssessoriaTributaria from './pages/AssessoriaTributaria'
 import TreinamentoCapacitacao from './pages/TreinamentoCapacitacao'
 import Blog from './pages/Blog'
 import BlogPost from './pages/BlogPost'
@@ -136,6 +137,11 @@ const App = () => (
               <Route
                 path="/planejamento-sucessorio"
                 element={<Navigate to="/servicos/planejamento-sucessorio" replace />}
+              />
+              <Route path="/servicos/assessoria-tributaria" element={<AssessoriaTributaria />} />
+              <Route
+                path="/assessoria-tributaria"
+                element={<Navigate to="/servicos/assessoria-tributaria" replace />}
               />
               <Route path="/servicos/treinamento" element={<TreinamentoCapacitacao />} />
               <Route
