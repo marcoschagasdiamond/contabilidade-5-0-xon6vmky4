@@ -115,7 +115,7 @@ export default function Servicos() {
       description:
         'Identificamos oportunidades de recuperação de impostos pagos indevidamente ou a maior nos últimos 5 anos, além de defender sua empresa em autos de infração e realizar auditorias fiscais para blindar a sua operação contra fiscalizações.',
       features: [
-        'Levantamento e recuperação de créditos de PIS, COFINS, ICMS e IPI',
+        'Levantamento e recuperação de créditos de PIS, COFINS, ICMS, IPI e IRPJ',
         'Revisão fiscal dos últimos 60 meses com cruzamento eletrônico',
         'Elaboração de defesas e recursos administrativos fiscais',
         'Auditoria preventiva de arquivos SPED antes do envio ao Fisco',
