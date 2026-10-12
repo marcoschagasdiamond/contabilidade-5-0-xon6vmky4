@@ -8,7 +8,6 @@ import {
   Receipt,
   Users,
   PieChart,
-  FolderOpen,
   ShieldAlert,
   Star,
   Sparkles,
@@ -66,11 +65,11 @@ export default function Index() {
       link: '/servicos/consultoria-financeira',
     },
     {
-      icon: FolderOpen,
-      title: 'Abertura de Empresa',
+      icon: ShieldCheck,
+      title: 'Planejamento Sucessório e Estruturação Patrimonial',
       description:
-        'Abertura, alteração e regularização de empresas com agilidade, sem burocracia e com segurança jurídica.',
-      link: '/servicos#abertura-de-empresa',
+        'Estruturação de empresas nacionais e internacionais para proteger seu patrimônio e garantir a continuidade do negócio entre gerações.',
+      link: '/servicos#planejamento-sucessorio-patrimonial',
     },
     {
       icon: ShieldAlert,
