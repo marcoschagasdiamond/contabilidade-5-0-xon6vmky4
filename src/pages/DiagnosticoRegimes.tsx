@@ -40,6 +40,19 @@ export default function DiagnosticoRegimes() {
     scoreHibrido: number
     scoreNormal: number
     respostas: Record<number, string>
+    convergencia?: {
+      convergem: boolean
+      hipoteseQualitativa: string
+      recomendacaoFinal: string
+      motivoPrevalencia?: string
+      detalhes?: {
+        faturamentoAnual: number
+        tetoSimples: number
+        sublimiteSimples: number
+        fatorR: number
+        fatorRPercent: number
+      }
+    }
     resultadosNumericos: {
       faturamentoAnual: number
       folhaAnual: number
@@ -66,6 +79,7 @@ export default function DiagnosticoRegimes() {
     try {
       const authUserId = pb.authStore.record?.id || undefined
       const num = payload.resultadosNumericos
+      const conv = payload.convergencia
 
       await createDiagnostico({
         user_id: authUserId,
@@ -104,6 +118,12 @@ export default function DiagnosticoRegimes() {
           tipo: 'regimes',
           moduloOrigem: 'Modulo 6 - Comparador de Regime Unificado',
           regimeVencedorModulo6: payload.regimeVencedor,
+          hipoteseQualitativa: conv?.hipoteseQualitativa || payload.regimeVencedor,
+          recomendacaoFinalNumerica: num.melhorRegime,
+          convergenciaAnalise: conv?.convergem ?? false,
+          statusConvergencia: conv?.convergem ? 'convergem' : 'divergem',
+          motivoPrevalenciaNumerica: conv?.motivoPrevalencia || '',
+          detalhesLimiares: conv?.detalhes || null,
           justificativaModulo6: payload.justificativa,
           scoreSimples: payload.scoreSimples,
           scoreHibrido: payload.scoreHibrido,

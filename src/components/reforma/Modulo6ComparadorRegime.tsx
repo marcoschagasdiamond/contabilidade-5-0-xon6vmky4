@@ -50,6 +50,19 @@ export interface Modulo6ComparadorRegimeProps {
     scoreHibrido: number
     scoreNormal: number
     respostas: Record<number, string>
+    convergencia?: {
+      convergem: boolean
+      hipoteseQualitativa: string
+      recomendacaoFinal: string
+      motivoPrevalencia?: string
+      detalhes?: {
+        faturamentoAnual: number
+        tetoSimples: number
+        sublimiteSimples: number
+        fatorR: number
+        fatorRPercent: number
+      }
+    }
     resultadosNumericos: {
       faturamentoAnual: number
       folhaAnual: number
@@ -125,6 +138,7 @@ export function mapearDadosEmpresaParaPerguntasModulo6(
   const despAnual = (dados.despesasComCreditosMensais || 35000) * 12
   const proporcaoInsumos = fatAnual > 0 ? despAnual / fatAnual : 0.25
 
+  // Alinhado aos limiares do motor: sublimite R$ 3,6M, teto R$ 4,8M
   if (fatAnual > 3600000 || proporcaoInsumos > 0.5) {
     inicial[4] = 'alto-insumo'
   } else if (fatAnual >= 2500000 || proporcaoInsumos >= 0.25) {
@@ -245,14 +259,22 @@ export function Modulo6ComparadorRegime({
 
   // CÁLCULO DOS 4 REGIMES
   const resultadosRegimes = useMemo(() => {
-    // 1. Simples Nacional (Elegibilidade teto R$ 4,8 mi)
-    const elegivelSimples = faturamentoAnual <= 4800000
+    // 1. Simples Nacional (Elegibilidade teto R$ 4,8 mi e sublimite R$ 3,6 mi)
+    const TETO_SIMPLES = 4800000
+    const SUBLIMITE_SIMPLES = 3600000
+    const FATOR_R_MINIMO = 0.28
+
+    const elegivelSimples = faturamentoAnual <= TETO_SIMPLES
+    const estouraSublimite =
+      faturamentoAnual > SUBLIMITE_SIMPLES && faturamentoAnual <= TETO_SIMPLES
     const fatorR = faturamentoAnual > 0 ? folhaAnual / faturamentoAnual : 0
+    const fatorRPercent = Math.round(fatorR * 1000) / 10
+
     let aliqSimples = 0.08
     if (segmentoEmpresa === 'Comércio') aliqSimples = 0.065
     else if (segmentoEmpresa === 'Indústria') aliqSimples = 0.078
     else if (segmentoEmpresa === 'Serviços' || segmentoEmpresa === 'Tecnologia') {
-      aliqSimples = fatorR >= 0.28 ? 0.095 : 0.155 // Anexo III vs Anexo V
+      aliqSimples = fatorR >= FATOR_R_MINIMO ? 0.095 : 0.155 // Anexo III vs Anexo V
     } else {
       aliqSimples = 0.105
     }
@@ -352,8 +374,116 @@ export function Modulo6ComparadorRegime({
       melhorRegime,
       piorRegime,
       economiaAnualMaxima,
+      fatorR,
+      fatorRPercent,
+      elegivelSimples,
+      estouraSublimite,
+      TETO_SIMPLES,
+      SUBLIMITE_SIMPLES,
+      FATOR_R_MINIMO,
     }
   }, [faturamentoAnual, folhaAnual, despesasAnuais, segmentoEmpresa, anoBase])
+
+  // =========================================================
+  // ANÁLISE DE CONVERGÊNCIA / DIVERGÊNCIA (HIPÓTESE QUALITATIVA VS NÚMEROS)
+  // =========================================================
+  const analiseConvergencia = useMemo(() => {
+    // Normalização das categorias para cruzamento
+    // Hipótese das 4 perguntas (regimeVencedor):
+    // - "Simples Tradicional" / "Simples Nacional Tradicional" -> 'simples'
+    // - "Simples Híbrido (IBS e CBS por fora)" -> 'hibrido' (categoria dentro do universo Simples / Regime Regular dependendo do faturamento)
+    // - "Regime Normal (Lucro Real ou Lucro Presumido)" -> 'normal'
+    let catQualitativa: 'simples' | 'hibrido' | 'normal' = 'simples'
+    if (regimeVencedor.includes('Híbrido')) {
+      catQualitativa = 'hibrido'
+    } else if (regimeVencedor.includes('Regime Normal') || regimeVencedor.includes('Lucro')) {
+      catQualitativa = 'normal'
+    } else {
+      catQualitativa = 'simples'
+    }
+
+    const recNumericaId = resultadosRegimes.melhorRegime?.id || 'simples'
+    let catNumerica: 'simples' | 'normal' = 'simples'
+    if (recNumericaId === 'simples') {
+      catNumerica = 'simples'
+    } else {
+      // Presumido, Real ou Novo Dual são Regimes Normais / Regulares
+      catNumerica = 'normal'
+    }
+
+    // Convergência:
+    // - Se catQualitativa === 'simples' e catNumerica === 'simples': convergem!
+    // - Se catQualitativa === 'normal' e catNumerica === 'normal': convergem!
+    // - Se catQualitativa === 'hibrido': no Simples Híbrido a empresa recolhe CBS/IBS pelo regime normal ou apura por fora;
+    //   se o motor calculou Simples como mais barato, converge como variante do Simples com opção híbrida;
+    //   se o motor calculou Regime Normal (Lucro Presumido / Real / Novo Dual), pode ser justificado pelo sublimite ou carga global.
+    let convergem = false
+    if (catQualitativa === 'simples' && catNumerica === 'simples') {
+      convergem = true
+    } else if (catQualitativa === 'normal' && catNumerica === 'normal') {
+      convergem = true
+    } else if (
+      catQualitativa === 'hibrido' &&
+      (catNumerica === 'simples' || recNumericaId === 'novo_dual')
+    ) {
+      // No caso de híbrido e Simples / Novo Dual, há consonância com a lógica mista
+      convergem = true
+    } else {
+      convergem = false
+    }
+
+    // Motivo específico com dados reais do motor
+    const fatAnual = faturamentoAnual
+    const fatFormatado = formatarMoeda(fatAnual)
+    const folhaFormatada = formatarMoeda(folhaAnual)
+    const fatorRPct = resultadosRegimes.fatorRPercent
+    const melhorRegimeNome = resultadosRegimes.melhorRegime?.nome || 'Regime Mais Econômico'
+    const economia = formatarMoeda(resultadosRegimes.economiaAnualMaxima)
+
+    let motivoDivergencia = ''
+    let limiarRompido = ''
+
+    if (!convergem) {
+      if (fatAnual > resultadosRegimes.TETO_SIMPLES) {
+        limiarRompido = 'Teto do Simples Nacional rompido (> R$ 4,8 milhões/ano)'
+        motivoDivergencia = `Seu faturamento anual projetado de ${fatFormatado} excede o teto legal do Simples Nacional (R$ 4.800.000,00). Por determinação expressa da LC 123/2006, a permanência no Simples é legalmente vedada, prevalecendo os regimes normais (Lucro Presumido, Lucro Real ou Novo Sistema) independentemente do perfil das vendas.`
+      } else if (fatAnual > resultadosRegimes.SUBLIMITE_SIMPLES && catQualitativa === 'simples') {
+        limiarRompido = 'Sublimite estadual do Simples ultrapassado (> R$ 3,6 milhões/ano)'
+        motivoDivergencia = `Com receita bruta de ${fatFormatado}, sua empresa superou o sublimite de R$ 3.600.000,00. Nessa faixa, o ICMS/ISS (e futuros IBS/CBS) são compulsoriamente recolhidos por fora do DAS no regime de débito e crédito, descaracterizando a vantagem do Simples Tradicional. Os números apontam ${melhorRegimeNome} como a opção que minimiza o desembolso real (economia estimada de ${economia}/ano).`
+      } else if (catQualitativa === 'simples' && catNumerica === 'normal') {
+        if (
+          (segmentoEmpresa === 'Serviços' || segmentoEmpresa === 'Tecnologia') &&
+          fatorRPct < 28
+        ) {
+          limiarRompido = `Fator R em ${fatorRPct.toFixed(1)}% (abaixo do limiar de 28%)`
+          motivoDivergencia = `Embora seu perfil de clientes sugira o Simples, sua relação folha/faturamento (Fator R de ${fatorRPct.toFixed(1)}% com folha de ${folhaFormatada} e receita de ${fatFormatado}) enquadra a atividade no oneroso Anexo V (alíquota inicial de 15,5%). Nesse patamar, o ${melhorRegimeNome} apresenta carga líquida inferior, gerando economia anual de ${economia}.`
+        } else {
+          limiarRompido = 'Carga tributária efetiva e volume de despesas/créditos'
+          motivoDivergencia = `Apesar do perfil de clientes indicar preferência pelo Simples, a simulação matemática com base em receita (${fatFormatado}), despesas operacionais e margem de lucro comprova que o ${melhorRegimeNome} gera menor desembolso financeiro anual (economia de ${economia}/ano). A realidade dos números do seu fluxo contábil prevalece sobre a hipótese inicial de perfil.`
+        }
+      } else if (catQualitativa === 'normal' && catNumerica === 'simples') {
+        limiarRompido =
+          'Elegibilidade plena ao Simples Nacional (faturamento até R$ 4,8 milhões/ano)'
+        motivoDivergencia = `O questionário indicou que seus clientes demandam créditos fiscais ou que o volume de insumos é representativo, levantando a hipótese de Regime Normal. Contudo, com receita anual de ${fatFormatado} (dentro do limite de R$ 4.800.000,00), a alíquota unificada do Simples Nacional ainda entrega um custo fiscal absoluto significativamente menor (${melhorRegimeNome} com economia de ${economia}/ano), superando a perda de atratividade de crédito.`
+      } else {
+        limiarRompido = 'Otimização matemática da carga anual'
+        motivoDivergencia = `A análise numérica detalhada identificou que o ${melhorRegimeNome} oferece a melhor equação entre impostos sobre consumo, folha e renda para os dados declarados (economia de ${economia}/ano). Por isso a recomendação final calculada é a que prevalece.`
+      }
+    }
+
+    return {
+      convergem,
+      catQualitativa,
+      catNumerica,
+      hipoteseNome: regimeVencedor,
+      recomendacaoFinalNome: melhorRegimeNome,
+      motivoDivergencia,
+      limiarRompido,
+      economiaFormatada: economia,
+      fatorRPct,
+      fatAnual,
+    }
+  }, [regimeVencedor, resultadosRegimes, faturamentoAnual, folhaAnual, segmentoEmpresa])
 
   const reiniciar = () => {
     if (modo === 'trilha' && dadosEmpresa) {
@@ -386,6 +516,19 @@ export function Modulo6ComparadorRegime({
         scoreHibrido,
         scoreNormal,
         respostas,
+        convergencia: {
+          convergem: analiseConvergencia.convergem,
+          hipoteseQualitativa: analiseConvergencia.hipoteseNome,
+          recomendacaoFinal: analiseConvergencia.recomendacaoFinalNome,
+          motivoPrevalencia: analiseConvergencia.motivoDivergencia,
+          detalhes: {
+            faturamentoAnual,
+            tetoSimples: resultadosRegimes.TETO_SIMPLES,
+            sublimiteSimples: resultadosRegimes.SUBLIMITE_SIMPLES,
+            fatorR: resultadosRegimes.fatorR,
+            fatorRPercent: resultadosRegimes.fatorRPercent,
+          },
+        },
         resultadosNumericos: {
           faturamentoAnual,
           folhaAnual,
@@ -565,16 +708,18 @@ export function Modulo6ComparadorRegime({
               <GitCompare className="w-3.5 h-3.5" />
               <span>
                 {modo === 'trilha'
-                  ? 'Módulo 6 Integrado • Fluxo de Decisão Interativo'
+                  ? 'Módulo 6 • Hipótese Qualitativa de Regime (4 Perguntas)'
                   : 'Fluxo de Decisão Interativo'}
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-heading font-black text-[#07132B]">
-              Qual o regime ideal para sua operação?
+              {modo === 'trilha'
+                ? 'Hipótese Inicial do Perfil de Operação'
+                : 'Qual o regime ideal para sua operação?'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               {modo === 'trilha'
-                ? 'Respostas pré-preenchidas com base no perfil cadastrado nos Dados da Empresa. Você pode ajustar livremente.'
+                ? 'As 4 perguntas geram uma hipótese preliminar de regime, confrontada em seguida com a análise numérica dos seus números (faturamento, folha, margem e créditos). A recomendação final é única e calculada pelos números.'
                 : 'Simples Tradicional, Simples Híbrido ou Regime Normal? Responda a 4 perguntas essenciais.'}
             </p>
           </div>
@@ -690,28 +835,127 @@ export function Modulo6ComparadorRegime({
             </div>
           </div>
         )}
+
+        {/* RESUMO DA HIPÓTESE INICIAL NO MODO TRILHA */}
+        {modo === 'trilha' && (
+          <div className="mt-6 pt-5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs bg-slate-50/70 p-4 rounded-xl border border-slate-200/60">
+            <div className="flex items-center gap-2 text-slate-700">
+              <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+              <span>
+                Hipótese preliminar gerada pelo perfil:{' '}
+                <strong className="text-[#07132B] font-bold">{regimeVencedor}</strong>
+              </span>
+            </div>
+            <span className="text-slate-500 font-medium text-[11px]">
+              Esta hipótese é confrontada com a análise numérica abaixo
+            </span>
+          </div>
+        )}
       </div>
 
       {/* SE FOR NA TRILHA: DESTAQUE UNIFICADO DO VEREDITO (QUALITATIVO + NUMÉRICO) */}
       {modo === 'trilha' && (
         <section className="bg-gradient-to-r from-[#07132B] via-[#0A1A13] to-[#07132B] text-white rounded-[26px] p-6 sm:p-10 border-2 border-[#D4AF37] shadow-xl space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/10">
-            <div className="space-y-2 max-w-2xl">
+            <div className="space-y-3 max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#D4AF37] text-[#07132B]">
                 <Trophy className="w-3.5 h-3.5" />
-                <span>Veredito Unificado • Decisão Estratégica & Numérica</span>
+                <span>Recomendação Final Única • Decisão Numérica Conclusiva</span>
               </div>
-              <h3 className="font-heading font-black text-2xl sm:text-3xl text-white">
-                Recomendação:{' '}
-                <span className="text-[#D4AF37]">{resultadosRegimes.melhorRegime?.nome}</span>
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">{justificativa}</p>
-              <div className="inline-flex items-center gap-2 text-xs text-[#2ECC71] bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 mt-1">
-                <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                <span>
-                  Diagnóstico qualitativo aponta preferência por: <strong>{regimeVencedor}</strong>
+
+              <div>
+                <span className="text-xs font-semibold text-slate-400 block uppercase tracking-wider mb-1">
+                  Regime Recomendado pelo Motor de Cálculo
                 </span>
+                <h3 className="font-heading font-black text-2xl sm:text-4xl text-white">
+                  <span className="text-[#D4AF37]">{resultadosRegimes.melhorRegime?.nome}</span>
+                </h3>
               </div>
+
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                A recomendação final é estritamente calculada pelo motor numérico com base no
+                faturamento, folha de pagamento, margem e créditos tributários da sua empresa. As 4
+                perguntas geraram uma hipótese preliminar confrontada abaixo com a realidade fiscal
+                dos números.
+              </p>
+
+              {/* SELO DE CONVERGÊNCIA OU AVISO DE DIVERGÊNCIA */}
+              {analiseConvergencia.convergem ? (
+                <div className="p-4 rounded-xl bg-[#2ECC71]/15 border border-[#2ECC71]/40 text-emerald-100 flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#2ECC71] text-[#07132B] flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#07132B]" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-heading font-black text-sm text-white">
+                        ✓ Sua análise de perfil e os números convergem!
+                      </span>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[#2ECC71]/30 text-[#2ECC71]">
+                        Hipótese Confirmada
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-200 leading-relaxed">
+                      A hipótese preliminar derivada das 4 perguntas (
+                      <strong className="text-white font-semibold">
+                        {analiseConvergencia.hipoteseNome}
+                      </strong>
+                      ) coincide com o regime mais econômico calculado matematicamente (
+                      <strong className="text-[#D4AF37] font-semibold">
+                        {resultadosRegimes.melhorRegime?.nome}
+                      </strong>
+                      ). Seu posicionamento comercial e seus parâmetros contábeis apontam na mesma
+                      direção.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 sm:p-5 rounded-xl bg-[#0A1A13] border-2 border-[#D4AF37] text-slate-100 space-y-2.5 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full bg-[#D4AF37] text-[#07132B] flex items-center justify-center shrink-0 mt-0.5">
+                      <AlertTriangle className="w-4 h-4 text-[#07132B]" />
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap justify-between">
+                        <span className="font-heading font-extrabold text-sm sm:text-base text-white">
+                          Aviso de Divergência: Por que a Recomendação Numérica Prevalece
+                        </span>
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                          Números Prevalecem
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-300 flex items-center gap-2 flex-wrap pt-0.5">
+                        <span>
+                          Hipótese do perfil (4 perguntas):{' '}
+                          <span className="text-slate-200 line-through decoration-amber-400 font-semibold">
+                            {analiseConvergencia.hipoteseNome}
+                          </span>
+                        </span>
+                        <span>•</span>
+                        <span>
+                          Decisão final (motor numérico):{' '}
+                          <strong className="text-[#2ECC71] font-bold">
+                            {resultadosRegimes.melhorRegime?.nome}
+                          </strong>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pl-0 sm:pl-10 space-y-2 text-xs">
+                    {analiseConvergencia.limiarRompido && (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/5 border border-white/10 text-[#D4AF37] font-semibold">
+                        <span>Limiar chave acionado:</span>
+                        <span className="text-white font-bold">
+                          {analiseConvergencia.limiarRompido}
+                        </span>
+                      </div>
+                    )}
+                    <p className="text-slate-200 leading-relaxed bg-white/5 p-3 rounded-lg border border-white/10">
+                      {analiseConvergencia.motivoDivergencia}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="p-4 sm:p-5 rounded-2xl bg-white/10 border border-white/15 text-left md:text-right shrink-0">
