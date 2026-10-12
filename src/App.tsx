@@ -36,8 +36,6 @@ import SubpageCalendario from './pages/reforma/SubpageCalendario'
 import SubpageDicionario from './pages/reforma/SubpageDicionario'
 import SubpageImpactoSetor from './pages/reforma/SubpageImpactoSetor'
 import SubpageExcecoes from './pages/reforma/SubpageExcecoes'
-import SubpageComparador from './pages/reforma/SubpageComparador'
-import SubpageDiagnosticoReforma from './pages/reforma/SubpageDiagnosticoReforma'
 import SubpagePainelCarteira from './pages/reforma/SubpagePainelCarteira'
 import SubpageGlossarioFontes from './pages/reforma/SubpageGlossarioFontes'
 
@@ -111,10 +109,14 @@ const App = () => (
                 element={<SubpageImpactoSetor />}
               />
               <Route path="/reforma-tributaria/excecoes" element={<SubpageExcecoes />} />
-              <Route path="/reforma-tributaria/comparador" element={<SubpageComparador />} />
+              {/* Redirecionamentos: módulos 6 e 7 da reforma migrados para a trilha oficial de diagnósticos */}
+              <Route
+                path="/reforma-tributaria/comparador"
+                element={<Navigate to="/diagnostico-regimes" replace />}
+              />
               <Route
                 path="/reforma-tributaria/diagnostico-reforma"
-                element={<SubpageDiagnosticoReforma />}
+                element={<Navigate to="/diagnostico-transicao" replace />}
               />
               <Route
                 path="/reforma-tributaria/painel-carteira"

@@ -56,7 +56,7 @@ export default function DiagnosticosHub() {
       numero: '02',
       id: 'transicao',
       nome: 'Diagnóstico de Transição Fiscal',
-      subtitulo: 'Roteiro de 40 Minutos • Módulo 7 da Reforma',
+      subtitulo: 'Roteiro de 40 Minutos • Farol de Urgência & ERP',
       parceria: 'Reforma Tributária do Consumo',
       descricao:
         'Roteiro guiado em dois blocos operacionais (Negócio & Vendas / Operação & ERP) que gera laudo com farol de risco, 3 prioridades para os próximos 90 dias e solução recomendada.',
@@ -75,19 +75,19 @@ export default function DiagnosticosHub() {
       numero: '03',
       id: 'regimes',
       nome: 'Diagnóstico de Comparação de Regime',
-      subtitulo: 'Módulo 6 Unificado • 4 Modelos & Decisão Estratégica',
+      subtitulo: 'Decisão Estratégica • 4 Modelos Societários & IVA Dual',
       parceria: 'Simples Tradicional vs Híbrido vs Presumido vs Real vs IVA Dual',
       descricao:
-        'Sistema unificado integrando o comparador estratégico do Módulo 6 da Reforma (Simples Tradicional, Híbrido ou Regime Regular) com a matriz numérica dos 4 regimes societários, ranking de economia e simulação de split payment.',
+        'Sistema unificado integrando o fluxo estratégico de decisão (Simples Tradicional, Híbrido ou Regime Regular) com a matriz numérica dos 4 regimes societários, ranking de economia e simulação de split payment.',
       beneficios: [
-        'Fluxo de decisão interativo em 4 perguntas do Módulo 6',
+        'Fluxo de decisão interativo em 4 perguntas estratégicas',
         'Ranking financeiro completo dos 4 regimes com apuração líquida',
         'Simulação de Split Payment e impacto no capital de giro',
         'Os 3 cenários práticos mais comuns de mercado (estudos de caso)',
       ],
       rota: '/diagnostico-regimes',
       corAccent: '#3B82F6',
-      badge: 'Módulo 6 + Matriz 4 Regimes',
+      badge: 'Comparador + Matriz 4 Regimes',
       icone: Scale,
     },
     {

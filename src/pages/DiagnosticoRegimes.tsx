@@ -166,7 +166,7 @@ export default function DiagnosticoRegimes() {
           <div className="max-w-3xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-blue-400/40 bg-blue-400/15 text-xs font-bold text-blue-300 uppercase tracking-wider backdrop-blur-md">
               <Scale className="w-3.5 h-3.5" />
-              <span>DIAGNÓSTICO 3 DE 4 • COMPARADOR DE REGIME TRIBUTÁRIO (MÓDULO 6 UNIFICADO)</span>
+              <span>DIAGNÓSTICO 3 DE 4 • COMPARADOR DE REGIME TRIBUTÁRIO</span>
             </div>
 
             <h1 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
@@ -175,7 +175,7 @@ export default function DiagnosticoRegimes() {
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
-              Sistema unificado de decisão: fluxo consultivo do Módulo 6 (Simples Tradicional,
+              Sistema unificado de decisão: fluxo consultivo estratégico (Simples Tradicional,
               Simples Híbrido e Regime Normal), matriz matemática dos 4 regimes societários, impacto
               do split payment no capital de giro e os 3 cenários práticos de mercado. Alimentado
               pelos <strong className="text-white">Dados da Empresa</strong> cadastrada.

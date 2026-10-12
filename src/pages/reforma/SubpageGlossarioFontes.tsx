@@ -15,7 +15,7 @@ export default function SubpageGlossarioFontes() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <DiamondHeader
-        badge="MÓDULO 9 • LEGISLAÇÃO & FAQ"
+        badge="MÓDULO 7 • LEGISLAÇÃO & FAQ"
         titulo="Glossário e Fontes Oficiais"
         subtitulo="Quadro comparativo das confusões mais comuns (IBS vs CBS, IS vs ISS, IBS vs IPI, CBS vs PIS/COFINS) e links para a LC 214/2025."
       />

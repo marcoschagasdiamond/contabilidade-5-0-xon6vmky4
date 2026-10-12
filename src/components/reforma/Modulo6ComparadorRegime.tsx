@@ -708,7 +708,7 @@ export function Modulo6ComparadorRegime({
               <GitCompare className="w-3.5 h-3.5" />
               <span>
                 {modo === 'trilha'
-                  ? 'Módulo 6 • Hipótese Qualitativa de Regime (4 Perguntas)'
+                  ? 'Hipótese Qualitativa de Regime (4 Perguntas)'
                   : 'Fluxo de Decisão Interativo'}
               </span>
             </div>

@@ -1903,7 +1903,7 @@ export default function Admin() {
                     {selectedDiag.dados_extra_json.regimeVencedorModulo6 && (
                       <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-200">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900 block mb-0.5">
-                          Comparador Estratégico (Módulo 6):
+                          Comparador de Regimes (Etapa 3):
                         </span>
                         <strong className="text-blue-950 font-bold block">
                           {selectedDiag.dados_extra_json.regimeVencedorModulo6}
@@ -1919,7 +1919,7 @@ export default function Admin() {
                     {selectedDiag.dados_extra_json.farolTitulo && (
                       <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 block mb-0.5">
-                          Diagnóstico de Transição Fiscal (Módulo 7):
+                          Diagnóstico de Transição Fiscal (Etapa 2):
                         </span>
                         <strong className="text-amber-950 font-bold block">
                           {selectedDiag.dados_extra_json.farolTitulo} (Score:{' '}

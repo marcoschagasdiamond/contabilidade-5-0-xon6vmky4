@@ -77,32 +77,8 @@ export const MODULOS_REFORMA: ModuloReforma[] = [
     destaque: 'Redução de 60% e alíquota zero',
   },
   {
-    id: 'comparador',
-    numero: 6,
-    slug: 'comparador',
-    titulo: 'Comparador de Regime',
-    subtitulo: 'Simples Tradicional, Simples Híbrido ou Regime Normal',
-    descricao:
-      'Fluxo de decisão interativo em 4 perguntas objetivas + simulação dos 3 cenários mais comuns (loja de varejo, fornecedor para indústria, empresa de alto insumo).',
-    icone: 'GitCompare',
-    tag: 'Decisor Interativo',
-    destaque: 'Simples vs Híbrido vs Normal',
-  },
-  {
-    id: 'diagnostico-reforma',
-    numero: 7,
-    slug: 'diagnostico-reforma',
-    titulo: 'Diagnóstico da Reforma',
-    subtitulo: 'Roteiro de reunião de 40 min em dois blocos operacionais',
-    descricao:
-      'Bloco A (negócio e vendas) e Bloco B (operação e sistema ERP) gerando laudo imediato com farol de urgência (verde/amarelo/vermelho), 3 prioridades e serviço recomendado.',
-    icone: 'ClipboardCheck',
-    tag: 'Roteiro 40 min',
-    destaque: 'Laudo com farol + 3 prioridades',
-  },
-  {
     id: 'painel-carteira',
-    numero: 8,
+    numero: 6,
     slug: 'painel-carteira',
     titulo: 'Painel de Controle da Carteira',
     subtitulo: 'Gestão da transição dos clientes em 5 etapas',
@@ -114,7 +90,7 @@ export const MODULOS_REFORMA: ModuloReforma[] = [
   },
   {
     id: 'glossario',
-    numero: 9,
+    numero: 7,
     slug: 'glossario',
     titulo: 'Glossário e Fontes',
     subtitulo: 'Quadro comparativo de confusões e legislação oficial',

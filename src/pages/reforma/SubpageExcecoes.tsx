@@ -112,10 +112,10 @@ export default function SubpageExcecoes() {
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Link
-              to="/reforma-tributaria/comparador"
+              to="/diagnostico-regimes"
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#F3E5AB] transition-colors"
             >
-              Testar se o Simples Híbrido vale a pena no Comparador
+              Testar se o Simples Híbrido vale a pena no Comparador de Regimes
               <ArrowRight className="w-4 h-4 text-[#07132B]" />
             </Link>
           </div>

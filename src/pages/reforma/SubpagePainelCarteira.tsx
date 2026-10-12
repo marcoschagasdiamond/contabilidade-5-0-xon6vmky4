@@ -87,7 +87,7 @@ export default function SubpagePainelCarteira() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <DiamondHeader
-        badge="MÓDULO 8 • GESTÃO DA CARTEIRA"
+        badge="MÓDULO 6 • GESTÃO DA CARTEIRA"
         titulo="Painel de Controle da Carteira"
         subtitulo="Esteira contábil com as 5 etapas de acompanhamento do cliente, faróis de prioridade de risco e rotina mensal estruturada por semanas."
       />

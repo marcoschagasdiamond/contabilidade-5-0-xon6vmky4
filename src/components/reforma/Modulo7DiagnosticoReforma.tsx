@@ -262,7 +262,7 @@ export function ConteudoModulo7Diagnostico({
       <div className="bg-[#07132B] text-white p-6 sm:p-8 rounded-2xl border border-[#D4AF37]/30 shadow-lg">
         <div className="flex items-center gap-2 text-xs font-bold text-[#D4AF37] uppercase tracking-wider mb-2">
           <Clock className="w-4 h-4" />
-          Metodologia Consultiva Diamond Group • Módulo 7 da Reforma Tributária
+          Metodologia Consultiva Diamond Group • Transição Fiscal da Reforma Tributária
         </div>
         <h2 className="text-xl sm:text-2xl font-heading font-black text-white">
           Como conduzir esta reunião de 40 minutos com o cliente

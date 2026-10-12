@@ -195,7 +195,7 @@ export const blogPosts: BlogPost[] = [
       description:
         'Faça uma simulação comparativa entre Simples tradicional, Simples Híbrido e Lucro Real em nosso Comparador de Regimes exclusivo.',
       buttonText: 'Acessar Comparador de Regimes',
-      buttonLink: '/reforma-tributaria/comparador',
+      buttonLink: '/diagnostico-regimes',
       secondaryLink: {
         text: 'Abrir Calculadora IBS/CBS',
         href: '/calculadora-ibs-cbs',
