@@ -33,7 +33,7 @@ export const ETAPAS_TRILHA = [
     id: 'transicao' as const,
     numero: '2',
     nome: 'Transição Fiscal',
-    tag: 'Curva IBS/CBS 2026–2033',
+    tag: 'Roteiro 40 min • Farol',
     rota: '/diagnostico-transicao',
     icone: Calendar,
     cor: '#F59E0B',
