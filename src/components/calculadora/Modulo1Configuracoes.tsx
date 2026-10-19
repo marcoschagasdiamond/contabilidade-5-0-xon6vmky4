@@ -407,31 +407,32 @@ export default function Modulo1Configuracoes() {
           </CardContent>
         </Card>
 
-        {/* Card 2: Regimes Diferenciados */}
+        {/* Card 2: Alíquotas Efetivas por Faixa Legal */}
         <Card className="border-slate-200 dark:border-slate-800 shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="bg-slate-50 border-b border-slate-100 pb-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#2ECC71] tracking-wider uppercase">
-                LC 214/2025 Art. 130
+                LC 214/2025 · Faixas Legais
               </span>
               <Zap className="w-5 h-5 text-[#2ECC71]" />
             </div>
             <CardTitle className="text-lg font-heading text-[#07132B]">
-              Regimes Diferenciados
+              Alíquotas Efetivas por Faixa Legal
             </CardTitle>
             <CardDescription className="text-xs text-slate-500">
-              Reduções legais de 60%, 30% e alíquota zero aplicadas sobre a alíquota da fase.
+              Valores por faixa (−60% · −30% · zero), preenchidos pelo Preset por Setor — todos
+              editáveis
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-5 space-y-4">
-            {/* Saúde e Educação */}
+            {/* Faixa -60% */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <Label
                   htmlFor="saudeEducacaoAliquota"
                   className="text-sm font-semibold text-slate-700"
                 >
-                  Saúde e Educação (-60%)
+                  Faixa com Redução de 60%
                 </Label>
                 <div className="flex items-center gap-1.5">
                   {config.etiquetasOrigem?.saudeEducacaoAliquota ? (
@@ -461,20 +462,21 @@ export default function Modulo1Configuracoes() {
                   %
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Serviços de saúde humana e ensino fundamental/superior (resulta em 40% da alíquota
-                plena).
+              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                Saúde, educação, medicamentos, dispositivos médicos, alimentação humana, insumos
+                agropecuários, produções artísticas/culturais/desportivas, segurança nacional (arts.
+                128–134).
               </p>
             </div>
 
-            {/* Transporte Coletivo e Profissões Intelectuais */}
+            {/* Faixa -30% */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <Label
                   htmlFor="transporteAliquota"
                   className="text-sm font-semibold text-slate-700"
                 >
-                  Transporte Coletivo & Intelectuais (-30%)
+                  Faixa com Redução de 30%
                 </Label>
                 <div className="flex items-center gap-1.5">
                   {config.etiquetasOrigem?.transporteAliquota ? (
@@ -504,20 +506,19 @@ export default function Modulo1Configuracoes() {
                   %
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Transporte de passageiros e profissões regulamentadas (resulta em 70% da alíquota
-                plena).
+              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                Profissões intelectuais regulamentadas (art. 132).
               </p>
             </div>
 
-            {/* Cesta Básica */}
+            {/* Faixa Alíquota Zero */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <Label
                   htmlFor="cestaBasicaIsencao"
                   className="text-sm font-semibold text-slate-700"
                 >
-                  Cesta Básica Nacional
+                  Faixa com Alíquota Zero (0%)
                 </Label>
                 <div className="flex items-center gap-1.5">
                   {config.etiquetasOrigem?.cestaBasicaIsencao ? (
@@ -547,8 +548,9 @@ export default function Modulo1Configuracoes() {
                   %
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Isenção total com direito a manutenção de créditos para insumos essenciais.
+              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                Cesta Básica Nacional, hortícolas/frutas/ovos, medicamentos essenciais (Anexo XII),
+                dispositivos de acessibilidade PcD (arts. 8º, 129 e 146).
               </p>
             </div>
           </CardContent>
