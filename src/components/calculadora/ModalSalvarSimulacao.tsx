@@ -269,6 +269,14 @@ export function ModalSalvarSimulacao({
                 </strong>
               </div>
               <div>
+                Fase Transição:{' '}
+                <strong>
+                  {parametros.config.anoTransicao
+                    ? `${parametros.config.anoTransicao}`
+                    : '2033 (Pleno)'}
+                </strong>
+              </div>
+              <div>
                 Alíq. Efetiva Nova:{' '}
                 <strong>{resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%</strong>
               </div>

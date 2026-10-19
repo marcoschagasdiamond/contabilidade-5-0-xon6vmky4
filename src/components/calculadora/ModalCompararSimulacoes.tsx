@@ -254,6 +254,26 @@ export function ModalCompararSimulacoes({
 
                 <tr>
                   <td className="p-3 font-semibold text-slate-700 bg-slate-50/50">
+                    Fase da Transição (LC 214)
+                  </td>
+                  {simulacoes.map((sim) => (
+                    <td
+                      key={sim.id}
+                      className="p-3 border-l border-slate-100 font-mono font-medium"
+                    >
+                      {sim.parametros.config?.anoTransicao || sim.parametros.anoTransicao
+                        ? `Ano ${sim.parametros.config?.anoTransicao || sim.parametros.anoTransicao}`
+                        : '2033 (Pleno)'}
+                      <span className="text-[10px] text-slate-500 block">
+                        CBS: {sim.parametros.config?.cbsPadrao ?? 8.8}% / IBS:{' '}
+                        {sim.parametros.config?.ibsPadrao ?? 17.7}%
+                      </span>
+                    </td>
+                  ))}
+                </tr>
+
+                <tr>
+                  <td className="p-3 font-semibold text-slate-700 bg-slate-50/50">
                     Ramo / Subatividade
                   </td>
                   {simulacoes.map((sim) => (

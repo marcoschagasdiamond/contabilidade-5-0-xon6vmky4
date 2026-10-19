@@ -602,10 +602,18 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(6.8)
   doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+  const infoAssistente = parametros.config.anoTransicao
+    ? ` | Fase Transição: ${parametros.config.anoTransicao}${parametros.config.presetSetor ? ` (${parametros.config.presetSetor})` : ''}`
+    : ''
   doc.text(
-    `CBS Padrão: ${parametros.config.cbsPadrao}% | IBS Padrão: ${parametros.config.ibsPadrao}% | Total IVA Dual: ${parametros.config.totalIvaDual}% | Lucro Real PIS: ${parametros.config.lucroRealPis}% / COFINS: ${parametros.config.lucroRealCofins}% / ICMS: ${parametros.config.lucroRealIcms}% / ISS: ${parametros.config.lucroRealIss}% | Lucro Presumido PIS: ${parametros.config.lucroPresumidoPis}% / COFINS: ${parametros.config.lucroPresumidoCofins}% / ISS: ${parametros.config.lucroPresumidoIss}%`,
+    `CBS: ${parametros.config.cbsPadrao}% | IBS: ${parametros.config.ibsPadrao}% | Total IVA Dual: ${parametros.config.totalIvaDual}%${infoAssistente} | Saúde/Educação (-60%): ${parametros.config.saudeEducacaoAliquota}% | Transp. (-30%): ${parametros.config.transporteAliquota}%`,
     margin + 3,
     currentY + 9,
+  )
+  doc.text(
+    `Lucro Real PIS: ${parametros.config.lucroRealPis}% / COFINS: ${parametros.config.lucroRealCofins}% / ICMS: ${parametros.config.lucroRealIcms}% / ISS: ${parametros.config.lucroRealIss}% | Lucro Presumido PIS: ${parametros.config.lucroPresumidoPis}% / COFINS: ${parametros.config.lucroPresumidoCofins}%`,
+    margin + 3,
+    currentY + 14,
   )
   doc.text(
     `Regimes Diferenciados: Saúde/Educação (${parametros.config.saudeEducacaoAliquota}% — redução de 60%) | Transporte de Passageiros (${parametros.config.transporteAliquota}% — redução de 30%) | Cesta Básica Nacional (${parametros.config.cestaBasicaIsencao}% — Alíquota Zero)`,

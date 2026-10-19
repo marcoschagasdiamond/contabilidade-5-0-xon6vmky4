@@ -19,6 +19,10 @@ export interface ParametrosSimulacaoCalculadora {
   // Módulo 1 - Configurações Gerais
   config: ConfiguracoesGerais
 
+  // Preenchimento Assistido do Módulo 1
+  anoTransicao?: 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+  presetSetor?: string
+
   // Módulo 2 - Calculadora Simples
   valorOperacao: number
   regimeOperacao: RegimeDiferenciadoTipo

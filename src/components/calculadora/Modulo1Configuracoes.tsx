@@ -4,11 +4,32 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Sliders, RotateCcw, Info, CheckCircle2, ShieldCheck, Zap } from 'lucide-react'
 import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
+import {
+  AnoTransicaoIbsCbs,
+  PresetSetorIbsCbs,
+  CRONOGRAMA_FASES_TRANSICAO,
+  LISTA_ANOS_TRANSICAO,
+  PRESETS_SETORES_LC214,
+} from '@/types/calculadoraIbsCbs'
 
 export default function Modulo1Configuracoes() {
-  const { config, updateConfig, resetConfig, alertaLimitesSimples } = useCalculadoraIbsCbs()
+  const {
+    config,
+    updateConfig,
+    resetConfig,
+    alertaLimitesSimples,
+    aplicarAnoTransicao,
+    aplicarPresetSetor,
+  } = useCalculadoraIbsCbs()
 
   const handleInputChange = (field: keyof typeof config, value: string) => {
     const limpo = value.replace(',', '.')
@@ -17,6 +38,10 @@ export default function Modulo1Configuracoes() {
       updateConfig({ [field]: parsed })
     }
   }
+
+  // Ano atual da transição (ou padrão 2033 pleno)
+  const anoAtual = config.anoTransicao || 2033
+  const presetAtual = config.presetSetor || 'nenhum'
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -34,7 +59,8 @@ export default function Modulo1Configuracoes() {
             </h2>
             <p className="text-slate-300 text-sm sm:text-base max-w-2xl">
               Defina os parâmetros centrais do IVA Dual (CBS federal e IBS subnacional) e as taxas
-              do sistema antigo. Todos os outros 5 módulos consom essas diretrizes em tempo real.
+              do sistema antigo. Utilize o preenchimento assistido por ano e preset setorial da LC
+              214/2025 ou edite livremente os valores.
             </p>
           </div>
           <Button
@@ -48,6 +74,149 @@ export default function Modulo1Configuracoes() {
           </Button>
         </div>
       </div>
+
+      {/* BLOCO DE PREENCHIMENTO ASSISTIDO (LC 214/2025) */}
+      <Card className="border border-[#D4AF37]/50 shadow-md bg-gradient-to-br from-white via-slate-50 to-amber-50/20 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-[#07132B] via-[#0E1F42] to-[#122347] text-white border-b border-[#D4AF37]/30 pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 tracking-wider uppercase">
+                LC 214/2025 • Assistente Tributário
+              </div>
+              <CardTitle className="text-lg font-heading text-white">
+                Preenchimento Assistido de Alíquotas e Regimes
+              </CardTitle>
+            </div>
+            <span className="text-xs text-slate-300">
+              Atalhos automáticos • Todos os campos continuam 100% editáveis
+            </span>
+          </div>
+          <CardDescription className="text-xs text-slate-300 pt-1">
+            Selecione o ano da transição e o setor para carregar de uma vez os percentuais legais
+            oficiais calculados com base no cronograma constitucional.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-5 sm:p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Seletor 1: Ano da Transição (2026–2033) — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="seletorAnoTransicao" className="text-xs font-bold text-[#07132B]">
+                  Ano da transição (2026–2033)
+                </Label>
+                <span className="text-[11px] font-medium text-slate-500">
+                  Mesmos dados do Módulo 5
+                </span>
+              </div>
+              <Select
+                value={String(anoAtual)}
+                onValueChange={(val) => aplicarAnoTransicao(Number(val) as AnoTransicaoIbsCbs)}
+              >
+                <SelectTrigger
+                  id="seletorAnoTransicao"
+                  className="h-12 bg-white border-slate-300 text-[#07132B] font-semibold shadow-sm"
+                >
+                  <SelectValue placeholder="Selecione o ano da transição" />
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  {LISTA_ANOS_TRANSICAO.map((ano) => {
+                    const dados = CRONOGRAMA_FASES_TRANSICAO[ano]
+                    return (
+                      <SelectItem key={ano} value={String(ano)} className="py-2">
+                        <div className="flex flex-col text-left">
+                          <span className="font-bold text-slate-900 text-xs">
+                            {ano} • {dados.fase} ({dados.aliquotaCbs.toFixed(2)}% CBS +{' '}
+                            {dados.aliquotaIbs.toFixed(2)}% IBS)
+                          </span>
+                          <span className="text-[11px] text-slate-500 leading-tight">
+                            {dados.subtitulo}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                <span>Fase vigente selecionada: {CRONOGRAMA_FASES_TRANSICAO[anoAtual]?.fase}</span>
+                <span className="font-mono font-bold text-[#07132B]">
+                  Total: {CRONOGRAMA_FASES_TRANSICAO[anoAtual]?.totalIvaDual.toFixed(2)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Seletor 2: Preset por Setor LC 214/2025 — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="seletorPresetSetor" className="text-xs font-bold text-[#07132B]">
+                  Preset por Setor (LC 214/2025)
+                </Label>
+                <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                  Aplica reduções de uma vez
+                </span>
+              </div>
+              <Select
+                value={presetAtual}
+                onValueChange={(val) => aplicarPresetSetor(val as PresetSetorIbsCbs)}
+              >
+                <SelectTrigger
+                  id="seletorPresetSetor"
+                  className="h-12 bg-white border-slate-300 text-[#07132B] font-semibold shadow-sm"
+                >
+                  <SelectValue placeholder="Selecione o preset por setor" />
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  <SelectItem value="nenhum" className="py-2">
+                    <div className="flex flex-col text-left">
+                      <span className="font-bold text-slate-900 text-xs">
+                        Manual / Sem Preset Específico
+                      </span>
+                      <span className="text-[11px] text-slate-500 leading-tight">
+                        Manter alíquotas personalizadas editadas manualmente
+                      </span>
+                    </div>
+                  </SelectItem>
+                  {PRESETS_SETORES_LC214.map((preset) => (
+                    <SelectItem key={preset.id} value={preset.id} className="py-2">
+                      <div className="flex flex-col text-left">
+                        <span className="font-bold text-slate-900 text-xs">{preset.titulo}</span>
+                        <span className="text-[11px] text-slate-500 leading-tight">
+                          {preset.subtitulo}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                <span>
+                  Preset ativo:{' '}
+                  {presetAtual === 'nenhum'
+                    ? 'Nenhum (personalizado)'
+                    : PRESETS_SETORES_LC214.find((p) => p.id === presetAtual)?.titulo}
+                </span>
+                {presetAtual !== 'nenhum' && (
+                  <span className="font-semibold text-emerald-700">Reduções legais calculadas</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Banner de Ajuda Operacional */}
+          <div className="p-3 bg-slate-100/90 border border-slate-200 rounded-xl text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Info className="w-4 h-4 text-[#D4AF37] shrink-0" />
+              <span>
+                Os seletores acima preenchem os campos abaixo automaticamente. Cada campo exibe uma
+                etiqueta com a base legal (ex.: <em>"LC 214/2025 · fase {anoAtual}"</em>).
+              </span>
+            </div>
+            <span className="text-[11px] font-bold text-slate-600 shrink-0">
+              Flexibilidade plena para o contador
+            </span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ETAPA 3: FARÓIS DE LIMITES DO SIMPLES NACIONAL NO MÓDULO 1 */}
       <FarolLimitesSimples alerta={alertaLimitesSimples} compacto={false} />
@@ -67,16 +236,27 @@ export default function Modulo1Configuracoes() {
               Novo Sistema (IVA Dual)
             </CardTitle>
             <CardDescription className="text-xs text-slate-500">
-              Trava de referência de 26,50% prevista pelo Ministério da Fazenda e LC 214/2025.
+              Alíquota de referência federal (CBS) e subnacional (IBS) da fase configurada.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-5 space-y-4">
+            {/* Campo CBS Padrão */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <Label htmlFor="cbsPadrao" className="text-sm font-semibold text-slate-700">
                   CBS Padrão (Federal)
                 </Label>
-                <span className="text-xs text-slate-400">PIS/COFINS/IPI</span>
+                <div className="flex items-center gap-1.5">
+                  {config.etiquetasOrigem?.cbsPadrao && (
+                    <span
+                      title="Origem do valor via assistente legal"
+                      className="text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded"
+                    >
+                      {config.etiquetasOrigem.cbsPadrao}
+                    </span>
+                  )}
+                  <span className="text-xs text-slate-400">PIS/COFINS/IPI</span>
+                </div>
               </div>
               <div className="relative">
                 <Input
@@ -93,12 +273,23 @@ export default function Modulo1Configuracoes() {
               </div>
             </div>
 
+            {/* Campo IBS Padrão */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <Label htmlFor="ibsPadrao" className="text-sm font-semibold text-slate-700">
                   IBS Padrão (Estados/Municípios)
                 </Label>
-                <span className="text-xs text-slate-400">ICMS/ISS</span>
+                <div className="flex items-center gap-1.5">
+                  {config.etiquetasOrigem?.ibsPadrao && (
+                    <span
+                      title="Origem do valor via assistente legal"
+                      className="text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded"
+                    >
+                      {config.etiquetasOrigem.ibsPadrao}
+                    </span>
+                  )}
+                  <span className="text-xs text-slate-400">ICMS/ISS</span>
+                </div>
               </div>
               <div className="relative">
                 <Input
@@ -115,12 +306,24 @@ export default function Modulo1Configuracoes() {
               </div>
             </div>
 
+            {/* Campo Total IVA Dual */}
             <div className="pt-2 border-t border-slate-100">
               <div className="flex justify-between items-center mb-1.5">
                 <Label htmlFor="totalIvaDual" className="text-sm font-bold text-[#07132B]">
                   Total IVA Dual (CBS + IBS)
                 </Label>
-                <span className="text-xs font-bold text-[#D4AF37]">Alíquota Cheia</span>
+                <div className="flex items-center gap-1.5">
+                  {config.etiquetasOrigem?.totalIvaDual ? (
+                    <span
+                      title="Origem do valor via assistente legal"
+                      className="text-[10px] font-bold text-[#07132B] bg-[#D4AF37]/20 border border-[#D4AF37]/50 px-1.5 py-0.5 rounded"
+                    >
+                      {config.etiquetasOrigem.totalIvaDual}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-[#D4AF37]">Alíquota Cheia</span>
+                  )}
+                </div>
               </div>
               <div className="relative">
                 <Input
@@ -161,10 +364,11 @@ export default function Modulo1Configuracoes() {
               Regimes Diferenciados
             </CardTitle>
             <CardDescription className="text-xs text-slate-500">
-              Reduções constitucionais de 60%, 30% e isenção integral da cesta básica.
+              Reduções legais de 60%, 30% e alíquota zero aplicadas sobre a alíquota da fase.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-5 space-y-4">
+            {/* Saúde e Educação */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <Label
@@ -173,9 +377,20 @@ export default function Modulo1Configuracoes() {
                 >
                   Saúde e Educação (-60%)
                 </Label>
-                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-                  Redução 60%
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {config.etiquetasOrigem?.saudeEducacaoAliquota ? (
+                    <span
+                      title="Origem do valor via assistente legal"
+                      className="text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded"
+                    >
+                      {config.etiquetasOrigem.saudeEducacaoAliquota}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                      Redução 60%
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="relative">
                 <Input
@@ -191,21 +406,34 @@ export default function Modulo1Configuracoes() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
-                Serviços de saúde humana e ensino fundamental/superior (resulta em 10,60%).
+                Serviços de saúde humana e ensino fundamental/superior (resulta em 40% da alíquota
+                plena).
               </p>
             </div>
 
+            {/* Transporte Coletivo e Profissões Intelectuais */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <Label
                   htmlFor="transporteAliquota"
                   className="text-sm font-semibold text-slate-700"
                 >
-                  Transporte Coletivo (-30%)
+                  Transporte Coletivo & Intelectuais (-30%)
                 </Label>
-                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                  Redução 30%
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {config.etiquetasOrigem?.transporteAliquota ? (
+                    <span
+                      title="Origem do valor via assistente legal"
+                      className="text-[10px] font-medium text-blue-800 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded"
+                    >
+                      {config.etiquetasOrigem.transporteAliquota}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                      Redução 30%
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="relative">
                 <Input
@@ -221,10 +449,12 @@ export default function Modulo1Configuracoes() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
-                Transporte de passageiros e profissões intelectuais (resulta em 18,55%).
+                Transporte de passageiros e profissões regulamentadas (resulta em 70% da alíquota
+                plena).
               </p>
             </div>
 
+            {/* Cesta Básica */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <Label
@@ -233,9 +463,20 @@ export default function Modulo1Configuracoes() {
                 >
                   Cesta Básica Nacional
                 </Label>
-                <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
-                  Alíquota Zero
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {config.etiquetasOrigem?.cestaBasicaIsencao ? (
+                    <span
+                      title="Origem do valor via assistente legal"
+                      className="text-[10px] font-medium text-amber-900 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded"
+                    >
+                      {config.etiquetasOrigem.cestaBasicaIsencao}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                      Alíquota Zero
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="relative">
                 <Input

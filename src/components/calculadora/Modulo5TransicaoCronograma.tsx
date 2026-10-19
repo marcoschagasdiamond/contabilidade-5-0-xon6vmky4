@@ -50,7 +50,15 @@ export default function Modulo5TransicaoCronograma() {
     restaurarDadosEmpresaNoModulo,
   } = useCalculadoraIbsCbs()
 
-  const [anoSelecionado, setAnoSelecionado] = useState<number>(2027)
+  // Sincronizado com o ano selecionado no Módulo 1 (se houver) ou 2027 como padrão
+  const [anoSelecionado, setAnoSelecionado] = useState<number>(config.anoTransicao || 2027)
+
+  // Atualiza quando o ano no Módulo 1 mudar
+  React.useEffect(() => {
+    if (config.anoTransicao) {
+      setAnoSelecionado(config.anoTransicao)
+    }
+  }, [config.anoTransicao])
 
   const handleFaturamentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, '')

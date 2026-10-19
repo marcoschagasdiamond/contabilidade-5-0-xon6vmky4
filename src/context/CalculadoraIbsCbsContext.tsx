@@ -23,6 +23,11 @@ import {
   SUBATIVIDADES_LOCACAO,
   SUBATIVIDADES_FOOD_SERVICE,
   InfoSubatividade,
+  AnoTransicaoIbsCbs,
+  PresetSetorIbsCbs,
+  OrigemCamposAliquota,
+  CRONOGRAMA_FASES_TRANSICAO,
+  PRESETS_SETORES_LC214,
 } from '@/types/calculadoraIbsCbs'
 import { TABELAS_SIMPLES } from '@/lib/regimes'
 import {
@@ -40,8 +45,11 @@ import type {
 interface CalculadoraContextType {
   // Módulo 1 - Configurações Gerais
   config: ConfiguracoesGerais
-  updateConfig: (novasConfigs: Partial<ConfiguracoesGerais>) => void
+  updateConfig: (novas: Partial<ConfiguracoesGerais>) => void
   resetConfig: () => void
+  aplicarAnoTransicao: (ano: AnoTransicaoIbsCbs) => void
+  aplicarPresetSetor: (preset: PresetSetorIbsCbs) => void
+  limparEtiquetaOrigem: (campo: keyof OrigemCamposAliquota) => void
 
   // Módulo 2 - Calculadora Simples
   valorOperacao: number
@@ -304,11 +312,138 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
           next.totalIvaDual = Number((next.cbsPadrao + next.ibsPadrao).toFixed(2))
         }
       }
+      // Se um campo foi editado manualmente pelo usuário, preserva/remove a etiqueta correspondente
+      const camposVerificados: (keyof OrigemCamposAliquota)[] = [
+        'cbsPadrao',
+        'ibsPadrao',
+        'totalIvaDual',
+        'saudeEducacaoAliquota',
+        'transporteAliquota',
+        'cestaBasicaIsencao',
+      ]
+      let etiquetasAtualizadas = prev.etiquetasOrigem ? { ...prev.etiquetasOrigem } : {}
+      camposVerificados.forEach((campo) => {
+        if (novas[campo] !== undefined && !novas.etiquetasOrigem) {
+          // Se o valor foi alterado diretamente sem passar novas etiquetas, remove a etiqueta daquele campo específico
+          if (etiquetasAtualizadas[campo]) {
+            delete etiquetasAtualizadas[campo]
+          }
+        }
+      })
+      if (!novas.etiquetasOrigem && prev.etiquetasOrigem) {
+        next.etiquetasOrigem = etiquetasAtualizadas
+      }
       return next
     })
   }
 
   const resetConfig = () => setConfig(CONFIGURACOES_PADRAO)
+
+  const limparEtiquetaOrigem = (campo: keyof OrigemCamposAliquota) => {
+    setConfig((prev) => {
+      if (!prev.etiquetasOrigem || !prev.etiquetasOrigem[campo]) return prev
+      const novaEtiqueta = { ...prev.etiquetasOrigem }
+      delete novaEtiqueta[campo]
+      return {
+        ...prev,
+        etiquetasOrigem: novaEtiqueta,
+      }
+    })
+  }
+
+  // Preenchimento Assistido: Ano da transição (2026–2033)
+  const aplicarAnoTransicao = (ano: AnoTransicaoIbsCbs) => {
+    const dadosAno = CRONOGRAMA_FASES_TRANSICAO[ano]
+    if (!dadosAno) return
+
+    setConfig((prev) => {
+      const cbs = dadosAno.aliquotaCbs
+      const ibs = dadosAno.aliquotaIbs
+      const total = dadosAno.totalIvaDual
+      const etiquetaFase = dadosAno.etiquetaOrigem
+
+      // Se houver um preset setorial ativo, recalcula também as alíquotas diferenciadas sobre o ano escolhido
+      let saudeAliq = Number((total * 0.4).toFixed(2)) // redução 60%
+      let transAliq = Number((total * 0.7).toFixed(2)) // redução 30%
+      let cestaAliq = 0
+
+      // Atualiza etiquetas de origem
+      const novasEtiquetas: OrigemCamposAliquota = {
+        ...(prev.etiquetasOrigem || {}),
+        cbsPadrao: etiquetaFase,
+        ibsPadrao: etiquetaFase,
+        totalIvaDual: etiquetaFase,
+      }
+
+      // Se já estava com preset de setor, atualiza o rótulo dos regimes diferenciados
+      if (prev.presetSetor === 'saude_educacao') {
+        novasEtiquetas.saudeEducacaoAliquota = `LC 214/2025 · redução 60% (${ano})`
+      } else if (prev.presetSetor === 'transporte_intelectual') {
+        novasEtiquetas.transporteAliquota = `LC 214/2025 · redução 30% (${ano})`
+      } else if (prev.presetSetor === 'cesta_basica') {
+        novasEtiquetas.cestaBasicaIsencao = 'LC 214/2025 · alíquota zero'
+      }
+
+      return {
+        ...prev,
+        cbsPadrao: cbs,
+        ibsPadrao: ibs,
+        totalIvaDual: total,
+        saudeEducacaoAliquota: saudeAliq,
+        transporteAliquota: transAliq,
+        cestaBasicaIsencao: cestaAliq,
+        anoTransicao: ano,
+        etiquetasOrigem: novasEtiquetas,
+      }
+    })
+  }
+
+  // Preenchimento Assistido: Preset por Setor (LC 214/2025)
+  const aplicarPresetSetor = (preset: PresetSetorIbsCbs) => {
+    if (preset === 'nenhum') {
+      setConfig((prev) => ({
+        ...prev,
+        presetSetor: 'nenhum',
+      }))
+      return
+    }
+
+    const itemPreset = PRESETS_SETORES_LC214.find((p) => p.id === preset)
+    if (!itemPreset) return
+
+    setConfig((prev) => {
+      const totalRef = prev.totalIvaDual || 26.5
+      const ano = prev.anoTransicao || 2033
+      const novasEtiquetas: OrigemCamposAliquota = {
+        ...(prev.etiquetasOrigem || {}),
+      }
+
+      // Recalcular as alíquotas de regimes diferenciados baseado na alíquota do ano escolhido
+      const saudeAliq = Number((totalRef * 0.4).toFixed(2)) // -60%
+      const transAliq = Number((totalRef * 0.7).toFixed(2)) // -30%
+      const cestaAliq = 0 // Alíquota zero
+
+      if (preset === 'saude_educacao') {
+        novasEtiquetas.saudeEducacaoAliquota = `LC 214/2025 · redução 60% (${ano})`
+      } else if (preset === 'transporte_intelectual') {
+        novasEtiquetas.transporteAliquota = `LC 214/2025 · redução 30% (${ano})`
+      } else if (preset === 'cesta_basica') {
+        novasEtiquetas.cestaBasicaIsencao = 'LC 214/2025 · alíquota zero'
+      } else if (preset === 'padrao') {
+        novasEtiquetas.totalIvaDual =
+          prev.etiquetasOrigem?.totalIvaDual || `LC 214/2025 · fase ${ano}`
+      }
+
+      return {
+        ...prev,
+        saudeEducacaoAliquota: saudeAliq,
+        transporteAliquota: transAliq,
+        cestaBasicaIsencao: cestaAliq,
+        presetSetor: preset,
+        etiquetasOrigem: novasEtiquetas,
+      }
+    })
+  }
 
   // Módulo 2: Calculadora Simples (inicializado a partir dos Dados da Empresa)
   const [valorOperacao, setValorOperacao] = useState<number>(
@@ -442,6 +577,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const perfil = carregarDadosEmpresa()
     return {
       config,
+      anoTransicao: config.anoTransicao,
+      presetSetor: config.presetSetor,
       valorOperacao,
       regimeOperacao,
       percentualComprasVendasSimples,
@@ -478,7 +615,17 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   // Função para restaurar integralmente o estado da calculadora a partir de uma simulação salva
   const restaurarSimulacao = (p: ParametrosSimulacaoCalculadora) => {
-    if (p.config) setConfig(p.config)
+    if (p.config) {
+      // Compatibilidade retroativa com simulações antigas que não tinham anoTransicao ou presetSetor
+      const configRestaurada: ConfiguracoesGerais = {
+        ...CONFIGURACOES_PADRAO,
+        ...p.config,
+        anoTransicao: p.anoTransicao || p.config.anoTransicao,
+        presetSetor: (p.presetSetor || p.config.presetSetor) as PresetSetorIbsCbs | undefined,
+        etiquetasOrigem: p.config.etiquetasOrigem,
+      }
+      setConfig(configRestaurada)
+    }
     if (p.valorOperacao !== undefined) setValorOperacao(p.valorOperacao)
     if (p.regimeOperacao) setRegimeOperacao(p.regimeOperacao)
     if (p.percentualComprasVendasSimples !== undefined)
@@ -1475,9 +1622,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const impostoAtual = (fatAnual * aliqAtualEstimada) / 100
 
     return anos.map((ano) => {
-      let fase = ''
-      let aliqCbs = 0
-      let aliqIbs = 0
+      const dadosFase = CRONOGRAMA_FASES_TRANSICAO[ano as AnoTransicaoIbsCbs]
+      const fase = dadosFase.fase
+      const aliqCbs = dadosFase.aliquotaCbs
+      const aliqIbs = dadosFase.aliquotaIbs
       let statusIcms = ''
       let statusIss = ''
       let statusIpi = ''
@@ -1485,17 +1633,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       let alertaCritico: string | undefined = undefined
 
       if (ano === 2026) {
-        fase = 'Fase de Teste Operacional'
-        aliqCbs = 0.9
-        aliqIbs = 0.1
         statusIcms = '100% Vigente'
         statusIss = '100% Vigente'
         statusIpi = '100% Vigente'
         statusPisCofins = '100% Vigente (CBS compensável)'
       } else if (ano === 2027) {
-        fase = 'CBS Plena + Fim do PIS/COFINS'
-        aliqCbs = Number((config.cbsPadrao - 0.1).toFixed(2)) // 8,7% com desconto transitório de 0,1 p.p.
-        aliqIbs = 0.1 // estadual/municipal compensável
         statusIcms = '100% Vigente'
         statusIss = '100% Vigente'
         statusIpi = 'Alíquota Zero (exceto ZFM)'
@@ -1503,50 +1645,32 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         alertaCritico =
           'Ano Crítico: Extinção definitiva de PIS/COFINS e início da CBS com crédito amplo e Imposto Seletivo.'
       } else if (ano === 2028) {
-        fase = 'Consolidação CBS'
-        aliqCbs = Number((config.cbsPadrao - 0.1).toFixed(2)) // 8,7%
-        aliqIbs = 0.1
         statusIcms = '100% Vigente'
         statusIss = '100% Vigente'
         statusIpi = 'Alíquota Zero'
         statusPisCofins = 'Extintos'
       } else if (ano === 2029) {
-        fase = 'Transição ICMS/ISS (90%) → IBS (10%)'
-        aliqCbs = config.cbsPadrao // 8,80%
-        aliqIbs = Number((config.ibsPadrao * 0.1).toFixed(2)) // 1,77%
         statusIcms = 'Reduzido para 90%'
         statusIss = 'Reduzido para 90%'
         statusIpi = 'Extinto'
         statusPisCofins = 'Extintos'
       } else if (ano === 2030) {
-        fase = 'Transição ICMS/ISS (80%) → IBS (20%)'
-        aliqCbs = config.cbsPadrao
-        aliqIbs = Number((config.ibsPadrao * 0.2).toFixed(2)) // 3,54%
         statusIcms = 'Reduzido para 80%'
         statusIss = 'Reduzido para 80%'
         statusIpi = 'Extinto'
         statusPisCofins = 'Extintos'
       } else if (ano === 2031) {
-        fase = 'Transição ICMS/ISS (70%) → IBS (30%)'
-        aliqCbs = config.cbsPadrao
-        aliqIbs = Number((config.ibsPadrao * 0.3).toFixed(2)) // 5,31%
         statusIcms = 'Reduzido para 70%'
         statusIss = 'Reduzido para 70%'
         statusIpi = 'Extinto'
         statusPisCofins = 'Extintos'
       } else if (ano === 2032) {
-        fase = 'Último Ano de Convivência (60% / 40%)'
-        aliqCbs = config.cbsPadrao
-        aliqIbs = Number((config.ibsPadrao * 0.4).toFixed(2)) // 7,08%
         statusIcms = 'Reduzido para 60%'
         statusIss = 'Reduzido para 60%'
         statusIpi = 'Extinto'
         statusPisCofins = 'Extintos'
       } else {
         // 2033
-        fase = 'Sistema Pleno IVA Dual (IBS + CBS)'
-        aliqCbs = config.cbsPadrao // 8,80%
-        aliqIbs = config.ibsPadrao // 17,70%
         statusIcms = 'EXTINTO'
         statusIss = 'EXTINTO'
         statusIpi = 'EXTINTO'
@@ -1717,6 +1841,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         config,
         updateConfig,
         resetConfig,
+        aplicarAnoTransicao,
+        aplicarPresetSetor,
+        limparEtiquetaOrigem,
 
         valorOperacao,
         setValorOperacao,

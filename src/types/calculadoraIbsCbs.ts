@@ -635,6 +635,171 @@ export const LISTA_UFS_ICMS: ItemUfIcms[] = [
   { uf: 'TO', nome: 'Tocantins', aliquotaInternaPadrao: 20 },
 ]
 
+export type AnoTransicaoIbsCbs = 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+
+export type PresetSetorIbsCbs =
+  | 'nenhum'
+  | 'padrao'
+  | 'saude_educacao'
+  | 'transporte_intelectual'
+  | 'cesta_basica'
+
+export interface DadosFaseTransicao {
+  ano: AnoTransicaoIbsCbs
+  fase: string
+  subtitulo: string
+  aliquotaCbs: number
+  aliquotaIbs: number
+  totalIvaDual: number
+  etiquetaOrigem: string
+  baseLegal: string
+}
+
+/**
+ * Fonte única da verdade das alíquotas oficiais de transição (LC 214/2025 e EC 132/2023)
+ * Compartilhada entre Módulo 1 (preenchimento assistido) e Módulo 5 (cronograma 2026–2033).
+ */
+export const CRONOGRAMA_FASES_TRANSICAO: Record<AnoTransicaoIbsCbs, DadosFaseTransicao> = {
+  2026: {
+    ano: 2026,
+    fase: 'Fase de Teste Operacional',
+    subtitulo: 'CBS 0,90% + IBS 0,10% (ensaio geral compensável)',
+    aliquotaCbs: 0.9,
+    aliquotaIbs: 0.1,
+    totalIvaDual: 1.0,
+    etiquetaOrigem: 'LC 214/2025 · fase 2026',
+    baseLegal: 'Art. 348 da LC 214/2025 (Teste operacional 0,9% CBS + 0,1% IBS compensáveis)',
+  },
+  2027: {
+    ano: 2027,
+    fase: 'CBS Plena + Fim PIS/COFINS',
+    subtitulo: 'CBS 8,70% (-0,1 p.p.) + IBS 0,10% teste',
+    aliquotaCbs: 8.7,
+    aliquotaIbs: 0.1,
+    totalIvaDual: 8.8,
+    etiquetaOrigem: 'LC 214/2025 · fase 2027',
+    baseLegal: 'Art. 347 da LC 214/2025 (CBS plena com desconto transitório de 0,1 p.p.)',
+  },
+  2028: {
+    ano: 2028,
+    fase: 'Consolidação CBS',
+    subtitulo: 'CBS 8,70% + IBS 0,10% teste',
+    aliquotaCbs: 8.7,
+    aliquotaIbs: 0.1,
+    totalIvaDual: 8.8,
+    etiquetaOrigem: 'LC 214/2025 · fase 2028',
+    baseLegal: 'Art. 347 da LC 214/2025 (CBS consolidada e homologação do CGIBS)',
+  },
+  2029: {
+    ano: 2029,
+    fase: 'Início Transição IBS (10%)',
+    subtitulo: 'CBS 8,80% + IBS 1,77% (10% de 17,70%)',
+    aliquotaCbs: 8.8,
+    aliquotaIbs: 1.77,
+    totalIvaDual: 10.57,
+    etiquetaOrigem: 'LC 214/2025 · fase 2029',
+    baseLegal: 'ADCT art. 128 / LC 214/2025 (IBS 10% da alíquota de referência)',
+  },
+  2030: {
+    ano: 2030,
+    fase: 'Transição IBS (20%)',
+    subtitulo: 'CBS 8,80% + IBS 3,54% (20% de 17,70%)',
+    aliquotaCbs: 8.8,
+    aliquotaIbs: 3.54,
+    totalIvaDual: 12.34,
+    etiquetaOrigem: 'LC 214/2025 · fase 2030',
+    baseLegal: 'ADCT art. 128 / LC 214/2025 (IBS 20% da alíquota de referência)',
+  },
+  2031: {
+    ano: 2031,
+    fase: 'Transição IBS (30%)',
+    subtitulo: 'CBS 8,80% + IBS 5,31% (30% de 17,70%)',
+    aliquotaCbs: 8.8,
+    aliquotaIbs: 5.31,
+    totalIvaDual: 14.11,
+    etiquetaOrigem: 'LC 214/2025 · fase 2031',
+    baseLegal: 'ADCT art. 128 / LC 214/2025 (IBS 30% da alíquota de referência)',
+  },
+  2032: {
+    ano: 2032,
+    fase: 'Transição IBS (40%)',
+    subtitulo: 'CBS 8,80% + IBS 7,08% (40% de 17,70%)',
+    aliquotaCbs: 8.8,
+    aliquotaIbs: 7.08,
+    totalIvaDual: 15.88,
+    etiquetaOrigem: 'LC 214/2025 · fase 2032',
+    baseLegal: 'ADCT art. 128 / LC 214/2025 (IBS 40% da alíquota de referência)',
+  },
+  2033: {
+    ano: 2033,
+    fase: 'Sistema Pleno IVA Dual (100%)',
+    subtitulo: 'CBS 8,80% + IBS 17,70% (26,50% integral)',
+    aliquotaCbs: 8.8,
+    aliquotaIbs: 17.7,
+    totalIvaDual: 26.5,
+    etiquetaOrigem: 'LC 214/2025 · fase 2033',
+    baseLegal: 'LC 214/2025 art. 130 (IVA Dual integral com ICMS/ISS/PIS/COFINS extintos)',
+  },
+}
+
+export const LISTA_ANOS_TRANSICAO: AnoTransicaoIbsCbs[] = [
+  2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033,
+]
+
+export interface OpcaoPresetSetor {
+  id: PresetSetorIbsCbs
+  titulo: string
+  subtitulo: string
+  reducaoPercentual: number // 0, 60, 30, 100
+  baseLegal: string
+  etiquetaOrigem: string
+}
+
+export const PRESETS_SETORES_LC214: OpcaoPresetSetor[] = [
+  {
+    id: 'padrao',
+    titulo: 'Alíquota Padrão Plena (Sem Redução)',
+    subtitulo: 'Comércio, Indústria e Serviços em geral (alíquota cheia do ano)',
+    reducaoPercentual: 0,
+    baseLegal: 'LC 214/2025 art. 130 (Alíquota de referência sem redução)',
+    etiquetaOrigem: 'LC 214/2025 · alíquota plena',
+  },
+  {
+    id: 'saude_educacao',
+    titulo: 'Saúde e Educação (-60%)',
+    subtitulo: 'Serviços de saúde humana, hospitais, clínicas e ensino fundamental/superior',
+    reducaoPercentual: 60,
+    baseLegal: 'LC 214/2025 art. 130 (Redução de 60% para saúde e educação)',
+    etiquetaOrigem: 'LC 214/2025 · redução 60%',
+  },
+  {
+    id: 'transporte_intelectual',
+    titulo: 'Transporte Coletivo e Profissões Intelectuais (-30%)',
+    subtitulo: 'Transporte de passageiros e atividades profissionais regulamentadas',
+    reducaoPercentual: 30,
+    baseLegal:
+      'LC 214/2025 art. 130 (Redução de 30% transporte coletivo e profissões regulamentadas)',
+    etiquetaOrigem: 'LC 214/2025 · redução 30%',
+  },
+  {
+    id: 'cesta_basica',
+    titulo: 'Cesta Básica Nacional (Alíquota Zero)',
+    subtitulo: 'Alimentos essenciais da cesta básica com isenção integral e créditos mantidos',
+    reducaoPercentual: 100,
+    baseLegal: 'LC 214/2025 art. 8º e 129 (Isenção integral 0% com manutenção de créditos)',
+    etiquetaOrigem: 'LC 214/2025 · alíquota zero',
+  },
+]
+
+export interface OrigemCamposAliquota {
+  cbsPadrao?: string
+  ibsPadrao?: string
+  totalIvaDual?: string
+  saudeEducacaoAliquota?: string
+  transporteAliquota?: string
+  cestaBasicaIsencao?: string
+}
+
 export interface ConfiguracoesGerais {
   // Alíquotas Padrão IVA Dual
   cbsPadrao: number // 8.80
@@ -647,6 +812,11 @@ export interface ConfiguracoesGerais {
   transporteReducao: number // 30%
   transporteAliquota: number // 18.55%
   cestaBasicaIsencao: number // 0%
+
+  // Metadados do preenchimento assistido (Módulo 1)
+  anoTransicao?: AnoTransicaoIbsCbs
+  presetSetor?: PresetSetorIbsCbs
+  etiquetasOrigem?: OrigemCamposAliquota
 
   // Sistema Antigo Lucro Real
   lucroRealPis: number // 1.65%
