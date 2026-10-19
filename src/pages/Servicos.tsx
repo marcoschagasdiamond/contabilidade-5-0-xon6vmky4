@@ -14,6 +14,7 @@ import {
   Building2,
   BookOpen,
   Layers,
+  Briefcase,
 } from 'lucide-react'
 
 export default function Servicos() {
@@ -166,6 +167,25 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=corporate%20training%20workshop%20classroom&color=emerald',
       reverse: false,
+    },
+    {
+      id: 'bpo-contabil',
+      icon: Briefcase,
+      category: 'Operação & BPO',
+      title: 'BPO Contábil 5.0',
+      subtitle: 'Delegue a operação. Mantenha o controle.',
+      description:
+        'O BPO (Business Process Outsourcing) transfere para a nossa equipe a rotina operacional — fiscal, folha, contas a pagar/receber e faturamento — enquanto você acompanha tudo em tempo real pelo painel. O diferencial 5.0: operação rodando sobre tecnologia com indicadores e alertas preditivos.',
+      features: [
+        'Redução de custo fixo sem contratar ou gerenciar equipe operacional interna',
+        'Zero risco de esquecer obrigação com calendário fiscal e trabalhista sob nosso controle',
+        'Dados sempre prontos para decisão com fechamento mensal garantido',
+        'Escala sem dor de cabeça: a operação cresce sem precisar contratar',
+        'Foco total do empresário no core business e nas vendas',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=business%20process%20outsourcing%20team%20operations&color=emerald',
+      reverse: true,
     },
   ]
 
@@ -348,6 +368,16 @@ export default function Servicos() {
                     {service.id === 'treinamento-capacitacao' && (
                       <Link
                         to="/servicos/treinamento"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#145A32]" />
+                        Ver Página Completa & Pilares 5.0
+                      </Link>
+                    )}
+
+                    {service.id === 'bpo-contabil' && (
+                      <Link
+                        to="/servicos/bpo-contabil"
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
                       >
                         <Sparkles className="w-4 h-4 text-[#145A32]" />

@@ -17,6 +17,7 @@ import {
   Award,
   Headphones,
   GraduationCap,
+  Briefcase,
 } from 'lucide-react'
 import LeadForm from '@/components/LeadForm'
 
@@ -84,6 +85,13 @@ export default function Index() {
       description:
         'Projetos educacionais únicos sob medida, workshops sobre a Reforma Tributária e capacitação contábil e fiscal.',
       link: '/servicos/treinamento',
+    },
+    {
+      icon: Briefcase,
+      title: 'BPO Contábil 5.0',
+      description:
+        'Delegue a operação fiscal, folha, contas e faturamento para especialistas com tecnologia, alertas preditivos e painel em tempo real.',
+      link: '/servicos/bpo-contabil',
     },
   ]
 
@@ -460,8 +468,8 @@ export default function Index() {
             </p>
           </div>
 
-          {/* Grid de 6 cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {/* Grid de 8 cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {services.map((srv, idx) => {
               const IconComp = srv.icon
               return (

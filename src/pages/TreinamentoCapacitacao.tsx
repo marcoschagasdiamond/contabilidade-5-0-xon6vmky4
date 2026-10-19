@@ -25,6 +25,7 @@ import {
   BrainCircuit,
   BarChart3,
   ShieldAlert,
+  Briefcase,
 } from 'lucide-react'
 
 export default function TreinamentoCapacitacao() {
@@ -572,6 +573,13 @@ export default function TreinamentoCapacitacao() {
               >
                 <ShieldAlert className="w-4 h-4 text-[#2ECC71]" />
                 Assessoria Tributária 5.0
+              </Link>
+              <Link
+                to="/servicos/bpo-contabil"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
+              >
+                <Briefcase className="w-4 h-4 text-[#2ECC71]" />
+                BPO Contábil 5.0
               </Link>
               <Link
                 to="/servicos"
