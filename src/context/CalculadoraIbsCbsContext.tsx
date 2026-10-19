@@ -539,6 +539,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       setSubatividadeServico(p.subatividadeServico || 'servico_comum')
       setSubatividadeIndustria(p.subatividadeIndustria || 'industria_comum')
       setSubatividadeComercio(p.subatividadeComercio || 'varejo_comum')
+      if ((p as any).subatividadeAgro) setSubatividadeAgro((p as any).subatividadeAgro)
+      if ((p as any).subatividadeConstrucao)
+        setSubatividadeConstrucao((p as any).subatividadeConstrucao)
+      if ((p as any).subatividadeLocacao) setSubatividadeLocacao((p as any).subatividadeLocacao)
+      if ((p as any).subatividadeFoodService)
+        setSubatividadeFoodService((p as any).subatividadeFoodService)
       setProporcaoServicoMisto(p.proporcaoServicoMisto ?? 50)
       setPercentualComprasVendasComparativo(p.percentualComprasVendas ?? 40)
       setFolhaPagamentoMensal(p.folhaPagamentoMensal || 50000)
@@ -694,7 +700,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       SUBATIVIDADES_FOOD_SERVICE.find((s) => s.id === subatividadeFoodService) ||
       SUBATIVIDADES_FOOD_SERVICE[0]
 
-    // Determinar dados conforme o ramo e a subatividade (apenas os 4 ramos ativos: servico, industria, comercio, misto)
+    // Determinar dados conforme o ramo e a subatividade (8 ramos ativos)
     let subatividadeNome = ''
     let presuncaoIrpj = 32
     let presuncaoCsll = 32
@@ -786,6 +792,109 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
           `Comércio varejista com ICMS padrão de ${aliqIcmsReal}% (${origemIcms}) e presunção de 8% no Lucro Presumido.`,
         )
       }
+    } else if (tipoAtividade === 'agronegocio') {
+      subatividadeNome = infoSubAgro.label
+      presuncaoIrpj = infoSubAgro.presuncaoIrpj
+      presuncaoCsll = infoSubAgro.presuncaoCsll
+      reducaoIbsCbsPct = infoSubAgro.reducaoIbsCbsPercentual || 0
+
+      // Agroindústria tem IPI, produção rural tem ICMS interno da UF
+      if (infoSubAgro.id === 'agroindustria_processamento') {
+        taxaIpiIcmsIssReal = config.lucroRealIpi
+        taxaIpiIcmsIssPresumido = config.lucroPresumidoIpi
+        nomeImpostoIndireto = `IPI (${config.lucroRealIpi}%)`
+        impactosDidaticos.push(
+          'Agroindústria: Anexo II do Simples Nacional (Indústria), presunção de 8% no Lucro Presumido e IPI de saída.',
+        )
+      } else {
+        taxaIpiIcmsIssReal = aliqIcmsReal
+        taxaIpiIcmsIssPresumido = aliqIcmsPresumido
+        nomeImpostoIndireto = `ICMS Agro (${aliqIcmsReal}%)`
+        impactosDidaticos.push(
+          'Produtor rural PJ / Agro: Anexo I do Simples Nacional (comercialização) com presunção de 8% IRPJ / 12% CSLL.',
+        )
+      }
+
+      if (reducaoIbsCbsPct === 100) {
+        impactosDidaticos.push(
+          'Hortifrúti / Cesta Básica Nacional: alíquota ZERO (isenção de 100%) no IBS e na CBS (art. 8º da LC 214/2025).',
+        )
+      } else if (reducaoIbsCbsPct === 60) {
+        impactosDidaticos.push(
+          'Agronegócio no IBS/CBS: redução legal de 60% na alíquota padrão com manutenção de créditos (EC 132/2023).',
+        )
+      }
+    } else if (tipoAtividade === 'construcao_civil') {
+      subatividadeNome = infoSubConstrucao.label
+      presuncaoIrpj = infoSubConstrucao.presuncaoIrpj
+      presuncaoCsll = infoSubConstrucao.presuncaoCsll
+      reducaoIbsCbsPct = infoSubConstrucao.reducaoIbsCbsPercentual || 0
+
+      taxaIpiIcmsIssReal = config.lucroRealIss
+      taxaIpiIcmsIssPresumido = config.lucroPresumidoIss
+      nomeImpostoIndireto = `ISS Obras (${config.lucroPresumidoIss}%)`
+
+      if (infoSubConstrucao.id === 'engenharia_projetos') {
+        impactosDidaticos.push(
+          'Engenharia consultiva e projetos: regidos pelo Fator R (LC 123/2006). Folha ≥ 28% qualifica para o Anexo III; abaixo vai para o Anexo V.',
+        )
+      } else {
+        impactosDidaticos.push(
+          'Obras e edificações: enquadramento obrigatório no Anexo IV do Simples Nacional (CPP de 20% patronal recolhida por fora na folha).',
+        )
+      }
+      impactosDidaticos.push(
+        'Operações com bens imóveis e obras civis no novo sistema submetem-se ao regime específico (art. 156-A CF) com crédito no destino.',
+      )
+    } else if (tipoAtividade === 'locacao_bens') {
+      subatividadeNome = infoSubLocacao.label
+      presuncaoIrpj = infoSubLocacao.presuncaoIrpj
+      presuncaoCsll = infoSubLocacao.presuncaoCsll
+      reducaoIbsCbsPct = infoSubLocacao.reducaoIbsCbsPercentual || 0
+
+      // Locação pura de bens móveis NÃO tem ISS (Súmula Vinculante 31 STF)
+      if (infoSubLocacao.id === 'coworking_espacos') {
+        taxaIpiIcmsIssReal = config.lucroRealIss
+        taxaIpiIcmsIssPresumido = config.lucroPresumidoIss
+        nomeImpostoIndireto = `ISS Coworking (${config.lucroPresumidoIss}%)`
+        impactosDidaticos.push(
+          'Coworking mescla locação e serviços administrativos: sujeito à regra do Fator R (Anexo III se folha ≥ 28%, Anexo V se < 28%).',
+        )
+      } else {
+        taxaIpiIcmsIssReal = 0
+        taxaIpiIcmsIssPresumido = 0
+        nomeImpostoIndireto = 'Sem ISS (Súmula Vinculante 31 STF)'
+        impactosDidaticos.push(
+          'Locação de bens móveis pura: não incide ISS (Súmula Vinculante 31 STF) e enquadra-se no Anexo III do Simples Nacional diretamente.',
+        )
+      }
+      impactosDidaticos.push(
+        'No novo IVA Dual, a locação de bens e utilidades passa a ser expressamente tributada pelo IBS/CBS, gerando créditos integrais para clientes PJ.',
+      )
+    } else if (tipoAtividade === 'food_service') {
+      subatividadeNome = infoSubFoodService.label
+      presuncaoIrpj = infoSubFoodService.presuncaoIrpj
+      presuncaoCsll = infoSubFoodService.presuncaoCsll
+      reducaoIbsCbsPct = infoSubFoodService.reducaoIbsCbsPercentual || 0
+      temImpostoSeletivo = !!infoSubFoodService.sujeitoImpostoSeletivo
+
+      taxaIpiIcmsIssReal = aliqIcmsReal
+      taxaIpiIcmsIssPresumido = aliqIcmsPresumido
+      nomeImpostoIndireto = `ICMS Restaurante (${aliqIcmsReal}%)`
+
+      impactosDidaticos.push(
+        'Bares e restaurantes: enquadramento no Anexo I do Simples Nacional (refeições equiparadas a comércio) com presunção de 8% no Lucro Presumido.',
+      )
+      if (temImpostoSeletivo) {
+        impactosDidaticos.push(
+          `Bebidas alcoólicas sofrem incidência adicional do Imposto Seletivo ("imposto do pecado" — ${aliquotaImpostoSeletivo}%) no novo sistema.`,
+        )
+      }
+      if (infoSubFoodService.id === 'delivery_marmitaria') {
+        impactosDidaticos.push(
+          'Crédito de 26,5% de IBS/CBS sobre taxas e comissões cobradas por aplicativos de delivery (iFood, etc.), reduzindo o custo operacional.',
+        )
+      }
     } else {
       // Misto: Serviço + Comércio ponderado pela proporção configurável
       const pServ = Math.max(0, Math.min(100, proporcaoServicoMisto)) / 100
@@ -855,13 +964,18 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
     // Créditos Lucro Real:
     // a) Compras de insumos/mercadorias (PIS 1,65% + COFINS 7,60% + ICMS/IPI conforme atividade)
-    // Se for ICMS-ST, as compras de revenda não geram crédito de ICMS próprio destacado
-    const aliqCreditoRealCompras =
-      tipoAtividade === 'servico'
+    // Se for serviço ou locação (sem ICMS/IPI), crédito é PIS/COFINS
+    const isAtividadeComercioOuIndustriaOuAgroOuFood =
+      tipoAtividade === 'comercio' ||
+      tipoAtividade === 'industria' ||
+      tipoAtividade === 'agronegocio' ||
+      tipoAtividade === 'food_service'
+
+    const aliqCreditoRealCompras = !isAtividadeComercioOuIndustriaOuAgroOuFood
+      ? config.lucroRealPis + config.lucroRealCofins
+      : isIcmsSt
         ? config.lucroRealPis + config.lucroRealCofins
-        : isIcmsSt
-          ? config.lucroRealPis + config.lucroRealCofins
-          : config.lucroRealPis + config.lucroRealCofins + taxaIpiIcmsIssReal
+        : config.lucroRealPis + config.lucroRealCofins + taxaIpiIcmsIssReal
     const creditosComprasReal = (comprasValor * aliqCreditoRealCompras) / 100
 
     // b) Despesas com créditos mensais (energia, aluguel, insumos operacionais - PIS 1,65% + COFINS 7,60% = 9,25%)
@@ -933,6 +1047,52 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         faixaNome = `Anexo V (Fator R = ${fatorRPercent}% < 28% — alíquota onerada)`
         anexoCod = 'Anexo V'
       }
+    } else if (tipoAtividade === 'agronegocio') {
+      if (infoSubAgro.id === 'agroindustria_processamento') {
+        tabelaSimples = TABELAS_SIMPLES.anexoII
+        faixaNome = 'Anexo II (Agroindústria)'
+        anexoCod = 'Anexo II'
+      } else {
+        tabelaSimples = TABELAS_SIMPLES.anexoI
+        faixaNome = 'Anexo I (Agronegócio / Venda de Produção)'
+        anexoCod = 'Anexo I'
+      }
+    } else if (tipoAtividade === 'construcao_civil') {
+      if (infoSubConstrucao.id === 'engenharia_projetos') {
+        if (qualificaAnexoIII) {
+          tabelaSimples = TABELAS_SIMPLES.anexoIII
+          faixaNome = `Anexo III (Engenharia — Fator R = ${fatorRPercent}% ≥ 28%)`
+          anexoCod = 'Anexo III'
+        } else {
+          tabelaSimples = TABELAS_SIMPLES.anexoV
+          faixaNome = `Anexo V (Engenharia — Fator R = ${fatorRPercent}% < 28%)`
+          anexoCod = 'Anexo V'
+        }
+      } else {
+        tabelaSimples = TABELAS_SIMPLES.anexoIV
+        faixaNome = 'Anexo IV (Construção Civil — Obras e Instalações)'
+        anexoCod = 'Anexo IV'
+      }
+    } else if (tipoAtividade === 'locacao_bens') {
+      if (infoSubLocacao.id === 'coworking_espacos') {
+        if (qualificaAnexoIII) {
+          tabelaSimples = TABELAS_SIMPLES.anexoIII
+          faixaNome = `Anexo III (Coworking — Fator R = ${fatorRPercent}% ≥ 28%)`
+          anexoCod = 'Anexo III'
+        } else {
+          tabelaSimples = TABELAS_SIMPLES.anexoV
+          faixaNome = `Anexo V (Coworking — Fator R = ${fatorRPercent}% < 28%)`
+          anexoCod = 'Anexo V'
+        }
+      } else {
+        tabelaSimples = TABELAS_SIMPLES.anexoIII
+        faixaNome = 'Anexo III (Locação de Bens Móveis — Sem ISS Súmula 31)'
+        anexoCod = 'Anexo III'
+      }
+    } else if (tipoAtividade === 'food_service') {
+      tabelaSimples = TABELAS_SIMPLES.anexoI
+      faixaNome = 'Anexo I (Bares e Restaurantes)'
+      anexoCod = 'Anexo I'
     } else {
       // Misto: ponderação entre Comércio (Anexo I) e Serviço (Anexo III ou V conforme Fator R)
       const pServ = Math.max(0, Math.min(100, proporcaoServicoMisto)) / 100
@@ -1303,13 +1463,15 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const anos = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
     const fatAnual = Math.max(0, faturamentoAnualProjetado)
 
-    // Carga atual estimada de referência para comparação
+    // Carga atual estimada de referência para comparação conforme o ramo
     const aliqAtualEstimada =
-      setorTransicao === 'servico'
+      setorTransicao === 'servico' || setorTransicao === 'construcao_civil'
         ? config.lucroPresumidoPis + config.lucroPresumidoCofins + config.lucroPresumidoIss // ~6,65%
-        : setorTransicao === 'industria'
-          ? config.lucroRealPis + config.lucroRealCofins + config.lucroRealIpi // ~14,25%
-          : config.lucroRealPis + config.lucroRealCofins + config.lucroRealIcms // ~27,25% nominal
+        : setorTransicao === 'locacao_bens'
+          ? config.lucroPresumidoPis + config.lucroPresumidoCofins // ~3,65% (sem ISS Súmula 31)
+          : setorTransicao === 'industria'
+            ? config.lucroRealPis + config.lucroRealCofins + config.lucroRealIpi // ~14,25%
+            : config.lucroRealPis + config.lucroRealCofins + config.lucroRealIcms // ~27,25% nominal (comércio, agro, food, misto)
     const impostoAtual = (fatAnual * aliqAtualEstimada) / 100
 
     return anos.map((ano) => {
@@ -1400,14 +1562,21 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       } else if (ano === 2027 || ano === 2028) {
         // CBS (8,7%) + ICMS/ISS integral remanescente
         const remanescente =
-          setorTransicao === 'servico' ? config.lucroPresumidoIss : config.lucroRealIcms
+          setorTransicao === 'servico' || setorTransicao === 'construcao_civil'
+            ? config.lucroPresumidoIss
+            : setorTransicao === 'locacao_bens'
+              ? 0
+              : config.lucroRealIcms
         aliqEfetivaAno = aliqCbs + remanescente
       } else if (ano >= 2029 && ano <= 2032) {
         const fatorIbs = (ano - 2028) * 0.1 // 0.1, 0.2, 0.3, 0.4
         const fatorAntigo = 1 - fatorIbs
         const remanescente =
-          (setorTransicao === 'servico' ? config.lucroPresumidoIss : config.lucroRealIcms) *
-          fatorAntigo
+          (setorTransicao === 'servico' || setorTransicao === 'construcao_civil'
+            ? config.lucroPresumidoIss
+            : setorTransicao === 'locacao_bens'
+              ? 0
+              : config.lucroRealIcms) * fatorAntigo
         aliqEfetivaAno = aliqCbs + aliqIbs + remanescente
       } else {
         aliqEfetivaAno = config.totalIvaDual

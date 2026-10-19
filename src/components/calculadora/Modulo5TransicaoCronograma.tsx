@@ -191,6 +191,18 @@ export default function Modulo5TransicaoCronograma() {
                 Comércio Varejista/Atacadista (ICMS no antigo)
               </SelectItem>
               <SelectItem value="industria">Indústria e Manufatura (IPI/ICMS no antigo)</SelectItem>
+              <SelectItem value="agronegocio">
+                Agronegócio / Produtor rural (Redução 60% ou Cesta Básica)
+              </SelectItem>
+              <SelectItem value="construcao_civil">
+                Construção civil e engenharia (Anexo IV / Obras)
+              </SelectItem>
+              <SelectItem value="locacao_bens">
+                Aluguel / Locação de bens (Sem ISS Súmula 31)
+              </SelectItem>
+              <SelectItem value="food_service">
+                Bares / Restaurantes e food service (Anexo I / Imposto Seletivo)
+              </SelectItem>
               <SelectItem value="misto">Atividade Mista (Serviço + Comércio)</SelectItem>
             </SelectContent>
           </Select>

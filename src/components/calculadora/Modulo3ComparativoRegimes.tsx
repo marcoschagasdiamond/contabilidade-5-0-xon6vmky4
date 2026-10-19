@@ -4,13 +4,22 @@ import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import {
   TipoAtividade,
+  RAMOS_PRINCIPAIS_ATIVOS,
   LISTA_UFS_ICMS,
   SUBATIVIDADES_SERVICO,
   SUBATIVIDADES_INDUSTRIA,
   SUBATIVIDADES_COMERCIO,
+  SUBATIVIDADES_AGRO,
+  SUBATIVIDADES_CONSTRUCAO,
+  SUBATIVIDADES_LOCACAO,
+  SUBATIVIDADES_FOOD_SERVICE,
   SubatividadeServico,
   SubatividadeIndustria,
   SubatividadeComercio,
+  SubatividadeAgro,
+  SubatividadeConstrucao,
+  SubatividadeLocacao,
+  SubatividadeFoodService,
 } from '@/types/calculadoraIbsCbs'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -69,6 +78,14 @@ export default function Modulo3ComparativoRegimes() {
     setSubatividadeIndustria,
     subatividadeComercio,
     setSubatividadeComercio,
+    subatividadeAgro,
+    setSubatividadeAgro,
+    subatividadeConstrucao,
+    setSubatividadeConstrucao,
+    subatividadeLocacao,
+    setSubatividadeLocacao,
+    subatividadeFoodService,
+    setSubatividadeFoodService,
     aliquotaImpostoSeletivo,
     setAliquotaImpostoSeletivo,
     proporcaoServicoMisto,
@@ -236,18 +253,11 @@ export default function Modulo3ComparativoRegimes() {
                   <SelectValue placeholder="Selecione o tipo de atividade" />
                 </SelectTrigger>
                 <SelectContent className="max-w-xl">
-                  <SelectItem value="servico">
-                    Serviço (ISS / Anexo III ou V / Presunção 32% ou 16%)
-                  </SelectItem>
-                  <SelectItem value="industria">
-                    Indústria (IPI / Anexo II / Imposto Seletivo)
-                  </SelectItem>
-                  <SelectItem value="comercio">
-                    Comércio (ICMS / Anexo I / ICMS-ST / Presunção 8%)
-                  </SelectItem>
-                  <SelectItem value="misto">
-                    Misto (Serviço + Comércio com proporção customizada)
-                  </SelectItem>
+                  {RAMOS_PRINCIPAIS_ATIVOS.map((ramo) => (
+                    <SelectItem key={ramo.id} value={ramo.id}>
+                      {ramo.label} ({ramo.subtitulo})
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <span className="text-[11px] text-slate-500">
@@ -475,7 +485,240 @@ export default function Modulo3ComparativoRegimes() {
               </div>
             )}
 
-            {/* 1.4 Seletor Ramo Misto: Proporção + Subatividades das duas partes */}
+            {/* 1.4 Seletor Ramo Agronegócio */}
+            {tipoAtividade === 'agronegocio' && (
+              <div className="bg-gradient-to-r from-lime-50/70 to-emerald-50/50 border border-lime-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label
+                    htmlFor="subAgro"
+                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                  >
+                    <Tag className="w-4 h-4 text-[#D4AF37]" />
+                    Subatividade Agropecuária (Reduções IBS/CBS e Enquadramento Simples)
+                  </Label>
+                  <span className="text-[11px] text-lime-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-lime-200">
+                    4 perfis regulatórios rurais
+                  </span>
+                </div>
+                <Select
+                  value={subatividadeAgro}
+                  onValueChange={(val) => setSubatividadeAgro(val as SubatividadeAgro)}
+                >
+                  <SelectTrigger
+                    id="subAgro"
+                    className="h-12 bg-white border-lime-300 shadow-sm font-medium text-slate-800"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade do agronegócio" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_AGRO.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2.5">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block">{item.label}</span>
+                          <span className="text-xs text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2 text-xs text-lime-950 bg-lime-100/60 p-2.5 rounded-lg">
+                  <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                  <span>
+                    {subatividadeAgro === 'hortifruti_cesta_basica'
+                      ? '✓ Cesta Básica Nacional / Hortifrúti: alíquota ZERO (isenção de 100%) no IBS e CBS com manutenção de créditos.'
+                      : subatividadeAgro === 'agroindustria_processamento'
+                        ? '✓ Agroindústria: enquadramento no Anexo II do Simples Nacional (Indústria) e redução de 60% no IBS/CBS.'
+                        : '✓ Produtor rural: Anexo I do Simples Nacional com redução de 60% na alíquota padrão do IBS/CBS.'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* 1.5 Seletor Ramo Construção Civil */}
+            {tipoAtividade === 'construcao_civil' && (
+              <div className="bg-gradient-to-r from-orange-50/70 to-amber-50/50 border border-orange-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label
+                    htmlFor="subConstrucao"
+                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                  >
+                    <Tag className="w-4 h-4 text-[#D4AF37]" />
+                    Subatividade de Construção Civil e Engenharia
+                  </Label>
+                  <span className="text-[11px] text-orange-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-orange-200">
+                    Anexo IV vs III (Fator R)
+                  </span>
+                </div>
+                <Select
+                  value={subatividadeConstrucao}
+                  onValueChange={(val) => setSubatividadeConstrucao(val as SubatividadeConstrucao)}
+                >
+                  <SelectTrigger
+                    id="subConstrucao"
+                    className="h-12 bg-white border-orange-300 shadow-sm font-medium text-slate-800"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade da construção civil" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_CONSTRUCAO.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2.5">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block">{item.label}</span>
+                          <span className="text-xs text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2 text-xs text-orange-950 bg-orange-100/60 p-2.5 rounded-lg">
+                  <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                  <span>
+                    {subatividadeConstrucao === 'engenharia_projetos'
+                      ? '✓ Engenharia e Projetos: sujeitos ao Fator R (LC 123/2006). Folha ≥ 28% qualifica para o Anexo III; se < 28%, cai no Anexo V.'
+                      : '✓ Obras e Edificações: Anexo IV do Simples Nacional com CPP patronal (20%) recolhida por fora na folha de pagamento.'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* 1.6 Seletor Ramo Aluguel / Locação de Bens */}
+            {tipoAtividade === 'locacao_bens' && (
+              <div className="bg-gradient-to-r from-sky-50/70 to-blue-50/50 border border-sky-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label
+                    htmlFor="subLocacao"
+                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                  >
+                    <Tag className="w-4 h-4 text-[#D4AF37]" />
+                    Subatividade de Aluguel e Locação de Bens
+                  </Label>
+                  <span className="text-[11px] text-sky-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-sky-200">
+                    Anexo III sem ISS (Súmula 31)
+                  </span>
+                </div>
+                <Select
+                  value={subatividadeLocacao}
+                  onValueChange={(val) => setSubatividadeLocacao(val as SubatividadeLocacao)}
+                >
+                  <SelectTrigger
+                    id="subLocacao"
+                    className="h-12 bg-white border-sky-300 shadow-sm font-medium text-slate-800"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade de locação" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_LOCACAO.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2.5">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block">{item.label}</span>
+                          <span className="text-xs text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2 text-xs text-sky-950 bg-sky-100/60 p-2.5 rounded-lg">
+                  <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                  <span>
+                    {subatividadeLocacao === 'coworking_espacos'
+                      ? '✓ Coworking mescla locação e serviços administrativos: submete-se à regra do Fator R (Anexo III vs V).'
+                      : '✓ Locação pura de bens móveis: não incide ISS (Súmula Vinculante 31 STF) e enquadra-se diretamente no Anexo III.'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* 1.7 Seletor Ramo Bares, Restaurantes e Food Service */}
+            {tipoAtividade === 'food_service' && (
+              <div className="bg-gradient-to-r from-red-50/70 to-rose-50/50 border border-red-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label
+                    htmlFor="subFoodService"
+                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                  >
+                    <Tag className="w-4 h-4 text-[#D4AF37]" />
+                    Subatividade de Bares, Restaurantes e Food Service
+                  </Label>
+                  <span className="text-[11px] text-red-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-red-200">
+                    Anexo I + Imposto Seletivo & Créditos Delivery
+                  </span>
+                </div>
+                <Select
+                  value={subatividadeFoodService}
+                  onValueChange={(val) =>
+                    setSubatividadeFoodService(val as SubatividadeFoodService)
+                  }
+                >
+                  <SelectTrigger
+                    id="subFoodService"
+                    className="h-12 bg-white border-red-300 shadow-sm font-medium text-slate-800"
+                  >
+                    <SelectValue placeholder="Selecione o perfil de food service" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_FOOD_SERVICE.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2.5">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block">{item.label}</span>
+                          <span className="text-xs text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {subatividadeFoodService === 'bar_balada_bebidas' && (
+                  <div className="bg-rose-50/80 border border-rose-200 p-3.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
+                        <Flame className="w-4 h-4 text-rose-600" />
+                        Alíquota do Imposto Seletivo sobre Bebidas Alcoólicas:
+                      </span>
+                      <p className="text-[11px] text-rose-700 leading-tight">
+                        Incidência adicional monofásica no novo sistema sobre bebidas alcoólicas.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="relative w-28">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={aliquotaImpostoSeletivo}
+                          onChange={(e) => setAliquotaImpostoSeletivo(Number(e.target.value))}
+                          className="h-10 bg-white font-mono font-bold text-rose-900 border-rose-300 pr-7 text-right"
+                        />
+                        <span className="absolute right-2.5 top-2.5 text-xs text-rose-500 font-bold">
+                          %
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 text-xs text-red-950 bg-red-100/60 p-2.5 rounded-lg">
+                  <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                  <span>
+                    {subatividadeFoodService === 'bar_balada_bebidas'
+                      ? `✓ Enquadramento no Anexo I com incidência adicional de ${aliquotaImpostoSeletivo}% de Imposto Seletivo sobre bebidas.`
+                      : subatividadeFoodService === 'delivery_marmitaria'
+                        ? '✓ Enquadramento no Anexo I e geração de 26,5% de crédito de IBS/CBS sobre comissões pagas aos aplicativos de entrega.'
+                        : '✓ Enquadramento no Anexo I do Simples Nacional (refeições equiparadas a comércio) e presunção de 8% de IRPJ.'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* 1.8 Seletor Ramo Misto: Proporção + Subatividades das duas partes */}
             {tipoAtividade === 'misto' && (
               <div className="bg-amber-50/70 border border-amber-200 p-5 rounded-xl space-y-4">
                 <div className="flex justify-between items-center">
@@ -1141,31 +1384,47 @@ export default function Modulo3ComparativoRegimes() {
                     — {simplesNacional.faixaEncontrada}.
                   </p>
                   {faturamentoMensal > 0 && (
-                    <p className="text-[11px] text-slate-500">
-                      Folha de {formatarMoeda(folhaPagamentoMensal)} sobre receita de{' '}
-                      {formatarMoeda(faturamentoMensal)} resulta em{' '}
-                      <strong className="text-[#07132B]">
-                        Fator R = {dadosAdicionais?.fatorRPercent}%
-                      </strong>
-                      .{' '}
-                      {tipoAtividade === 'servico' ? (
+                    <div className="text-[11px] text-slate-500 space-y-1 mt-1">
+                      <p>
+                        Folha de {formatarMoeda(folhaPagamentoMensal)} sobre receita de{' '}
+                        {formatarMoeda(faturamentoMensal)} resulta em{' '}
+                        <strong className="text-[#07132B]">
+                          Fator R = {dadosAdicionais?.fatorRPercent}%
+                        </strong>
+                        .
+                      </p>
+                      {tipoAtividade === 'servico' ||
+                      (tipoAtividade === 'construcao_civil' &&
+                        subatividadeConstrucao === 'engenharia_projetos') ||
+                      (tipoAtividade === 'locacao_bens' &&
+                        subatividadeLocacao === 'coworking_espacos') ? (
                         dadosAdicionais?.fatorRQualificaAnexoIII ? (
-                          <span className="text-emerald-700 font-semibold">
-                            ✓ Qualificado para o Anexo III (alíquotas a partir de 6%, economizando
-                            frente aos 15,5% do Anexo V).
+                          <span className="text-emerald-700 font-semibold block">
+                            ✓ Qualificado para o Anexo III (R ≥ 28%: alíquotas a partir de 6%,
+                            economizando expressivamente frente aos 15,5% do Anexo V).
                           </span>
                         ) : (
-                          <span className="text-amber-700 font-semibold">
-                            ⚠️ Folha inferior a 28%: enquadrado no Anexo V (inicia em 15,5%).
-                            Aumentar pró-labore/folha pode migrar a empresa para o Anexo III.
+                          <span className="text-amber-700 font-semibold block">
+                            ⚠️ Folha inferior a 28% (R &lt; 28%): enquadrado no Anexo V (inicia em
+                            15,5%). Caso a folha alcance 28% (R${' '}
+                            {formatarMoeda(faturamentoMensal * 0.28)}), a empresa migra para o Anexo
+                            III (economia direta).
                           </span>
                         )
                       ) : (
-                        <span className="text-slate-700 font-medium">
-                          Atividade regida por anexo próprio ({simplesNacional.anexoUtilizado}).
+                        <span className="text-slate-700 font-medium block">
+                          {tipoAtividade === 'construcao_civil'
+                            ? 'Obras civis e edificações são enquadradas no Anexo IV (CPP patronal recolhida por fora na folha).'
+                            : tipoAtividade === 'locacao_bens'
+                              ? 'Locação de bens móveis enquadrada no Anexo III diretamente, sem incidência de ISS (Súmula Vinculante 31 STF).'
+                              : tipoAtividade === 'agronegocio'
+                                ? 'Agronegócio enquadrado no Anexo I (produção/venda) ou Anexo II (agroindústria).'
+                                : tipoAtividade === 'food_service'
+                                  ? 'Bares e restaurantes enquadrados no Anexo I (refeições equiparadas a comércio).'
+                                  : `Atividade regida por anexo próprio (${simplesNacional.anexoUtilizado}).`}
                         </span>
                       )}
-                    </p>
+                    </div>
                   )}
                 </div>
               </div>

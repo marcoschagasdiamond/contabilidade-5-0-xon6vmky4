@@ -266,6 +266,10 @@ export default function Modulo6Dashboard() {
                   <SelectItem value="servico">Serviço</SelectItem>
                   <SelectItem value="comercio">Comércio</SelectItem>
                   <SelectItem value="industria">Indústria</SelectItem>
+                  <SelectItem value="agronegocio">Agronegócio / Produtor rural</SelectItem>
+                  <SelectItem value="construcao_civil">Construção civil e engenharia</SelectItem>
+                  <SelectItem value="locacao_bens">Aluguel / Locação de bens</SelectItem>
+                  <SelectItem value="food_service">Bares / Restaurantes e food service</SelectItem>
                   <SelectItem value="misto">Misto</SelectItem>
                 </SelectContent>
               </Select>

@@ -1,6 +1,14 @@
 export type RegimeDiferenciadoTipo = 'padrao' | 'saude_educacao' | 'transporte' | 'cesta_basica'
 
-export type TipoAtividadePrincipal = 'servico' | 'industria' | 'comercio' | 'misto'
+export type TipoAtividadePrincipal =
+  | 'servico'
+  | 'industria'
+  | 'comercio'
+  | 'misto'
+  | 'agronegocio'
+  | 'construcao_civil'
+  | 'locacao_bens'
+  | 'food_service'
 
 export type TipoAtividadeLegado =
   | 'agronegocio'
@@ -8,7 +16,7 @@ export type TipoAtividadeLegado =
   | 'locacao_bens'
   | 'food_service'
 
-export type TipoAtividade = TipoAtividadePrincipal | TipoAtividadeLegado
+export type TipoAtividade = TipoAtividadePrincipal
 
 export const RAMOS_PRINCIPAIS_ATIVOS: Array<{
   id: TipoAtividadePrincipal
@@ -31,6 +39,26 @@ export const RAMOS_PRINCIPAIS_ATIVOS: Array<{
     subtitulo: 'ICMS / Anexo I / ICMS-ST / Presunção 8%',
   },
   {
+    id: 'agronegocio',
+    label: 'Agronegócio / Produtor rural',
+    subtitulo: 'Anexo I ou II / Redução 60% ou Cesta Básica / Presunção 8%',
+  },
+  {
+    id: 'construcao_civil',
+    label: 'Construção civil e engenharia',
+    subtitulo: 'Anexo IV ou III (Fator R) / Regime de Obras e Bens Imóveis',
+  },
+  {
+    id: 'locacao_bens',
+    label: 'Aluguel / Locação de bens',
+    subtitulo: 'Anexo III (sem ISS Súmula 31) / Fator R para Coworking',
+  },
+  {
+    id: 'food_service',
+    label: 'Bares / Restaurantes e food service',
+    subtitulo: 'Anexo I / Imposto Seletivo Bebidas / Créditos Delivery',
+  },
+  {
     id: 'misto',
     label: 'Misto',
     subtitulo: 'Serviço + Comércio com proporção customizada',
@@ -38,14 +66,13 @@ export const RAMOS_PRINCIPAIS_ATIVOS: Array<{
 ]
 
 /**
- * Mapeamento de fallback gracioso para simulações e links legados contendo os 4 ramos retirados.
- * Garante que dados pré-existentes no banco ou URL decodificada nunca quebrem a aplicação.
+ * Mantido para compatibilidade histórica; agora preserva diretamente os 4 ramos restaurados.
  */
 export const MAPA_FALLBACK_RAMOS_LEGADOS: Record<TipoAtividadeLegado, TipoAtividadePrincipal> = {
-  agronegocio: 'comercio',
-  construcao_civil: 'servico',
-  locacao_bens: 'servico',
-  food_service: 'comercio',
+  agronegocio: 'agronegocio',
+  construcao_civil: 'construcao_civil',
+  locacao_bens: 'locacao_bens',
+  food_service: 'food_service',
 }
 
 export const LABELS_RAMOS_LEGADOS: Record<TipoAtividadeLegado, string> = {
@@ -68,11 +95,17 @@ export function isTipoAtividadeLegado(
 
 export function normalizarTipoAtividade(tipo: string | undefined | null): TipoAtividadePrincipal {
   if (!tipo) return 'servico'
-  if (tipo === 'servico' || tipo === 'industria' || tipo === 'comercio' || tipo === 'misto') {
+  if (
+    tipo === 'servico' ||
+    tipo === 'industria' ||
+    tipo === 'comercio' ||
+    tipo === 'misto' ||
+    tipo === 'agronegocio' ||
+    tipo === 'construcao_civil' ||
+    tipo === 'locacao_bens' ||
+    tipo === 'food_service'
+  ) {
     return tipo
-  }
-  if (isTipoAtividadeLegado(tipo)) {
-    return MAPA_FALLBACK_RAMOS_LEGADOS[tipo]
   }
   return 'servico'
 }
