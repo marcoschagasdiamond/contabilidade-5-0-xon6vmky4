@@ -25,6 +25,8 @@ import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import TermosDeUso from './pages/TermosDeUso'
 import Login from './pages/Login'
 import Cadastro from './pages/Cadastro'
+import RecuperarSenha from './pages/RecuperarSenha'
+import RedefinirSenha from './pages/RedefinirSenha'
 import MinhaConta from './pages/MinhaConta'
 import Admin from './pages/Admin'
 import Diagnostico from './pages/Diagnostico'
@@ -196,6 +198,8 @@ const App = () => (
               {/* Autenticação & Conta do Cliente */}
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro" element={<Cadastro />} />
+              <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+              <Route path="/redefinir-senha" element={<RedefinirSenha />} />
               <Route
                 path="/minha-conta"
                 element={

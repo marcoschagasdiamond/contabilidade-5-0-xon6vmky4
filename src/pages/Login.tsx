@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Sparkles,
   Building2,
+  CheckCircle2,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
@@ -22,6 +23,9 @@ export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
+
+  // Mensagem de sucesso vinda de redirecionamentos (ex.: redefinição de senha concluída)
+  const successMessage = (location.state as { sucessoMensagem?: string })?.sucessoMensagem || null
 
   // Helper para obter o destino de retorno (state ou query param ?redirect=...)
   const getDestination = (): string | null => {
@@ -97,6 +101,16 @@ export default function Login() {
             </p>
           </div>
 
+          {successMessage && (
+            <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-slate-800 flex items-start gap-2.5">
+              <CheckCircle2 className="w-5 h-5 text-[#2ECC71] shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <span className="font-semibold text-emerald-950">Sucesso!</span>
+                <p className="text-xs text-slate-600">{successMessage}</p>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-[#E74C3C] flex items-center gap-2">
               <AlertCircle className="w-5 h-5 shrink-0" />
@@ -127,12 +141,20 @@ export default function Login() {
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
-              >
-                Senha
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label
+                  htmlFor="password"
+                  className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+                >
+                  Senha
+                </label>
+                <Link
+                  to="/recuperar-senha"
+                  className="text-xs font-medium text-slate-500 hover:text-[#145A32] transition-colors hover:underline"
+                >
+                  Esqueci minha senha
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
@@ -145,6 +167,19 @@ export default function Login() {
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
                 />
               </div>
+            </div>
+
+            {/* Link discreto "Esqueci minha senha" abaixo do formulário */}
+            <div className="text-center pt-1">
+              <Link
+                to="/recuperar-senha"
+                className="text-xs text-slate-500 hover:text-[#2ECC71] transition-colors"
+              >
+                Esqueceu sua senha?{' '}
+                <span className="font-semibold text-[#145A32] hover:text-[#2ECC71] underline">
+                  Recuperar acesso
+                </span>
+              </Link>
             </div>
 
             <button
