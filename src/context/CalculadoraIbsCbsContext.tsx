@@ -639,7 +639,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       setConfig(configRestaurada)
     }
     if (p.valorOperacao !== undefined) setValorOperacao(p.valorOperacao)
-    if (p.regimeOperacao) setRegimeOperacao(p.regimeOperacao)
+    if (p.regimeOperacao) {
+      // Normalização garantindo compatibilidade com opções antigas e novas
+      const regNormalizado = p.regimeOperacao as RegimeDiferenciadoTipo
+      setRegimeOperacao(regNormalizado)
+    }
     if (p.percentualComprasVendasSimples !== undefined)
       setPercentualComprasVendasSimples(p.percentualComprasVendasSimples)
 
@@ -734,19 +738,33 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     let aliqCbs = config.cbsPadrao
     let aliqIbs = config.ibsPadrao
 
-    if (regimeOperacao === 'saude_educacao') {
-      aliquotaTotal = config.saudeEducacaoAliquota // 10.60%
-      // Rateio proporcional entre CBS e IBS (8.8 / 26.5 e 17.7 / 26.5)
+    // Determina a qual faixa legal o regime pertence (Padrão, Redução 60%, Redução 30%, Alíquota Zero)
+    const presetCorrespondente = PRESETS_SETORES_LC214.find((p) => p.id === regimeOperacao)
+    const grupo =
+      presetCorrespondente?.grupo ||
+      (regimeOperacao === 'saude_educacao'
+        ? 'reducao_60'
+        : regimeOperacao === 'transporte' || regimeOperacao === 'transporte_intelectual'
+          ? 'reducao_30'
+          : regimeOperacao === 'cesta_basica'
+            ? 'aliquota_zero'
+            : 'geral')
+
+    if (grupo === 'reducao_60') {
+      // Aplica a alíquota da faixa de redução de 60% configurada no Módulo 1 (padrão 10,60% ou calculada)
+      aliquotaTotal = config.saudeEducacaoAliquota
       const ratioCbs = config.cbsPadrao / (config.totalIvaDual || 1)
       aliqCbs = Number((aliquotaTotal * ratioCbs).toFixed(2))
       aliqIbs = Number((aliquotaTotal - aliqCbs).toFixed(2))
-    } else if (regimeOperacao === 'transporte') {
-      aliquotaTotal = config.transporteAliquota // 18.55%
+    } else if (grupo === 'reducao_30') {
+      // Aplica a alíquota da faixa de redução de 30% configurada no Módulo 1 (padrão 18,55% ou calculada)
+      aliquotaTotal = config.transporteAliquota
       const ratioCbs = config.cbsPadrao / (config.totalIvaDual || 1)
       aliqCbs = Number((aliquotaTotal * ratioCbs).toFixed(2))
       aliqIbs = Number((aliquotaTotal - aliqCbs).toFixed(2))
-    } else if (regimeOperacao === 'cesta_basica') {
-      aliquotaTotal = config.cestaBasicaIsencao // 0%
+    } else if (grupo === 'aliquota_zero') {
+      // Aplica a alíquota da faixa de alíquota zero configurada no Módulo 1 (0%)
+      aliquotaTotal = config.cestaBasicaIsencao
       aliqCbs = 0
       aliqIbs = 0
     }

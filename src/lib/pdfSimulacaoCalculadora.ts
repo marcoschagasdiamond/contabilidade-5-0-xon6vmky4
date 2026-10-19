@@ -3,6 +3,7 @@ import type {
   ParametrosSimulacaoCalculadora,
   ResultadosSimulacaoCalculadora,
 } from '@/types/simulacaoCalculadora'
+import { obterInfoRegimeOperacao } from '@/types/calculadoraIbsCbs'
 
 export interface GerarPdfSimulacaoOptions {
   nomeSimulacao: string
@@ -368,47 +369,49 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   // Box Módulo 2
   doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
   doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-  doc.roundedRect(margin, currentY, halfWidth, 34, 2, 2, 'FD')
+  doc.roundedRect(margin, currentY, halfWidth, 36, 2, 2, 'FD')
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8.5)
   doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
-  doc.text('MÓDULO 2 • OPERAÇÃO UNITÁRIA', margin + 4, currentY + 6)
+  doc.text('MÓDULO 2 • OPERAÇÃO UNITÁRIA', margin + 4, currentY + 5.5)
 
+  const infoRegimePdf = obterInfoRegimeOperacao(parametros.regimeOperacao || 'padrao')
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7.5)
+  doc.setFontSize(7)
   doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
   doc.text(
     `Valor da Operação: ${formatarMoeda(parametros.valorOperacao)}`,
     margin + 4,
-    currentY + 12,
+    currentY + 10.5,
   )
+  doc.text(`Regime: ${infoRegimePdf.titulo.slice(0, 36)}...`, margin + 4, currentY + 15)
   doc.text(
-    `Alíquota Total Aplicada: ${resultados.resultadoSimples.aliquotaTotalAplicada.toFixed(2)}%`,
+    `Alíquota Total Aplicada: ${resultados.resultadoSimples.aliquotaTotalAplicada.toFixed(2)}% (${infoRegimePdf.etiquetaOrigem})`,
     margin + 4,
-    currentY + 17,
+    currentY + 19.5,
   )
   doc.text(
     `Débito CBS (${resultados.resultadoSimples.aliquotaCbsAplicada}%): ${formatarMoeda(resultados.resultadoSimples.debitoCbs)}`,
     margin + 4,
-    currentY + 22,
+    currentY + 24,
   )
   doc.text(
     `Débito IBS (${resultados.resultadoSimples.aliquotaIbsAplicada}%): ${formatarMoeda(resultados.resultadoSimples.debitoIbs)}`,
     margin + 4,
-    currentY + 27,
+    currentY + 28.5,
   )
   doc.setFont('helvetica', 'bold')
   doc.text(
     `Valor Líquido a Recolher: ${formatarMoeda(resultados.resultadoSimples.valorARecolher)}`,
     margin + 4,
-    currentY + 32,
+    currentY + 33,
   )
 
   // Box Módulo 4
   const box4X = margin + halfWidth + 6
   doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
-  doc.roundedRect(box4X, currentY, halfWidth, 34, 2, 2, 'FD')
+  doc.roundedRect(box4X, currentY, halfWidth, 36, 2, 2, 'FD')
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8.5)
@@ -446,7 +449,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     currentY + 32,
   )
 
-  currentY += 40
+  currentY += 42
 
   // ==========================================
   // BLOCO NOVO: SPLIT PAYMENT & CRÉDITO DE ESTOQUE

@@ -1,7 +1,11 @@
 import React from 'react'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
-import { RegimeDiferenciadoTipo } from '@/types/calculadoraIbsCbs'
+import {
+  RegimeDiferenciadoTipo,
+  PRESETS_SETORES_LC214,
+  obterInfoRegimeOperacao,
+} from '@/types/calculadoraIbsCbs'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -15,12 +19,10 @@ import {
 import { Link } from 'react-router-dom'
 import {
   Calculator,
-  ArrowRight,
   Wallet,
   Receipt,
   Percent,
   FileCheck,
-  Layers,
   RotateCcw,
   Sparkles,
   Building2,
@@ -40,6 +42,20 @@ export default function Modulo2CalculadoraSimples() {
     origemDadosEmpresa,
     restaurarDadosEmpresaNoModulo,
   } = useCalculadoraIbsCbs()
+
+  // Presets divididos pelos grupos legais da LC 214/2025 (mesma estrutura do Módulo 1, sem ícones)
+  const presetsPadrao = PRESETS_SETORES_LC214.filter((p) => p.grupo === 'geral')
+  const presetsReducao60 = PRESETS_SETORES_LC214.filter(
+    (p) => p.grupo === 'reducao_60' && p.id !== 'saude_educacao',
+  )
+  const presetsReducao30 = PRESETS_SETORES_LC214.filter(
+    (p) => p.grupo === 'reducao_30' && p.id !== 'transporte_intelectual',
+  )
+  const presetsAliquotaZero = PRESETS_SETORES_LC214.filter(
+    (p) => p.grupo === 'aliquota_zero' && p.id !== 'cesta_basica',
+  )
+
+  const infoRegimeAtual = obterInfoRegimeOperacao(regimeOperacao)
 
   const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, '')
@@ -143,9 +159,14 @@ export default function Modulo2CalculadoraSimples() {
 
         {/* Campo 2: Regime Aplicado */}
         <div className="space-y-2">
-          <Label htmlFor="regimeOperacao" className="text-sm font-bold text-[#07132B]">
-            Regime Aplicado
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="regimeOperacao" className="text-sm font-bold text-[#07132B]">
+              Regime Aplicado
+            </Label>
+            <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+              {formatarPorcentagem(resultadoSimples.aliquotaTotalAplicada)}
+            </span>
+          </div>
           <Select
             value={regimeOperacao}
             onValueChange={(val) => setRegimeOperacao(val as RegimeDiferenciadoTipo)}
@@ -154,26 +175,81 @@ export default function Modulo2CalculadoraSimples() {
               id="regimeOperacao"
               className="h-12 bg-white border-slate-300 shadow-sm font-medium"
             >
-              <SelectValue placeholder="Selecione o regime" />
+              <SelectValue placeholder="Selecione o regime da operação" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="padrao">
-                Padrão ({formatarPorcentagem(config.totalIvaDual)})
-              </SelectItem>
-              <SelectItem value="saude_educacao">
-                Saúde e Educação ({formatarPorcentagem(config.saudeEducacaoAliquota)})
-              </SelectItem>
-              <SelectItem value="transporte">
-                Transporte ({formatarPorcentagem(config.transporteAliquota)})
-              </SelectItem>
-              <SelectItem value="cesta_basica">
-                Cesta Básica ({formatarPorcentagem(config.cestaBasicaIsencao)})
-              </SelectItem>
+            <SelectContent className="max-h-96">
+              {/* Alíquota Plena Padrão */}
+              {presetsPadrao.map((preset) => (
+                <SelectItem key={preset.id} value={preset.id} className="py-2">
+                  <div className="flex flex-col text-left">
+                    <span className="font-bold text-slate-900 text-xs">
+                      {preset.titulo} — {formatarPorcentagem(config.totalIvaDual)}
+                    </span>
+                    <span className="text-[11px] text-slate-500 leading-tight">
+                      {preset.etiquetaOrigem} · {preset.subtitulo}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+
+              {/* SEÇÃO (1): Redução de 60% (arts. 128–134) */}
+              <div className="px-2 py-1.5 mt-2 bg-slate-100 text-[11px] font-bold text-slate-800 uppercase tracking-wider rounded">
+                (1) Redução de 60% — Arts. 128 a 134 (
+                {formatarPorcentagem(config.saudeEducacaoAliquota)})
+              </div>
+              {presetsReducao60.map((preset) => (
+                <SelectItem key={preset.id} value={preset.id} className="py-2 pl-3">
+                  <div className="flex flex-col text-left">
+                    <span className="font-bold text-slate-900 text-xs">{preset.titulo}</span>
+                    <span className="text-[11px] text-slate-500 leading-tight">
+                      {preset.etiquetaOrigem} · {preset.subtitulo}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+
+              {/* SEÇÃO (2): Redução de 30% (art. 132) */}
+              <div className="px-2 py-1.5 mt-2 bg-slate-100 text-[11px] font-bold text-slate-800 uppercase tracking-wider rounded">
+                (2) Redução de 30% — Profissões Regulamentadas (Art. 132) (
+                {formatarPorcentagem(config.transporteAliquota)})
+              </div>
+              {presetsReducao30.map((preset) => (
+                <SelectItem key={preset.id} value={preset.id} className="py-2 pl-3">
+                  <div className="flex flex-col text-left">
+                    <span className="font-bold text-slate-900 text-xs">{preset.titulo}</span>
+                    <span className="text-[11px] text-slate-500 leading-tight">
+                      {preset.etiquetaOrigem} · {preset.subtitulo}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+
+              {/* SEÇÃO (3): Alíquota Zero (arts. 8º, 129 e 146) */}
+              <div className="px-2 py-1.5 mt-2 bg-slate-100 text-[11px] font-bold text-slate-800 uppercase tracking-wider rounded">
+                (3) Alíquota Zero — Arts. 8º, 129 e 146 (
+                {formatarPorcentagem(config.cestaBasicaIsencao)})
+              </div>
+              {presetsAliquotaZero.map((preset) => (
+                <SelectItem key={preset.id} value={preset.id} className="py-2 pl-3">
+                  <div className="flex flex-col text-left">
+                    <span className="font-bold text-slate-900 text-xs">{preset.titulo}</span>
+                    <span className="text-[11px] text-slate-500 leading-tight">
+                      {preset.etiquetaOrigem} · {preset.subtitulo}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <span className="text-[11px] text-slate-500">
-            Regra constitucional incidente sobre o produto/serviço.
-          </span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-500 gap-1">
+            <span className="truncate">
+              Regra:{' '}
+              <strong className="text-slate-800 font-semibold">{infoRegimeAtual.titulo}</strong>
+            </span>
+            <span className="font-medium text-emerald-700 shrink-0">
+              {infoRegimeAtual.etiquetaOrigem}
+            </span>
+          </div>
         </div>
 
         {/* Campo 3: % de Compras sobre Vendas */}

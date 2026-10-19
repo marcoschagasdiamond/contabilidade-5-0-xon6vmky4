@@ -1,4 +1,97 @@
-export type RegimeDiferenciadoTipo = 'padrao' | 'saude_educacao' | 'transporte' | 'cesta_basica'
+export type RegimeDiferenciadoTipo =
+  // Opção genérica / manual
+  | 'padrao'
+  // Legados mantidos para compatibilidade retroativa com simulações e links antigos
+  | 'saude_educacao'
+  | 'transporte'
+  | 'transporte_intelectual'
+  | 'cesta_basica'
+  // (1) Redução de 60% (arts. 128–134 da LC 214/2025)
+  | 'saude_servicos'
+  | 'educacao_ensino'
+  | 'medicamentos_60'
+  | 'dispositivos_medicos_anvisa'
+  | 'alimentacao_humana'
+  | 'insumos_agropecuarios'
+  | 'producoes_artisticas_culturais'
+  | 'seguranca_nacional'
+  // (2) Redução de 30% (art. 132 da LC 214/2025) - Profissões Intelectuais Regulamentadas
+  | 'profissoes_intelectuais_advogados'
+  | 'profissoes_intelectuais_contadores'
+  | 'profissoes_intelectuais_engenheiros'
+  | 'profissoes_intelectuais_economistas'
+  | 'profissoes_intelectuais_jornalistas'
+  | 'profissoes_intelectuais_demais'
+  // (3) Alíquota Zero (arts. 8º, 129 e 146 da LC 214/2025)
+  | 'cesta_basica_nacional'
+  | 'horticolas_frutas_ovos'
+  | 'medicamentos_essenciais_anexo_xii'
+  | 'dispositivos_acessibilidade_pcd'
+
+/**
+ * Normaliza qualquer valor antigo ou novo de RegimeDiferenciadoTipo garantindo retrocompatibilidade plena
+ */
+export function normalizarRegimeOperacao(
+  regime: string | undefined | null,
+): RegimeDiferenciadoTipo {
+  if (!regime) return 'padrao'
+  const r = regime.trim()
+  const validos: RegimeDiferenciadoTipo[] = [
+    'padrao',
+    'saude_educacao',
+    'transporte',
+    'transporte_intelectual',
+    'cesta_basica',
+    'saude_servicos',
+    'educacao_ensino',
+    'medicamentos_60',
+    'dispositivos_medicos_anvisa',
+    'alimentacao_humana',
+    'insumos_agropecuarios',
+    'producoes_artisticas_culturais',
+    'seguranca_nacional',
+    'profissoes_intelectuais_advogados',
+    'profissoes_intelectuais_contadores',
+    'profissoes_intelectuais_engenheiros',
+    'profissoes_intelectuais_economistas',
+    'profissoes_intelectuais_jornalistas',
+    'profissoes_intelectuais_demais',
+    'cesta_basica_nacional',
+    'horticolas_frutas_ovos',
+    'medicamentos_essenciais_anexo_xii',
+    'dispositivos_acessibilidade_pcd',
+  ]
+  if (validos.includes(r as RegimeDiferenciadoTipo)) {
+    return r as RegimeDiferenciadoTipo
+  }
+  return 'padrao'
+}
+
+/**
+ * Retorna as informações do preset/regime LC 214/2025 para exibição de título, subtítulo e etiquetas legais
+ */
+export function obterInfoRegimeOperacao(regime: RegimeDiferenciadoTipo) {
+  const achado = PRESETS_SETORES_LC214.find((p) => p.id === regime)
+  if (achado) return achado
+
+  // Mapeamentos de fallback para legados
+  if (regime === 'transporte') {
+    return (
+      PRESETS_SETORES_LC214.find((p) => p.id === 'transporte_intelectual') || {
+        id: 'transporte' as any,
+        grupo: 'reducao_30' as const,
+        grupoLabel: 'Redução de 30% (art. 132)',
+        titulo: 'Transporte Coletivo & Profissões Regulamentadas (-30%)',
+        subtitulo: 'Regime diferenciado com redução de 30%',
+        reducaoPercentual: 30,
+        baseLegal: 'LC 214/2025 art. 132',
+        etiquetaOrigem: 'LC 214/2025 · art. 132 — redução 30%',
+        alvoRegime: 'transporte' as const,
+      }
+    )
+  }
+  return PRESETS_SETORES_LC214[0]
+}
 
 export type TipoAtividadePrincipal =
   | 'servico'
