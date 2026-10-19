@@ -602,8 +602,12 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(6.8)
   doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+  let labelPresetPdf = ''
+  if (parametros.config.presetSetor && parametros.config.presetSetor !== 'nenhum') {
+    labelPresetPdf = ` (${parametros.config.presetSetor})`
+  }
   const infoAssistente = parametros.config.anoTransicao
-    ? ` | Fase Transição: ${parametros.config.anoTransicao}${parametros.config.presetSetor ? ` (${parametros.config.presetSetor})` : ''}`
+    ? ` | Fase Transição: ${parametros.config.anoTransicao}${labelPresetPdf}`
     : ''
   doc.text(
     `CBS: ${parametros.config.cbsPadrao}% | IBS: ${parametros.config.ibsPadrao}% | Total IVA Dual: ${parametros.config.totalIvaDual}%${infoAssistente} | Saúde/Educação (-60%): ${parametros.config.saudeEducacaoAliquota}% | Transp. (-30%): ${parametros.config.transporteAliquota}%`,

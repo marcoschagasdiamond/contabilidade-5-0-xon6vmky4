@@ -375,13 +375,22 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         totalIvaDual: etiquetaFase,
       }
 
-      // Se já estava com preset de setor, atualiza o rótulo dos regimes diferenciados
-      if (prev.presetSetor === 'saude_educacao') {
-        novasEtiquetas.saudeEducacaoAliquota = `LC 214/2025 · redução 60% (${ano})`
-      } else if (prev.presetSetor === 'transporte_intelectual') {
-        novasEtiquetas.transporteAliquota = `LC 214/2025 · redução 30% (${ano})`
-      } else if (prev.presetSetor === 'cesta_basica') {
-        novasEtiquetas.cestaBasicaIsencao = 'LC 214/2025 · alíquota zero'
+      // Se já estava com preset de setor, atualiza o rótulo dos regimes diferenciados combinando preset + fase do ano
+      const presetAtivo = prev.presetSetor
+      if (presetAtivo && presetAtivo !== 'nenhum') {
+        const itemPreset = PRESETS_SETORES_LC214.find((p) => p.id === presetAtivo)
+        if (itemPreset) {
+          const etiquetaAno = `${itemPreset.etiquetaOrigem} · fase ${ano}`
+          if (itemPreset.grupo === 'reducao_60') {
+            novasEtiquetas.saudeEducacaoAliquota = etiquetaAno
+          } else if (itemPreset.grupo === 'reducao_30') {
+            novasEtiquetas.transporteAliquota = etiquetaAno
+          } else if (itemPreset.grupo === 'aliquota_zero') {
+            novasEtiquetas.cestaBasicaIsencao = `${itemPreset.etiquetaOrigem} · fase ${ano}`
+          } else if (itemPreset.id === 'padrao') {
+            novasEtiquetas.totalIvaDual = etiquetaFase
+          }
+        }
       }
 
       return {
@@ -423,13 +432,16 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       const transAliq = Number((totalRef * 0.7).toFixed(2)) // -30%
       const cestaAliq = 0 // Alíquota zero
 
-      if (preset === 'saude_educacao') {
-        novasEtiquetas.saudeEducacaoAliquota = `LC 214/2025 · redução 60% (${ano})`
-      } else if (preset === 'transporte_intelectual') {
-        novasEtiquetas.transporteAliquota = `LC 214/2025 · redução 30% (${ano})`
-      } else if (preset === 'cesta_basica') {
-        novasEtiquetas.cestaBasicaIsencao = 'LC 214/2025 · alíquota zero'
-      } else if (preset === 'padrao') {
+      // Rótulo completo com a base legal específica e fase do ano selecionado
+      const etiquetaLegalComAno = `${itemPreset.etiquetaOrigem} · fase ${ano}`
+
+      if (itemPreset.grupo === 'reducao_60') {
+        novasEtiquetas.saudeEducacaoAliquota = etiquetaLegalComAno
+      } else if (itemPreset.grupo === 'reducao_30') {
+        novasEtiquetas.transporteAliquota = etiquetaLegalComAno
+      } else if (itemPreset.grupo === 'aliquota_zero') {
+        novasEtiquetas.cestaBasicaIsencao = `${itemPreset.etiquetaOrigem} · fase ${ano}`
+      } else if (itemPreset.id === 'padrao') {
         novasEtiquetas.totalIvaDual =
           prev.etiquetasOrigem?.totalIvaDual || `LC 214/2025 · fase ${ano}`
       }

@@ -637,12 +637,37 @@ export const LISTA_UFS_ICMS: ItemUfIcms[] = [
 
 export type AnoTransicaoIbsCbs = 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
 
+export type GrupoPresetSetor = 'geral' | 'reducao_60' | 'reducao_30' | 'aliquota_zero'
+
 export type PresetSetorIbsCbs =
+  // Opção genérica / manual
   | 'nenhum'
   | 'padrao'
+  // Legados mantidos para compatibilidade retroativa com simulações antigas
   | 'saude_educacao'
   | 'transporte_intelectual'
   | 'cesta_basica'
+  // (1) Redução de 60% (arts. 128–134 da LC 214/2025)
+  | 'saude_servicos'
+  | 'educacao_ensino'
+  | 'medicamentos_60'
+  | 'dispositivos_medicos_anvisa'
+  | 'alimentacao_humana'
+  | 'insumos_agropecuarios'
+  | 'producoes_artisticas_culturais'
+  | 'seguranca_nacional'
+  // (2) Redução de 30% (art. 132 da LC 214/2025) - Profissões Intelectuais Regulamentadas
+  | 'profissoes_intelectuais_advogados'
+  | 'profissoes_intelectuais_contadores'
+  | 'profissoes_intelectuais_engenheiros'
+  | 'profissoes_intelectuais_economistas'
+  | 'profissoes_intelectuais_jornalistas'
+  | 'profissoes_intelectuais_demais'
+  // (3) Alíquota Zero (arts. 8º, 129 e 146 da LC 214/2025)
+  | 'cesta_basica_nacional'
+  | 'horticolas_frutas_ovos'
+  | 'medicamentos_essenciais_anexo_xii'
+  | 'dispositivos_acessibilidade_pcd'
 
 export interface DadosFaseTransicao {
   ano: AnoTransicaoIbsCbs
@@ -748,46 +773,269 @@ export const LISTA_ANOS_TRANSICAO: AnoTransicaoIbsCbs[] = [
 
 export interface OpcaoPresetSetor {
   id: PresetSetorIbsCbs
+  grupo: GrupoPresetSetor
+  grupoLabel: string
   titulo: string
   subtitulo: string
   reducaoPercentual: number // 0, 60, 30, 100
   baseLegal: string
   etiquetaOrigem: string
+  alvoRegime?: 'padrao' | 'saude_educacao' | 'transporte' | 'cesta_basica'
 }
 
 export const PRESETS_SETORES_LC214: OpcaoPresetSetor[] = [
+  // --- GRUPO GERAL / PADRÃO ---
   {
     id: 'padrao',
+    grupo: 'geral',
+    grupoLabel: 'Padrão / Sem Redução',
     titulo: 'Alíquota Padrão Plena (Sem Redução)',
-    subtitulo: 'Comércio, Indústria e Serviços em geral (alíquota cheia do ano)',
+    subtitulo: 'Comércio, Indústria e Serviços em geral (alíquota cheia da fase)',
     reducaoPercentual: 0,
     baseLegal: 'LC 214/2025 art. 130 (Alíquota de referência sem redução)',
     etiquetaOrigem: 'LC 214/2025 · alíquota plena',
+    alvoRegime: 'padrao',
+  },
+
+  // --- (1) REDUÇÃO DE 60% (arts. 128–134 da LC 214/2025) ---
+  {
+    id: 'saude_servicos',
+    grupo: 'reducao_60',
+    grupoLabel: 'Redução de 60% (arts. 128–134)',
+    titulo: 'Saúde — Serviços Hospitalares, Clínicas e Diagnóstico (-60%)',
+    subtitulo: 'Serviços de saúde humana, atenção ambulatorial e exames laboratoriais',
+    reducaoPercentual: 60,
+    baseLegal: 'LC 214/2025 art. 130 (Serviços de saúde humana regulamentados)',
+    etiquetaOrigem: 'LC 214/2025 · art. 130 — saúde',
+    alvoRegime: 'saude_educacao',
   },
   {
+    id: 'educacao_ensino',
+    grupo: 'reducao_60',
+    grupoLabel: 'Redução de 60% (arts. 128–134)',
+    titulo: 'Educação — Ensino Básico, Superior e Técnico (-60%)',
+    subtitulo: 'Educação infantil, ensino fundamental/médio, superior e técnico-profissional',
+    reducaoPercentual: 60,
+    baseLegal: 'LC 214/2025 art. 130 (Serviços de educação e ensino)',
+    etiquetaOrigem: 'LC 214/2025 · art. 130 — educação',
+    alvoRegime: 'saude_educacao',
+  },
+  {
+    id: 'medicamentos_60',
+    grupo: 'reducao_60',
+    grupoLabel: 'Redução de 60% (arts. 128–134)',
+    titulo: 'Medicamentos — Produtos Farmacêuticos Registrados (-60%)',
+    subtitulo: 'Medicamentos com registro Anvisa não contemplados com alíquota zero',
+    reducaoPercentual: 60,
+    baseLegal: 'LC 214/2025 art. 133 (Medicamentos e fármacos com redução de 60%)',
+    etiquetaOrigem: 'LC 214/2025 · art. 133 — medicamentos',
+    alvoRegime: 'saude_educacao',
+  },
+  {
+    id: 'dispositivos_medicos_anvisa',
+    grupo: 'reducao_60',
+    grupoLabel: 'Redução de 60% (arts. 128–134)',
+    titulo: 'Dispositivos Médicos — Equipamentos e Materiais Anvisa (-60%)',
+    subtitulo: 'Dispositivos médicos, próteses, órteses e materiais hospitalares credenciados',
+    reducaoPercentual: 60,
+    baseLegal:
+      'LC 214/2025 art. 131 (Dispositivos médicos e de acessibilidade com registro Anvisa)',
+    etiquetaOrigem: 'LC 214/2025 · art. 131 — dispositivos médicos/Anvisa',
+    alvoRegime: 'saude_educacao',
+  },
+  {
+    id: 'alimentacao_humana',
+    grupo: 'reducao_60',
+    grupoLabel: 'Redução de 60% (arts. 128–134)',
+    titulo: 'Alimentação Humana — Produtos Agropecuários & Alimentos (-60%)',
+    subtitulo: 'Alimentos destinados ao consumo humano fora da Cesta Básica Nacional',
+    reducaoPercentual: 60,
+    baseLegal: 'LC 214/2025 art. 128 (Alimentos destinados ao consumo humano)',
+    etiquetaOrigem: 'LC 214/2025 · art. 128 — alimentação humana',
+    alvoRegime: 'saude_educacao',
+  },
+  {
+    id: 'insumos_agropecuarios',
+    grupo: 'reducao_60',
+    grupoLabel: 'Redução de 60% (arts. 128–134)',
+    titulo: 'Insumos Agropecuários e Aquícolas (-60%)',
+    subtitulo: 'Fertilizantes, defensivos, sementes certificadas, rações e insumos da produção',
+    reducaoPercentual: 60,
+    baseLegal: 'LC 214/2025 art. 128 (Insumos agropecuários e aquícolas)',
+    etiquetaOrigem: 'LC 214/2025 · art. 128 — insumos agropecuários',
+    alvoRegime: 'saude_educacao',
+  },
+  {
+    id: 'producoes_artisticas_culturais',
+    grupo: 'reducao_60',
+    grupoLabel: 'Redução de 60% (arts. 128–134)',
+    titulo: 'Produções Artísticas, Culturais e Desportivas (-60%)',
+    subtitulo: 'Eventos culturais, obras audiovisuais nacionais e atividades desportivas',
+    reducaoPercentual: 60,
+    baseLegal:
+      'LC 214/2025 art. 130, IV (Produções artísticas, culturais, jornalísticas e desportivas)',
+    etiquetaOrigem: 'LC 214/2025 · art. 130 — cultura/desporto',
+    alvoRegime: 'saude_educacao',
+  },
+  {
+    id: 'seguranca_nacional',
+    grupo: 'reducao_60',
+    grupoLabel: 'Redução de 60% (arts. 128–134)',
+    titulo: 'Segurança e Soberania Nacional — Bens e Tecnologias de Defesa (-60%)',
+    subtitulo: 'Bens e serviços de segurança nacional, defesa e soberania cibernética',
+    reducaoPercentual: 60,
+    baseLegal: 'LC 214/2025 art. 134 (Bens e serviços de segurança e soberania nacional)',
+    etiquetaOrigem: 'LC 214/2025 · art. 134 — segurança nacional',
+    alvoRegime: 'saude_educacao',
+  },
+
+  // --- (2) REDUÇÃO DE 30% (art. 132 da LC 214/2025) - PROFISSÕES INTELECTUAIS REGULAMENTADAS ---
+  {
+    id: 'profissoes_intelectuais_advogados',
+    grupo: 'reducao_30',
+    grupoLabel: 'Redução de 30% — Profissões Regulamentadas (art. 132)',
+    titulo: 'Advocacia — Serviços Jurídicos e Consultoria Legal (-30%)',
+    subtitulo: 'Sociedades e profissionais submetidos à fiscalização da OAB',
+    reducaoPercentual: 30,
+    baseLegal: 'LC 214/2025 art. 132 (Serviços de profissões intelectuais — Advocacia / OAB)',
+    etiquetaOrigem: 'LC 214/2025 · art. 132 — advogados (OAB)',
+    alvoRegime: 'transporte',
+  },
+  {
+    id: 'profissoes_intelectuais_contadores',
+    grupo: 'reducao_30',
+    grupoLabel: 'Redução de 30% — Profissões Regulamentadas (art. 132)',
+    titulo: 'Contabilidade e Auditoria — CFC/CRC (-30%)',
+    subtitulo: 'Serviços contábeis, perícia contábil e auditoria independente',
+    reducaoPercentual: 30,
+    baseLegal: 'LC 214/2025 art. 132 (Serviços de profissões intelectuais — Contabilidade / CFC)',
+    etiquetaOrigem: 'LC 214/2025 · art. 132 — contadores (CFC/CRC)',
+    alvoRegime: 'transporte',
+  },
+  {
+    id: 'profissoes_intelectuais_engenheiros',
+    grupo: 'reducao_30',
+    grupoLabel: 'Redução de 30% — Profissões Regulamentadas (art. 132)',
+    titulo: 'Engenharia, Arquitetura e Agronomia — CREA/CAU (-30%)',
+    subtitulo: 'Projetos técnicos, perícias, consultorias de engenharia e urbanismo',
+    reducaoPercentual: 30,
+    baseLegal: 'LC 214/2025 art. 132 (Serviços de profissões intelectuais — Engenharia / CREA-CAU)',
+    etiquetaOrigem: 'LC 214/2025 · art. 132 — engenheiros/arquitetos',
+    alvoRegime: 'transporte',
+  },
+  {
+    id: 'profissoes_intelectuais_economistas',
+    grupo: 'reducao_30',
+    grupoLabel: 'Redução de 30% — Profissões Regulamentadas (art. 132)',
+    titulo: 'Economia, Administração e Atuária — CORECON/CRA (-30%)',
+    subtitulo: 'Consultoria financeira, estudos de viabilidade, auditoria de gestão e previdência',
+    reducaoPercentual: 30,
+    baseLegal: 'LC 214/2025 art. 132 (Serviços de profissões intelectuais — Economistas / CORECON)',
+    etiquetaOrigem: 'LC 214/2025 · art. 132 — economistas/administradores',
+    alvoRegime: 'transporte',
+  },
+  {
+    id: 'profissoes_intelectuais_jornalistas',
+    grupo: 'reducao_30',
+    grupoLabel: 'Redução de 30% — Profissões Regulamentadas (art. 132)',
+    titulo: 'Jornalismo, Comunicação e Redação Técnica (-30%)',
+    subtitulo: 'Atividades jornalísticas regulamentadas, reportagem e edição técnica',
+    reducaoPercentual: 30,
+    baseLegal: 'LC 214/2025 art. 132 (Serviços de profissões intelectuais — Jornalistas)',
+    etiquetaOrigem: 'LC 214/2025 · art. 132 — jornalistas',
+    alvoRegime: 'transporte',
+  },
+  {
+    id: 'profissoes_intelectuais_demais',
+    grupo: 'reducao_30',
+    grupoLabel: 'Redução de 30% — Profissões Regulamentadas (art. 132)',
+    titulo: 'Demais Profissões Intelectuais Regulamentadas por Conselho (-30%)',
+    subtitulo: 'Psicologia, fisioterapia, medicina veterinária, biologia e outros conselhos',
+    reducaoPercentual: 30,
+    baseLegal: 'LC 214/2025 art. 132 (Serviços prestados por profissões intelectuais com conselho)',
+    etiquetaOrigem: 'LC 214/2025 · art. 132 — profissões regulamentadas',
+    alvoRegime: 'transporte',
+  },
+
+  // --- (3) ALÍQUOTA ZERO (arts. 8º, 129 e 146 da LC 214/2025) ---
+  {
+    id: 'cesta_basica_nacional',
+    grupo: 'aliquota_zero',
+    grupoLabel: 'Alíquota Zero (arts. 8º, 129 e 146)',
+    titulo: 'Cesta Básica Nacional de Alimentos — Alíquota Zero (0%)',
+    subtitulo: 'Arroz, feijão, leite, carnes, farinhas, pão, café e itens essenciais do Anexo I',
+    reducaoPercentual: 100,
+    baseLegal: 'LC 214/2025 art. 8º e 129 (Cesta Básica Nacional com desoneração integral)',
+    etiquetaOrigem: 'LC 214/2025 · arts. 8º e 129 — cesta básica nacional',
+    alvoRegime: 'cesta_basica',
+  },
+  {
+    id: 'horticolas_frutas_ovos',
+    grupo: 'aliquota_zero',
+    grupoLabel: 'Alíquota Zero (arts. 8º, 129 e 146)',
+    titulo: 'Hortícolas, Frutas Frescas e Ovos — Alíquota Zero (0%)',
+    subtitulo: 'Produtos hortícolas in natura, leguminosas, frutas frescas e ovos',
+    reducaoPercentual: 100,
+    baseLegal: 'LC 214/2025 art. 129, II (Hortícolas, frutas e ovos com alíquota zero)',
+    etiquetaOrigem: 'LC 214/2025 · art. 129 — hortícolas, frutas e ovos',
+    alvoRegime: 'cesta_basica',
+  },
+  {
+    id: 'medicamentos_essenciais_anexo_xii',
+    grupo: 'aliquota_zero',
+    grupoLabel: 'Alíquota Zero (arts. 8º, 129 e 146)',
+    titulo: 'Medicamentos Essenciais e Imunobiológicos — Anexo XII (0%)',
+    subtitulo: 'Medicamentos para câncer, doenças raras, vacinas do PNI e itens do Anexo XII',
+    reducaoPercentual: 100,
+    baseLegal: 'LC 214/2025 art. 146 e Anexo XII (Medicamentos essenciais com alíquota zero)',
+    etiquetaOrigem: 'LC 214/2025 · art. 146 — medicamentos essenciais (Anexo XII)',
+    alvoRegime: 'cesta_basica',
+  },
+  {
+    id: 'dispositivos_acessibilidade_pcd',
+    grupo: 'aliquota_zero',
+    grupoLabel: 'Alíquota Zero (arts. 8º, 129 e 146)',
+    titulo: 'Dispositivos de Acessibilidade para PcD — Alíquota Zero (0%)',
+    subtitulo: 'Cadeiras de rodas, próteses auditivas/visuais e tecnologias assistivas',
+    reducaoPercentual: 100,
+    baseLegal: 'LC 214/2025 art. 146 (Dispositivos de acessibilidade para pessoas com deficiência)',
+    etiquetaOrigem: 'LC 214/2025 · art. 146 — acessibilidade PcD',
+    alvoRegime: 'cesta_basica',
+  },
+
+  // --- PRESETS HISTÓRICOS MANTIDOS PARA COMPATIBILIDADE ---
+  {
     id: 'saude_educacao',
-    titulo: 'Saúde e Educação (-60%)',
-    subtitulo: 'Serviços de saúde humana, hospitais, clínicas e ensino fundamental/superior',
+    grupo: 'reducao_60',
+    grupoLabel: 'Redução de 60% (arts. 128–134)',
+    titulo: 'Saúde e Educação (-60% genérico)',
+    subtitulo: 'Serviços de saúde humana e ensino (preset legado)',
     reducaoPercentual: 60,
     baseLegal: 'LC 214/2025 art. 130 (Redução de 60% para saúde e educação)',
-    etiquetaOrigem: 'LC 214/2025 · redução 60%',
+    etiquetaOrigem: 'LC 214/2025 · art. 130 — saúde e educação',
+    alvoRegime: 'saude_educacao',
   },
   {
     id: 'transporte_intelectual',
-    titulo: 'Transporte Coletivo e Profissões Intelectuais (-30%)',
-    subtitulo: 'Transporte de passageiros e atividades profissionais regulamentadas',
+    grupo: 'reducao_30',
+    grupoLabel: 'Redução de 30% — Profissões Regulamentadas (art. 132)',
+    titulo: 'Transporte Coletivo & Intelectuais (-30% genérico)',
+    subtitulo: 'Transporte e profissões regulamentadas (preset legado)',
     reducaoPercentual: 30,
-    baseLegal:
-      'LC 214/2025 art. 130 (Redução de 30% transporte coletivo e profissões regulamentadas)',
-    etiquetaOrigem: 'LC 214/2025 · redução 30%',
+    baseLegal: 'LC 214/2025 arts. 130 e 132 (Redução de 30%)',
+    etiquetaOrigem: 'LC 214/2025 · art. 132 — intelectuais/transporte',
+    alvoRegime: 'transporte',
   },
   {
     id: 'cesta_basica',
-    titulo: 'Cesta Básica Nacional (Alíquota Zero)',
-    subtitulo: 'Alimentos essenciais da cesta básica com isenção integral e créditos mantidos',
+    grupo: 'aliquota_zero',
+    grupoLabel: 'Alíquota Zero (arts. 8º, 129 e 146)',
+    titulo: 'Cesta Básica Nacional (Alíquota Zero genérica)',
+    subtitulo: 'Alimentos essenciais da cesta básica (preset legado)',
     reducaoPercentual: 100,
-    baseLegal: 'LC 214/2025 art. 8º e 129 (Isenção integral 0% com manutenção de créditos)',
-    etiquetaOrigem: 'LC 214/2025 · alíquota zero',
+    baseLegal: 'LC 214/2025 art. 8º e 129 (Isenção integral 0%)',
+    etiquetaOrigem: 'LC 214/2025 · arts. 8º e 129 — cesta básica',
+    alvoRegime: 'cesta_basica',
   },
 ]
 

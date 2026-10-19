@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
-import { TipoAtividade } from '@/types/calculadoraIbsCbs'
+import { TipoAtividade, PRESETS_SETORES_LC214 } from '@/types/calculadoraIbsCbs'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -480,6 +480,13 @@ export default function Modulo5TransicaoCronograma() {
             </h3>
             <p className="text-xs text-slate-500">
               Curva de convergência da tributação sobre consumo ao longo das etapas constitucionais.
+              {config.presetSetor && config.presetSetor !== 'nenhum' && (
+                <span className="ml-1 font-semibold text-[#07132B]">
+                  • Preset:{' '}
+                  {PRESETS_SETORES_LC214.find((p) => p.id === config.presetSetor)?.titulo ||
+                    config.presetSetor}
+                </span>
+              )}
             </p>
           </div>
           <span className="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">

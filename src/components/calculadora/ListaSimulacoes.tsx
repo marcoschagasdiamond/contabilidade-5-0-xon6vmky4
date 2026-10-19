@@ -231,6 +231,13 @@ export function ListaSimulacoes({
                       <span className="text-emerald-700 font-semibold">
                         Rec: {sim.resultados.resultadoDashboard.regimeRecomendado}
                       </span>
+                      {sim.parametros.config?.presetSetor &&
+                        sim.parametros.config.presetSetor !== 'nenhum' && (
+                          <>
+                            <span>•</span>
+                            <span className="text-amber-800 font-medium">Preset LC 214</span>
+                          </>
+                        )}
                     </div>
 
                     <div className="text-[9px] text-slate-400 flex items-center gap-1 mt-1">

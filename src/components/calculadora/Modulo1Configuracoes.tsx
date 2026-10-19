@@ -36,6 +36,20 @@ export default function Modulo1Configuracoes() {
   const anoAtual = config.anoTransicao || 2033
   const presetAtual = config.presetSetor || 'nenhum'
 
+  // Presets divididos pelos 3 grupos legais da LC 214/2025 + Padrão
+  const presetsPadrao = PRESETS_SETORES_LC214.filter((p) => p.grupo === 'geral')
+  const presetsReducao60 = PRESETS_SETORES_LC214.filter(
+    (p) => p.grupo === 'reducao_60' && p.id !== 'saude_educacao',
+  )
+  const presetsReducao30 = PRESETS_SETORES_LC214.filter(
+    (p) => p.grupo === 'reducao_30' && p.id !== 'transporte_intelectual',
+  )
+  const presetsAliquotaZero = PRESETS_SETORES_LC214.filter(
+    (p) => p.grupo === 'aliquota_zero' && p.id !== 'cesta_basica',
+  )
+
+  const presetAtivoObj = PRESETS_SETORES_LC214.find((p) => p.id === presetAtual)
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Cabeçalho do Módulo */}
@@ -158,7 +172,8 @@ export default function Modulo1Configuracoes() {
                 >
                   <SelectValue placeholder="Selecione o preset por setor" />
                 </SelectTrigger>
-                <SelectContent className="max-h-80">
+                <SelectContent className="max-h-96">
+                  {/* Opção Padrão / Manual */}
                   <SelectItem value="nenhum" className="py-2">
                     <div className="flex flex-col text-left">
                       <span className="font-bold text-slate-900 text-xs">
@@ -169,8 +184,55 @@ export default function Modulo1Configuracoes() {
                       </span>
                     </div>
                   </SelectItem>
-                  {PRESETS_SETORES_LC214.map((preset) => (
+
+                  {/* Alíquota Plena Padrão */}
+                  {presetsPadrao.map((preset) => (
                     <SelectItem key={preset.id} value={preset.id} className="py-2">
+                      <div className="flex flex-col text-left">
+                        <span className="font-bold text-slate-900 text-xs">{preset.titulo}</span>
+                        <span className="text-[11px] text-slate-500 leading-tight">
+                          {preset.subtitulo}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+
+                  {/* SEÇÃO (1): Redução de 60% (arts. 128–134) */}
+                  <div className="px-2 py-1.5 mt-2 bg-slate-100 text-[11px] font-bold text-slate-800 uppercase tracking-wider rounded">
+                    (1) Redução de 60% — Arts. 128 a 134 da LC 214/2025
+                  </div>
+                  {presetsReducao60.map((preset) => (
+                    <SelectItem key={preset.id} value={preset.id} className="py-2 pl-3">
+                      <div className="flex flex-col text-left">
+                        <span className="font-bold text-slate-900 text-xs">{preset.titulo}</span>
+                        <span className="text-[11px] text-slate-500 leading-tight">
+                          {preset.subtitulo}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+
+                  {/* SEÇÃO (2): Redução de 30% (art. 132) */}
+                  <div className="px-2 py-1.5 mt-2 bg-slate-100 text-[11px] font-bold text-slate-800 uppercase tracking-wider rounded">
+                    (2) Redução de 30% — Profissões Regulamentadas (Art. 132)
+                  </div>
+                  {presetsReducao30.map((preset) => (
+                    <SelectItem key={preset.id} value={preset.id} className="py-2 pl-3">
+                      <div className="flex flex-col text-left">
+                        <span className="font-bold text-slate-900 text-xs">{preset.titulo}</span>
+                        <span className="text-[11px] text-slate-500 leading-tight">
+                          {preset.subtitulo}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+
+                  {/* SEÇÃO (3): Alíquota Zero (arts. 8º, 129 e 146) */}
+                  <div className="px-2 py-1.5 mt-2 bg-slate-100 text-[11px] font-bold text-slate-800 uppercase tracking-wider rounded">
+                    (3) Alíquota Zero — Arts. 8º, 129 e 146 da LC 214/2025
+                  </div>
+                  {presetsAliquotaZero.map((preset) => (
+                    <SelectItem key={preset.id} value={preset.id} className="py-2 pl-3">
                       <div className="flex flex-col text-left">
                         <span className="font-bold text-slate-900 text-xs">{preset.titulo}</span>
                         <span className="text-[11px] text-slate-500 leading-tight">
@@ -181,15 +243,19 @@ export default function Modulo1Configuracoes() {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
-                <span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-500 pt-0.5 gap-1">
+                <span className="truncate">
                   Preset ativo:{' '}
-                  {presetAtual === 'nenhum'
-                    ? 'Nenhum (personalizado)'
-                    : PRESETS_SETORES_LC214.find((p) => p.id === presetAtual)?.titulo}
+                  <strong className="text-slate-800">
+                    {presetAtual === 'nenhum'
+                      ? 'Nenhum (personalizado)'
+                      : presetAtivoObj?.titulo || presetAtual}
+                  </strong>
                 </span>
                 {presetAtual !== 'nenhum' && (
-                  <span className="font-semibold text-emerald-700">Reduções legais calculadas</span>
+                  <span className="font-semibold text-emerald-700 shrink-0">
+                    {presetAtivoObj?.baseLegal || 'Redução legal aplicada'}
+                  </span>
                 )}
               </div>
             </div>

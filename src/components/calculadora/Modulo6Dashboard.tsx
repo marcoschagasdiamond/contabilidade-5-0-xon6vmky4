@@ -48,11 +48,13 @@ import {
 } from 'lucide-react'
 import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
 import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
+import { PRESETS_SETORES_LC214 } from '@/types/calculadoraIbsCbs'
 
 const CORES_PIZZA = ['#07132B', '#D4AF37', '#10B981', '#3B82F6', '#6366F1', '#EC4899', '#8B5CF6']
 
 export default function Modulo6Dashboard() {
   const {
+    config,
     faturamentoMensal,
     setFaturamentoMensal,
     tipoAtividade,
@@ -234,6 +236,27 @@ export default function Modulo6Dashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
+          {/* Informação do Preset Ativo e Ano da Transição da Simulação */}
+          {config.presetSetor && config.presetSetor !== 'nenhum' && (
+            <div className="mb-4 p-3 bg-amber-50/80 border border-[#D4AF37]/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-[#07132B]">Preset Setorial LC 214/2025:</span>
+                <span className="text-slate-700">
+                  {PRESETS_SETORES_LC214.find((p) => p.id === config.presetSetor)?.titulo ||
+                    config.presetSetor}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-[#07132B] text-[#D4AF37] font-mono font-bold text-[11px]">
+                  Fase {config.anoTransicao || 2033}
+                </span>
+                <span className="text-slate-500 font-medium text-[11px]">
+                  {PRESETS_SETORES_LC214.find((p) => p.id === config.presetSetor)?.baseLegal}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Filtro: Período */}
             <div>
