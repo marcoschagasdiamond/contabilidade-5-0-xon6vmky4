@@ -130,6 +130,9 @@ export type SubatividadeAgronegocio =
   | 'pecuaria_corte_leite'
   | 'agroindustria_processamento'
   | 'hortifrutigranjeiros'
+  | 'hortifruti_cesta_basica'
+
+export type SubatividadeAgro = SubatividadeAgronegocio
 
 export type SubatividadeConstrucao =
   | 'obras_edificacoes_ret'
@@ -146,6 +149,7 @@ export type SubatividadeLocacao =
 export type SubatividadeFoodService =
   | 'restaurante_a_la_carte_buffet'
   | 'bar_choperia_noturno'
+  | 'bar_balada_bebidas'
   | 'lanchonete_fast_food'
   | 'delivery_marmitaria'
 
@@ -311,7 +315,7 @@ export const SUBATIVIDADES_COMERCIO: InfoSubatividade[] = [
   },
 ]
 
-export const SUBATIVIDADES_AGRONEGOCIO: InfoSubatividade[] = [
+export const SUBATIVIDADES_AGRO: InfoSubatividade[] = [
   {
     id: 'producao_agricola_graos',
     label: 'Produção Agrícola / Grãos (Soja, Milho, Café)',
@@ -369,7 +373,23 @@ export const SUBATIVIDADES_AGRONEGOCIO: InfoSubatividade[] = [
     tratamentoIbsCbs:
       'Alíquota ZERO (isenção 100%) no IBS e na CBS pela Cesta Básica Nacional de Alimentos (art. 8º da LC 214/2025).',
   },
+  {
+    id: 'hortifruti_cesta_basica',
+    label: 'Hortifrúti e Cesta Básica Nacional (Alíquota Zero 100%)',
+    descricao:
+      'Alimentos essenciais da Cesta Básica Nacional e hortifrutigranjeiros in natura: alíquota ZERO (isenção 100%) no IBS e na CBS com direito à manutenção integral de créditos e Anexo I no Simples.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    reducaoIbsCbsPercentual: 100,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples:
+      'Anexo I do Simples Nacional (comércio de alimentos básicos) com desoneração nas saídas estaduais de ICMS em diversos estados.',
+    tratamentoIbsCbs:
+      'Alíquota ZERO (isenção 100%) no IBS e na CBS pela Cesta Básica Nacional de Alimentos (art. 8º da LC 214/2025), garantindo desoneração integral ao consumidor final com manutenção de créditos.',
+  },
 ]
+
+export const SUBATIVIDADES_AGRONEGOCIO: InfoSubatividade[] = SUBATIVIDADES_AGRO
 
 export const SUBATIVIDADES_CONSTRUCAO: InfoSubatividade[] = [
   {
@@ -493,6 +513,36 @@ export const SUBATIVIDADES_FOOD_SERVICE: InfoSubatividade[] = [
   {
     id: 'restaurante_a_la_carte_buffet',
     label: 'Restaurante À La Carte / Buffet (Anexo I, Consumo Local e Alimentos)',
+    descricao:
+      'Fornecimento de refeições para consumo no local. No Simples Nacional é enquadrado no ANEXO I (Comércio), com parcelas de ICMS e ISS conforme entendimento da legislação municipal/estadual. Presunção 8% IRPJ / 12% CSLL.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples:
+      'Restaurantes e serviços de alimentação enquadram-se no ANEXO I do Simples Nacional (comércio/refeições preparadas), usufruindo das alíquotas mais favoráveis de saída.',
+    tratamentoIbsCbs:
+      'Regime específico de bares e restaurantes previsto na Reforma Tributária (LC 214/2025): sistemática diferenciada que equaliza as alíquotas de preparo e consumo no local com crédito das compras de insumos.',
+  },
+  {
+    id: 'bar_balada_bebidas',
+    label: 'Bar, Choperia, Balada e Bebidas Alcoólicas (Imposto Seletivo)',
+    descricao:
+      'Comercialização de bebidas alcoólicas, drinks e alimentação noturna com música/entretenimento. No Simples enquadra no Anexo I com ICMS-ST / monofásico e Imposto Seletivo no IBS/CBS.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    sujeitoImpostoSeletivo: true,
+    aliquotaSeletivoPadrao: 10,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples:
+      'Bares, choperias e baladas: Anexo I do Simples Nacional com segregação de bebidas frias (ICMS-ST e monofásico).',
+    tratamentoIbsCbs:
+      'Bebidas alcoólicas sofrem incidência adicional do Imposto Seletivo ("imposto do pecado"), enquanto refeições e petiscos seguem a regra padrão com creditamento das compras.',
+  },
+  {
+    id: 'bar_choperia_noturno',
+    label: 'Bar, Choperia e Casa Noturna (Bebidas Alcoólicas & Petiscos)',
     descricao:
       'Fornecimento de refeições para consumo no local. No Simples Nacional é enquadrado no ANEXO I (Comércio), com parcelas de ICMS e ISS conforme entendimento da legislação municipal/estadual. Presunção 8% IRPJ / 12% CSLL.',
     presuncaoIrpj: 8,
