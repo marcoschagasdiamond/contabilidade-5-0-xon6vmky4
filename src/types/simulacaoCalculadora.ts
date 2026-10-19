@@ -5,6 +5,10 @@ import type {
   SubatividadeServico,
   SubatividadeIndustria,
   SubatividadeComercio,
+  SubatividadeAgronegocio,
+  SubatividadeConstrucao,
+  SubatividadeLocacao,
+  SubatividadeFoodService,
   CategoriaDespesaCredito,
 } from './calculadoraIbsCbs'
 
@@ -26,6 +30,10 @@ export interface ParametrosSimulacaoCalculadora {
   subatividadeServico: SubatividadeServico
   subatividadeIndustria: SubatividadeIndustria
   subatividadeComercio: SubatividadeComercio
+  subatividadeAgro?: SubatividadeAgronegocio
+  subatividadeConstrucao?: SubatividadeConstrucao
+  subatividadeLocacao?: SubatividadeLocacao
+  subatividadeFoodService?: SubatividadeFoodService
   aliquotaImpostoSeletivo: number
   proporcaoServicoMisto: number
   percentualComprasVendasComparativo: number

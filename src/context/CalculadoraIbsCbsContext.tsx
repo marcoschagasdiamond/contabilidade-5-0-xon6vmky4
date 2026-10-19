@@ -9,9 +9,17 @@ import {
   SubatividadeServico,
   SubatividadeIndustria,
   SubatividadeComercio,
+  SubatividadeAgronegocio,
+  SubatividadeConstrucao,
+  SubatividadeLocacao,
+  SubatividadeFoodService,
   SUBATIVIDADES_SERVICO,
   SUBATIVIDADES_INDUSTRIA,
   SUBATIVIDADES_COMERCIO,
+  SUBATIVIDADES_AGRONEGOCIO,
+  SUBATIVIDADES_CONSTRUCAO,
+  SUBATIVIDADES_LOCACAO,
+  SUBATIVIDADES_FOOD_SERVICE,
   InfoSubatividade,
 } from '@/types/calculadoraIbsCbs'
 import { TABELAS_SIMPLES } from '@/lib/regimes'
@@ -53,6 +61,14 @@ interface CalculadoraContextType {
   setSubatividadeIndustria: (s: SubatividadeIndustria) => void
   subatividadeComercio: SubatividadeComercio
   setSubatividadeComercio: (s: SubatividadeComercio) => void
+  subatividadeAgro: SubatividadeAgronegocio
+  setSubatividadeAgro: (s: SubatividadeAgronegocio) => void
+  subatividadeConstrucao: SubatividadeConstrucao
+  setSubatividadeConstrucao: (s: SubatividadeConstrucao) => void
+  subatividadeLocacao: SubatividadeLocacao
+  setSubatividadeLocacao: (s: SubatividadeLocacao) => void
+  subatividadeFoodService: SubatividadeFoodService
+  setSubatividadeFoodService: (s: SubatividadeFoodService) => void
   // Alíquota de Imposto Seletivo customizada (padrão 10%)
   aliquotaImpostoSeletivo: number
   setAliquotaImpostoSeletivo: (v: number) => void
@@ -318,6 +334,16 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const [subatividadeComercio, setSubatividadeComercio] = useState<SubatividadeComercio>(
     () => perfilInicial.subatividadeComercio || 'varejo_comum',
   )
+  const [subatividadeAgro, setSubatividadeAgro] =
+    useState<SubatividadeAgronegocio>('producao_agricola_graos')
+  const [subatividadeConstrucao, setSubatividadeConstrucao] =
+    useState<SubatividadeConstrucao>('obras_edificacoes_ret')
+  const [subatividadeLocacao, setSubatividadeLocacao] = useState<SubatividadeLocacao>(
+    'locacao_veiculos_maquinas',
+  )
+  const [subatividadeFoodService, setSubatividadeFoodService] = useState<SubatividadeFoodService>(
+    'restaurante_a_la_carte_buffet',
+  )
   const [aliquotaImpostoSeletivo, setAliquotaImpostoSeletivo] = useState<number>(10)
 
   const [proporcaoServicoMisto, setProporcaoServicoMisto] = useState<number>(
@@ -414,6 +440,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       subatividadeServico,
       subatividadeIndustria,
       subatividadeComercio,
+      subatividadeAgro,
+      subatividadeConstrucao,
+      subatividadeLocacao,
+      subatividadeFoodService,
       aliquotaImpostoSeletivo,
       proporcaoServicoMisto,
       percentualComprasVendasComparativo,
@@ -449,6 +479,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     if (p.subatividadeServico) setSubatividadeServico(p.subatividadeServico)
     if (p.subatividadeIndustria) setSubatividadeIndustria(p.subatividadeIndustria)
     if (p.subatividadeComercio) setSubatividadeComercio(p.subatividadeComercio)
+    if ((p as any).subatividadeAgro) setSubatividadeAgro((p as any).subatividadeAgro)
+    if ((p as any).subatividadeConstrucao)
+      setSubatividadeConstrucao((p as any).subatividadeConstrucao)
+    if ((p as any).subatividadeLocacao) setSubatividadeLocacao((p as any).subatividadeLocacao)
+    if ((p as any).subatividadeFoodService)
+      setSubatividadeFoodService((p as any).subatividadeFoodService)
     if (p.aliquotaImpostoSeletivo !== undefined)
       setAliquotaImpostoSeletivo(p.aliquotaImpostoSeletivo)
     if (p.proporcaoServicoMisto !== undefined) setProporcaoServicoMisto(p.proporcaoServicoMisto)
@@ -631,6 +667,17 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       SUBATIVIDADES_INDUSTRIA[0]
     const infoSubComercio =
       SUBATIVIDADES_COMERCIO.find((s) => s.id === subatividadeComercio) || SUBATIVIDADES_COMERCIO[0]
+    const infoSubAgro =
+      SUBATIVIDADES_AGRONEGOCIO.find((s) => s.id === subatividadeAgro) ||
+      SUBATIVIDADES_AGRONEGOCIO[0]
+    const infoSubConstrucao =
+      SUBATIVIDADES_CONSTRUCAO.find((s) => s.id === subatividadeConstrucao) ||
+      SUBATIVIDADES_CONSTRUCAO[0]
+    const infoSubLocacao =
+      SUBATIVIDADES_LOCACAO.find((s) => s.id === subatividadeLocacao) || SUBATIVIDADES_LOCACAO[0]
+    const infoSubFoodService =
+      SUBATIVIDADES_FOOD_SERVICE.find((s) => s.id === subatividadeFoodService) ||
+      SUBATIVIDADES_FOOD_SERVICE[0]
 
     // Determinar dados conforme o ramo e a subatividade
     let subatividadeNome = ''
@@ -724,6 +771,124 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
           `Comércio varejista com ICMS padrão de ${aliqIcmsReal}% (${origemIcms}) e presunção de 8% no Lucro Presumido.`,
         )
       }
+    } else if (tipoAtividade === 'agronegocio') {
+      subatividadeNome = infoSubAgro.label
+      presuncaoIrpj = infoSubAgro.presuncaoIrpj
+      presuncaoCsll = infoSubAgro.presuncaoCsll
+      reducaoIbsCbsPct = infoSubAgro.reducaoIbsCbsPercentual || 0
+
+      // Agropecuária: ICMS com diferimento ou isenção em saídas internas/exportação
+      taxaIpiIcmsIssReal = aliqIcmsReal * 0.4 // Diferimento / carga efetiva média reduzida
+      taxaIpiIcmsIssPresumido = aliqIcmsPresumido * 0.4
+      nomeImpostoIndireto = `ICMS Agro / Diferido (~${(aliqIcmsReal * 0.4).toFixed(1)}%)`
+
+      impactosDidaticos.push(
+        'Agronegócio / Produtor rural: presunção favorecida de IRPJ (8%) e CSLL (12%) no Lucro Presumido.',
+      )
+      if (reducaoIbsCbsPct === 100) {
+        impactosDidaticos.push(
+          'Cesta Básica Nacional de Alimentos: alíquota ZERO (isenção total de 100%) no IBS e na CBS (LC 214/2025).',
+        )
+      } else if (reducaoIbsCbsPct === 60) {
+        impactosDidaticos.push(
+          'Produtos agropecuários: redução legal de 60% na alíquota do IVA Dual (IBS/CBS), mantendo direito de creditamento integral dos insumos.',
+        )
+      }
+      impactosDidaticos.push(
+        'Exportações agropecuárias contam com imunidade constitucional e manutenção plena de créditos fiscais.',
+      )
+    } else if (tipoAtividade === 'construcao_civil') {
+      subatividadeNome = infoSubConstrucao.label
+      presuncaoIrpj = infoSubConstrucao.presuncaoIrpj
+      presuncaoCsll = infoSubConstrucao.presuncaoCsll
+      reducaoIbsCbsPct = infoSubConstrucao.reducaoIbsCbsPercentual || 0
+
+      // Construção civil: ISS municipal sobre mão de obra (com dedução de materiais em vários municípios)
+      taxaIpiIcmsIssReal = config.lucroRealIss
+      taxaIpiIcmsIssPresumido = config.lucroPresumidoIss
+      nomeImpostoIndireto = `ISS Obras (${config.lucroPresumidoIss}%)`
+
+      impactosDidaticos.push(
+        `Construção civil e engenharia: presunção de IRPJ ${presuncaoIrpj}% e CSLL ${presuncaoCsll}% no Lucro Presumido.`,
+      )
+      if (infoSubConstrucao.anexoSimplesRegra === 'IV') {
+        impactosDidaticos.push(
+          'No Simples Nacional, obras e edificações enquadram-se no ANEXO IV: a Contribuição Previdenciária Patronal (CPP de 20%) é recolhida à parte da guia DAS.',
+        )
+      } else if (infoSubConstrucao.anexoSimplesRegra === 'fator_r') {
+        impactosDidaticos.push(
+          'Serviços de engenharia e projetos intelectuais sujeitam-se ao Fator R (Anexo III se folha ≥ 28%, Anexo V se < 28%).',
+        )
+      }
+      impactosDidaticos.push(
+        'No IBS/CBS, operações imobiliárias sujeitam-se a regime específico de bens imóveis (art. 156-A e LC 214/2025) ou regras de RET com margem redutora.',
+      )
+    } else if (tipoAtividade === 'locacao_bens') {
+      subatividadeNome = infoSubLocacao.label
+      presuncaoIrpj = infoSubLocacao.presuncaoIrpj
+      presuncaoCsll = infoSubLocacao.presuncaoCsll
+      reducaoIbsCbsPct = infoSubLocacao.reducaoIbsCbsPercentual || 0
+
+      // Locação de bens móveis: Súmula Vinculante 31 do STF veda cobrança de ISS
+      if (
+        infoSubLocacao.id === 'locacao_veiculos_maquinas' ||
+        infoSubLocacao.id === 'locacao_equipamentos_eventos'
+      ) {
+        taxaIpiIcmsIssReal = 0
+        taxaIpiIcmsIssPresumido = 0
+        nomeImpostoIndireto = 'Não incide ISS (Súmula Vinculante 31/STF)'
+        impactosDidaticos.push(
+          'Locação de bens móveis não sofre incidência de ISS por determinação da Súmula Vinculante 31 do STF.',
+        )
+      } else if (infoSubLocacao.id === 'coworking_espacos') {
+        taxaIpiIcmsIssReal = config.lucroRealIss
+        taxaIpiIcmsIssPresumido = config.lucroPresumidoIss
+        nomeImpostoIndireto = `ISS Coworking (${config.lucroPresumidoIss}%)`
+        impactosDidaticos.push(
+          'Coworking inclui serviços de escritório e recepção com incidência de ISS e sujeição ao Fator R no Simples.',
+        )
+      } else {
+        // Locação de imóveis
+        taxaIpiIcmsIssReal = 0
+        taxaIpiIcmsIssPresumido = 0
+        nomeImpostoIndireto = 'Sem ISS/ICMS (Locação imobiliária)'
+        impactosDidaticos.push(
+          'Locação imobiliária tradicional não sofre ISS nem ICMS no modelo atual (apenas PIS/COFINS e IRPJ/CSLL).',
+        )
+      }
+
+      impactosDidaticos.push(
+        'Presunção de 32% para IRPJ e CSLL no Lucro Presumido para serviços e locações.',
+      )
+      impactosDidaticos.push(
+        'No novo IVA Dual (IBS/CBS), a locação onerosa passa a ser tributada expressamente como fornecimento de utilidade, permitindo crédito pleno para clientes corporativos (B2B).',
+      )
+    } else if (tipoAtividade === 'food_service') {
+      subatividadeNome = infoSubFoodService.label
+      presuncaoIrpj = infoSubFoodService.presuncaoIrpj
+      presuncaoCsll = infoSubFoodService.presuncaoCsll
+      reducaoIbsCbsPct = infoSubFoodService.reducaoIbsCbsPercentual || 0
+      temImpostoSeletivo = !!infoSubFoodService.sujeitoImpostoSeletivo
+
+      // Bares e restaurantes: no sistema cumulativo/débito-crédito, ICMS alimentos preparados (~12% ou regime especial)
+      taxaIpiIcmsIssReal = 12
+      taxaIpiIcmsIssPresumido = 12
+      nomeImpostoIndireto = 'ICMS Alimentação (12% / Regime Especial)'
+
+      impactosDidaticos.push(
+        'Bares, Restaurantes e Food Service: enquadramento no ANEXO I do Simples Nacional (refeições preparadas e comércio).',
+      )
+      impactosDidaticos.push(
+        'No Lucro Presumido, goza de presunção comercial de 8% de IRPJ e 12% de CSLL.',
+      )
+      if (temImpostoSeletivo) {
+        impactosDidaticos.push(
+          `Bebidas alcoólicas sofrem incidência de Imposto Seletivo ("imposto do pecado" — ${aliquotaImpostoSeletivo}%) no novo sistema tributário.`,
+        )
+      }
+      impactosDidaticos.push(
+        'Reforma Tributária (LC 214/2025): prevê regime diferenciado para bares e restaurantes, com crédito integral sobre energia, insumos alimentícios e comissões de delivery.',
+      )
     } else {
       // Misto: Serviço + Comércio ponderado pela proporção configurável
       const pServ = Math.max(0, Math.min(100, proporcaoServicoMisto)) / 100
@@ -864,13 +1029,62 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       // Serviços gerais sujeitos ao Fator R (LC 123/2006)
       if (qualificaAnexoIII) {
         tabelaSimples = TABELAS_SIMPLES.anexoIII
-        faixaNome = `Anexo III (Fator R = ${fatorRPercent}% ≥ 28%)`
+        faixaNome = `Anexo III (Fator R = ${fatorRPercent}% ≥ 28% — benefício conquistado)`
         anexoCod = 'Anexo III'
       } else {
         tabelaSimples = TABELAS_SIMPLES.anexoV
-        faixaNome = `Anexo V (Fator R = ${fatorRPercent}% < 28%)`
+        faixaNome = `Anexo V (Fator R = ${fatorRPercent}% < 28% — alíquota onerada)`
         anexoCod = 'Anexo V'
       }
+    } else if (tipoAtividade === 'agronegocio') {
+      if (infoSubAgro.id === 'agroindustria_processamento') {
+        tabelaSimples = TABELAS_SIMPLES.anexoII
+        faixaNome = 'Anexo II (Agroindústria / Transformação)'
+        anexoCod = 'Anexo II'
+      } else {
+        tabelaSimples = TABELAS_SIMPLES.anexoI
+        faixaNome = 'Anexo I (Produtor Rural / Comercialização)'
+        anexoCod = 'Anexo I'
+      }
+    } else if (tipoAtividade === 'construcao_civil') {
+      if (infoSubConstrucao.anexoSimplesRegra === 'fator_r') {
+        if (qualificaAnexoIII) {
+          tabelaSimples = TABELAS_SIMPLES.anexoIII
+          faixaNome = `Anexo III (Engenharia / Fator R = ${fatorRPercent}% ≥ 28%)`
+          anexoCod = 'Anexo III'
+        } else {
+          tabelaSimples = TABELAS_SIMPLES.anexoV
+          faixaNome = `Anexo V (Engenharia / Fator R = ${fatorRPercent}% < 28%)`
+          anexoCod = 'Anexo V'
+        }
+      } else {
+        // Obras civis, reformas e infraestrutura: Anexo IV obrigatório
+        tabelaSimples = TABELAS_SIMPLES.anexoIV
+        faixaNome = 'Anexo IV (Construção Civil — CPP patronal de 20% recolhida por fora)'
+        anexoCod = 'Anexo IV'
+      }
+    } else if (tipoAtividade === 'locacao_bens') {
+      if (infoSubLocacao.anexoSimplesRegra === 'fator_r') {
+        if (qualificaAnexoIII) {
+          tabelaSimples = TABELAS_SIMPLES.anexoIII
+          faixaNome = `Anexo III (Coworking / Fator R = ${fatorRPercent}% ≥ 28%)`
+          anexoCod = 'Anexo III'
+        } else {
+          tabelaSimples = TABELAS_SIMPLES.anexoV
+          faixaNome = `Anexo V (Coworking / Fator R = ${fatorRPercent}% < 28%)`
+          anexoCod = 'Anexo V'
+        }
+      } else {
+        // Locação de bens móveis pura: Anexo III direto
+        tabelaSimples = TABELAS_SIMPLES.anexoIII
+        faixaNome = 'Anexo III (Locação de Bens Móveis — sem Fator R e sem ISS SV 31)'
+        anexoCod = 'Anexo III'
+      }
+    } else if (tipoAtividade === 'food_service') {
+      // Bares, restaurantes e alimentação: Anexo I
+      tabelaSimples = TABELAS_SIMPLES.anexoI
+      faixaNome = 'Anexo I (Bares / Restaurantes / Food Service)'
+      anexoCod = 'Anexo I'
     } else {
       // Misto: ponderação entre Comércio (Anexo I) e Serviço (Anexo III ou V conforme Fator R)
       const pServ = Math.max(0, Math.min(100, proporcaoServicoMisto)) / 100
@@ -1040,6 +1254,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     subatividadeServico,
     subatividadeIndustria,
     subatividadeComercio,
+    subatividadeAgro,
+    subatividadeConstrucao,
+    subatividadeLocacao,
+    subatividadeFoodService,
     aliquotaImpostoSeletivo,
     proporcaoServicoMisto,
     percentualComprasVendasComparativo,
@@ -1500,6 +1718,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         setSubatividadeIndustria,
         subatividadeComercio,
         setSubatividadeComercio,
+        subatividadeAgro,
+        setSubatividadeAgro,
+        subatividadeConstrucao,
+        setSubatividadeConstrucao,
+        subatividadeLocacao,
+        setSubatividadeLocacao,
+        subatividadeFoodService,
+        setSubatividadeFoodService,
         aliquotaImpostoSeletivo,
         setAliquotaImpostoSeletivo,
         proporcaoServicoMisto,

@@ -181,7 +181,15 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
         ? 'Comércio'
         : parametros.tipoAtividade === 'industria'
           ? 'Indústria'
-          : 'Misto'
+          : parametros.tipoAtividade === 'agronegocio'
+            ? 'Agronegócio'
+            : parametros.tipoAtividade === 'construcao_civil'
+              ? 'Construção Civil'
+              : parametros.tipoAtividade === 'locacao_bens'
+                ? 'Locação de Bens'
+                : parametros.tipoAtividade === 'food_service'
+                  ? 'Bares / Food Service'
+                  : 'Misto'
   doc.text(labelRamo, col2X + 32, currentY + 13)
 
   doc.setFont('helvetica', 'bold')

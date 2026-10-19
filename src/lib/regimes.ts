@@ -479,6 +479,15 @@ export const TABELAS_SIMPLES = {
     { max: 3_600_000, aliq: 21.0, deducao: 125_000 },
     { max: 4_800_000, aliq: 33.0, deducao: 648_000 },
   ],
+  // Serviços - Anexo IV (Construção civil, obras, limpeza e vigilância — sem CPP inclusa no DAS)
+  anexoIV: [
+    { max: 180_000, aliq: 4.5, deducao: 0 },
+    { max: 360_000, aliq: 9.0, deducao: 8_100 },
+    { max: 720_000, aliq: 10.2, deducao: 12_420 },
+    { max: 1_800_000, aliq: 14.0, deducao: 39_780 },
+    { max: 3_600_000, aliq: 22.0, deducao: 183_780 },
+    { max: 4_800_000, aliq: 33.0, deducao: 579_780 },
+  ],
   // Serviços - Anexo V (Fator R < 28%)
   anexoV: [
     { max: 180_000, aliq: 15.5, deducao: 0 },

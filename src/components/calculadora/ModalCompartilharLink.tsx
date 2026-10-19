@@ -144,7 +144,15 @@ export function ModalCompartilharLink({
             <div className="flex justify-between items-center text-slate-500 font-semibold">
               <span>Atividade:</span>
               <strong className="text-slate-900 font-bold uppercase text-[11px]">
-                {parametros.tipoAtividade}
+                {parametros.tipoAtividade === 'agronegocio'
+                  ? 'Agronegócio / Rural'
+                  : parametros.tipoAtividade === 'construcao_civil'
+                    ? 'Construção Civil'
+                    : parametros.tipoAtividade === 'locacao_bens'
+                      ? 'Locação de Bens'
+                      : parametros.tipoAtividade === 'food_service'
+                        ? 'Bares / Food Service'
+                        : parametros.tipoAtividade}
               </strong>
             </div>
           </div>

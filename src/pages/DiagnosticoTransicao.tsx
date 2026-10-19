@@ -15,7 +15,13 @@ import { PaywallModal } from '@/components/freemium/PaywallModal'
 export default function DiagnosticoTransicao() {
   const navigate = useNavigate()
   const { temDadosSalvos, dadosEmpresa, restaurarPadrao } = useDadosEmpresa()
-  const { isAuthenticated, isLoading: authLoading, isPremium, podeDiagnosticar, recarregarUsuario } = useAuth()
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    isPremium,
+    podeDiagnosticar,
+    recarregarUsuario,
+  } = useAuth()
   const [paywallAberto, setPaywallAberto] = useState(false)
 
   // Gate de Dados da Empresa
@@ -53,7 +59,8 @@ export default function DiagnosticoTransicao() {
 
     setSalvando(true)
     try {
-      const authUserId = pb.authStore.record?.id || undefined      const fatAnual = (dadosEmpresa.faturamentoMensal || 100000) * 12
+      const authUserId = pb.authStore.record?.id || undefined
+      const fatAnual = (dadosEmpresa.faturamentoMensal || 100000) * 12
       const folhaAnual = (dadosEmpresa.folhaPagamentoMensal || 10000) * 12
 
       await createDiagnostico({
@@ -159,11 +166,7 @@ export default function DiagnosticoTransicao() {
 
       <DiamondFooterCTA />
 
-      <PaywallModal
-        open={paywallAberto}
-        onOpenChange={setPaywallAberto}
-        motivo="diagnostico"
-      />
+      <PaywallModal open={paywallAberto} onOpenChange={setPaywallAberto} motivo="diagnostico" />
     </div>
   )
 }

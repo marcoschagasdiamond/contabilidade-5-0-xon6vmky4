@@ -1,6 +1,14 @@
 export type RegimeDiferenciadoTipo = 'padrao' | 'saude_educacao' | 'transporte' | 'cesta_basica'
 
-export type TipoAtividade = 'servico' | 'industria' | 'comercio' | 'misto'
+export type TipoAtividade =
+  | 'servico'
+  | 'industria'
+  | 'comercio'
+  | 'misto'
+  | 'agronegocio'
+  | 'construcao_civil'
+  | 'locacao_bens'
+  | 'food_service'
 
 export type SubatividadeServico =
   | 'servico_comum'
@@ -17,7 +25,38 @@ export type SubatividadeIndustria =
 
 export type SubatividadeComercio = 'varejo_comum' | 'com_icms_st' | 'atacado_distribuicao'
 
-export type SubatividadeTipo = SubatividadeServico | SubatividadeIndustria | SubatividadeComercio
+export type SubatividadeAgronegocio =
+  | 'producao_agricola_graos'
+  | 'pecuaria_corte_leite'
+  | 'agroindustria_processamento'
+  | 'hortifrutigranjeiros'
+
+export type SubatividadeConstrucao =
+  | 'obras_edificacoes_ret'
+  | 'reformas_instalacoes'
+  | 'engenharia_projetos'
+  | 'obras_infraestrutura'
+
+export type SubatividadeLocacao =
+  | 'locacao_veiculos_maquinas'
+  | 'locacao_imoveis_proprios'
+  | 'locacao_equipamentos_eventos'
+  | 'coworking_espacos'
+
+export type SubatividadeFoodService =
+  | 'restaurante_a_la_carte_buffet'
+  | 'bar_choperia_noturno'
+  | 'lanchonete_fast_food'
+  | 'delivery_marmitaria'
+
+export type SubatividadeTipo =
+  | SubatividadeServico
+  | SubatividadeIndustria
+  | SubatividadeComercio
+  | SubatividadeAgronegocio
+  | SubatividadeConstrucao
+  | SubatividadeLocacao
+  | SubatividadeFoodService
 
 export interface InfoSubatividade {
   id: string
@@ -28,9 +67,12 @@ export interface InfoSubatividade {
   aliquotaIpi?: number // % ex: 5, 15, 0
   aliquotaIcmsProprioReducao?: number // fator multiplicador ou override (ex: 0 para ICMS-ST)
   aliquotaIcmsOverride?: number // ex: 12% para atacado
-  reducaoIbsCbsPercentual?: number // % ex: 60 para saúde/TI, 30 para transporte
+  reducaoIbsCbsPercentual?: number // % ex: 60 para saúde/TI/agro, 30 para transporte
   sujeitoImpostoSeletivo?: boolean
   aliquotaSeletivoPadrao?: number // % ex: 10
+  anexoSimplesRegra?: 'I' | 'II' | 'III' | 'IV' | 'fator_r' | 'misto' | 'isento_rural'
+  explicacaoSimples?: string
+  tratamentoIbsCbs?: string
 }
 
 export const SUBATIVIDADES_SERVICO: InfoSubatividade[] = [
@@ -135,6 +177,9 @@ export const SUBATIVIDADES_COMERCIO: InfoSubatividade[] = [
     presuncaoIrpj: 8,
     presuncaoCsll: 12,
     reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples: 'Comércio varejista: enquadrado no Anexo I do Simples Nacional.',
+    tratamentoIbsCbs: 'Tributação padrão com creditamento amplo nas compras e extinção do ICMS.',
   },
   {
     id: 'com_icms_st',
@@ -145,6 +190,10 @@ export const SUBATIVIDADES_COMERCIO: InfoSubatividade[] = [
     presuncaoCsll: 12,
     aliquotaIcmsProprioReducao: 0,
     reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples: 'Comércio com ST: Anexo I do Simples com segregação de ICMS-ST na DAS.',
+    tratamentoIbsCbs:
+      'Extinção completa da Substituição Tributária no IBS/CBS, migrando para Split Payment.',
   },
   {
     id: 'atacado_distribuicao',
@@ -155,6 +204,248 @@ export const SUBATIVIDADES_COMERCIO: InfoSubatividade[] = [
     presuncaoCsll: 12,
     aliquotaIcmsOverride: 12,
     reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples: 'Atacado e revenda: Anexo I do Simples Nacional.',
+    tratamentoIbsCbs:
+      'Tributação pelo destino com creditamento financeiro integral nas operações B2B.',
+  },
+]
+
+export const SUBATIVIDADES_AGRONEGOCIO: InfoSubatividade[] = [
+  {
+    id: 'producao_agricola_graos',
+    label: 'Produção Agrícola / Grãos (Soja, Milho, Café)',
+    descricao:
+      'Cultivo e comercialização de grãos e comodities agrícolas. Presunção favorecida de 8% IRPJ / 12% CSLL, imunidade exportadora e redução de 60% no IBS/CBS para insumos e alimentos.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    reducaoIbsCbsPercentual: 60,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples:
+      'Produtor rural PJ optante pelo Simples recolhe pelo Anexo I (comercialização da produção). Exportações são imunes e Funrural/ICMS contam com diferimento.',
+    tratamentoIbsCbs:
+      'Redução de 60% na alíquota padrão do IBS/CBS para produtos agropecuários e alimentos da cesta básica estendida (EC 132/2023), com manutenção de créditos.',
+  },
+  {
+    id: 'pecuaria_corte_leite',
+    label: 'Pecuária de Corte e Leiteira',
+    descricao:
+      'Criação de bovinos, suínos e aves com abate ou comercialização de leite/carne in natura. Presunção 8% IRPJ / 12% CSLL, desoneração de insumos biológicos e redução de 60% no IVA Dual.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    reducaoIbsCbsPercentual: 60,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples:
+      'Anexo I do Simples Nacional para venda de animais vivos e produção rural pecuária.',
+    tratamentoIbsCbs:
+      'Redução de 60% no IBS/CBS com direito a crédito presumido para o adquirente de produtor não contribuinte.',
+  },
+  {
+    id: 'agroindustria_processamento',
+    label: 'Agroindústria / Beneficiamento (Laticínios, Usinas, Ração)',
+    descricao:
+      'Industrialização e transformação de produtos agropecuários. Presunção 8% IRPJ / 12% CSLL, IPI de 0% a 5% e regime de créditos plenos nas aquisições rurais.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    aliquotaIpi: 0,
+    reducaoIbsCbsPercentual: 60,
+    anexoSimplesRegra: 'II',
+    explicacaoSimples:
+      'Agroindústria com transformação física: Anexo II do Simples Nacional (Indústria).',
+    tratamentoIbsCbs:
+      'Regime de crédito presumido de aquisição de insumos agropecuários de pessoa física e redução de 60% para alimentos básicos.',
+  },
+  {
+    id: 'hortifrutigranjeiros',
+    label: 'Hortifrúti e Produtos Orgânicos (Cesta Básica Nacional)',
+    descricao:
+      'Frutas, legumes, verduras e ovos com alíquota zero (isenção 100%) no IBS/CBS conforme Cesta Básica Nacional e presunção 8% no Lucro Presumido.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    reducaoIbsCbsPercentual: 100, // Cesta Básica Isenção 100%
+    anexoSimplesRegra: 'I',
+    explicacaoSimples:
+      'Comercialização direta de hortifrutigranjeiros: Anexo I do Simples Nacional com isenções estaduais de ICMS em vários estados.',
+    tratamentoIbsCbs:
+      'Alíquota ZERO (isenção 100%) no IBS e na CBS pela Cesta Básica Nacional de Alimentos (art. 8º da LC 214/2025).',
+  },
+]
+
+export const SUBATIVIDADES_CONSTRUCAO: InfoSubatividade[] = [
+  {
+    id: 'obras_edificacoes_ret',
+    label: 'Construção de Edifícios e Obras Civis (Anexo IV / RET)',
+    descricao:
+      'Execução de obras de alvenaria e incorporações imobiliárias. No Simples enquadra-se no Anexo IV (com CPP de 20% recolhida por fora na folha de pagamento). Presunção de 32% (serviço) ou 8% (com fornecimento de materiais e empreitada global).',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'IV',
+    explicacaoSimples:
+      'Obras civis e edificações enquadram-se obrigatoriamente no ANEXO IV do Simples Nacional (art. 18, § 5º-C da LC 123/2006). A Contribuição Previdenciária Patronal (CPP de 20%) NÃO está inclusa na guia DAS e deve ser recolhida à parte.',
+    tratamentoIbsCbs:
+      'Submetido ao regime específico de operações com bens imóveis no IBS/CBS (art. 156-A e LC 214/2025) ou RET com margem redutora sobre terrenos e insumos.',
+  },
+  {
+    id: 'reformas_instalacoes',
+    label: 'Reformas, Instalações Elétricas/Hidráulicas e Pintura',
+    descricao:
+      'Serviços de acabamento, reformas prediais e instalações. Tributado no Anexo IV do Simples Nacional com retenção de INSS e ISS na fonte conforme município da obra.',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'IV',
+    explicacaoSimples:
+      'Serviços especializados de instalação e reforma: Anexo IV do Simples Nacional (CPP patronal recolhida por fora, não entra na alíquota única do DAS).',
+    tratamentoIbsCbs:
+      'Prestação de serviço civil no novo IVA Dual com incidência no local da execução da obra (princípio do destino pleno).',
+  },
+  {
+    id: 'engenharia_projetos',
+    label: 'Serviços de Engenharia, Arquitetura e Projetos Técnicos',
+    descricao:
+      'Projetos arquitetônicos, cálculo estrutural e consultoria técnica. No Simples está sujeito ao FATOR R (folha ≥ 28% vai para o Anexo III; < 28% vai para o Anexo V). Presunção 32% no Lucro Presumido.',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'fator_r',
+    explicacaoSimples:
+      'Engenharia consultiva e projetos intelectuais: sujeitos à regra do FATOR R (LC 123/2006 art. 18 § 5º-J). Se a folha for ≥ 28%, tributa pelo Anexo III (mais barato); se < 28%, cai no Anexo V.',
+    tratamentoIbsCbs:
+      'Tributação padrão com aproveitamento amplo de créditos pelos clientes corporativos (B2B).',
+  },
+  {
+    id: 'obras_infraestrutura',
+    label: 'Obras de Infraestrutura, Terraplenagem e Pavimentação',
+    descricao:
+      'Obras pesadas de rodovias, saneamento e terraplenagem com emprego de maquinário pesado. Anexo IV do Simples Nacional e retenção previdenciária de 11% sobre cessão de mão de obra.',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'IV',
+    explicacaoSimples:
+      'Construção pesada e infraestrutura: enquadramento obrigatório no Anexo IV do Simples (INSS patronal pago na guia previdenciária avulsa).',
+    tratamentoIbsCbs:
+      'Creditamento integral das aquisições de maquinário, combustíveis e insumos pesados no IVA Dual.',
+  },
+]
+
+export const SUBATIVIDADES_LOCACAO: InfoSubatividade[] = [
+  {
+    id: 'locacao_veiculos_maquinas',
+    label: 'Locação de Bens Móveis (Máquinas, Veículos e Equipamentos)',
+    descricao:
+      'Locação pura de bens móveis (sem operador). Súmula Vinculante 31 do STF: NÃO incide ISS. No Simples enquadra-se no Anexo III diretamente. Presunção 32% no Lucro Presumido.',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'III',
+    explicacaoSimples:
+      'Locação de bens móveis pura: Anexo III do Simples Nacional diretamente (sem necessidade de Fator R e sem incidência de ISS por força da Súmula Vinculante 31 do STF).',
+    tratamentoIbsCbs:
+      'No novo sistema tributário, a locação de bens móveis passa a ser expressamente tributada pelo IBS/CBS (conceito amplo de fornecimento oneroso de bens/utilidades).',
+  },
+  {
+    id: 'locacao_imoveis_proprios',
+    label: 'Locação de Imóveis Próprios (Holding / Patrimonial)',
+    descricao:
+      'Gestão e aluguel de imóveis próprios residenciais ou comerciais. No sistema antigo não há ISS nem ICMS (apenas PIS/COFINS e IRPJ/CSLL). Presunção 32% no Lucro Presumido. VEDADO o Simples Nacional para locação pura de imóveis próprios.',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'III',
+    explicacaoSimples:
+      'Locação de imóveis: no Simples há restrições legais para locação pura de imóveis próprios (vedação do art. 17 da LC 123/2006). Quando permitida com intermediação/serviço correlato, enquadra-se no Anexo III.',
+    tratamentoIbsCbs:
+      'Regime específico de bens imóveis no IBS/CBS com direito a redução de base ou dedução do valor do bem/aluguel para evitar distorções no mercado imobiliário.',
+  },
+  {
+    id: 'locacao_equipamentos_eventos',
+    label: 'Locação de Equipamentos de Som, Luz e Estruturas para Eventos',
+    descricao:
+      'Locação de estruturas e equipamentos sem prestação de serviço técnico concomitante. Anexo III do Simples Nacional, sem ISS sobre o aluguel dos bens.',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'III',
+    explicacaoSimples:
+      'Aluguel de palcos e equipamentos: Anexo III do Simples Nacional (locação pura desonerada de ISS).',
+    tratamentoIbsCbs:
+      'Incidência padrão do IBS/CBS com creditamento total para os organizadores de eventos corporativos.',
+  },
+  {
+    id: 'coworking_espacos',
+    label: 'Coworking, Salas Compartilhadas e Locação de Espaços',
+    descricao:
+      'Cessão de postos de trabalho e salas comerciais mobiliadas com internet e recepção. Sujeito ao FATOR R (Anexo III se folha ≥ 28%, Anexo V se < 28%) devido aos serviços agregados.',
+    presuncaoIrpj: 32,
+    presuncaoCsll: 32,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'fator_r',
+    explicacaoSimples:
+      'Coworking mescla locação e serviços administrativos: submetido à regra do FATOR R (folha ≥ 28% garante Anexo III; abaixo vai para o Anexo V).',
+    tratamentoIbsCbs:
+      'Tributação pelo novo IVA Dual gerando créditos de 26,5% para clientes empresas enquadradas no regime regular.',
+  },
+]
+
+export const SUBATIVIDADES_FOOD_SERVICE: InfoSubatividade[] = [
+  {
+    id: 'restaurante_a_la_carte_buffet',
+    label: 'Restaurante À La Carte / Buffet (Anexo I, Consumo Local e Alimentos)',
+    descricao:
+      'Fornecimento de refeições para consumo no local. No Simples Nacional é enquadrado no ANEXO I (Comércio), com parcelas de ICMS e ISS conforme entendimento da legislação municipal/estadual. Presunção 8% IRPJ / 12% CSLL.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples:
+      'Restaurantes e serviços de alimentação enquadram-se no ANEXO I do Simples Nacional (comércio/refeições preparadas), usufruindo das alíquotas mais favoráveis de saída.',
+    tratamentoIbsCbs:
+      'Regime específico de bares e restaurantes previsto na Reforma Tributária (LC 214/2025): sistemática diferenciada que equaliza as alíquotas de preparo e consumo no local com crédito das compras de insumos.',
+  },
+  {
+    id: 'bar_choperia_noturno',
+    label: 'Bar, Choperia e Casa Noturna (Bebidas Alcoólicas & Petiscos)',
+    descricao:
+      'Comercialização de bebidas alcoólicas e alimentação noturna. No Simples aplica Anexo I com bebidas frias sujeitas a ICMS-ST / monofásico. Sujeito ao Imposto Seletivo no novo IVA para bebidas alcoólicas.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    sujeitoImpostoSeletivo: true,
+    aliquotaSeletivoPadrao: 10,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples:
+      'Bares e choperias: Anexo I do Simples Nacional. Destaque para a segregação de ICMS-ST e PIS/COFINS monofásico sobre cervejas e destilados.',
+    tratamentoIbsCbs:
+      'Bebidas alcoólicas sofrem incidência adicional do Imposto Seletivo ("imposto do pecado"), mas as refeições e petiscos seguem a regra regular com crédito das compras.',
+  },
+  {
+    id: 'lanchonete_fast_food',
+    label: 'Lanchonete, Hamburgueria e Fast Food',
+    descricao:
+      'Preparo rápido de lanches, salgados e sucos com alto giro operacional. Anexo I do Simples Nacional e presunção 8% IRPJ / 12% CSLL no Lucro Presumido.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples:
+      'Lanchonetes e fast food: tributados pelo Anexo I do Simples Nacional (refeições rápidas equiparadas a comércio).',
+    tratamentoIbsCbs:
+      'Crédito pleno de IBS/CBS sobre energia elétrica, embalagens descartáveis, compras de carne/pão e taxas de maquininhas/marketplaces.',
+  },
+  {
+    id: 'delivery_marmitaria',
+    label: 'Delivery Exclusivo, Dark Kitchen e Marmitaria',
+    descricao:
+      'Alimentação preparada exclusivamente para entrega a domicílio e retirada. Anexo I do Simples Nacional com alto impacto das taxas de intermediação de plataformas de delivery.',
+    presuncaoIrpj: 8,
+    presuncaoCsll: 12,
+    reducaoIbsCbsPercentual: 0,
+    anexoSimplesRegra: 'I',
+    explicacaoSimples: 'Delivery e marmitarias: tributação no Anexo I do Simples Nacional.',
+    tratamentoIbsCbs:
+      'No IBS/CBS, as altas comissões retidas pelos apps de delivery (iFood, etc.) geram crédito de 26,5% de IVA Dual, desonerando significativamente o custo da intermediação digital.',
   },
 ]
 
