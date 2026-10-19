@@ -47,7 +47,7 @@ export default function DiagnosticoTransicao() {
   // Salvamento do diagnóstico de transição na coleção diagnosticos com tipo_diagnostico='transicao'
   const handleSalvarDiagnosticoTransicao = async (payload: {
     totalScore: number
-    farol: 'VERMELHO' | 'AMARELO' | 'VERDE'
+    farol: 'verde' | 'amarelo' | 'vermelho'
     farolTitulo: string
     servicoRecomendado: string
     respostas: Record<string, string>
