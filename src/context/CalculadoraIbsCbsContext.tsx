@@ -4,6 +4,8 @@ import {
   CONFIGURACOES_PADRAO,
   RegimeDiferenciadoTipo,
   TipoAtividade,
+  TipoAtividadePrincipal,
+  normalizarTipoAtividade,
   CategoriaDespesaCredito,
   CATEGORIAS_CREDITO_PADRAO,
   SubatividadeServico,
@@ -321,9 +323,13 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const [faturamentoMensal, setFaturamentoMensal] = useState<number>(
     () => perfilInicial.faturamentoMensal || 200000,
   )
-  const [tipoAtividade, setTipoAtividade] = useState<TipoAtividade>(
-    () => perfilInicial.tipoAtividade || 'servico',
+  const [tipoAtividade, setTipoAtividadeState] = useState<TipoAtividadePrincipal>(() =>
+    normalizarTipoAtividade(perfilInicial.tipoAtividade),
   )
+
+  const setTipoAtividade = (novoTipo: TipoAtividade) => {
+    setTipoAtividadeState(normalizarTipoAtividade(novoTipo))
+  }
   // Subatividades por ramo
   const [subatividadeServico, setSubatividadeServico] = useState<SubatividadeServico>(
     () => perfilInicial.subatividadeServico || 'servico_comum',
@@ -392,9 +398,13 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const [faturamentoAnualProjetado, setFaturamentoAnualProjetado] = useState<number>(() =>
     perfilInicial.faturamentoMensal ? perfilInicial.faturamentoMensal * 12 : 2400000,
   )
-  const [setorTransicao, setSetorTransicao] = useState<TipoAtividade>(
-    () => perfilInicial.tipoAtividade || 'servico',
+  const [setorTransicao, setSetorTransicaoState] = useState<TipoAtividadePrincipal>(() =>
+    normalizarTipoAtividade(perfilInicial.tipoAtividade),
   )
+
+  const setSetorTransicao = (novoSector: TipoAtividade) => {
+    setSetorTransicaoState(normalizarTipoAtividade(novoSector))
+  }
   // Etapa 5: Valor do estoque na virada (padrão estimado em ~1 a 2 meses de compras da empresa)
   const [valorEstoqueVirada, setValorEstoqueVirada] = useState<number>(() => {
     const fat = perfilInicial.faturamentoMensal || 200000
@@ -475,7 +485,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       setPercentualComprasVendasSimples(p.percentualComprasVendasSimples)
 
     if (p.faturamentoMensal !== undefined) setFaturamentoMensal(p.faturamentoMensal)
-    if (p.tipoAtividade) setTipoAtividade(p.tipoAtividade)
+    if (p.tipoAtividade) {
+      // Fallback gracioso automático para simulações ou links antigos
+      setTipoAtividade(normalizarTipoAtividade(p.tipoAtividade))
+    }
     if (p.subatividadeServico) setSubatividadeServico(p.subatividadeServico)
     if (p.subatividadeIndustria) setSubatividadeIndustria(p.subatividadeIndustria)
     if (p.subatividadeComercio) setSubatividadeComercio(p.subatividadeComercio)
@@ -503,7 +516,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
     if (p.faturamentoAnualProjetado !== undefined)
       setFaturamentoAnualProjetado(p.faturamentoAnualProjetado)
-    if (p.setorTransicao) setSetorTransicao(p.setorTransicao)
+    if (p.setorTransicao) {
+      setSetorTransicao(normalizarTipoAtividade(p.setorTransicao))
+    }
     if (p.valorEstoqueVirada !== undefined) setValorEstoqueVirada(p.valorEstoqueVirada)
     if (p.taxaMensalCapitalGiro !== undefined) setTaxaMensalCapitalGiro(p.taxaMensalCapitalGiro)
     if (p.diasAntecipacaoSplit !== undefined) setDiasAntecipacaoSplit(p.diasAntecipacaoSplit)
@@ -520,7 +535,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       setPercentualComprasVendasSimples(p.percentualComprasVendas ?? 40)
     } else if (modulo === 3) {
       setFaturamentoMensal(p.faturamentoMensal || 200000)
-      setTipoAtividade(p.tipoAtividade || 'servico')
+      setTipoAtividade(normalizarTipoAtividade(p.tipoAtividade))
       setSubatividadeServico(p.subatividadeServico || 'servico_comum')
       setSubatividadeIndustria(p.subatividadeIndustria || 'industria_comum')
       setSubatividadeComercio(p.subatividadeComercio || 'varejo_comum')
@@ -542,7 +557,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       )
     } else if (modulo === 5) {
       setFaturamentoAnualProjetado(p.faturamentoMensal ? p.faturamentoMensal * 12 : 2400000)
-      setSetorTransicao(p.tipoAtividade || 'servico')
+      setSetorTransicao(normalizarTipoAtividade(p.tipoAtividade))
     }
   }
 

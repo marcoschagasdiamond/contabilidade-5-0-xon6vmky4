@@ -8,17 +8,9 @@ import {
   SUBATIVIDADES_SERVICO,
   SUBATIVIDADES_INDUSTRIA,
   SUBATIVIDADES_COMERCIO,
-  SUBATIVIDADES_AGRONEGOCIO,
-  SUBATIVIDADES_CONSTRUCAO,
-  SUBATIVIDADES_LOCACAO,
-  SUBATIVIDADES_FOOD_SERVICE,
   SubatividadeServico,
   SubatividadeIndustria,
   SubatividadeComercio,
-  SubatividadeAgronegocio,
-  SubatividadeConstrucao,
-  SubatividadeLocacao,
-  SubatividadeFoodService,
 } from '@/types/calculadoraIbsCbs'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -77,14 +69,6 @@ export default function Modulo3ComparativoRegimes() {
     setSubatividadeIndustria,
     subatividadeComercio,
     setSubatividadeComercio,
-    subatividadeAgro,
-    setSubatividadeAgro,
-    subatividadeConstrucao,
-    setSubatividadeConstrucao,
-    subatividadeLocacao,
-    setSubatividadeLocacao,
-    subatividadeFoodService,
-    setSubatividadeFoodService,
     aliquotaImpostoSeletivo,
     setAliquotaImpostoSeletivo,
     proporcaoServicoMisto,
@@ -263,21 +247,6 @@ export default function Modulo3ComparativoRegimes() {
                   </SelectItem>
                   <SelectItem value="misto">
                     Misto (Serviço + Comércio com proporção customizada)
-                  </SelectItem>
-                  <SelectItem value="agronegocio">
-                    🌾 Agronegócio / Produtor rural (Presunção 8% / Anexo I ou II / Redução 60% ou
-                    Isenção)
-                  </SelectItem>
-                  <SelectItem value="construcao_civil">
-                    🏗️ Construção civil e engenharia (Anexo IV ou III / RET / Presunção 32%)
-                  </SelectItem>
-                  <SelectItem value="locacao_bens">
-                    🏢 Aluguel / Locação de bens (Anexo III direto sem ISS SV 31 / Coworking Fator
-                    R)
-                  </SelectItem>
-                  <SelectItem value="food_service">
-                    🍽️ Bares / Restaurantes e food service (Anexo I / Presunção 8% / Crédito
-                    delivery)
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -506,245 +475,7 @@ export default function Modulo3ComparativoRegimes() {
               </div>
             )}
 
-            {/* 1.4 Seletor Ramo Agronegócio / Produtor rural */}
-            {tipoAtividade === 'agronegocio' && (
-              <div className="bg-gradient-to-r from-lime-50/80 to-emerald-50/60 border border-lime-300/80 p-4 sm:p-5 rounded-xl space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <Label
-                    htmlFor="subAgro"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
-                  >
-                    <Tag className="w-4 h-4 text-emerald-700" />
-                    Subatividade Agropecuária (Presunções 8%/12%, Redução 60% e Cesta Básica)
-                  </Label>
-                  <span className="text-[11px] text-emerald-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-lime-200">
-                    Produtor Rural PJ & Agroindústria
-                  </span>
-                </div>
-                <Select
-                  value={subatividadeAgro}
-                  onValueChange={(val) => setSubatividadeAgro(val as SubatividadeAgronegocio)}
-                >
-                  <SelectTrigger
-                    id="subAgro"
-                    className="h-12 bg-white border-lime-300 shadow-sm font-medium text-slate-800"
-                  >
-                    <SelectValue placeholder="Selecione a subatividade do agronegócio" />
-                  </SelectTrigger>
-                  <SelectContent className="max-w-xl">
-                    {SUBATIVIDADES_AGRONEGOCIO.map((item) => (
-                      <SelectItem key={item.id} value={item.id} className="py-2.5">
-                        <div className="text-left">
-                          <span className="font-semibold text-slate-900 block">{item.label}</span>
-                          <span className="text-xs text-slate-500 block leading-tight mt-0.5">
-                            {item.descricao}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="flex items-center gap-2 text-xs text-emerald-950 bg-emerald-100/60 p-2.5 rounded-lg">
-                  <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                  <span>
-                    {subatividadeAgro === 'hortifrutigranjeiros'
-                      ? '✓ Cesta Básica Nacional de Alimentos: Isenção 100% (alíquota ZERO de IBS e CBS, art. 8º da LC 214/2025).'
-                      : subatividadeAgro === 'agroindustria_processamento'
-                        ? '✓ Agroindústria: enquadramento no Anexo II do Simples (Indústria) e crédito presumido de aquisição de insumos rurais.'
-                        : '✓ Produção agropecuária: Anexo I do Simples Nacional, redução de 60% no IBS/CBS e presunção favorecida de 8% no Lucro Presumido.'}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* 1.5 Seletor Ramo Construção Civil e Engenharia */}
-            {tipoAtividade === 'construcao_civil' && (
-              <div className="bg-gradient-to-r from-orange-50/70 to-amber-50/60 border border-orange-200/80 p-4 sm:p-5 rounded-xl space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <Label
-                    htmlFor="subConstrucao"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
-                  >
-                    <Tag className="w-4 h-4 text-orange-600" />
-                    Subatividade da Construção Civil (Anexo IV vs Fator R / RET Imobiliário)
-                  </Label>
-                  <span className="text-[11px] text-orange-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-orange-200">
-                    Obras, Reformas e Engenharia
-                  </span>
-                </div>
-                <Select
-                  value={subatividadeConstrucao}
-                  onValueChange={(val) => setSubatividadeConstrucao(val as SubatividadeConstrucao)}
-                >
-                  <SelectTrigger
-                    id="subConstrucao"
-                    className="h-12 bg-white border-orange-300 shadow-sm font-medium text-slate-800"
-                  >
-                    <SelectValue placeholder="Selecione a subatividade de construção/engenharia" />
-                  </SelectTrigger>
-                  <SelectContent className="max-w-xl">
-                    {SUBATIVIDADES_CONSTRUCAO.map((item) => (
-                      <SelectItem key={item.id} value={item.id} className="py-2.5">
-                        <div className="text-left">
-                          <span className="font-semibold text-slate-900 block">{item.label}</span>
-                          <span className="text-xs text-slate-500 block leading-tight mt-0.5">
-                            {item.descricao}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="flex items-center gap-2 text-xs text-orange-950 bg-orange-100/60 p-2.5 rounded-lg">
-                  <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                  <span>
-                    {subatividadeConstrucao === 'engenharia_projetos'
-                      ? '✓ Engenharia e projetos: sujeitos ao Fator R (folha ≥ 28% vai p/ Anexo III; < 28% vai p/ Anexo V).'
-                      : '✓ Obras civis e edificações: enquadramento obrigatório no ANEXO IV do Simples (a CPP patronal de 20% é recolhida à parte da guia DAS). No IBS/CBS: regime de bens imóveis.'}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* 1.6 Seletor Ramo Aluguel / Locação de Bens */}
-            {tipoAtividade === 'locacao_bens' && (
-              <div className="bg-gradient-to-r from-purple-50/70 to-indigo-50/60 border border-purple-200/80 p-4 sm:p-5 rounded-xl space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <Label
-                    htmlFor="subLocacao"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
-                  >
-                    <Tag className="w-4 h-4 text-purple-700" />
-                    Subatividade de Locação (Bens Móveis, Imóveis e Coworking)
-                  </Label>
-                  <span className="text-[11px] text-purple-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-purple-200">
-                    Súmula Vinculante 31 STF / IVA Dual
-                  </span>
-                </div>
-                <Select
-                  value={subatividadeLocacao}
-                  onValueChange={(val) => setSubatividadeLocacao(val as SubatividadeLocacao)}
-                >
-                  <SelectTrigger
-                    id="subLocacao"
-                    className="h-12 bg-white border-purple-300 shadow-sm font-medium text-slate-800"
-                  >
-                    <SelectValue placeholder="Selecione a subatividade de locação" />
-                  </SelectTrigger>
-                  <SelectContent className="max-w-xl">
-                    {SUBATIVIDADES_LOCACAO.map((item) => (
-                      <SelectItem key={item.id} value={item.id} className="py-2.5">
-                        <div className="text-left">
-                          <span className="font-semibold text-slate-900 block">{item.label}</span>
-                          <span className="text-xs text-slate-500 block leading-tight mt-0.5">
-                            {item.descricao}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="flex items-center gap-2 text-xs text-purple-950 bg-purple-100/60 p-2.5 rounded-lg">
-                  <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                  <span>
-                    {subatividadeLocacao === 'locacao_veiculos_maquinas' ||
-                    subatividadeLocacao === 'locacao_equipamentos_eventos'
-                      ? '✓ Locação de bens móveis pura: Anexo III direto (sem exigência de Fator R e sem incidência de ISS por SV 31/STF). Tributada no novo IBS/CBS com crédito total B2B.'
-                      : subatividadeLocacao === 'coworking_espacos'
-                        ? '✓ Coworking agrega infraestrutura e serviços: sujeito ao Fator R no Simples (Anexo III se folha ≥ 28%).'
-                        : '✓ Locação de imóveis próprios: não incide ISS no modelo atual; no novo IBS/CBS segue regra específica de bens imóveis.'}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* 1.7 Seletor Ramo Bares / Restaurantes e Food Service */}
-            {tipoAtividade === 'food_service' && (
-              <div className="bg-gradient-to-r from-rose-50/70 to-amber-50/60 border border-rose-200/80 p-4 sm:p-5 rounded-xl space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <Label
-                    htmlFor="subFoodService"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
-                  >
-                    <Tag className="w-4 h-4 text-rose-600" />
-                    Subatividade Bares, Restaurantes e Food Service (Anexo I do Simples & Consumo
-                    Local)
-                  </Label>
-                  <span className="text-[11px] text-rose-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-rose-200">
-                    Alimentação Fora do Lar / Delivery
-                  </span>
-                </div>
-                <Select
-                  value={subatividadeFoodService}
-                  onValueChange={(val) =>
-                    setSubatividadeFoodService(val as SubatividadeFoodService)
-                  }
-                >
-                  <SelectTrigger
-                    id="subFoodService"
-                    className="h-12 bg-white border-rose-300 shadow-sm font-medium text-slate-800"
-                  >
-                    <SelectValue placeholder="Selecione a subatividade de alimentação" />
-                  </SelectTrigger>
-                  <SelectContent className="max-w-xl">
-                    {SUBATIVIDADES_FOOD_SERVICE.map((item) => (
-                      <SelectItem key={item.id} value={item.id} className="py-2.5">
-                        <div className="text-left">
-                          <span className="font-semibold text-slate-900 block">{item.label}</span>
-                          <span className="text-xs text-slate-500 block leading-tight mt-0.5">
-                            {item.descricao}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Se for Bar/Choperia: seletor de Imposto Seletivo para bebidas alcoólicas */}
-                {subatividadeFoodService === 'bar_choperia_noturno' && (
-                  <div className="bg-rose-50 border border-rose-200 p-3.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
-                    <div className="space-y-0.5">
-                      <span className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
-                        <Flame className="w-4 h-4 text-rose-600" />
-                        Imposto Seletivo sobre Bebidas Alcoólicas:
-                      </span>
-                      <p className="text-[11px] text-rose-700 leading-tight">
-                        Cervejas, destilados e vinhos sofrem incidência de IS no novo sistema
-                        tributário.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="relative w-28">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="1"
-                          value={aliquotaImpostoSeletivo}
-                          onChange={(e) => setAliquotaImpostoSeletivo(Number(e.target.value))}
-                          className="h-10 bg-white font-mono font-bold text-rose-900 border-rose-300 pr-7 text-right"
-                        />
-                        <span className="absolute right-2.5 top-2.5 text-xs text-rose-500 font-bold">
-                          %
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 text-xs text-rose-950 bg-rose-100/60 p-2.5 rounded-lg">
-                  <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                  <span>
-                    ✓ Bares e Restaurantes enquadram-se no{' '}
-                    <strong>ANEXO I do Simples Nacional</strong> (comércio de refeições). No Lucro
-                    Presumido a presunção é de 8%. No novo IBS/CBS, goza de crédito de insumos
-                    alimentícios e abatimento das comissões de delivery.
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* 1.8 Seletor Ramo Misto: Proporção + Subatividades das duas partes */}
+            {/* 1.4 Seletor Ramo Misto: Proporção + Subatividades das duas partes */}
             {tipoAtividade === 'misto' && (
               <div className="bg-amber-50/70 border border-amber-200 p-5 rounded-xl space-y-4">
                 <div className="flex justify-between items-center">
@@ -1417,11 +1148,7 @@ export default function Modulo3ComparativoRegimes() {
                         Fator R = {dadosAdicionais?.fatorRPercent}%
                       </strong>
                       .{' '}
-                      {tipoAtividade === 'servico' ||
-                      (tipoAtividade === 'construcao_civil' &&
-                        subatividadeConstrucao === 'engenharia_projetos') ||
-                      (tipoAtividade === 'locacao_bens' &&
-                        subatividadeLocacao === 'coworking_espacos') ? (
+                      {tipoAtividade === 'servico' ? (
                         dadosAdicionais?.fatorRQualificaAnexoIII ? (
                           <span className="text-emerald-700 font-semibold">
                             ✓ Qualificado para o Anexo III (alíquotas a partir de 6%, economizando
@@ -1433,28 +1160,6 @@ export default function Modulo3ComparativoRegimes() {
                             Aumentar pró-labore/folha pode migrar a empresa para o Anexo III.
                           </span>
                         )
-                      ) : tipoAtividade === 'food_service' ? (
-                        <span className="text-slate-700 font-medium">
-                          Bares e restaurantes recolhem pelo Anexo I (alíquota comercial a partir de
-                          4%). O Fator R é mantido como referência de eficiência de custos de
-                          equipe.
-                        </span>
-                      ) : tipoAtividade === 'construcao_civil' &&
-                        subatividadeConstrucao !== 'engenharia_projetos' ? (
-                        <span className="text-slate-700 font-medium">
-                          Obras e reformas enquadram-se no Anexo IV (inicia em 4,5% sem CPP
-                          inclusa). A CPP patronal de 20% é recolhida à parte.
-                        </span>
-                      ) : tipoAtividade === 'agronegocio' ? (
-                        <span className="text-slate-700 font-medium">
-                          Produtor rural enquadra-se no Anexo I (ou Anexo II na agroindústria).
-                          Desoneração de ICMS e diferimentos aplicáveis.
-                        </span>
-                      ) : tipoAtividade === 'locacao_bens' ? (
-                        <span className="text-slate-700 font-medium">
-                          Locação de bens móveis pura enquadra-se no Anexo III diretamente,
-                          desonerada de ISS por decisão vinculante do STF (SV 31).
-                        </span>
                       ) : (
                         <span className="text-slate-700 font-medium">
                           Atividade regida por anexo próprio ({simplesNacional.anexoUtilizado}).

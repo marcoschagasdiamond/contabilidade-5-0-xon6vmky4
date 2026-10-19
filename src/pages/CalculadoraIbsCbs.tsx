@@ -32,6 +32,11 @@ import {
   ModalCompartilharLink,
   decodificarParametrosDaUrl,
 } from '@/components/calculadora/ModalCompartilharLink'
+import {
+  isTipoAtividadeLegado,
+  LABELS_RAMOS_LEGADOS,
+  normalizarTipoAtividade,
+} from '@/types/calculadoraIbsCbs'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
 import { Share2, X } from 'lucide-react'
@@ -122,6 +127,7 @@ function CalculadoraConteudo() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [simulacaoCarregadaViaLink, setSimulacaoCarregadaViaLink] = useState(false)
   const [empresaLink, setEmpresaLink] = useState<string>('')
+  const [avisoRamoLegado, setAvisoRamoLegado] = useState<string | null>(null)
 
   React.useEffect(() => {
     const rawParam = searchParams.get('simulacao')
@@ -129,6 +135,13 @@ function CalculadoraConteudo() {
       try {
         const paramsRestaurados = decodificarParametrosDaUrl(rawParam)
         if (paramsRestaurados) {
+          if (isTipoAtividadeLegado(paramsRestaurados.tipoAtividade)) {
+            const ramoAntigo = LABELS_RAMOS_LEGADOS[paramsRestaurados.tipoAtividade]
+            const novoRamo = normalizarTipoAtividade(paramsRestaurados.tipoAtividade)
+            setAvisoRamoLegado(
+              `O ramo "${ramoAntigo}" deste link compartilhado foi mapeado automaticamente para "${novoRamo.toUpperCase()}".`,
+            )
+          }
           restaurarSimulacao(paramsRestaurados)
           setSimulacaoCarregadaViaLink(true)
           setEmpresaLink(paramsRestaurados.empresa || 'Cenário Compartilhado')
@@ -146,6 +159,7 @@ function CalculadoraConteudo() {
 
   const fecharAvisoLink = () => {
     setSimulacaoCarregadaViaLink(false)
+    setAvisoRamoLegado(null)
     searchParams.delete('simulacao')
     setSearchParams(searchParams, { replace: true })
   }
@@ -183,6 +197,15 @@ function CalculadoraConteudo() {
 
   const handleCarregarSimulacao = (sim: SimulacaoCalculadora) => {
     try {
+      if (isTipoAtividadeLegado(sim.parametros.tipoAtividade)) {
+        const ramoAntigo = LABELS_RAMOS_LEGADOS[sim.parametros.tipoAtividade]
+        const novoRamo = normalizarTipoAtividade(sim.parametros.tipoAtividade)
+        setAvisoRamoLegado(
+          `A simulação "${sim.nome}" utilizava o ramo "${ramoAntigo}", migrado com segurança para "${novoRamo.toUpperCase()}".`,
+        )
+      } else {
+        setAvisoRamoLegado(null)
+      }
       restaurarSimulacao(sim.parametros)
       toast({
         title: 'Cenário restaurado!',
@@ -337,6 +360,30 @@ function CalculadoraConteudo() {
                 <X className="w-4 h-4" />
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* BANNER AMIGÁVEL QUANDO SIMULAÇÃO OU LINK LEGADO CONTÉM RAMO MIGRADO */}
+      {avisoRamoLegado && (
+        <div className="bg-amber-500/15 border-b border-amber-500/40 text-amber-900 py-2.5 px-4 sm:px-6 animate-fade-in">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+              <span className="font-semibold">{avisoRamoLegado}</span>
+              <span className="hidden md:inline text-amber-800">
+                (A calculadora foi simplificada para os 4 ramos principais: Serviço, Indústria,
+                Comércio e Misto).
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAvisoRamoLegado(null)}
+              className="p-1 rounded hover:bg-amber-500/20 text-amber-800"
+              title="Dispensar aviso"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}

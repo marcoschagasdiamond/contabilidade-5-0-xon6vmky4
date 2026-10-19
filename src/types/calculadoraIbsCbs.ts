@@ -1,14 +1,81 @@
 export type RegimeDiferenciadoTipo = 'padrao' | 'saude_educacao' | 'transporte' | 'cesta_basica'
 
-export type TipoAtividade =
-  | 'servico'
-  | 'industria'
-  | 'comercio'
-  | 'misto'
+export type TipoAtividadePrincipal = 'servico' | 'industria' | 'comercio' | 'misto'
+
+export type TipoAtividadeLegado =
   | 'agronegocio'
   | 'construcao_civil'
   | 'locacao_bens'
   | 'food_service'
+
+export type TipoAtividade = TipoAtividadePrincipal | TipoAtividadeLegado
+
+export const RAMOS_PRINCIPAIS_ATIVOS: Array<{
+  id: TipoAtividadePrincipal
+  label: string
+  subtitulo: string
+}> = [
+  {
+    id: 'servico',
+    label: 'Serviço',
+    subtitulo: 'ISS / Anexo III ou V / Presunção 32% ou 16%',
+  },
+  {
+    id: 'industria',
+    label: 'Indústria',
+    subtitulo: 'IPI / Anexo II / Imposto Seletivo',
+  },
+  {
+    id: 'comercio',
+    label: 'Comércio',
+    subtitulo: 'ICMS / Anexo I / ICMS-ST / Presunção 8%',
+  },
+  {
+    id: 'misto',
+    label: 'Misto',
+    subtitulo: 'Serviço + Comércio com proporção customizada',
+  },
+]
+
+/**
+ * Mapeamento de fallback gracioso para simulações e links legados contendo os 4 ramos retirados.
+ * Garante que dados pré-existentes no banco ou URL decodificada nunca quebrem a aplicação.
+ */
+export const MAPA_FALLBACK_RAMOS_LEGADOS: Record<TipoAtividadeLegado, TipoAtividadePrincipal> = {
+  agronegocio: 'comercio',
+  construcao_civil: 'servico',
+  locacao_bens: 'servico',
+  food_service: 'comercio',
+}
+
+export const LABELS_RAMOS_LEGADOS: Record<TipoAtividadeLegado, string> = {
+  agronegocio: 'Agronegócio / Produtor rural',
+  construcao_civil: 'Construção civil e engenharia',
+  locacao_bens: 'Aluguel / Locação de bens',
+  food_service: 'Bares / Restaurantes e food service',
+}
+
+export function isTipoAtividadeLegado(
+  tipo: string | undefined | null,
+): tipo is TipoAtividadeLegado {
+  return (
+    tipo === 'agronegocio' ||
+    tipo === 'construcao_civil' ||
+    tipo === 'locacao_bens' ||
+    tipo === 'food_service'
+  )
+}
+
+export function normalizarTipoAtividade(tipo: string | undefined | null): TipoAtividadePrincipal {
+  if (!tipo) return 'servico'
+  if (tipo === 'servico' || tipo === 'industria' || tipo === 'comercio' || tipo === 'misto') {
+    return tipo
+  }
+  if (isTipoAtividadeLegado(tipo)) {
+    return MAPA_FALLBACK_RAMOS_LEGADOS[tipo]
+  }
+  return 'servico'
+}
 
 export type SubatividadeServico =
   | 'servico_comum'

@@ -258,7 +258,15 @@ export function ModalCompararSimulacoes({
                   </td>
                   {simulacoes.map((sim) => (
                     <td key={sim.id} className="p-3 border-l border-slate-100 capitalize">
-                      {sim.parametros.tipoAtividade}
+                      {sim.parametros.tipoAtividade === 'agronegocio'
+                        ? 'Agronegócio (Legado)'
+                        : sim.parametros.tipoAtividade === 'construcao_civil'
+                          ? 'Construção Civil (Legado)'
+                          : sim.parametros.tipoAtividade === 'locacao_bens'
+                            ? 'Locação de Bens (Legado)'
+                            : sim.parametros.tipoAtividade === 'food_service'
+                              ? 'Bares / Food (Legado)'
+                              : sim.parametros.tipoAtividade}
                       <span className="text-[10px] text-slate-500 block">
                         UF: {sim.parametros.ufOrigem || 'SP'}
                       </span>

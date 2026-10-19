@@ -192,10 +192,6 @@ export default function Modulo5TransicaoCronograma() {
               </SelectItem>
               <SelectItem value="industria">Indústria e Manufatura (IPI/ICMS no antigo)</SelectItem>
               <SelectItem value="misto">Atividade Mista (Serviço + Comércio)</SelectItem>
-              <SelectItem value="agronegocio">🌾 Agronegócio / Produtor rural</SelectItem>
-              <SelectItem value="construcao_civil">🏗️ Construção civil e engenharia</SelectItem>
-              <SelectItem value="locacao_bens">🏢 Aluguel / Locação de bens</SelectItem>
-              <SelectItem value="food_service">🍽️ Bares / Restaurantes e food service</SelectItem>
             </SelectContent>
           </Select>
           <span className="text-[11px] text-slate-500">
