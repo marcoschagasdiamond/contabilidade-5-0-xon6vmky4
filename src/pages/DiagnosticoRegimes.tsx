@@ -8,10 +8,15 @@ import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav
 import { Modulo6ComparadorRegime } from '@/components/reforma/Modulo6ComparadorRegime'
 import { createDiagnostico } from '@/services/diagnosticos'
 import pb from '@/lib/pocketbase/client'
+import { registrarDiagnosticoUsado } from '@/services/freemium'
+import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
+import { PaywallModal } from '@/components/freemium/PaywallModal'
 
 export default function DiagnosticoRegimes() {
   const navigate = useNavigate()
   const { temDadosSalvos, dadosEmpresa } = useDadosEmpresa()
+  const { isPremium, podeDiagnosticar, recarregarUsuario } = useAuth()
+  const [paywallAberto, setPaywallAberto] = useState(false)
   const { isAuthenticated, isLoading: authLoading } = useAuth()
 
   // Gate de Dados da Empresa
@@ -75,6 +80,11 @@ export default function DiagnosticoRegimes() {
       }>
     }
   }) => {
+    if (!podeDiagnosticar) {
+      setPaywallAberto(true)
+      return
+    }
+
     setSalvando(true)
     try {
       const authUserId = pb.authStore.record?.id || undefined
@@ -134,6 +144,9 @@ export default function DiagnosticoRegimes() {
         },
       })
 
+      await registrarDiagnosticoUsado(authUserId)
+      await recarregarUsuario()
+
       setSalvoFeedback(true)
       setTimeout(() => setSalvoFeedback(false), 4000)
     } catch (err) {
@@ -164,9 +177,12 @@ export default function DiagnosticoRegimes() {
 
         <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6">
           <div className="max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-blue-400/40 bg-blue-400/15 text-xs font-bold text-blue-300 uppercase tracking-wider backdrop-blur-md">
-              <Scale className="w-3.5 h-3.5" />
-              <span>DIAGNÓSTICO 3 DE 4 • COMPARADOR DE REGIME TRIBUTÁRIO</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-blue-400/40 bg-blue-400/15 text-xs font-bold text-blue-300 uppercase tracking-wider backdrop-blur-md">
+                <Scale className="w-3.5 h-3.5" />
+                <span>DIAGNÓSTICO 3 DE 4 • COMPARADOR DE REGIME TRIBUTÁRIO</span>
+              </div>
+              <FreemiumBadge tipo="diagnostico" />
             </div>
 
             <h1 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
@@ -198,6 +214,8 @@ export default function DiagnosticoRegimes() {
       </div>
 
       <DiamondFooterCTA />
+
+      <PaywallModal open={paywallAberto} onOpenChange={setPaywallAberto} motivo="diagnostico" />
     </div>
   )
 }

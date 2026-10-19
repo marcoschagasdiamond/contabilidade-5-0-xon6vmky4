@@ -29,6 +29,9 @@ import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
 import { createDiagnostico } from '@/services/diagnosticos'
 import pb from '@/lib/pocketbase/client'
+import { registrarDiagnosticoUsado } from '@/services/freemium'
+import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
+import { PaywallModal } from '@/components/freemium/PaywallModal'
 
 // Definição completa dos 7 riscos extraídos com rigor do PDF da Diamond Intelligence
 export interface Risco360Item {
@@ -196,8 +199,10 @@ export default function Diagnostico360() {
     7: 3,
   })
 
+  const { isPremium, podeDiagnosticar, recarregarUsuario } = useAuth()
   const [salvandoDiagnostico, setSalvandoDiagnostico] = useState(false)
   const [salvoFeedback, setSalvoFeedback] = useState(false)
+  const [paywallAberto, setPaywallAberto] = useState(false)
 
   const handleSelectNivel = (riscoId: number, nivel: number) => {
     setAvaliacoes((prev) => ({ ...prev, [riscoId]: nivel }))
@@ -231,6 +236,11 @@ export default function Diagnostico360() {
 
   // Salvar diagnóstico 360 no PocketBase vinculado à conta do usuário
   const handleSalvarDiagnostico360 = async () => {
+    if (!podeDiagnosticar) {
+      setPaywallAberto(true)
+      return
+    }
+
     setSalvandoDiagnostico(true)
     try {
       const authUserId = pb.authStore.record?.id || undefined
@@ -274,6 +284,10 @@ export default function Diagnostico360() {
           ],
         },
       })
+
+      await registrarDiagnosticoUsado(authUserId)
+      await recarregarUsuario()
+
       setSalvoFeedback(true)
       setTimeout(() => setSalvoFeedback(false), 4000)
     } catch (err) {
@@ -305,9 +319,12 @@ export default function Diagnostico360() {
 
         <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6">
           <div className="max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/15 text-xs font-bold text-[#D4AF37] uppercase tracking-wider backdrop-blur-md">
-              <Compass className="w-3.5 h-3.5" />
-              <span>DIAMOND INTELLIGENCE • PARCERIA GRUPO BAUMGARTENER</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/15 text-xs font-bold text-[#D4AF37] uppercase tracking-wider backdrop-blur-md">
+                <Compass className="w-3.5 h-3.5" />
+                <span>DIAMOND INTELLIGENCE • PARCERIA GRUPO BAUMGARTENER</span>
+              </div>
+              <FreemiumBadge tipo="diagnostico" />
             </div>
 
             <h1 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
@@ -928,6 +945,8 @@ export default function Diagnostico360() {
       </div>
 
       <DiamondFooterCTA />
+
+      <PaywallModal open={paywallAberto} onOpenChange={setPaywallAberto} motivo="diagnostico" />
     </div>
   )
 }

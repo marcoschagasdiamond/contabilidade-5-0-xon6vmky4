@@ -32,6 +32,8 @@ import {
   ModalCompartilharLink,
   decodificarParametrosDaUrl,
 } from '@/components/calculadora/ModalCompartilharLink'
+import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
+import { PaywallModal } from '@/components/freemium/PaywallModal'
 import { Share2, X } from 'lucide-react'
 import Modulo1Configuracoes from '@/components/calculadora/Modulo1Configuracoes'
 import Modulo2CalculadoraSimples from '@/components/calculadora/Modulo2CalculadoraSimples'
@@ -103,13 +105,14 @@ function CalculadoraConteudo() {
     obterSnapshotResultados,
     restaurarSimulacao,
   } = useCalculadoraIbsCbs()
-  const { user } = useAuth()
+  const { user, isPremium, podeSimular, simulacoesUsadas, simulacoesRestantes } = useAuth()
   const { toast } = useToast()
 
   // Estados de simulações
   const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
   const [modalCompararAberto, setModalCompararAberto] = useState(false)
   const [modalCompartilharAberto, setModalCompartilharAberto] = useState(false)
+  const [paywallSimulacaoAberto, setPaywallSimulacaoAberto] = useState(false)
   const [simulacoes, setSimulacoes] = useState<SimulacaoCalculadora[]>([])
   const [carregandoSimulacoes, setCarregandoSimulacoes] = useState(false)
   const [selecionadasComparar, setSelecionadasComparar] = useState<string[]>([])
@@ -194,6 +197,14 @@ function CalculadoraConteudo() {
     }
   }
 
+  const handleTentarSalvarSimulacao = () => {
+    if (!podeSimular) {
+      setPaywallSimulacaoAberto(true)
+      return
+    }
+    setModalSalvarAberto(true)
+  }
+
   const handleBaixarPdfAtual = () => {
     try {
       setGerandoPdf(true)
@@ -262,18 +273,19 @@ function CalculadoraConteudo() {
             </span>
             {/* BOTÕES DE AÇÃO RÁPIDA: SALVAR, COMPARTILHAR E BAIXAR PDF */}
             <div className="flex items-center gap-2 ml-auto">
+              <FreemiumBadge tipo="simulacao" />
               <button
                 type="button"
                 onClick={() => setModalCompartilharAberto(true)}
                 className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[#D4AF37] border border-[#D4AF37]/40 font-bold transition-colors flex items-center gap-1.5 shadow-sm"
-                title="Compartilhar simulação via link público direto"
+                title="Compartilhar simulação via link público direto (acesso livre)"
               >
                 <Share2 className="w-3.5 h-3.5" />
                 <span>Compartilhar</span>
               </button>
               <button
                 type="button"
-                onClick={() => setModalSalvarAberto(true)}
+                onClick={handleTentarSalvarSimulacao}
                 className="px-2.5 py-1 rounded-lg bg-[#D4AF37] text-[#07132B] font-bold hover:bg-[#E5C158] transition-colors flex items-center gap-1.5 shadow-sm"
               >
                 <BookmarkPlus className="w-3.5 h-3.5" />
@@ -311,7 +323,7 @@ function CalculadoraConteudo() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setModalSalvarAberto(true)}
+                onClick={handleTentarSalvarSimulacao}
                 className="px-2.5 py-1 rounded bg-[#D4AF37] text-[#07132B] font-bold hover:bg-[#E5C158] text-[11px] transition-colors"
               >
                 Salvar na Minha Conta
@@ -429,6 +441,9 @@ function CalculadoraConteudo() {
               />
             </div>
 
+            {/* Bloco de consumo Freemium */}
+            <FreemiumBadge tipo="simulacao" variante="barra" className="mt-2" />
+
             <div className="pt-2 border-t border-slate-100 px-3 py-2 bg-slate-50/70 rounded-xl">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#07132B]">
                 <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
@@ -505,6 +520,13 @@ function CalculadoraConteudo() {
         open={modalCompartilharAberto}
         onOpenChange={setModalCompartilharAberto}
         parametros={obterSnapshotParametros()}
+      />
+
+      {/* PAYWALL MODAL QUANDO ATINGE O LIMITE DE SIMULAÇÕES */}
+      <PaywallModal
+        open={paywallSimulacaoAberto}
+        onOpenChange={setPaywallSimulacaoAberto}
+        motivo="simulacao"
       />
     </div>
   )

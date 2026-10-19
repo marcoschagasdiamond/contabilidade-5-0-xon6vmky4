@@ -8,6 +8,16 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   isAdmin: boolean
+  isPremium: boolean
+  plano: 'gratuito' | 'premium'
+  simulacoesUsadas: number
+  diagnosticosUsados: number
+  simulacoesRestantes: number
+  diagnosticosRestantes: number
+  podeSimular: boolean
+  podeDiagnosticar: boolean
+  podeBaixarPdfDiagnostico: boolean
+  recarregarUsuario: () => Promise<void>
   login: (email: string, pass: string) => Promise<void>
   signup: (nome: string, email: string, pass: string, passConfirm: string) => Promise<void>
   logout: () => void
@@ -56,6 +66,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(pb.authStore.token)
   }
 
+  const recarregarUsuario = async () => {
+    if (!pb.authStore.record?.id) return
+    try {
+      const updated = await pb.collection('users').getOne(pb.authStore.record.id)
+      setUser(updated)
+      pb.authStore.save(pb.authStore.token, updated)
+    } catch (err) {
+      console.warn('Erro ao recarregar dados do usuário:', err)
+    }
+  }
+
   const logout = () => {
     pb.authStore.clear()
     setUser(null)
@@ -65,6 +86,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin =
     (user as any)?.role === 'admin' || user?.email === 'marcoschagasdiamond@icloud.com'
 
+  const isPremium =
+    isAdmin || (user as any)?.is_premium === true || (user as any)?.plano === 'premium'
+
+  const plano: 'gratuito' | 'premium' = isPremium ? 'premium' : 'gratuito'
+
+  // Contadores de uso
+  const simulacoesUsadas =
+    (user as any)?.simulacoes_usadas ??
+    (typeof window !== 'undefined'
+      ? parseInt(localStorage.getItem('c50_simulacoes_usadas') || '0', 10)
+      : 0)
+  const diagnosticosUsados =
+    (user as any)?.diagnosticos_usados ??
+    (typeof window !== 'undefined'
+      ? parseInt(localStorage.getItem('c50_diagnosticos_usados') || '0', 10)
+      : 0)
+
+  const simulacoesRestantes = isPremium ? 999 : Math.max(0, 3 - simulacoesUsadas)
+  const diagnosticosRestantes = isPremium ? 999 : Math.max(0, 1 - diagnosticosUsados)
+
+  const podeSimular = isPremium || simulacoesUsadas < 3
+  const podeDiagnosticar = isPremium || diagnosticosUsados < 1
+  const podeBaixarPdfDiagnostico = isPremium
+
   return (
     <AuthContext.Provider
       value={{
@@ -73,6 +118,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         isAuthenticated: !!token && !!user,
         isAdmin,
+        isPremium,
+        plano,
+        simulacoesUsadas,
+        diagnosticosUsados,
+        simulacoesRestantes,
+        diagnosticosRestantes,
+        podeSimular,
+        podeDiagnosticar,
+        podeBaixarPdfDiagnostico,
+        recarregarUsuario,
         login,
         signup,
         logout,

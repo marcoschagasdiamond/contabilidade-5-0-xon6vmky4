@@ -8,11 +8,15 @@ import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav
 import { ConteudoModulo7Diagnostico } from '@/components/reforma/Modulo7DiagnosticoReforma'
 import { createDiagnostico } from '@/services/diagnosticos'
 import pb from '@/lib/pocketbase/client'
+import { registrarDiagnosticoUsado } from '@/services/freemium'
+import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
+import { PaywallModal } from '@/components/freemium/PaywallModal'
 
 export default function DiagnosticoTransicao() {
   const navigate = useNavigate()
   const { temDadosSalvos, dadosEmpresa, restaurarPadrao } = useDadosEmpresa()
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { isAuthenticated, isLoading: authLoading, isPremium, podeDiagnosticar, recarregarUsuario } = useAuth()
+  const [paywallAberto, setPaywallAberto] = useState(false)
 
   // Gate de Dados da Empresa
   useEffect(() => {
@@ -37,15 +41,19 @@ export default function DiagnosticoTransicao() {
   // Salvamento do diagnóstico de transição na coleção diagnosticos com tipo_diagnostico='transicao'
   const handleSalvarDiagnosticoTransicao = async (payload: {
     totalScore: number
-    farol: 'verde' | 'amarelo' | 'vermelho'
+    farol: 'VERMELHO' | 'AMARELO' | 'VERDE'
     farolTitulo: string
     servicoRecomendado: string
     respostas: Record<string, string>
   }) => {
+    if (!podeDiagnosticar) {
+      setPaywallAberto(true)
+      return
+    }
+
     setSalvando(true)
     try {
-      const authUserId = pb.authStore.record?.id || undefined
-      const fatAnual = (dadosEmpresa.faturamentoMensal || 100000) * 12
+      const authUserId = pb.authStore.record?.id || undefined      const fatAnual = (dadosEmpresa.faturamentoMensal || 100000) * 12
       const folhaAnual = (dadosEmpresa.folhaPagamentoMensal || 10000) * 12
 
       await createDiagnostico({
@@ -79,6 +87,9 @@ export default function DiagnosticoTransicao() {
         },
       })
 
+      await registrarDiagnosticoUsado(authUserId)
+      await recarregarUsuario()
+
       setSalvoFeedback(true)
       setTimeout(() => setSalvoFeedback(false), 4000)
     } catch (err) {
@@ -110,9 +121,12 @@ export default function DiagnosticoTransicao() {
 
         <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6">
           <div className="max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-400/40 bg-amber-400/15 text-xs font-bold text-amber-300 uppercase tracking-wider backdrop-blur-md">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>DIAGNÓSTICO 2 DE 4 • TRANSIÇÃO FISCAL (ROTEIRO DE 40 MINUTOS)</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-400/40 bg-amber-400/15 text-xs font-bold text-amber-300 uppercase tracking-wider backdrop-blur-md">
+                <Calendar className="w-3.5 h-3.5" />
+                <span>DIAGNÓSTICO 2 DE 4 • TRANSIÇÃO FISCAL (ROTEIRO DE 40 MINUTOS)</span>
+              </div>
+              <FreemiumBadge tipo="diagnostico" />
             </div>
 
             <h1 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
@@ -144,6 +158,12 @@ export default function DiagnosticoTransicao() {
       </div>
 
       <DiamondFooterCTA />
+
+      <PaywallModal
+        open={paywallAberto}
+        onOpenChange={setPaywallAberto}
+        motivo="diagnostico"
+      />
     </div>
   )
 }

@@ -59,7 +59,12 @@ import {
   TAXA_IBS_REFERENCIA,
 } from '@/lib/reformaTributaria'
 import pb from '@/lib/pocketbase/client'
+import { useAuth } from '@/context/AuthContext'
 import { createDiagnostico } from '@/services/diagnosticos'
+import { registrarDiagnosticoUsado } from '@/services/freemium'
+import { PaywallModal } from '@/components/freemium/PaywallModal'
+import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
+import { Lock } from 'lucide-react'
 import { createLead } from '@/services/leads'
 import { formatarCNPJ, validarCNPJ, limparCNPJ } from '@/lib/cnpj'
 import {
@@ -90,6 +95,16 @@ interface FormErrors {
 
 export default function Diagnostico() {
   const navigate = useNavigate()
+  const {
+    user,
+    isPremium,
+    podeDiagnosticar,
+    podeBaixarPdfDiagnostico,
+    diagnosticosUsados,
+    recarregarUsuario,
+  } = useAuth()
+  const [paywallModalOpen, setPaywallModalOpen] = useState(false)
+  const [paywallMotivo, setPaywallMotivo] = useState<'diagnostico' | 'pdf'>('diagnostico')
 
   // Carrega dados da empresa salvos para pré-preenchimento
   const perfilEmpresaInicial = React.useMemo(() => carregarDadosEmpresa(), [])
@@ -293,6 +308,13 @@ export default function Diagnostico() {
 
   const handleBaixarPDF = async () => {
     if (!resultado) return
+    // Regra freemium: plano gratuito não consegue imprimir nem gerar PDF
+    if (!podeBaixarPdfDiagnostico) {
+      setPaywallMotivo('pdf')
+      setPaywallModalOpen(true)
+      return
+    }
+
     setIsGerandoPDF(true)
     try {
       gerarRelatorioDiagnosticoPDF({
@@ -508,6 +530,13 @@ export default function Diagnostico() {
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }
     } else {
+      // Bloqueio freemium: cliente gratuito só consegue fazer 1 diagnóstico
+      if (!podeDiagnosticar) {
+        setPaywallMotivo('diagnostico')
+        setPaywallModalOpen(true)
+        return
+      }
+
       // Finalizar wizard: calcular diagnóstico e persistir no PocketBase
       setIsCalculando(true)
       try {
@@ -583,6 +612,10 @@ export default function Diagnostico() {
               diferencaPercent: item.diferencaPercent,
             })),
           })
+
+          // Registra o uso no backend/localStorage e atualiza contexto
+          await registrarDiagnosticoUsado(authUserId)
+          await recarregarUsuario()
         } catch (dbErr) {
           console.error('Aviso: diagnóstico gerado, mas falha ao salvar no banco:', dbErr)
         }
@@ -716,9 +749,12 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
         <div className="absolute top-1/2 right-10 w-80 h-80 bg-[#2ECC71]/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-[1100px] mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#2ECC71]/40 bg-[#145A32]/60 text-xs sm:text-sm font-medium text-emerald-300 mb-4 backdrop-blur-md">
-            <Sparkles className="w-4 h-4 text-[#2ECC71]" />
-            <span>Simulador Tributário 2025 • Inteligência Fiscal</span>
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#2ECC71]/40 bg-[#145A32]/60 text-xs sm:text-sm font-medium text-emerald-300 backdrop-blur-md">
+              <Sparkles className="w-4 h-4 text-[#2ECC71]" />
+              <span>Simulador Tributário 2025 • Inteligência Fiscal</span>
+            </div>
+            <FreemiumBadge tipo="diagnostico" />
           </div>
 
           <h1 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-white mb-4">
@@ -735,12 +771,16 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
           </p>
         </div>
       </section>
-
       {/* CONTAINER PRINCIPAL DO WIZARD / RESULTADO */}
       <div
         id="wizard-diagnostico-container"
         className="max-w-[1000px] mx-auto px-4 sm:px-6 -mt-6 scroll-mt-28"
       >
+        {/* BARRA DE CONSUMO FREEMIUM NO TOPO DO WIZARD */}
+        {etapa <= 4 && (
+          <FreemiumBadge tipo="diagnostico" variante="barra" className="mb-4 shadow-sm" />
+        )}
+
         {/* AVISO DE DADOS DA EMPRESA INTEGRADOS (quando etapa <= 4) */}
         {etapa <= 4 && (
           <div className="mb-4 bg-white border border-[#D4AF37]/40 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -2170,12 +2210,26 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   type="button"
                   onClick={handleBaixarPDF}
                   disabled={isGerandoPDF}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center gap-1.5 shrink-0"
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shrink-0 ${
+                    !podeBaixarPdfDiagnostico
+                      ? 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100'
+                      : 'text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
+                  }`}
+                  title={
+                    !podeBaixarPdfDiagnostico
+                      ? 'Recurso exclusivo do Plano Premium'
+                      : 'Baixar dossiê em PDF'
+                  }
                 >
                   {isGerandoPDF ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       <span>Gerando PDF...</span>
+                    </>
+                  ) : !podeBaixarPdfDiagnostico ? (
+                    <>
+                      <Lock className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Baixar PDF (Premium)</span>
                     </>
                   ) : (
                     <>
@@ -3572,12 +3626,26 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   type="button"
                   onClick={handleBaixarPDF}
                   disabled={isGerandoPDF}
-                  className="px-6 py-4 rounded-xl font-heading font-semibold text-sm sm:text-base text-white bg-white/15 hover:bg-white/25 border border-white/25 hover:border-white/50 transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap shadow-sm disabled:opacity-70"
+                  className={`px-6 py-4 rounded-xl font-heading font-semibold text-sm sm:text-base transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap shadow-sm disabled:opacity-70 ${
+                    !podeBaixarPdfDiagnostico
+                      ? 'bg-[#D4AF37]/20 border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/30'
+                      : 'text-white bg-white/15 hover:bg-white/25 border border-white/25 hover:border-white/50'
+                  }`}
+                  title={
+                    !podeBaixarPdfDiagnostico
+                      ? 'Recurso exclusivo do Plano Premium'
+                      : 'Baixar dossiê em PDF'
+                  }
                 >
                   {isGerandoPDF ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin text-[#2ECC71]" />
                       <span>Gerando PDF...</span>
+                    </>
+                  ) : !podeBaixarPdfDiagnostico ? (
+                    <>
+                      <Lock className="w-5 h-5 text-[#D4AF37]" />
+                      <span>Baixar Relatório em PDF (Premium)</span>
                     </>
                   ) : (
                     <>
@@ -3718,6 +3786,13 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* MODAL DE PAYWALL FREEMIUM */}
+      <PaywallModal
+        open={paywallModalOpen}
+        onOpenChange={setPaywallModalOpen}
+        motivo={paywallMotivo}
+      />
     </div>
   )
 }

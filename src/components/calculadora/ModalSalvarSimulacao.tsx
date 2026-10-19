@@ -14,6 +14,8 @@ import { Label } from '@/components/ui/label'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { salvarSimulacao } from '@/services/simulacoesCalculadora'
+import { registrarSimulacaoUsada, LIMITE_SIMULACOES_GRATUITO } from '@/services/freemium'
+import { PaywallModal } from '@/components/freemium/PaywallModal'
 import type {
   ParametrosSimulacaoCalculadora,
   ResultadosSimulacaoCalculadora,
@@ -44,14 +46,15 @@ export function ModalSalvarSimulacao({
   resultados,
   onSalvoComSucesso,
 }: ModalSalvarSimulacaoProps) {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isPremium, podeSimular, simulacoesUsadas, recarregarUsuario } =
+    useAuth()
   const { toast } = useToast()
 
   const [nome, setNome] = useState('')
-  const [empresa, setEmpresa] = useState(parametros.empresa || '')
+  const [empresa, setEmpresa] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [preferirLocal, setPreferirLocal] = useState(false)
-
+  const [paywallAberto, setPaywallAberto] = useState(false)
   // Preenche sugestão de nome ao abrir
   React.useEffect(() => {
     if (open && !nome) {
@@ -75,6 +78,12 @@ export function ModalSalvarSimulacao({
       return
     }
 
+    // Regra freemium: se for gratuito e já atingiu o limite de 3 simulações, disparar Paywall
+    if (!podeSimular) {
+      setPaywallAberto(true)
+      return
+    }
+
     try {
       setSalvando(true)
       const simulacao = await salvarSimulacao({
@@ -88,6 +97,10 @@ export function ModalSalvarSimulacao({
         cnpj: parametros.cnpj,
         userId: preferirLocal ? null : user?.id,
       })
+
+      // Registra o uso no backend/localStorage e atualiza contexto
+      await registrarSimulacaoUsada(user?.id)
+      await recarregarUsuario()
 
       toast({
         title: 'Simulação salva com sucesso!',
@@ -300,6 +313,8 @@ export function ModalSalvarSimulacao({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <PaywallModal open={paywallAberto} onOpenChange={setPaywallAberto} motivo="simulacao" />
     </Dialog>
   )
 }

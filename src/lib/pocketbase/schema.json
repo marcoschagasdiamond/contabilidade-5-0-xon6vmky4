@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-10-19T11:54:46.640Z",
+  "generatedAt": "2026-10-19T19:24:42.316Z",
   "collections": [
     {
       "name": "users",
       "type": "auth",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
+        "list": "@request.auth.id != \"\"",
+        "view": "@request.auth.id != \"\"",
         "create": "",
-        "update": "id = @request.auth.id && @request.body.role:changed = false",
+        "update": "(@request.auth.role = \"admin\" || @request.auth.email = \"marcoschagasdiamond@icloud.com\") || (id = @request.auth.id && @request.body.role:changed = false && @request.body.plano:changed = false && @request.body.is_premium:changed = false)",
         "delete": "id = @request.auth.id"
       },
       "fields": [
@@ -44,6 +44,31 @@
           "required": false,
           "system": false,
           "selectValues": ["admin", "user"]
+        },
+        {
+          "name": "plano",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["gratuito", "premium"]
+        },
+        {
+          "name": "is_premium",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "simulacoes_usadas",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "diagnosticos_usados",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
