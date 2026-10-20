@@ -550,8 +550,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   // Módulo 4: Simulador de Créditos (proporcionaliza categorias quando houver perfil)
   const gerarCategoriasIniciais = (): CategoriaDespesaCredito[] => {
     const despesaPerfil = perfilInicial.despesasComCreditosMensais || 30000
-    // O padrão soma 33.000. Se o perfil tiver valor diferente, escala proporcionalmente
-    const proporcao = despesaPerfil / 33000
+    // Soma total dos valores mensais padrão das 18 categorias
+    const somaPadrao = CATEGORIAS_CREDITO_PADRAO.reduce((acc, c) => acc + c.valorMensal, 0) || 1
+    const proporcao = despesaPerfil / somaPadrao
     return CATEGORIAS_CREDITO_PADRAO.map((item) => ({
       ...item,
       valorMensal: Math.round(item.valorMensal * proporcao),
@@ -709,7 +710,24 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     if (p.ufOrigem) setUfOrigem(p.ufOrigem)
 
     if (p.despesasCreditos && Array.isArray(p.despesasCreditos)) {
-      setDespesasCreditos(p.despesasCreditos)
+      // Mescla com CATEGORIAS_CREDITO_PADRAO para que simulações antigas com menos categorias
+      // incorporem as novas categorias sem perder as personalizações já salvas
+      const mapaSalvas = new Map(p.despesasCreditos.map((c) => [c.id, c]))
+      const mescladas = CATEGORIAS_CREDITO_PADRAO.map((catPadrao) => {
+        const salva = mapaSalvas.get(catPadrao.id)
+        if (salva) {
+          return {
+            ...catPadrao,
+            ...salva,
+            // Preserva alíquotas/notas especiais atualizadas se a salva não possuir
+            aliquotaNova:
+              catPadrao.aliquotaNova !== undefined ? catPadrao.aliquotaNova : salva.aliquotaNova,
+            notaEspecial: catPadrao.notaEspecial || salva.notaEspecial,
+          }
+        }
+        return catPadrao
+      })
+      setDespesasCreditos(mescladas)
     }
 
     if (p.faturamentoAnualProjetado !== undefined)
@@ -752,7 +770,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       setUfOrigem(p.ufOrigem || 'SP')
     } else if (modulo === 4) {
       const despesaPerfil = p.despesasComCreditosMensais || 30000
-      const proporcao = despesaPerfil / 33000
+      const somaPadrao = CATEGORIAS_CREDITO_PADRAO.reduce((acc, c) => acc + c.valorMensal, 0) || 1
+      const proporcao = despesaPerfil / somaPadrao
       setDespesasCreditos(
         CATEGORIAS_CREDITO_PADRAO.map((item) => ({
           ...item,
@@ -1537,7 +1556,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     despesasCreditos.forEach((item) => {
       const v = Math.max(0, item.valorMensal)
       const cAntigo = (v * item.aliquotaAntiga) / 100
-      const cNovo = (v * config.totalIvaDual) / 100 // 26,50%
+      // Se a categoria possuir alíquota nova específica (ex: tarifas bancárias = 0%), usa ela; senão usa totalIvaDual (26,50%)
+      const aliqNova = item.aliquotaNova !== undefined ? item.aliquotaNova : config.totalIvaDual
+      const cNovo = (v * aliqNova) / 100
       totalAntigo += cAntigo
       totalNovo += cNovo
     })

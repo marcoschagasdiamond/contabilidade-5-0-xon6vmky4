@@ -424,18 +424,18 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8.5)
   doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
-  doc.text('MÓDULO 4 • SIMULADOR DE CRÉDITOS', box4X + 4, currentY + 6)
+  doc.text('MÓDULO 4 • SIMULADOR DE CRÉDITOS (18 CATEGORIAS)', box4X + 4, currentY + 6)
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.5)
   doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
   doc.text(
-    `Créditos Regime Antigo (PIS/COFINS): ${formatarMoeda(resultados.resultadoCreditos.totalAntigo)}/mês`,
+    `Créditos Regime Antigo: ${formatarMoeda(resultados.resultadoCreditos.totalAntigo)}/mês`,
     box4X + 4,
     currentY + 12,
   )
   doc.text(
-    `Créditos Novo IVA Dual (26,5%): ${formatarMoeda(resultados.resultadoCreditos.totalNovo)}/mês`,
+    `Créditos Novo IVA Dual: ${formatarMoeda(resultados.resultadoCreditos.totalNovo)}/mês`,
     box4X + 4,
     currentY + 17,
   )

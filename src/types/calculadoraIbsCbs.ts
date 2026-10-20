@@ -1223,6 +1223,10 @@ export interface CategoriaDespesaCredito {
   // Taxa de crédito do sistema antigo em % (ex: 9.25% para PIS/COFINS LR, 18% para ICMS em insumos, etc.)
   aliquotaAntiga: number
   descricaoAntigo: string
+  // Alíquota nova específica (se omitido, aplica config.totalIvaDual de 26,50%)
+  aliquotaNova?: number
+  // Nota explicativa técnica/legal (ex.: regras de transição ou regimes específicos da LC 214/2025)
+  notaEspecial?: string
 }
 
 export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
@@ -1234,11 +1238,42 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
     descricaoAntigo: 'Crédito pleno no Lucro Real (PIS 1,65% + COFINS 7,6% + ICMS 18%)',
   },
   {
+    id: 'mercadorias_revenda',
+    nome: 'Mercadorias para revenda (comércio)',
+    valorMensal: 80000,
+    aliquotaAntiga: 27.25, // PIS 1.65 + COFINS 7.6 + ICMS 18
+    descricaoAntigo:
+      'Crédito pleno no Lucro Real (PIS/COFINS 9,25% + ICMS ~18%); restrito no Simples Nacional e Lucro Presumido',
+  },
+  {
+    id: 'maquinas_equipamentos',
+    nome: 'Máquinas e equipamentos (CAPEX)',
+    valorMensal: 35000,
+    aliquotaAntiga: 9.25,
+    descricaoAntigo:
+      'Crédito restrito e fracionado em 48 meses (CIAP/PIS/COFINS) no Lucro Real; sem crédito no Simples e Presumido',
+  },
+  {
     id: 'energia_eletrica',
     nome: 'Energia elétrica',
     valorMensal: 15000,
     aliquotaAntiga: 9.25, // PIS/COFINS não-cumulativo (ICMS produtivo condicionado)
     descricaoAntigo: 'Crédito de PIS/COFINS (9,25%) no Lucro Real; ICMS com restrição setorial',
+  },
+  {
+    id: 'combustiveis_lubrificantes',
+    nome: 'Combustíveis e lubrificantes de frota',
+    valorMensal: 15000,
+    aliquotaAntiga: 18.0,
+    descricaoAntigo:
+      'ICMS monofásico e PIS/COFINS restrito a frotas estritamente produtivas no Lucro Real; vedado para uso administrativo',
+  },
+  {
+    id: 'frete_transporte',
+    nome: 'Frete e Transporte de insumos',
+    valorMensal: 30000,
+    aliquotaAntiga: 21.25, // ICMS 12% + PIS/COFINS 9.25%
+    descricaoAntigo: 'Crédito de PIS/COFINS (9,25%) e ICMS interestadual (~12%) no Lucro Real',
   },
   {
     id: 'aluguel',
@@ -1248,12 +1283,19 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
     descricaoAntigo: 'PIS/COFINS 9,25% apenas Lucro Real de PJ; sem crédito no Presumido/Simples',
   },
   {
-    id: 'servicos_ti',
-    nome: 'Serviços de TI e Software',
-    valorMensal: 20000,
-    aliquotaAntiga: 0, // Tradicionalmente vedado/litigioso sem crédito ICMS/ISS
+    id: 'leasing_veiculos_equipamentos',
+    nome: 'Arrendamento/leasing de veículos e equipamentos',
+    valorMensal: 14000,
+    aliquotaAntiga: 9.25,
     descricaoAntigo:
-      'Geralmente sem crédito no sistema antigo (ISS não gera crédito, PIS/COFINS restrito)',
+      'Crédito de PIS/COFINS (9,25%) no Lucro Real para bens de capital; sem crédito de ISS e ICMS',
+  },
+  {
+    id: 'manutencao',
+    nome: 'Manutenção de máquinas e instalações',
+    valorMensal: 18000,
+    aliquotaAntiga: 9.25,
+    descricaoAntigo: 'PIS/COFINS 9,25% para bens de produção no Lucro Real; sem crédito de ISS',
   },
   {
     id: 'servicos_limpeza',
@@ -1264,11 +1306,70 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
       'Permite crédito de PIS/COFINS (9,25%) no Lucro Real como insumo de mão de obra',
   },
   {
-    id: 'material_escritorio',
-    nome: 'Material de escritório e expediente',
-    valorMensal: 5000,
+    id: 'servicos_ti',
+    nome: 'Serviços de TI e Software',
+    valorMensal: 20000,
+    aliquotaAntiga: 0, // Tradicionalmente vedado/litigioso sem crédito ICMS/ISS
+    descricaoAntigo:
+      'Geralmente sem crédito no sistema antigo (ISS não gera crédito, PIS/COFINS restrito)',
+  },
+  {
+    id: 'consultorias',
+    nome: 'Consultorias e serviços profissionais',
+    valorMensal: 15000,
     aliquotaAntiga: 0,
-    descricaoAntigo: 'Uso e consumo: Vedado crédito no sistema antigo (ICMS e PIS/COFINS)',
+    descricaoAntigo: 'Serviços tributados por ISS: zero crédito tributário no sistema atual',
+  },
+  {
+    id: 'marketing_publicidade',
+    nome: 'Marketing e publicidade',
+    valorMensal: 12000,
+    aliquotaAntiga: 0,
+    descricaoAntigo:
+      'Serviço tributado sob ISS: sem crédito no sistema antigo e histórico de litígio em PIS/COFINS',
+  },
+  {
+    id: 'royalties_licenciamento',
+    nome: 'Royalties e licenciamento',
+    valorMensal: 8000,
+    aliquotaAntiga: 0,
+    descricaoAntigo:
+      'Vedação expressa de apropriação de créditos de PIS/COFINS (Leis 10.637 e 10.833) e sem crédito de ISS',
+  },
+  {
+    id: 'seguros',
+    nome: 'Seguros',
+    valorMensal: 6000,
+    aliquotaAntiga: 0,
+    descricaoAntigo:
+      'Operação financeira sujeita a IOF: vedação legal absoluta de aproveitamento de créditos no regime anterior',
+  },
+  {
+    id: 'viagens_hospedagem',
+    nome: 'Viagens/hospedagem/diárias',
+    valorMensal: 7000,
+    aliquotaAntiga: 0,
+    descricaoAntigo:
+      'Despesas de representação e viagem: vedadas de crédito no regime anterior (enquadramento em uso/consumo)',
+  },
+  {
+    id: 'tarifas_bancarias',
+    nome: 'Tarifas bancárias',
+    valorMensal: 3500,
+    aliquotaAntiga: 0,
+    descricaoAntigo:
+      'Serviços do setor financeiro sujeitos a ISS: sem geração de créditos tributários no sistema anterior',
+    aliquotaNova: 0,
+    notaEspecial:
+      'Regime especial dos arts. 164–165 da LC 214/2025: crédito restrito e apenas a partir de 2027. Alíquota imediata de 26,50% não aplicável a serviços financeiros.',
+  },
+  {
+    id: 'agua_esgoto_gas',
+    nome: 'Água/esgoto/gás',
+    valorMensal: 4000,
+    aliquotaAntiga: 0,
+    descricaoAntigo:
+      'Uso e consumo geral: vedação expressa de créditos de ICMS e PIS/COFINS no sistema antigo',
   },
   {
     id: 'telefonia_internet',
@@ -1279,24 +1380,10 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
       'Sem crédito para a maioria dos setores no sistema antigo (vedação de uso/consumo)',
   },
   {
-    id: 'manutencao',
-    nome: 'Manutenção de máquinas e instalações',
-    valorMensal: 18000,
-    aliquotaAntiga: 9.25,
-    descricaoAntigo: 'PIS/COFINS 9,25% para bens de produção no Lucro Real; sem crédito de ISS',
-  },
-  {
-    id: 'consultorias',
-    nome: 'Consultorias e serviços profissionais',
-    valorMensal: 15000,
+    id: 'material_escritorio',
+    nome: 'Material de escritório e expediente',
+    valorMensal: 5000,
     aliquotaAntiga: 0,
-    descricaoAntigo: 'Serviços tributados por ISS: zero crédito tributário no sistema atual',
-  },
-  {
-    id: 'frete_transporte',
-    nome: 'Frete e Transporte de insumos',
-    valorMensal: 30000,
-    aliquotaAntiga: 21.25, // ICMS 12% + PIS/COFINS 9.25%
-    descricaoAntigo: 'Crédito de PIS/COFINS (9,25%) e ICMS interestadual (~12%) no Lucro Real',
+    descricaoAntigo: 'Uso e consumo: Vedado crédito no sistema antigo (ICMS e PIS/COFINS)',
   },
 ]

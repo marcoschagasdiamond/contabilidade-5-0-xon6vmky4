@@ -59,8 +59,8 @@ export default function Modulo4SimuladorCreditos() {
             </h2>
             <p className="text-slate-300 text-sm sm:text-base max-w-2xl">
               Avalie como a substituição das vedações do sistema antigo pelo crédito financeiro
-              irrestrito do IVA Dual (26,50%) gera economia direta em 10 categorias essenciais de
-              custos.
+              amplo do IVA Dual (26,50%) gera economia direta em 18 categorias essenciais de custos
+              operacionais, CAPEX e suprimentos.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
@@ -195,12 +195,12 @@ export default function Modulo4SimuladorCreditos() {
         </Card>
       </div>
 
-      {/* Tabela Interativa de 10 Categorias Conforme Especificação */}
+      {/* Tabela Interativa de 18 Categorias Conforme Especificação */}
       <Card className="border-slate-200 shadow-lg overflow-hidden">
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="font-heading font-bold text-lg text-[#07132B]">
-              Tabela das 10 Categorias de Despesas Corporativas
+              Tabela das 18 Categorias de Despesas Corporativas e Insumos
             </h3>
             <p className="text-xs text-slate-500">
               Edite o valor mensal de cada despesa da sua empresa para recalcular os créditos em
@@ -208,7 +208,7 @@ export default function Modulo4SimuladorCreditos() {
             </p>
           </div>
           <span className="text-xs text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg">
-            Taxa Novo IVA Dual:{' '}
+            Taxa Referência IVA Dual:{' '}
             <strong className="text-[#07132B] font-mono">
               {formatarPorcentagem(config.totalIvaDual)}
             </strong>
@@ -219,7 +219,7 @@ export default function Modulo4SimuladorCreditos() {
           <Table>
             <TableHeader className="bg-slate-100">
               <TableRow className="border-slate-200">
-                <TableHead className="font-bold text-slate-700 min-w-[200px]">
+                <TableHead className="font-bold text-slate-700 min-w-[240px]">
                   Categoria de Despesa
                 </TableHead>
                 <TableHead className="font-bold text-slate-800 text-center min-w-[170px]">
@@ -228,8 +228,8 @@ export default function Modulo4SimuladorCreditos() {
                 <TableHead className="font-bold text-slate-700 text-center min-w-[150px]">
                   Crédito Antigo
                 </TableHead>
-                <TableHead className="font-bold text-[#07132B] text-center min-w-[150px] bg-amber-50/60">
-                  Crédito Novo (26,50%)
+                <TableHead className="font-bold text-[#07132B] text-center min-w-[160px] bg-amber-50/60">
+                  Crédito Novo (IBS/CBS)
                 </TableHead>
                 <TableHead className="font-bold text-emerald-800 text-center min-w-[150px] bg-emerald-50/60">
                   Ganho Adicional
@@ -239,18 +239,25 @@ export default function Modulo4SimuladorCreditos() {
             <TableBody className="text-sm divide-y divide-slate-100">
               {despesasCreditos.map((item) => {
                 const cAntigo = (item.valorMensal * item.aliquotaAntiga) / 100
-                const cNovo = (item.valorMensal * config.totalIvaDual) / 100
+                const aliqNova =
+                  item.aliquotaNova !== undefined ? item.aliquotaNova : config.totalIvaDual
+                const cNovo = (item.valorMensal * aliqNova) / 100
                 const ganho = cNovo - cAntigo
 
                 return (
                   <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                    <TableCell className="font-medium text-slate-800">
+                    <TableCell className="font-medium text-slate-800 py-3">
                       <div className="font-bold text-slate-900">{item.nome}</div>
                       <div className="text-[11px] text-slate-500 mt-0.5">
                         {item.descricaoAntigo}
                       </div>
+                      {item.notaEspecial && (
+                        <div className="mt-1 text-[11px] font-medium text-amber-800 bg-amber-50/80 border border-amber-200/70 rounded-md p-1.5 leading-snug">
+                          {item.notaEspecial}
+                        </div>
+                      )}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center py-3">
                       <Input
                         type="text"
                         value={item.valorMensal.toLocaleString('pt-BR', {
@@ -261,16 +268,19 @@ export default function Modulo4SimuladorCreditos() {
                         className="h-10 text-center font-mono font-bold text-slate-900 bg-white border-slate-300 w-full max-w-[160px] mx-auto shadow-sm"
                       />
                     </TableCell>
-                    <TableCell className="text-center font-mono text-slate-700">
+                    <TableCell className="text-center font-mono text-slate-700 py-3">
                       <div className="font-semibold">{formatarMoeda(cAntigo)}</div>
                       <div className="text-[10px] text-slate-400 font-normal">
                         ({formatarPorcentagem(item.aliquotaAntiga, 1)})
                       </div>
                     </TableCell>
-                    <TableCell className="text-center font-mono font-bold text-amber-950 bg-amber-50/40">
-                      {formatarMoeda(cNovo)}
+                    <TableCell className="text-center font-mono font-bold text-amber-950 bg-amber-50/40 py-3">
+                      <div>{formatarMoeda(cNovo)}</div>
+                      <div className="text-[10px] text-amber-700 font-normal">
+                        ({formatarPorcentagem(aliqNova, 1)})
+                      </div>
                     </TableCell>
-                    <TableCell className="text-center font-mono font-bold text-emerald-700 bg-emerald-50/40">
+                    <TableCell className="text-center font-mono font-bold text-emerald-700 bg-emerald-50/40 py-3">
                       + {formatarMoeda(Math.max(0, ganho))}
                     </TableCell>
                   </TableRow>
@@ -320,9 +330,16 @@ export default function Modulo4SimuladorCreditos() {
           </ul>
           <ul className="space-y-1.5 list-disc pl-4 text-slate-700">
             <li>
-              <strong>Alíquotas de Matéria-Prima no Passado:</strong> Calculada considerando o
-              aproveitamento conjunto de PIS (1,65%), COFINS (7,60%) e ICMS interestadual/interno
-              médio (18,00%) no Lucro Real.
+              <strong>Alíquotas de Matéria-Prima e Mercadorias no Passado:</strong> Calculada
+              considerando o aproveitamento conjunto de PIS (1,65%), COFINS (7,60%) e ICMS
+              interestadual/interno médio (18,00%) no Lucro Real.
+            </li>
+            <li>
+              <strong>
+                Regime Especial de Serviços Financeiros e Tarifas (Arts. 164–165 / LC 214/2025):
+              </strong>{' '}
+              Crédito restrito e apenas a partir de 2027. Tarifas bancárias e intermediações não
+              adotam alíquota imediata de 26,50%.
             </li>
             <li>
               <strong>Condição de Pagamento (Split Payment):</strong> No novo modelo, o
