@@ -93,6 +93,21 @@ export function obterInfoRegimeOperacao(regime: RegimeDiferenciadoTipo) {
   return PRESETS_SETORES_LC214[0]
 }
 
+/**
+ * Retorna o grupo tributário do regime da operação (LC 214/2025)
+ * 'geral' (alíquota padrão cheia) | 'reducao_60' (arts. 128–134) | 'reducao_30' (art. 132) | 'aliquota_zero' (arts. 8º, 129 e 146)
+ */
+export function obterGrupoRegimeOperacao(regime: RegimeDiferenciadoTipo): GrupoPresetSetor {
+  const preset = PRESETS_SETORES_LC214.find((p) => p.id === regime)
+  if (preset) return preset.grupo
+
+  // Fallbacks legados
+  if (regime === 'saude_educacao') return 'reducao_60'
+  if (regime === 'transporte' || regime === 'transporte_intelectual') return 'reducao_30'
+  if (regime === 'cesta_basica') return 'aliquota_zero'
+  return 'geral'
+}
+
 export type TipoAtividadePrincipal =
   | 'servico'
   | 'industria'

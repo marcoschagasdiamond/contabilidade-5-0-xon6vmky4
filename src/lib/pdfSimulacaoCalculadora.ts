@@ -3,7 +3,7 @@ import type {
   ParametrosSimulacaoCalculadora,
   ResultadosSimulacaoCalculadora,
 } from '@/types/simulacaoCalculadora'
-import { obterInfoRegimeOperacao } from '@/types/calculadoraIbsCbs'
+import { obterInfoRegimeOperacao, obterGrupoRegimeOperacao } from '@/types/calculadoraIbsCbs'
 
 export interface GerarPdfSimulacaoOptions {
   nomeSimulacao: string
@@ -419,7 +419,19 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   // Box Módulo 4
   const box4X = margin + halfWidth + 6
   doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
-  doc.roundedRect(box4X, currentY, halfWidth, 36, 2, 2, 'FD')
+
+  const regimeOpPdf =
+  resultados.resultadoCreditos.regimeOperacao ||
+  parametros.regimeOperacao ||
+  'padrao'
+const grupoRegimePdf =
+  resultados.resultadoCreditos.grupoRegime ||
+  obterGrupoRegimeOperacao(regimeOpPdf)
+  const isAliquotaZeroPdf =
+    Boolean(resultados.resultadoCreditos.isAliquotaZero) || grupoRegimePdf === 'aliquota_zero'
+
+  const boxHeight = isAliquotaZeroPdf ? 40 : 36
+  doc.roundedRect(box4X, currentY, halfWidth, boxHeight, 2, 2, 'FD')
 
   const anoCreditosPdf =
     resultados.resultadoCreditos.anoOperacao ||
@@ -428,8 +440,9 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     2033
   const rotuloAnoCreditosPdf =
     anoCreditosPdf === 'atual' ? 'Ano atual (0%)' : `Fase ${anoCreditosPdf}`
-  const infoTaxaCreditosPdf =
-    resultados.resultadoCreditos.aliquotaReferencia !== undefined
+  const infoTaxaCreditosPdf = isAliquotaZeroPdf
+    ? ' • 0,00% (zerada)'
+    : resultados.resultadoCreditos.aliquotaReferencia !== undefined
       ? ` • ${resultados.resultadoCreditos.aliquotaReferencia.toFixed(2)}%`
       : ''
 
@@ -451,25 +464,43 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     box4X + 4,
     currentY + 16.5,
   )
-  doc.text(
-    `Ganho Mensal em Créditos: +${formatarMoeda(resultados.resultadoCreditos.adicionalGanho)}/mês`,
-    box4X + 4,
-    currentY + 21.5,
-  )
-  doc.text(
-    `Aumento Percentual: +${resultados.resultadoCreditos.aumentoPercentual.toFixed(1)}% de aproveitamento`,
-    box4X + 4,
-    currentY + 26.5,
-  )
+
+  const ganhoCreditosPdf = resultados.resultadoCreditos.adicionalGanho
+  const strGanhoPdf =
+    ganhoCreditosPdf < 0
+      ? `−${formatarMoeda(Math.abs(ganhoCreditosPdf))}`
+      : `+${formatarMoeda(ganhoCreditosPdf)}`
+  const strAumentoPctPdf =
+    resultados.resultadoCreditos.aumentoPercentual < 0
+      ? `−${Math.abs(resultados.resultadoCreditos.aumentoPercentual).toFixed(1)}%`
+      : `+${resultados.resultadoCreditos.aumentoPercentual.toFixed(1)}%`
+
+  doc.text(`Ganho Mensal em Créditos: ${strGanhoPdf}/mês`, box4X + 4, currentY + 21.5)
+  doc.text(`Aumento Percentual: ${strAumentoPctPdf} de aproveitamento`, box4X + 4, currentY + 26.5)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(COR_VERDE[0], COR_VERDE[1], COR_VERDE[2])
+  doc.setTextColor(
+    ganhoCreditosPdf < 0 ? 185 : COR_VERDE[0],
+    ganhoCreditosPdf < 0 ? 28 : COR_VERDE[1],
+    ganhoCreditosPdf < 0 ? 28 : COR_VERDE[2],
+  )
   doc.text(
     `Economia Anual em Créditos: ${formatarMoeda(resultados.resultadoCreditos.economiaAnual)}`,
     box4X + 4,
     currentY + 31.5,
   )
 
-  currentY += 42
+  if (isAliquotaZeroPdf) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(6.2)
+    doc.setTextColor(180, 83, 9)
+    doc.text(
+      'Nota: Alíquota zero (arts. 8º, 129 e 146 LC 214) não gera crédito na cadeia (crédito morre).',
+      box4X + 4,
+      currentY + 36.5,
+    )
+  }
+
+  currentY += isAliquotaZeroPdf ? 46 : 42
 
   // ==========================================
   // BLOCO NOVO: SPLIT PAYMENT & CRÉDITO DE ESTOQUE

@@ -129,6 +129,9 @@ export interface ResultadosSimulacaoCalculadora {
     economiaAnual: number
     anoOperacao?: 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
     aliquotaReferencia?: number
+    regimeOperacao?: RegimeDiferenciadoTipo
+    grupoRegime?: string
+    isAliquotaZero?: boolean
   }
   resultadoTransicao: Array<{
     ano: number | 'atual'

@@ -26,8 +26,10 @@ import {
   AnoTransicaoIbsCbs,
   PresetSetorIbsCbs,
   OrigemCamposAliquota,
+  GrupoPresetSetor,
   CRONOGRAMA_FASES_TRANSICAO,
   PRESETS_SETORES_LC214,
+  obterGrupoRegimeOperacao,
 } from '@/types/calculadoraIbsCbs'
 import { TABELAS_SIMPLES } from '@/lib/regimes'
 import {
@@ -230,6 +232,9 @@ interface CalculadoraContextType {
     economiaAnual: number
     anoOperacao: AnoTransicaoIbsCbs
     aliquotaReferencia: number
+    regimeOperacao: RegimeDiferenciadoTipo
+    grupoRegime: GrupoPresetSetor
+    isAliquotaZero: boolean
   }
 
   resultadoTransicao: Array<{
@@ -1562,14 +1567,23 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       ? config.totalIvaDual
       : dadosFaseAno.totalIvaDual
 
+    // Regra legal LC 214/2025: grupo Alíquota Zero no Módulo 2 zera créditos das 18 categorias
+    const grupoRegime = obterGrupoRegimeOperacao(regimeOperacao)
+    const isAliquotaZero = grupoRegime === 'aliquota_zero'
+
     let totalAntigo = 0
     let totalNovo = 0
 
     despesasCreditos.forEach((item) => {
       const v = Math.max(0, item.valorMensal)
       const cAntigo = (v * item.aliquotaAntiga) / 100
-      // Se a categoria possuir alíquota nova específica (ex: tarifas bancárias = 0%), usa ela; senão usa a alíquota da fase
-      const aliqNova = item.aliquotaNova !== undefined ? item.aliquotaNova : aliquotaReferenciaFase
+      // Quando o regime for de alíquota zero (arts. 8º, 129 e 146 da LC 214/2025), o crédito novo é zerado (0%)
+      // Para demais regimes, respeita override específico (ex: tarifas bancárias) ou a alíquota da fase
+      const aliqNova = isAliquotaZero
+        ? 0
+        : item.aliquotaNova !== undefined
+          ? item.aliquotaNova
+          : aliquotaReferenciaFase
       const cNovo = (v * aliqNova) / 100
       totalAntigo += cAntigo
       totalNovo += cNovo
@@ -1587,8 +1601,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       economiaAnual,
       anoOperacao: ano,
       aliquotaReferencia: aliquotaReferenciaFase,
+      regimeOperacao,
+      grupoRegime,
+      isAliquotaZero,
     }
-  }, [despesasCreditos, anoOperacao, config.anoTransicao, config.totalIvaDual])
+  }, [despesasCreditos, anoOperacao, config.anoTransicao, config.totalIvaDual, regimeOperacao])
 
   // ==========================================
   // ETAPA 3: ALERTAS DE LIMITES DO SIMPLES NACIONAL

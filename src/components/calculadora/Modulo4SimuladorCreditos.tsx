@@ -21,7 +21,9 @@ import {
   AlertCircle,
   CheckCircle,
   Building2,
+  Info,
 } from 'lucide-react'
+import { obterInfoRegimeOperacao } from '@/types/calculadoraIbsCbs'
 
 export default function Modulo4SimuladorCreditos() {
   const {
@@ -49,11 +51,15 @@ export default function Modulo4SimuladorCreditos() {
     economiaAnual,
     anoOperacao: anoEfetivoCreditos,
     aliquotaReferencia: aliqRefCreditos,
+    regimeOperacao: regimeOperacaoCreditos,
+    isAliquotaZero,
   } = resultadoCreditos
 
   const anoModulo1 = config.anoTransicao || 2033
   const anoModulo2 = anoOperacao || anoModulo1
   const haDivergenciaAnos = String(anoModulo1) !== String(anoModulo2)
+
+  const infoRegime = obterInfoRegimeOperacao(regimeOperacaoCreditos)
 
   const rotuloAnoEfetivo =
     anoEfetivoCreditos === 'atual'
@@ -105,8 +111,8 @@ export default function Modulo4SimuladorCreditos() {
             <p className="text-slate-300 text-sm sm:text-base max-w-2xl">
               Avalie como a substituição das vedações do sistema antigo pelo crédito financeiro
               amplo do IVA Dual ({formatarPorcentagem(aliqRefCreditos)} • {rotuloAnoEfetivo}) gera
-              economia direta em 18 categorias essenciais de custos operacionais, CAPEX e
-              suprimentos.
+              {isAliquotaZero ? ' impacto na cadeia de insumos' : ' economia direta'} em 18
+              categorias essenciais de custos operacionais, CAPEX e suprimentos.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
@@ -131,6 +137,54 @@ export default function Modulo4SimuladorCreditos() {
           </div>
         </div>
       </div>
+
+      {/* BANNER NOTA EXPLICATIVA: REGIME DE ALÍQUOTA ZERO SELECIONADO NO MÓDULO 2 */}
+      {isAliquotaZero && (
+        <div className="bg-amber-50/95 border-2 border-amber-400/80 rounded-2xl p-5 text-amber-950 shadow-md animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-200/80 text-amber-900 border border-amber-400">
+                <Info className="w-3.5 h-3.5 shrink-0" />
+                <span>Alíquota Zero Selecionada no Módulo 2: Créditos Zerados na Cadeia</span>
+              </div>
+              <h3 className="font-heading font-bold text-base sm:text-lg text-amber-950">
+                Regime: {infoRegime.titulo} ({infoRegime.baseLegal})
+              </h3>
+              <p className="text-xs sm:text-sm text-amber-900/90 leading-relaxed max-w-4xl">
+                O regime aplicado à operação selecionado no Módulo 2 pertence ao grupo de{' '}
+                <strong>Alíquota Zero (arts. 8º, 129 e 146 da LC 214/2025)</strong>. Sob esta
+                disciplina legal, a saída é desonerada com alíquota zero sem direito a apropriação
+                de créditos sobre as despesas e aquisições da cadeia (o crédito &ldquo;morre&rdquo;
+                na operação). Consequentemente, os créditos novos de todas as 18 categorias foram{' '}
+                <strong>zerados</strong>, e a coluna &ldquo;Ganho Adicional&rdquo; reflete o valor
+                real (crédito novo = 0, gerando variação negativa equivalente à perda dos créditos
+                antigos que eram usufruídos no sistema anterior).
+              </p>
+              <div className="text-xs text-amber-900/80 pt-1 border-t border-amber-300/60 flex flex-wrap gap-x-4 gap-y-1">
+                <span>
+                  <strong>Tarifas bancárias (arts. 164–165):</strong> Já possuem regime próprio e
+                  restrito (0% em 2026 e na alíquota zero permanece 0%).
+                </span>
+                <span>
+                  <strong>Demais regimes:</strong> Para Redução de 60% (arts. 128–134) ou 30% (art.
+                  132), a manutenção dos créditos sobre compras é integral.
+                </span>
+              </div>
+            </div>
+            <Link
+              to="#modulo2"
+              onClick={(e) => {
+                e.preventDefault()
+                const el = document.getElementById('modulo2')
+                if (el) el.scrollIntoView({ behavior: 'smooth' })
+              }}
+              className="text-xs font-bold text-amber-950 underline hover:text-amber-800 shrink-0 self-start sm:self-center"
+            >
+              Alterar regime no Módulo 2 →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* AVISO INFORMATIVO COM ATALHO PARA DADOS DA EMPRESA */}
       <div className="bg-slate-100 border border-slate-200 rounded-xl p-3 px-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-700">
@@ -210,7 +264,7 @@ export default function Modulo4SimuladorCreditos() {
                 className="text-[11px] sm:text-xs font-bold text-amber-900 uppercase tracking-wider block leading-tight min-h-[2rem] flex items-center break-words"
                 title={`Crédito Novo (${formatarPorcentagem(aliqRefCreditos)})`}
               >
-                Crédito Novo ({formatarPorcentagem(aliqRefCreditos)})
+                Crédito Novo ({isAliquotaZero ? '0,00%' : formatarPorcentagem(aliqRefCreditos)})
               </span>
               <p
                 className={`${obterClasseTamanhoFonte(strTotalNovo)} font-mono font-extrabold text-amber-950 tracking-tight break-words min-w-0`}
@@ -220,7 +274,9 @@ export default function Modulo4SimuladorCreditos() {
               </p>
             </div>
             <span className="text-[11px] text-amber-800/80 block leading-tight pt-1">
-              Crédito sobre 100% dos bens e serviços adquiridos ({rotuloAnoEfetivo})
+              {isAliquotaZero
+                ? 'Créditos zerados (alíquota zero sem direito a crédito na cadeia - arts. 8º, 129 e 146)'
+                : `Crédito sobre 100% dos bens e serviços adquiridos (${rotuloAnoEfetivo})`}
             </span>
           </CardContent>
         </Card>
@@ -330,8 +386,9 @@ export default function Modulo4SimuladorCreditos() {
         <div className="bg-red-50/90 border border-red-200/90 rounded-xl p-3 px-4 text-xs text-red-900 flex items-center gap-2 shadow-sm animate-fade-in">
           <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
           <span>
-            Crédito menor que o atual: na fase selecionada a alíquota IBS/CBS ainda não supera a
-            carga de créditos do sistema antigo.
+            {isAliquotaZero
+              ? 'Crédito menor que o atual: a operação enquadrada em alíquota zero (arts. 8º, 129 e 146 da LC 214/2025) veda a tomada de créditos na cadeia, extinguindo o crédito que existia no regime antigo.'
+              : 'Crédito menor que o atual: na fase selecionada a alíquota IBS/CBS ainda não supera a carga de créditos do sistema antigo.'}
           </span>
         </div>
       )}
@@ -351,16 +408,35 @@ export default function Modulo4SimuladorCreditos() {
           <span className="text-xs text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex flex-wrap items-center gap-1">
             <span>Taxa Referência IVA Dual:</span>
             <strong className="text-[#07132B] font-mono font-bold">
-              {formatarPorcentagem(aliqRefCreditos)}
+              {isAliquotaZero ? '0,00% (zerada)' : formatarPorcentagem(aliqRefCreditos)}
             </strong>
             <span className="text-slate-400">•</span>
             <span className="text-slate-700 font-medium">
-              {anoEfetivoCreditos === 'atual'
-                ? 'Ano atual (0%) — vinda da calculadora simples'
-                : `fase ${anoEfetivoCreditos} — vinda da calculadora simples`}
+              {isAliquotaZero
+                ? `${infoRegime.titulo} — arts. 8º, 129 e 146 LC 214/2025`
+                : anoEfetivoCreditos === 'atual'
+                  ? 'Ano atual (0%) — vinda da calculadora simples'
+                  : `fase ${anoEfetivoCreditos} — vinda da calculadora simples`}
             </span>
           </span>
         </div>
+
+        {/* NOTA EXPLICATIVA VISÍVEL NA TABELA CASO O REGIME SEJA ALÍQUOTA ZERO */}
+        {isAliquotaZero && (
+          <div className="bg-amber-100/90 border-b border-amber-300 p-3 px-4 text-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <strong className="font-bold">Aviso legal da tabela (LC 214/2025):</strong> O regime
+              de <strong>{infoRegime.titulo}</strong> ({infoRegime.baseLegal}) selecionado no Módulo
+              2 aplica alíquota zero nas saídas sem manutenção do direito ao creditamento sobre as
+              despesas operacionais da cadeia (o crédito &ldquo;morre&rdquo; na cadeia), conforme os
+              arts. 8º, 129 e 146 da LC 214/2025. Todas as 18 categorias abaixo têm crédito novo
+              zerado (0,00%).
+            </div>
+            <div className="text-[11px] text-amber-800 shrink-0 font-medium">
+              Tarifas bancárias: 0,00% (arts. 164–165 mantido regime próprio)
+            </div>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <Table>
@@ -386,8 +462,11 @@ export default function Modulo4SimuladorCreditos() {
             <TableBody className="text-sm divide-y divide-slate-100">
               {despesasCreditos.map((item) => {
                 const cAntigo = (item.valorMensal * item.aliquotaAntiga) / 100
-                const aliqNova =
-                  item.aliquotaNova !== undefined ? item.aliquotaNova : aliqRefCreditos
+                const aliqNova = isAliquotaZero
+                  ? 0
+                  : item.aliquotaNova !== undefined
+                    ? item.aliquotaNova
+                    : aliqRefCreditos
                 const cNovo = (item.valorMensal * aliqNova) / 100
                 const ganho = cNovo - cAntigo
 
@@ -482,8 +561,16 @@ export default function Modulo4SimuladorCreditos() {
             <li>
               <strong>Sistema Novo (IVA Dual - Art. 156-A da CF):</strong> Não-cumulatividade
               financeira ampla. Toda aquisição de bem ou serviço vinculada à atividade econômica
-              gera crédito imediato, independentemente de ser insumo físico ou despesa
-              administrativa.
+              gera crédito imediato, salvo quando a operação for contemplada com regime de alíquota
+              zero sem manutenção de crédito.
+            </li>
+            <li>
+              <strong>Regime de Alíquota Zero (Arts. 8º, 129 e 146 da LC 214/2025):</strong>{' '}
+              Operações com alíquota zero (Cesta Básica Nacional, hortícolas/frutas/ovos,
+              medicamentos essenciais e dispositivos PcD) não geram direito a crédito sobre as
+              aquisições da cadeia (o crédito &ldquo;morre&rdquo; na operação), zerando os créditos
+              das 18 categorias. Para regimes com redução de 60% (arts. 128–134) ou 30% (art. 132),
+              a manutenção dos créditos de entrada permanece integral.
             </li>
             <li>
               <strong>Itens com Crédito Zero no Passado:</strong> Aluguel e materiais para empresas
