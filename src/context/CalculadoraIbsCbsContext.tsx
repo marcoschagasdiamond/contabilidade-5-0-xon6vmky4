@@ -131,6 +131,18 @@ interface CalculadoraContextType {
   origemDadosEmpresa: boolean
   restaurarDadosEmpresaNoModulo: (modulo: 2 | 3 | 4 | 5) => void
 
+  // Flags de controle de edição manual local nos módulos downstream
+  editadoLocalmente: {
+    modulo2AnoOperacao: boolean
+    modulo2RegimeOperacao: boolean
+    modulo2ValorOperacao: boolean
+    modulo2PercentualCompras: boolean
+    modulo3Faturamento: boolean
+    modulo3PercentualCompras: boolean
+    modulo4Categorias: boolean
+    modulo5Faturamento: boolean
+  }
+
   // Rastreamento de origem de campos propagados automaticamente do Módulo 1
   origensPropagadas: {
     modulo2AnoOperacao: boolean
@@ -2151,6 +2163,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         aplicarAnoTransicao,
         aplicarPresetSetor,
         limparEtiquetaOrigem,
+        editadoLocalmente,
         origensPropagadas,
 
         valorOperacao,
