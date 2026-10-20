@@ -1190,6 +1190,8 @@ export interface ConfiguracoesGerais {
   // Metadados do preenchimento assistido (Módulo 1)
   anoTransicao?: AnoTransicaoIbsCbs
   presetSetor?: PresetSetorIbsCbs
+  faturamentoMensal?: number
+  percentualComprasVendas?: number
   etiquetasOrigem?: OrigemCamposAliquota
 
   // Sistema Antigo Lucro Real
@@ -1217,6 +1219,11 @@ export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {
   transporteReducao: 30,
   transporteAliquota: 18.55,
   cestaBasicaIsencao: 0,
+
+  anoTransicao: 2033,
+  presetSetor: 'padrao',
+  faturamentoMensal: 200000,
+  percentualComprasVendas: 40,
 
   lucroRealPis: 1.65,
   lucroRealCofins: 7.6,

@@ -220,7 +220,7 @@ export default function Modulo4SimuladorCreditos() {
         <div className="bg-amber-50/90 border border-amber-200/90 rounded-xl p-3 px-4 text-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm animate-fade-in">
           <div className="flex items-center gap-2">
             <span className="font-semibold">
-              O cálculo dos créditos segue o Ano da Operação definido no Módulo 2 (Simulador de
+              O cálculo dos créditos segue o Ano da Transição definido no Módulo 2 (Simulador de
               Nota). Para alterar, ajuste lá.
             </span>
           </div>

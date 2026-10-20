@@ -131,6 +131,18 @@ interface CalculadoraContextType {
   origemDadosEmpresa: boolean
   restaurarDadosEmpresaNoModulo: (modulo: 2 | 3 | 4 | 5) => void
 
+  // Rastreamento de origem de campos propagados automaticamente do Módulo 1
+  origensPropagadas: {
+    modulo2AnoOperacao: boolean
+    modulo2RegimeOperacao: boolean
+    modulo2ValorOperacao: boolean
+    modulo2PercentualCompras: boolean
+    modulo3Faturamento: boolean
+    modulo3PercentualCompras: boolean
+    modulo4Categorias: boolean
+    modulo5Faturamento: boolean
+  }
+
   // Salvar / Restaurar Simulação Completa
   obterSnapshotParametros: () => ParametrosSimulacaoCalculadora
   obterSnapshotResultados: () => ResultadosSimulacaoCalculadora
@@ -346,6 +358,53 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       }
       return next
     })
+
+    // PROPAGAÇÃO AUTOMÁTICA DO MÓDULO 1:
+    // Se faturamentoMensal for alterado no Módulo 1, propaga para M2, M3 e M5
+    if (novas.faturamentoMensal !== undefined) {
+      const fat = novas.faturamentoMensal
+      setValorOperacaoState(fat)
+      setFaturamentoMensalState(fat)
+      setFaturamentoAnualProjetadoState(fat * 12)
+      setEditadoLocalmente((prev) => ({
+        ...prev,
+        modulo2ValorOperacao: false,
+        modulo3Faturamento: false,
+        modulo5Faturamento: false,
+      }))
+    }
+
+    // Se percentualComprasVendas for alterado no Módulo 1, propaga para M2 e M3
+    if (novas.percentualComprasVendas !== undefined) {
+      const pct = novas.percentualComprasVendas
+      setPercentualComprasVendasSimplesState(pct)
+      setPercentualComprasVendasComparativoState(pct)
+      setEditadoLocalmente((prev) => ({
+        ...prev,
+        modulo2PercentualCompras: false,
+        modulo3PercentualCompras: false,
+      }))
+    }
+
+    // Se anoTransicao for alterado no Módulo 1, propaga para anoOperacao do M2
+    if (novas.anoTransicao !== undefined) {
+      setAnoOperacaoState(novas.anoTransicao)
+      setEditadoLocalmente((prev) => ({
+        ...prev,
+        modulo2AnoOperacao: false,
+      }))
+    }
+
+    // Se presetSetor for alterado no Módulo 1, propaga para regimeOperacao do M2
+    if (novas.presetSetor !== undefined) {
+      const novoRegime: RegimeDiferenciadoTipo =
+        novas.presetSetor === 'nenhum' ? 'padrao' : (novas.presetSetor as RegimeDiferenciadoTipo)
+      setRegimeOperacaoState(novoRegime)
+      setEditadoLocalmente((prev) => ({
+        ...prev,
+        modulo2RegimeOperacao: false,
+      }))
+    }
   }
 
   const resetConfig = () => setConfig(CONFIGURACOES_PADRAO)
@@ -433,6 +492,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         etiquetasOrigem: novasEtiquetas,
       }
     })
+
+    // PROPAGAÇÃO AUTOMÁTICA AO MÓDULO 2 (Ano da Operação/Transição)
+    // Uma nova alteração no Módulo 1 repropaga o valor e redefine a flag de edição local
+    setAnoOperacaoState(ano)
+    setEditadoLocalmente((prev) => ({
+      ...prev,
+      modulo2AnoOperacao: false,
+    }))
   }
 
   // Preenchimento Assistido: Preset por Setor (LC 214/2025)
@@ -441,6 +508,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       setConfig((prev) => ({
         ...prev,
         presetSetor: 'nenhum',
+      }))
+      // Propaga ao Módulo 2 também como 'padrao'
+      setRegimeOperacaoState('padrao')
+      setEditadoLocalmente((prev) => ({
+        ...prev,
+        modulo2RegimeOperacao: false,
       }))
       return
     }
@@ -487,24 +560,69 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         etiquetasOrigem: novasEtiquetas,
       }
     })
+
+    // PROPAGAÇÃO AUTOMÁTICA AO MÓDULO 2 (Regime Aplicado)
+    // Uma nova alteração no Módulo 1 repropaga o valor e redefine a flag de edição local
+    setRegimeOperacaoState(preset as RegimeDiferenciadoTipo)
+    setEditadoLocalmente((prev) => ({
+      ...prev,
+      modulo2RegimeOperacao: false,
+    }))
   }
 
-  // Módulo 2: Calculadora Simples (inicializado a partir dos Dados da Empresa)
-  const [valorOperacao, setValorOperacao] = useState<number>(
-    () => perfilInicial.faturamentoMensal || 50000,
+  // Flags para controle de edição manual local nos módulos downstream
+  // Quando false, significa que o valor ainda é espelhado do Módulo 1 (ou foi atualizado por ele)
+  const [editadoLocalmente, setEditadoLocalmente] = useState({
+    modulo2AnoOperacao: false,
+    modulo2RegimeOperacao: false,
+    modulo2ValorOperacao: false,
+    modulo2PercentualCompras: false,
+    modulo3Faturamento: false,
+    modulo3PercentualCompras: false,
+    modulo4Categorias: false,
+    modulo5Faturamento: false,
+  })
+
+  // Módulo 2: Calculadora Simples (inicializado a partir dos Dados da Empresa / Módulo 1)
+  const [valorOperacao, setValorOperacaoState] = useState<number>(
+    () => config.faturamentoMensal || perfilInicial.faturamentoMensal || 50000,
   )
-  const [regimeOperacao, setRegimeOperacao] = useState<RegimeDiferenciadoTipo>('padrao')
-  const [anoOperacao, setAnoOperacao] = useState<AnoTransicaoIbsCbs>(
+  const [regimeOperacao, setRegimeOperacaoState] = useState<RegimeDiferenciadoTipo>(() =>
+    config.presetSetor && config.presetSetor !== 'nenhum' ? config.presetSetor : 'padrao',
+  )
+  const [anoOperacao, setAnoOperacaoState] = useState<AnoTransicaoIbsCbs>(
     () => config.anoTransicao || 2033,
   )
-  const [percentualComprasVendasSimples, setPercentualComprasVendasSimples] = useState<number>(
-    () => perfilInicial.percentualComprasVendas ?? 40,
+  const [percentualComprasVendasSimples, setPercentualComprasVendasSimplesState] = useState<number>(
+    () => config.percentualComprasVendas ?? perfilInicial.percentualComprasVendas ?? 40,
   )
 
-  // Módulo 3: Comparativo por Regime (inicializado a partir dos Dados da Empresa)
-  const [faturamentoMensal, setFaturamentoMensal] = useState<number>(
-    () => perfilInicial.faturamentoMensal || 200000,
+  // Setters instrumentados que marcam edição local
+  const setValorOperacao = (v: number) => {
+    setEditadoLocalmente((prev) => ({ ...prev, modulo2ValorOperacao: true }))
+    setValorOperacaoState(v)
+  }
+  const setRegimeOperacao = (r: RegimeDiferenciadoTipo) => {
+    setEditadoLocalmente((prev) => ({ ...prev, modulo2RegimeOperacao: true }))
+    setRegimeOperacaoState(r)
+  }
+  const setAnoOperacao = (a: AnoTransicaoIbsCbs) => {
+    setEditadoLocalmente((prev) => ({ ...prev, modulo2AnoOperacao: true }))
+    setAnoOperacaoState(a)
+  }
+  const setPercentualComprasVendasSimples = (p: number) => {
+    setEditadoLocalmente((prev) => ({ ...prev, modulo2PercentualCompras: true }))
+    setPercentualComprasVendasSimplesState(p)
+  }
+
+  // Módulo 3: Comparativo por Regime (inicializado a partir dos Dados da Empresa / Módulo 1)
+  const [faturamentoMensal, setFaturamentoMensalState] = useState<number>(
+    () => config.faturamentoMensal || perfilInicial.faturamentoMensal || 200000,
   )
+  const setFaturamentoMensal = (v: number) => {
+    setEditadoLocalmente((prev) => ({ ...prev, modulo3Faturamento: true }))
+    setFaturamentoMensalState(v)
+  }
   const [tipoAtividade, setTipoAtividadeState] = useState<TipoAtividadePrincipal>(() =>
     normalizarTipoAtividade(perfilInicial.tipoAtividade),
   )
@@ -537,8 +655,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const [proporcaoServicoMisto, setProporcaoServicoMisto] = useState<number>(
     () => perfilInicial.proporcaoServicoMisto ?? 50,
   )
-  const [percentualComprasVendasComparativo, setPercentualComprasVendasComparativo] =
-    useState<number>(() => perfilInicial.percentualComprasVendas ?? 40)
+  const [percentualComprasVendasComparativo, setPercentualComprasVendasComparativoState] =
+    useState<number>(
+      () => config.percentualComprasVendas ?? perfilInicial.percentualComprasVendas ?? 40,
+    )
+  const setPercentualComprasVendasComparativo = (p: number) => {
+    setEditadoLocalmente((prev) => ({ ...prev, modulo3PercentualCompras: true }))
+    setPercentualComprasVendasComparativoState(p)
+  }
   // Campos refinados do Módulo 3
   const [folhaPagamentoMensal, setFolhaPagamentoMensal] = useState<number>(
     () => perfilInicial.folhaPagamentoMensal || 50000,
@@ -570,17 +694,25 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     useState<CategoriaDespesaCredito[]>(gerarCategoriasIniciais)
 
   const updateDespesaCredito = (id: string, updates: Partial<CategoriaDespesaCredito>) => {
+    setEditadoLocalmente((prev) => ({ ...prev, modulo4Categorias: true }))
     setDespesasCreditos((prev) =>
       prev.map((item) => (item.id === id ? { ...item, ...updates } : item)),
     )
   }
 
-  const resetDespesasCreditos = () => setDespesasCreditos(CATEGORIAS_CREDITO_PADRAO)
+  const resetDespesasCreditos = () => {
+    setEditadoLocalmente((prev) => ({ ...prev, modulo4Categorias: false }))
+    setDespesasCreditos(CATEGORIAS_CREDITO_PADRAO)
+  }
 
   // Módulo 5: Transição (faturamento anual = faturamentoMensal * 12)
-  const [faturamentoAnualProjetado, setFaturamentoAnualProjetado] = useState<number>(() =>
-    perfilInicial.faturamentoMensal ? perfilInicial.faturamentoMensal * 12 : 2400000,
+  const [faturamentoAnualProjetado, setFaturamentoAnualProjetadoState] = useState<number>(
+    () => (config.faturamentoMensal || perfilInicial.faturamentoMensal || 200000) * 12,
   )
+  const setFaturamentoAnualProjetado = (v: number) => {
+    setEditadoLocalmente((prev) => ({ ...prev, modulo5Faturamento: true }))
+    setFaturamentoAnualProjetadoState(v)
+  }
   const [setorTransicao, setSetorTransicaoState] = useState<TipoAtividadePrincipal>(() =>
     normalizarTipoAtividade(perfilInicial.tipoAtividade),
   )
@@ -1996,6 +2128,20 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     }
   }
 
+  const origensPropagadas = useMemo(
+    () => ({
+      modulo2AnoOperacao: !editadoLocalmente.modulo2AnoOperacao,
+      modulo2RegimeOperacao: !editadoLocalmente.modulo2RegimeOperacao,
+      modulo2ValorOperacao: !editadoLocalmente.modulo2ValorOperacao,
+      modulo2PercentualCompras: !editadoLocalmente.modulo2PercentualCompras,
+      modulo3Faturamento: !editadoLocalmente.modulo3Faturamento,
+      modulo3PercentualCompras: !editadoLocalmente.modulo3PercentualCompras,
+      modulo4Categorias: !editadoLocalmente.modulo4Categorias,
+      modulo5Faturamento: !editadoLocalmente.modulo5Faturamento,
+    }),
+    [editadoLocalmente],
+  )
+
   return (
     <CalculadoraContext.Provider
       value={{
@@ -2005,6 +2151,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         aplicarAnoTransicao,
         aplicarPresetSetor,
         limparEtiquetaOrigem,
+        origensPropagadas,
 
         valorOperacao,
         setValorOperacao,

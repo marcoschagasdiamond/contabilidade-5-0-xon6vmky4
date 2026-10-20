@@ -162,11 +162,11 @@ export default function Modulo2CalculadoraSimples() {
           </span>
         </div>
 
-        {/* Campo 2: Ano da Operação (Ano atual + 2026–2033) — SEM ÍCONES */}
+        {/* Campo 2: Ano da Transição (Ano atual + 2026–2033) — SEM ÍCONES */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="anoOperacao" className="text-sm font-bold text-[#07132B]">
-              Ano da Operação
+              Ano da Transição
             </Label>
             <span className="text-[11px] font-mono font-bold text-[#07132B] bg-[#D4AF37]/20 border border-[#D4AF37]/50 px-1.5 py-0.5 rounded">
               {anoOperacao === 'atual' ? 'Pré-reforma' : `Fase ${anoOperacao}`}
@@ -182,7 +182,7 @@ export default function Modulo2CalculadoraSimples() {
               id="anoOperacao"
               className="h-12 bg-white border-slate-300 shadow-sm font-medium"
             >
-              <SelectValue placeholder="Selecione o ano da nota" />
+              <SelectValue placeholder="Selecione o ano da transição" />
             </SelectTrigger>
             <SelectContent className="max-h-80">
               {LISTA_ANOS_TRANSICAO.map((ano) => {
@@ -213,11 +213,11 @@ export default function Modulo2CalculadoraSimples() {
           </div>
         </div>
 
-        {/* Campo 3: Regime Aplicado — SEM ÍCONES */}
+        {/* Campo 3: Regime Aplicado (Preset por Setor) — SEM ÍCONES */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="regimeOperacao" className="text-sm font-bold text-[#07132B]">
-              Regime Aplicado
+              Regime Aplicado (Preset por Setor)
             </Label>
             <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
               {formatarPorcentagem(resultadoSimples.aliquotaTotalAplicada)}
@@ -231,7 +231,7 @@ export default function Modulo2CalculadoraSimples() {
               id="regimeOperacao"
               className="h-12 bg-white border-slate-300 shadow-sm font-medium"
             >
-              <SelectValue placeholder="Selecione o regime da operação" />
+              <SelectValue placeholder="Selecione o regime aplicado (preset por setor)" />
             </SelectTrigger>
             <SelectContent className="max-h-96">
               {/* Alíquota Plena Padrão */}

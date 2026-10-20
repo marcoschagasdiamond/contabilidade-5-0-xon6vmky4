@@ -109,7 +109,7 @@ export default function Modulo1Configuracoes() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="seletorAnoTransicao" className="text-xs font-bold text-[#07132B]">
-                  Ano da transição
+                  Ano da Transição
                 </Label>
                 <span className="text-[11px] font-medium text-slate-500">
                   Sistema atual ou transição LC 214
@@ -159,11 +159,11 @@ export default function Modulo1Configuracoes() {
               </div>
             </div>
 
-            {/* Seletor 2: Preset por Setor LC 214/2025 — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
+            {/* Seletor 2: Regime Aplicado (Preset por Setor) — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="seletorPresetSetor" className="text-xs font-bold text-[#07132B]">
-                  Preset por Setor (LC 214/2025)
+                  Regime Aplicado (Preset por Setor)
                 </Label>
                 <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                   Aplica reduções de uma vez
@@ -177,7 +177,7 @@ export default function Modulo1Configuracoes() {
                   id="seletorPresetSetor"
                   className="h-12 bg-white border-slate-300 text-[#07132B] font-semibold shadow-sm"
                 >
-                  <SelectValue placeholder="Selecione o preset por setor" />
+                  <SelectValue placeholder="Selecione o regime aplicado (preset por setor)" />
                 </SelectTrigger>
                 <SelectContent className="max-h-96">
                   {/* Opção Padrão / Manual */}
@@ -268,17 +268,77 @@ export default function Modulo1Configuracoes() {
             </div>
           </div>
 
+          {/* Parâmetros Operacionais Base para Propagação Automática aos Módulos 2, 3 e 4 */}
+          <div className="pt-2 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="fatMensalM1" className="text-xs font-bold text-[#07132B]">
+                  Faturamento Mensal (R$)
+                </Label>
+                <span className="text-[10px] text-slate-500 font-medium">
+                  Propaga aos Módulos 2, 3 e 5
+                </span>
+              </div>
+              <Input
+                id="fatMensalM1"
+                type="text"
+                value={(config.faturamentoMensal ?? 200000).toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                })}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/\D/g, '')
+                  const v = Number(raw) / 100
+                  updateConfig({ faturamentoMensal: v })
+                }}
+                className="h-11 bg-white border-slate-300 text-[#07132B] font-mono font-bold shadow-sm"
+              />
+              <span className="text-[11px] text-slate-500 block leading-tight">
+                Receita operacional mensal de referência.
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="pctComprasM1" className="text-xs font-bold text-[#07132B]">
+                  % de Compras sobre Vendas
+                </Label>
+                <span className="text-[10px] text-slate-500 font-medium">
+                  Propaga aos Módulos 2 e 3
+                </span>
+              </div>
+              <div className="relative">
+                <Input
+                  id="pctComprasM1"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={config.percentualComprasVendas ?? 40}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    updateConfig({ percentualComprasVendas: v })
+                  }}
+                  className="h-11 bg-white border-slate-300 text-[#07132B] font-mono font-bold shadow-sm pr-9"
+                />
+                <span className="absolute right-3.5 top-3 text-slate-400 font-bold text-xs">%</span>
+              </div>
+              <span className="text-[11px] text-slate-500 block leading-tight">
+                Percentual médio de insumos e compras tributáveis.
+              </span>
+            </div>
+          </div>
+
           {/* Banner de Ajuda Operacional */}
           <div className="p-3 bg-slate-100/90 border border-slate-200 rounded-xl text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-[#D4AF37] shrink-0" />
               <span>
-                Os seletores acima preenchem os campos abaixo automaticamente. Cada campo exibe uma
-                etiqueta com a base legal (ex.: <em>"LC 214/2025 · fase {anoAtual}"</em>).
+                Os seletores e dados acima preenchem automaticamente os Módulos 2, 3 e 4. Em cada
+                módulo, os campos mantêm 100% de editabilidade independente com indicação de origem.
               </span>
             </div>
             <span className="text-[11px] font-bold text-slate-600 shrink-0">
-              Flexibilidade plena para o contador
+              Propagação automática ativa
             </span>
           </div>
         </CardContent>
