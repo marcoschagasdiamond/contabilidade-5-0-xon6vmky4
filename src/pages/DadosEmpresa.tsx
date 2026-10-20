@@ -838,7 +838,17 @@ export default function DadosEmpresa() {
                     <Select
                       value={formData.ufOrigem}
                       onValueChange={(val) => {
-                        setFormData((prev) => ({ ...prev, ufOrigem: val }))
+                        // Se a cidade selecionada não pertencer à nova UF, limpa o campo de cidade
+                        setFormData((prev) => {
+                          const cidadeAtual = CIDADES_ISS_MAPA.find((cid) => cid.id === prev.cidade)
+                          const cidadeValida =
+                            cidadeAtual && (cidadeAtual.uf === val || cidadeAtual.id === 'outra')
+                          return {
+                            ...prev,
+                            ufOrigem: val,
+                            cidade: cidadeValida ? prev.cidade : '',
+                          }
+                        })
                         if (errors.ufOrigem) setErrors((prev) => ({ ...prev, ufOrigem: '' }))
                       }}
                     >
@@ -889,7 +899,9 @@ export default function DadosEmpresa() {
                         <SelectValue placeholder="Selecione a cidade" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
-                        {CIDADES_ISS_MAPA.map((cid) => (
+                        {CIDADES_ISS_MAPA.filter(
+                          (cid) => cid.uf === formData.ufOrigem || cid.id === 'outra',
+                        ).map((cid) => (
                           <SelectItem key={cid.id} value={cid.id}>
                             {cid.descricao || `${cid.nome}/${cid.uf} (${cid.aliquota.toFixed(1)}%)`}
                           </SelectItem>

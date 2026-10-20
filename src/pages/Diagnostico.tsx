@@ -1002,7 +1002,19 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   </div>
                   <select
                     value={formData.ufOrigem}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, ufOrigem: e.target.value }))}
+                    onChange={(e) => {
+                      const novaUf = e.target.value
+                      setFormData((prev) => {
+                        const cidadeAtual = CIDADES_ISS_MAPA.find((cid) => cid.id === prev.cidade)
+                        const cidadeValida =
+                          cidadeAtual && (cidadeAtual.uf === novaUf || cidadeAtual.id === 'outra')
+                        return {
+                          ...prev,
+                          ufOrigem: novaUf,
+                          cidade: cidadeValida ? prev.cidade : 'outra',
+                        }
+                      })
+                    }}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
                   >
                     {LISTA_UFS_ICMS.map((ufItem) => (
@@ -1032,7 +1044,9 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     onChange={(e) => setFormData((prev) => ({ ...prev, cidade: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
                   >
-                    {CIDADES_ISS_MAPA.map((cid) => (
+                    {CIDADES_ISS_MAPA.filter(
+                      (cid) => cid.uf === formData.ufOrigem || cid.id === 'outra',
+                    ).map((cid) => (
                       <option key={cid.id} value={cid.id}>
                         {cid.descricao || `${cid.nome}/${cid.uf} (${cid.aliquota.toFixed(1)}%)`}
                       </option>
