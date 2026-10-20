@@ -4,6 +4,14 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Coins,
   ArrowRight,
@@ -31,6 +39,8 @@ interface BlocoSplitPaymentProps {
   diasAntecipacaoSplit: number
   setDiasAntecipacaoSplit: (v: number) => void
   regimeAtualNome: string
+  onRegimeAtualChange?: (regime: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional') => void
+  origemPropagada?: boolean
 }
 
 export function BlocoSplitPayment({
@@ -40,6 +50,8 @@ export function BlocoSplitPayment({
   diasAntecipacaoSplit,
   setDiasAntecipacaoSplit,
   regimeAtualNome,
+  onRegimeAtualChange,
+  origemPropagada,
 }: BlocoSplitPaymentProps) {
   const {
     retencaoMensalNota,
@@ -87,21 +99,61 @@ export function BlocoSplitPayment({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Caixa Sistema Atual */}
           <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-700 uppercase tracking-wide">
-                1. Sistema Atual ({regimeAtualNome})
-              </span>
+            <div className="flex items-center justify-between text-xs gap-1 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-slate-700 uppercase tracking-wide">
+                  1. Sistema Atual
+                </span>
+                {origemPropagada && <BadgeOrigemPropagada origem="modulo1" />}
+              </div>
               <span className="text-[10px] font-medium bg-slate-200 text-slate-700 px-2 py-0.5 rounded">
                 Dia 20 do mês seguinte
               </span>
             </div>
+
+            {onRegimeAtualChange ? (
+              <div className="space-y-1">
+                <Select
+                  value={
+                    regimeAtualNome === 'Lucro Real' ||
+                    regimeAtualNome === 'Lucro Presumido' ||
+                    regimeAtualNome === 'Simples Nacional'
+                      ? regimeAtualNome
+                      : 'Lucro Presumido'
+                  }
+                  onValueChange={(val: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional') =>
+                    onRegimeAtualChange(val)
+                  }
+                >
+                  <SelectTrigger className="h-8 text-xs font-semibold bg-white border-slate-300">
+                    <SelectValue placeholder="Regime Atual" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Lucro Real" className="text-xs">
+                      Lucro Real
+                    </SelectItem>
+                    <SelectItem value="Lucro Presumido" className="text-xs">
+                      Lucro Presumido
+                    </SelectItem>
+                    <SelectItem value="Simples Nacional" className="text-xs">
+                      Simples Nacional
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="text-xs font-semibold text-slate-600">
+                Regime: <strong className="text-slate-800">{regimeAtualNome}</strong>
+              </div>
+            )}
+
             <p className="text-2xl font-mono font-bold text-slate-800">
               {formatarMoeda(recolhimentoAtualMensal)}
               <span className="text-xs text-slate-500 font-normal">/mês</span>
             </p>
             <p className="text-[11px] text-slate-500 leading-snug">
               A empresa recebe 100% do dinheiro do cliente e guarda o valor do imposto em caixa por
-              até 30 a 50 dias antes de recolher a guia.
+              até 30 a 50 dias antes de recolher a guia ({regimeAtualNome}).
             </p>
           </div>
 

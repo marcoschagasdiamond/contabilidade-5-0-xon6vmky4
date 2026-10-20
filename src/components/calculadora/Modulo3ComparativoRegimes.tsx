@@ -115,6 +115,8 @@ export default function Modulo3ComparativoRegimes() {
     origemDadosEmpresa,
     restaurarDadosEmpresaNoModulo,
     origensPropagadas,
+    regimeAtualFiltro,
+    setRegimeAtualFiltro,
   } = useCalculadoraIbsCbs()
 
   const handleFaturamentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1000,11 +1002,9 @@ export default function Modulo3ComparativoRegimes() {
         setTaxaMensalCapitalGiro={setTaxaMensalCapitalGiro}
         diasAntecipacaoSplit={diasAntecipacaoSplit}
         setDiasAntecipacaoSplit={setDiasAntecipacaoSplit}
-        regimeAtualNome={
-          resultadoComparativo.regimeMaisVantajoso === 'Simples Nacional'
-            ? 'Simples Nacional'
-            : 'Lucro Presumido / Real'
-        }
+        regimeAtualNome={regimeAtualFiltro}
+        onRegimeAtualChange={(novoRegime) => setRegimeAtualFiltro(novoRegime)}
+        origemPropagada={origensPropagadas?.dashboardRegimeAtual}
       />
 
       {/* Card de Conclusão / Vencedor */}

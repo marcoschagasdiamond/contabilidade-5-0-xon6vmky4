@@ -141,6 +141,10 @@ interface CalculadoraContextType {
     modulo3PercentualCompras: boolean
     modulo4Categorias: boolean
     modulo5Faturamento: boolean
+    dashboardRegimeAtual: boolean
+    dashboardSetor: boolean
+    dashboardFaturamento: boolean
+    dashboardPercentualCompras: boolean
   }
 
   // Rastreamento de origem de campos propagados automaticamente do Módulo 1
@@ -153,6 +157,10 @@ interface CalculadoraContextType {
     modulo3PercentualCompras: boolean
     modulo4Categorias: boolean
     modulo5Faturamento: boolean
+    dashboardRegimeAtual: boolean
+    dashboardSetor: boolean
+    dashboardFaturamento: boolean
+    dashboardPercentualCompras: boolean
   }
 
   // Salvar / Restaurar Simulação Completa
@@ -336,7 +344,26 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   )
 
   // Módulo 1: Configurações Gerais
-  const [config, setConfig] = useState<ConfiguracoesGerais>(CONFIGURACOES_PADRAO)
+  const [config, setConfig] = useState<ConfiguracoesGerais>(() => {
+    let regInicial: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional' = 'Lucro Presumido'
+    if (perfilInicial.regimeAtual?.includes('Real')) regInicial = 'Lucro Real'
+    else if (perfilInicial.regimeAtual?.includes('Simples')) regInicial = 'Simples Nacional'
+
+    return {
+      ...CONFIGURACOES_PADRAO,
+      regimeAtualEmpresa: regInicial,
+      faturamentoMensal: perfilInicial.faturamentoMensal || CONFIGURACOES_PADRAO.faturamentoMensal,
+      percentualComprasVendas:
+        perfilInicial.percentualComprasVendas ?? CONFIGURACOES_PADRAO.percentualComprasVendas,
+      etiquetasOrigem:
+        existeDadosEmpresaSalvos() && perfilInicial.regimeAtual
+          ? {
+              ...CONFIGURACOES_PADRAO.etiquetasOrigem,
+              regimeAtualEmpresa: 'Preenchido a partir de Dados da Empresa (/dados-empresa)',
+            }
+          : CONFIGURACOES_PADRAO.etiquetasOrigem,
+    }
+  })
 
   const updateConfig = (novas: Partial<ConfiguracoesGerais>) => {
     setConfig((prev) => {
@@ -355,6 +382,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         'saudeEducacaoAliquota',
         'transporteAliquota',
         'cestaBasicaIsencao',
+        'regimeAtualEmpresa',
       ]
       let etiquetasAtualizadas = prev.etiquetasOrigem ? { ...prev.etiquetasOrigem } : {}
       camposVerificados.forEach((campo) => {
@@ -372,7 +400,16 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     })
 
     // PROPAGAÇÃO AUTOMÁTICA DO MÓDULO 1:
-    // Se faturamentoMensal for alterado no Módulo 1, propaga para M2, M3 e M5
+    // Se regimeAtualEmpresa for alterado no Módulo 1, propaga para regimeAtualFiltro e reseta flag downstream
+    if (novas.regimeAtualEmpresa !== undefined) {
+      setRegimeAtualFiltroState(novas.regimeAtualEmpresa)
+      setEditadoLocalmente((prev) => ({
+        ...prev,
+        dashboardRegimeAtual: false,
+      }))
+    }
+
+    // Se faturamentoMensal for alterado no Módulo 1, propaga para M2, M3, M5 e Dashboard
     if (novas.faturamentoMensal !== undefined) {
       const fat = novas.faturamentoMensal
       setValorOperacaoState(fat)
@@ -383,10 +420,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         modulo2ValorOperacao: false,
         modulo3Faturamento: false,
         modulo5Faturamento: false,
+        dashboardFaturamento: false,
       }))
     }
 
-    // Se percentualComprasVendas for alterado no Módulo 1, propaga para M2 e M3
+    // Se percentualComprasVendas for alterado no Módulo 1, propaga para M2, M3 e Dashboard
     if (novas.percentualComprasVendas !== undefined) {
       const pct = novas.percentualComprasVendas
       setPercentualComprasVendasSimplesState(pct)
@@ -395,6 +433,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         ...prev,
         modulo2PercentualCompras: false,
         modulo3PercentualCompras: false,
+        dashboardPercentualCompras: false,
       }))
     }
 
@@ -593,6 +632,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     modulo3PercentualCompras: false,
     modulo4Categorias: false,
     modulo5Faturamento: false,
+    dashboardRegimeAtual: false,
+    dashboardSetor: false,
+    dashboardFaturamento: false,
+    dashboardPercentualCompras: false,
   })
 
   // Módulo 2: Calculadora Simples (inicializado a partir dos Dados da Empresa / Módulo 1)
@@ -632,7 +675,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     () => config.faturamentoMensal || perfilInicial.faturamentoMensal || 200000,
   )
   const setFaturamentoMensal = (v: number) => {
-    setEditadoLocalmente((prev) => ({ ...prev, modulo3Faturamento: true }))
+    setEditadoLocalmente((prev) => ({
+      ...prev,
+      modulo3Faturamento: true,
+      dashboardFaturamento: true,
+    }))
     setFaturamentoMensalState(v)
   }
   const [tipoAtividade, setTipoAtividadeState] = useState<TipoAtividadePrincipal>(() =>
@@ -640,6 +687,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   )
 
   const setTipoAtividade = (novoTipo: TipoAtividade) => {
+    setEditadoLocalmente((prev) => ({ ...prev, dashboardSetor: true }))
     setTipoAtividadeState(normalizarTipoAtividade(novoTipo))
   }
   // Subatividades por ramo
@@ -672,7 +720,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       () => config.percentualComprasVendas ?? perfilInicial.percentualComprasVendas ?? 40,
     )
   const setPercentualComprasVendasComparativo = (p: number) => {
-    setEditadoLocalmente((prev) => ({ ...prev, modulo3PercentualCompras: true }))
+    setEditadoLocalmente((prev) => ({
+      ...prev,
+      modulo3PercentualCompras: true,
+      dashboardPercentualCompras: true,
+    }))
     setPercentualComprasVendasComparativoState(p)
   }
   // Campos refinados do Módulo 3
@@ -746,13 +798,19 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   // Módulo 6: Dashboard filtros
   const [periodoDashboard, setPeriodoDashboard] = useState<'mensal' | 'anual'>('mensal')
-  const [regimeAtualFiltro, setRegimeAtualFiltro] = useState<
+  const [regimeAtualFiltro, setRegimeAtualFiltroState] = useState<
     'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
   >(() => {
+    if (config.regimeAtualEmpresa) return config.regimeAtualEmpresa
     if (perfilInicial.regimeAtual?.includes('Real')) return 'Lucro Real'
     if (perfilInicial.regimeAtual?.includes('Simples')) return 'Simples Nacional'
     return 'Lucro Presumido'
   })
+
+  const setRegimeAtualFiltro = (r: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional') => {
+    setEditadoLocalmente((prev) => ({ ...prev, dashboardRegimeAtual: true }))
+    setRegimeAtualFiltroState(r)
+  }
 
   // Listener para sincronização automática se o usuário salvar dados em outra aba ou na página /dados-empresa
   React.useEffect(() => {
@@ -891,7 +949,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     if (p.diasAntecipacaoSplit !== undefined) setDiasAntecipacaoSplit(p.diasAntecipacaoSplit)
 
     if (p.periodoDashboard) setPeriodoDashboard(p.periodoDashboard)
-    if (p.regimeAtualFiltro) setRegimeAtualFiltro(p.regimeAtualFiltro)
+    if (p.regimeAtualFiltro) {
+      setRegimeAtualFiltro(p.regimeAtualFiltro)
+      if (p.config?.regimeAtualEmpresa === undefined) {
+        setConfig((prev) => ({ ...prev, regimeAtualEmpresa: p.regimeAtualFiltro }))
+      }
+    }
   }
 
   // Função para restaurar os dados da empresa especificamente para um módulo
@@ -2150,6 +2213,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       modulo3PercentualCompras: !editadoLocalmente.modulo3PercentualCompras,
       modulo4Categorias: !editadoLocalmente.modulo4Categorias,
       modulo5Faturamento: !editadoLocalmente.modulo5Faturamento,
+      dashboardRegimeAtual: !editadoLocalmente.dashboardRegimeAtual,
+      dashboardSetor: !editadoLocalmente.dashboardSetor,
+      dashboardFaturamento: !editadoLocalmente.dashboardFaturamento,
+      dashboardPercentualCompras: !editadoLocalmente.dashboardPercentualCompras,
     }),
     [editadoLocalmente],
   )

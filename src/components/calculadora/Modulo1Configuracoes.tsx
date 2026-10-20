@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Sliders, RotateCcw, Info, CheckCircle2, ShieldCheck, Zap } from 'lucide-react'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import {
   AnoTransicaoIbsCbs,
   PresetSetorIbsCbs,
@@ -268,8 +269,52 @@ export default function Modulo1Configuracoes() {
             </div>
           </div>
 
-          {/* Parâmetros Operacionais Base para Propagação Automática aos Módulos 2, 3 e 4 */}
-          <div className="pt-2 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Parâmetros Operacionais Base para Propagação Automática aos Módulos 2, 3, 5 e Dashboard */}
+          <div className="pt-2 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Regime Atual da Empresa */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="regimeAtualEmpresaM1" className="text-xs font-bold text-[#07132B]">
+                  Regime Atual da Empresa
+                </Label>
+                {config.etiquetasOrigem?.regimeAtualEmpresa ? (
+                  <BadgeOrigemPropagada origem="dados-empresa" />
+                ) : (
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    Propaga ao Dashboard e Split
+                  </span>
+                )}
+              </div>
+              <Select
+                value={config.regimeAtualEmpresa || 'Lucro Presumido'}
+                onValueChange={(val: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional') =>
+                  updateConfig({ regimeAtualEmpresa: val })
+                }
+              >
+                <SelectTrigger
+                  id="regimeAtualEmpresaM1"
+                  className="h-11 bg-white border-slate-300 text-[#07132B] font-semibold shadow-sm"
+                >
+                  <SelectValue placeholder="Selecione o regime atual" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Lucro Real" className="py-2 font-medium">
+                    Lucro Real
+                  </SelectItem>
+                  <SelectItem value="Lucro Presumido" className="py-2 font-medium">
+                    Lucro Presumido
+                  </SelectItem>
+                  <SelectItem value="Simples Nacional" className="py-2 font-medium">
+                    Simples Nacional
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-slate-500 block leading-tight">
+                Enquadramento tributário vigente da empresa.
+              </span>
+            </div>
+
+            {/* Faturamento Mensal */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="fatMensalM1" className="text-xs font-bold text-[#07132B]">
@@ -298,6 +343,7 @@ export default function Modulo1Configuracoes() {
               </span>
             </div>
 
+            {/* % de Compras sobre Vendas */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="pctComprasM1" className="text-xs font-bold text-[#07132B]">
