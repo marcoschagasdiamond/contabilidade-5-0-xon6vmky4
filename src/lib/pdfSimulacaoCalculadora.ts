@@ -421,6 +421,18 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
   doc.roundedRect(box4X, currentY, halfWidth, 36, 2, 2, 'FD')
 
+  const anoCreditosPdf =
+    resultados.resultadoCreditos.anoOperacao ||
+    parametros.anoOperacao ||
+    parametros.config?.anoTransicao ||
+    2033
+  const rotuloAnoCreditosPdf =
+    anoCreditosPdf === 'atual' ? 'Ano atual (0%)' : `Fase ${anoCreditosPdf}`
+  const infoTaxaCreditosPdf =
+    resultados.resultadoCreditos.aliquotaReferencia !== undefined
+      ? ` • ${resultados.resultadoCreditos.aliquotaReferencia.toFixed(2)}%`
+      : ''
+
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8.5)
   doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
@@ -432,29 +444,29 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.text(
     `Créditos Regime Antigo: ${formatarMoeda(resultados.resultadoCreditos.totalAntigo)}/mês`,
     box4X + 4,
-    currentY + 12,
+    currentY + 11.5,
   )
   doc.text(
-    `Créditos Novo IVA Dual: ${formatarMoeda(resultados.resultadoCreditos.totalNovo)}/mês`,
+    `Créditos Novo IVA Dual (${rotuloAnoCreditosPdf}${infoTaxaCreditosPdf}): ${formatarMoeda(resultados.resultadoCreditos.totalNovo)}/mês`,
     box4X + 4,
-    currentY + 17,
+    currentY + 16.5,
   )
   doc.text(
     `Ganho Mensal em Créditos: +${formatarMoeda(resultados.resultadoCreditos.adicionalGanho)}/mês`,
     box4X + 4,
-    currentY + 22,
+    currentY + 21.5,
   )
   doc.text(
     `Aumento Percentual: +${resultados.resultadoCreditos.aumentoPercentual.toFixed(1)}% de aproveitamento`,
     box4X + 4,
-    currentY + 27,
+    currentY + 26.5,
   )
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(COR_VERDE[0], COR_VERDE[1], COR_VERDE[2])
   doc.text(
     `Economia Anual em Créditos: ${formatarMoeda(resultados.resultadoCreditos.economiaAnual)}`,
     box4X + 4,
-    currentY + 32,
+    currentY + 31.5,
   )
 
   currentY += 42

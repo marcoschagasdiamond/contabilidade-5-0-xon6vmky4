@@ -228,6 +228,8 @@ interface CalculadoraContextType {
     adicionalGanho: number
     aumentoPercentual: number
     economiaAnual: number
+    anoOperacao: AnoTransicaoIbsCbs
+    aliquotaReferencia: number
   }
 
   resultadoTransicao: Array<{
@@ -1550,14 +1552,24 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   // CÁLCULO MÓDULO 4 (Simulador de Créditos)
   // ==========================================
   const resultadoCreditos = useMemo(() => {
+    // Respeita o Ano da Operação definido no Módulo 2
+    const ano = anoOperacao || config.anoTransicao || 2033
+    const dadosFaseAno = CRONOGRAMA_FASES_TRANSICAO[ano] || CRONOGRAMA_FASES_TRANSICAO[2033]
+    const ehMesmoAnoDoModulo1 = config.anoTransicao === ano
+    // Se for o mesmo ano do Módulo 1, preserva qualquer personalização direta de config.totalIvaDual;
+    // se for outro ano do Módulo 2, usa a alíquota oficial totalIvaDual da fase correspondente do cronograma
+    const aliquotaReferenciaFase = ehMesmoAnoDoModulo1
+      ? config.totalIvaDual
+      : dadosFaseAno.totalIvaDual
+
     let totalAntigo = 0
     let totalNovo = 0
 
     despesasCreditos.forEach((item) => {
       const v = Math.max(0, item.valorMensal)
       const cAntigo = (v * item.aliquotaAntiga) / 100
-      // Se a categoria possuir alíquota nova específica (ex: tarifas bancárias = 0%), usa ela; senão usa totalIvaDual (26,50%)
-      const aliqNova = item.aliquotaNova !== undefined ? item.aliquotaNova : config.totalIvaDual
+      // Se a categoria possuir alíquota nova específica (ex: tarifas bancárias = 0%), usa ela; senão usa a alíquota da fase
+      const aliqNova = item.aliquotaNova !== undefined ? item.aliquotaNova : aliquotaReferenciaFase
       const cNovo = (v * aliqNova) / 100
       totalAntigo += cAntigo
       totalNovo += cNovo
@@ -1573,8 +1585,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       adicionalGanho,
       aumentoPercentual,
       economiaAnual,
+      anoOperacao: ano,
+      aliquotaReferencia: aliquotaReferenciaFase,
     }
-  }, [despesasCreditos, config.totalIvaDual])
+  }, [despesasCreditos, anoOperacao, config.anoTransicao, config.totalIvaDual])
 
   // ==========================================
   // ETAPA 3: ALERTAS DE LIMITES DO SIMPLES NACIONAL

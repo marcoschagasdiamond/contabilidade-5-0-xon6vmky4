@@ -30,6 +30,7 @@ export default function Modulo4SimuladorCreditos() {
     resetDespesasCreditos,
     resultadoCreditos,
     config,
+    anoOperacao,
     origemDadosEmpresa,
     restaurarDadosEmpresaNoModulo,
   } = useCalculadoraIbsCbs()
@@ -40,8 +41,24 @@ export default function Modulo4SimuladorCreditos() {
     updateDespesaCredito(id, { valorMensal: valor })
   }
 
-  const { totalAntigo, totalNovo, adicionalGanho, aumentoPercentual, economiaAnual } =
-    resultadoCreditos
+  const {
+    totalAntigo,
+    totalNovo,
+    adicionalGanho,
+    aumentoPercentual,
+    economiaAnual,
+    anoOperacao: anoEfetivoCreditos,
+    aliquotaReferencia: aliqRefCreditos,
+  } = resultadoCreditos
+
+  const anoModulo1 = config.anoTransicao || 2033
+  const anoModulo2 = anoOperacao || anoModulo1
+  const haDivergenciaAnos = String(anoModulo1) !== String(anoModulo2)
+
+  const rotuloAnoEfetivo =
+    anoEfetivoCreditos === 'atual'
+      ? 'Ano atual (sistema atual) • Pré-reforma'
+      : `fase ${anoEfetivoCreditos}`
 
   // Formatações dos 5 valores dos cards de resumo
   const strTotalAntigo = formatarMoeda(totalAntigo)
@@ -81,8 +98,9 @@ export default function Modulo4SimuladorCreditos() {
             </h2>
             <p className="text-slate-300 text-sm sm:text-base max-w-2xl">
               Avalie como a substituição das vedações do sistema antigo pelo crédito financeiro
-              amplo do IVA Dual (26,50%) gera economia direta em 18 categorias essenciais de custos
-              operacionais, CAPEX e suprimentos.
+              amplo do IVA Dual ({formatarPorcentagem(aliqRefCreditos)} • {rotuloAnoEfetivo}) gera
+              economia direta em 18 categorias essenciais de custos operacionais, CAPEX e
+              suprimentos.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
@@ -137,6 +155,22 @@ export default function Modulo4SimuladorCreditos() {
         </div>
       </div>
 
+      {/* AVISO DISCRETO CASO O ANO DO MÓDULO 1 DIVERJA DO MÓDULO 2 */}
+      {haDivergenciaAnos && (
+        <div className="bg-amber-50/90 border border-amber-200/90 rounded-xl p-3 px-4 text-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">
+              O cálculo dos créditos segue o Ano da Operação definido no Módulo 2 (Simulador de
+              Nota). Para alterar, ajuste lá.
+            </span>
+          </div>
+          <span className="text-[11px] text-amber-800/90 shrink-0">
+            Módulo 1: {config.anoTransicao || 2033} • Módulo 2:{' '}
+            {anoModulo2 === 'atual' ? 'Ano atual' : anoModulo2}
+          </span>
+        </div>
+      )}
+
       {/* Cards de Resumo e Métricas Conforme Especificação */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Card 1: Total Crédito Antigo */}
@@ -168,9 +202,9 @@ export default function Modulo4SimuladorCreditos() {
             <div className="space-y-1.5">
               <span
                 className="text-[11px] sm:text-xs font-bold text-amber-900 uppercase tracking-wider block leading-tight min-h-[2rem] flex items-center break-words"
-                title="Crédito Novo (26,50%)"
+                title={`Crédito Novo (${formatarPorcentagem(aliqRefCreditos)})`}
               >
-                Crédito Novo (26,50%)
+                Crédito Novo ({formatarPorcentagem(aliqRefCreditos)})
               </span>
               <p
                 className={`${obterClasseTamanhoFonte(strTotalNovo)} font-mono font-extrabold text-amber-950 tracking-tight break-words min-w-0`}
@@ -180,7 +214,7 @@ export default function Modulo4SimuladorCreditos() {
               </p>
             </div>
             <span className="text-[11px] text-amber-800/80 block leading-tight pt-1">
-              Crédito sobre 100% dos bens e serviços adquiridos
+              Crédito sobre 100% dos bens e serviços adquiridos ({rotuloAnoEfetivo})
             </span>
           </CardContent>
         </Card>
@@ -269,11 +303,17 @@ export default function Modulo4SimuladorCreditos() {
               tempo real.
             </p>
           </div>
-          <span className="text-xs text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg">
-            Taxa Referência IVA Dual:{' '}
-            <strong className="text-[#07132B] font-mono">
-              {formatarPorcentagem(config.totalIvaDual)}
+          <span className="text-xs text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex flex-wrap items-center gap-1">
+            <span>Taxa Referência IVA Dual:</span>
+            <strong className="text-[#07132B] font-mono font-bold">
+              {formatarPorcentagem(aliqRefCreditos)}
             </strong>
+            <span className="text-slate-400">•</span>
+            <span className="text-slate-700 font-medium">
+              {anoEfetivoCreditos === 'atual'
+                ? 'Ano atual (0%) — vinda do Módulo 2'
+                : `fase ${anoEfetivoCreditos} — vinda do Módulo 2`}
+            </span>
           </span>
         </div>
 
@@ -302,7 +342,7 @@ export default function Modulo4SimuladorCreditos() {
               {despesasCreditos.map((item) => {
                 const cAntigo = (item.valorMensal * item.aliquotaAntiga) / 100
                 const aliqNova =
-                  item.aliquotaNova !== undefined ? item.aliquotaNova : config.totalIvaDual
+                  item.aliquotaNova !== undefined ? item.aliquotaNova : aliqRefCreditos
                 const cNovo = (item.valorMensal * aliqNova) / 100
                 const ganho = cNovo - cAntigo
 
