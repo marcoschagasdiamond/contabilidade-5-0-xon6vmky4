@@ -49,6 +49,7 @@ import {
 } from 'lucide-react'
 import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
 import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import { PRESETS_SETORES_LC214 } from '@/types/calculadoraIbsCbs'
 
 const CORES_PIZZA = ['#07132B', '#D4AF37', '#10B981', '#3B82F6', '#6366F1', '#EC4899', '#8B5CF6']
@@ -65,7 +66,7 @@ export default function Modulo6Dashboard() {
     periodoDashboard,
     setPeriodoDashboard,
     regimeAtualFiltro,
-    setRegimeAtualFiltro,
+    origensPropagadas,
     resultadoDashboard,
     resultadoComparativo,
     resultadoCreditos,
@@ -281,8 +282,8 @@ export default function Modulo6Dashboard() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {/* Filtro: Período */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Filtro: Período (mantido intacto — visualização mensal/anual) */}
             <div>
               <Label className="text-xs font-semibold text-slate-600 block mb-1.5">Período</Label>
               <Select
@@ -299,9 +300,14 @@ export default function Modulo6Dashboard() {
               </Select>
             </div>
 
-            {/* Filtro: Setor */}
+            {/* Filtro: Setor (com BadgeOrigemPropagada quando propagado) */}
             <div>
-              <Label className="text-xs font-semibold text-slate-600 block mb-1.5">Setor</Label>
+              <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
+                <Label className="text-xs font-semibold text-slate-600">Setor</Label>
+                {origensPropagadas?.dashboardSetor && (
+                  <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+                )}
+              </div>
               <Select
                 value={tipoAtividade}
                 onValueChange={(val) => setTipoAtividade(val as TipoAtividade)}
@@ -322,33 +328,14 @@ export default function Modulo6Dashboard() {
               </Select>
             </div>
 
-            {/* Filtro: Regime Atual */}
+            {/* Filtro: Faturamento Mensal (com BadgeOrigemPropagada quando propagado) */}
             <div>
-              <Label className="text-xs font-semibold text-slate-600 block mb-1.5">
-                Regime Atual da Empresa
-              </Label>
-              <Select
-                value={regimeAtualFiltro}
-                onValueChange={(val) =>
-                  setRegimeAtualFiltro(val as 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional')
-                }
-              >
-                <SelectTrigger className="h-10 bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Lucro Real">Lucro Real</SelectItem>
-                  <SelectItem value="Lucro Presumido">Lucro Presumido</SelectItem>
-                  <SelectItem value="Simples Nacional">Simples Nacional</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Filtro: Faturamento */}
-            <div>
-              <Label className="text-xs font-semibold text-slate-600 block mb-1.5">
-                Faturamento Mensal
-              </Label>
+              <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
+                <Label className="text-xs font-semibold text-slate-600">Faturamento Mensal</Label>
+                {origensPropagadas?.dashboardFaturamento && (
+                  <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+                )}
+              </div>
               <Input
                 type="text"
                 value={faturamentoMensal.toLocaleString('pt-BR', {
@@ -360,11 +347,14 @@ export default function Modulo6Dashboard() {
               />
             </div>
 
-            {/* Filtro: % Compras */}
+            {/* Filtro: % Compras s/ Vendas (com BadgeOrigemPropagada quando propagado) */}
             <div>
-              <Label className="text-xs font-semibold text-slate-600 block mb-1.5">
-                % Compras s/ Vendas
-              </Label>
+              <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
+                <Label className="text-xs font-semibold text-slate-600">% Compras s/ Vendas</Label>
+                {origensPropagadas?.dashboardPercentualCompras && (
+                  <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+                )}
+              </div>
               <div className="relative">
                 <Input
                   type="number"
@@ -637,6 +627,7 @@ export default function Modulo6Dashboard() {
         diasAntecipacaoSplit={diasAntecipacaoSplit}
         setDiasAntecipacaoSplit={setDiasAntecipacaoSplit}
         regimeAtualNome={regimeAtualFiltro}
+        origemPropagada={origensPropagadas?.dashboardRegimeAtual}
       />
 
       {/* 3 Gráficos Conforme Especificação */}
