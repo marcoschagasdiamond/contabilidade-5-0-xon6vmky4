@@ -271,9 +271,11 @@ export function ModalSalvarSimulacao({
               <div>
                 Fase Transição:{' '}
                 <strong>
-                  {parametros.config.anoTransicao
-                    ? `${parametros.config.anoTransicao}`
-                    : '2033 (Pleno)'}
+                  {parametros.config.anoTransicao === 'atual'
+                    ? 'Ano atual (sistema atual)'
+                    : parametros.config.anoTransicao
+                      ? `${parametros.config.anoTransicao}`
+                      : '2033 (Pleno)'}
                 </strong>
               </div>
               <div>

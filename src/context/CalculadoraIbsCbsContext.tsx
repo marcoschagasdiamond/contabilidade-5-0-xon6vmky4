@@ -56,6 +56,8 @@ interface CalculadoraContextType {
   setValorOperacao: (v: number) => void
   regimeOperacao: RegimeDiferenciadoTipo
   setRegimeOperacao: (r: RegimeDiferenciadoTipo) => void
+  anoOperacao: AnoTransicaoIbsCbs
+  setAnoOperacao: (ano: AnoTransicaoIbsCbs) => void
   percentualComprasVendasSimples: number
   setPercentualComprasVendasSimples: (p: number) => void
 
@@ -144,6 +146,8 @@ interface CalculadoraContextType {
     valorARecolher: number
     aliquotaEfetiva: number
     valorTotalNotaFiscal: number
+    anoOperacao: AnoTransicaoIbsCbs
+    etiquetaLegalExibida: string
   }
 
   resultadoComparativo: {
@@ -227,7 +231,7 @@ interface CalculadoraContextType {
   }
 
   resultadoTransicao: Array<{
-    ano: number
+    ano: number | 'atual'
     fase: string
     aliquotaCbs: number
     aliquotaIbs: number
@@ -351,7 +355,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     })
   }
 
-  // Preenchimento Assistido: Ano da transição (2026–2033)
+  // Preenchimento Assistido: Ano da transição ('atual' | 2026–2033)
   const aplicarAnoTransicao = (ano: AnoTransicaoIbsCbs) => {
     const dadosAno = CRONOGRAMA_FASES_TRANSICAO[ano]
     if (!dadosAno) return
@@ -362,7 +366,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       const total = dadosAno.totalIvaDual
       const etiquetaFase = dadosAno.etiquetaOrigem
 
-      // Se houver um preset setorial ativo, recalcula também as alíquotas diferenciadas sobre o ano escolhido
+      // Se for ano atual (pré-reforma), alíquotas de IBS/CBS são 0%
       let saudeAliq = Number((total * 0.4).toFixed(2)) // redução 60%
       let transAliq = Number((total * 0.7).toFixed(2)) // redução 30%
       let cestaAliq = 0
@@ -380,17 +384,34 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       if (presetAtivo && presetAtivo !== 'nenhum') {
         const itemPreset = PRESETS_SETORES_LC214.find((p) => p.id === presetAtivo)
         if (itemPreset) {
-          const etiquetaAno = `${itemPreset.etiquetaOrigem} · fase ${ano}`
+          const etiquetaAno =
+            ano === 'atual'
+              ? `${itemPreset.titulo} · Sistema atual (pré-reforma)`
+              : `${itemPreset.etiquetaOrigem} · fase ${ano}`
           if (itemPreset.grupo === 'reducao_60') {
             novasEtiquetas.saudeEducacaoAliquota = etiquetaAno
           } else if (itemPreset.grupo === 'reducao_30') {
             novasEtiquetas.transporteAliquota = etiquetaAno
           } else if (itemPreset.grupo === 'aliquota_zero') {
-            novasEtiquetas.cestaBasicaIsencao = `${itemPreset.etiquetaOrigem} · fase ${ano}`
+            novasEtiquetas.cestaBasicaIsencao = etiquetaAno
           } else if (itemPreset.id === 'padrao') {
             novasEtiquetas.totalIvaDual = etiquetaFase
           }
         }
+      } else {
+        // Sem preset específico, as faixas refletem a origem da fase selecionada
+        novasEtiquetas.saudeEducacaoAliquota =
+          ano === 'atual'
+            ? 'Sistema atual (pré-reforma)'
+            : `LC 214/2025 · redução 60% · fase ${ano}`
+        novasEtiquetas.transporteAliquota =
+          ano === 'atual'
+            ? 'Sistema atual (pré-reforma)'
+            : `LC 214/2025 · redução 30% · fase ${ano}`
+        novasEtiquetas.cestaBasicaIsencao =
+          ano === 'atual'
+            ? 'Sistema atual (pré-reforma)'
+            : `LC 214/2025 · alíquota zero · fase ${ano}`
       }
 
       return {
@@ -421,7 +442,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     if (!itemPreset) return
 
     setConfig((prev) => {
-      const totalRef = prev.totalIvaDual || 26.5
+      const totalRef = prev.totalIvaDual !== undefined ? prev.totalIvaDual : 26.5
       const ano = prev.anoTransicao || 2033
       const novasEtiquetas: OrigemCamposAliquota = {
         ...(prev.etiquetasOrigem || {}),
@@ -433,17 +454,21 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       const cestaAliq = 0 // Alíquota zero
 
       // Rótulo completo com a base legal específica e fase do ano selecionado
-      const etiquetaLegalComAno = `${itemPreset.etiquetaOrigem} · fase ${ano}`
+      const etiquetaLegalComAno =
+        ano === 'atual'
+          ? `${itemPreset.titulo} · Sistema atual (pré-reforma)`
+          : `${itemPreset.etiquetaOrigem} · fase ${ano}`
 
       if (itemPreset.grupo === 'reducao_60') {
         novasEtiquetas.saudeEducacaoAliquota = etiquetaLegalComAno
       } else if (itemPreset.grupo === 'reducao_30') {
         novasEtiquetas.transporteAliquota = etiquetaLegalComAno
       } else if (itemPreset.grupo === 'aliquota_zero') {
-        novasEtiquetas.cestaBasicaIsencao = `${itemPreset.etiquetaOrigem} · fase ${ano}`
+        novasEtiquetas.cestaBasicaIsencao = etiquetaLegalComAno
       } else if (itemPreset.id === 'padrao') {
         novasEtiquetas.totalIvaDual =
-          prev.etiquetasOrigem?.totalIvaDual || `LC 214/2025 · fase ${ano}`
+          prev.etiquetasOrigem?.totalIvaDual ||
+          (ano === 'atual' ? 'Sistema atual (pré-reforma)' : `LC 214/2025 · fase ${ano}`)
       }
 
       return {
@@ -462,6 +487,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     () => perfilInicial.faturamentoMensal || 50000,
   )
   const [regimeOperacao, setRegimeOperacao] = useState<RegimeDiferenciadoTipo>('padrao')
+  const [anoOperacao, setAnoOperacao] = useState<AnoTransicaoIbsCbs>(
+    () => config.anoTransicao || 2033,
+  )
   const [percentualComprasVendasSimples, setPercentualComprasVendasSimples] = useState<number>(
     () => perfilInicial.percentualComprasVendas ?? 40,
   )
@@ -593,6 +621,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       presetSetor: config.presetSetor,
       valorOperacao,
       regimeOperacao,
+      anoOperacao,
       percentualComprasVendasSimples,
       faturamentoMensal,
       tipoAtividade,
@@ -643,6 +672,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       // Normalização garantindo compatibilidade com opções antigas e novas
       const regNormalizado = p.regimeOperacao as RegimeDiferenciadoTipo
       setRegimeOperacao(regNormalizado)
+    }
+    if (p.anoOperacao !== undefined) {
+      setAnoOperacao(p.anoOperacao)
+    } else if (p.anoTransicao !== undefined) {
+      // Fallback para simulações antigas
+      setAnoOperacao(p.anoTransicao)
     }
     if (p.percentualComprasVendasSimples !== undefined)
       setPercentualComprasVendasSimples(p.percentualComprasVendasSimples)
@@ -734,9 +769,20 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   // CÁLCULO MÓDULO 2 (Calculadora Simples)
   // ==========================================
   const resultadoSimples = useMemo(() => {
-    let aliquotaTotal = config.totalIvaDual
-    let aliqCbs = config.cbsPadrao
-    let aliqIbs = config.ibsPadrao
+    // Ano de operação selecionado para o cálculo da nota
+    const ano = anoOperacao || config.anoTransicao || 2033
+    const dadosFaseAno = CRONOGRAMA_FASES_TRANSICAO[ano] || CRONOGRAMA_FASES_TRANSICAO[2033]
+
+    // Alíquotas de referência da fase selecionada
+    // Se o ano for o mesmo do Módulo 1, usamos as alíquotas configuradas (mantendo possíveis edições manuais)
+    const ehMesmoAnoDoModulo1 = config.anoTransicao === ano
+    const totalIvaBase = ehMesmoAnoDoModulo1 ? config.totalIvaDual : dadosFaseAno.totalIvaDual
+    const cbsBase = ehMesmoAnoDoModulo1 ? config.cbsPadrao : dadosFaseAno.aliquotaCbs
+    const ibsBase = ehMesmoAnoDoModulo1 ? config.ibsPadrao : dadosFaseAno.aliquotaIbs
+
+    let aliquotaTotal = totalIvaBase
+    let aliqCbs = cbsBase
+    let aliqIbs = ibsBase
 
     // Determina a qual faixa legal o regime pertence (Padrão, Redução 60%, Redução 30%, Alíquota Zero)
     const presetCorrespondente = PRESETS_SETORES_LC214.find((p) => p.id === regimeOperacao)
@@ -750,21 +796,31 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
             ? 'aliquota_zero'
             : 'geral')
 
-    if (grupo === 'reducao_60') {
-      // Aplica a alíquota da faixa de redução de 60% configurada no Módulo 1 (padrão 10,60% ou calculada)
-      aliquotaTotal = config.saudeEducacaoAliquota
-      const ratioCbs = config.cbsPadrao / (config.totalIvaDual || 1)
+    if (ano === 'atual') {
+      // Regime atual pré-reforma: CBS e IBS são 0%
+      aliquotaTotal = 0
+      aliqCbs = 0
+      aliqIbs = 0
+    } else if (grupo === 'reducao_60') {
+      if (ehMesmoAnoDoModulo1) {
+        aliquotaTotal = config.saudeEducacaoAliquota
+      } else {
+        aliquotaTotal = Number((totalIvaBase * 0.4).toFixed(2))
+      }
+      const ratioCbs = totalIvaBase > 0 ? cbsBase / totalIvaBase : 0
       aliqCbs = Number((aliquotaTotal * ratioCbs).toFixed(2))
       aliqIbs = Number((aliquotaTotal - aliqCbs).toFixed(2))
     } else if (grupo === 'reducao_30') {
-      // Aplica a alíquota da faixa de redução de 30% configurada no Módulo 1 (padrão 18,55% ou calculada)
-      aliquotaTotal = config.transporteAliquota
-      const ratioCbs = config.cbsPadrao / (config.totalIvaDual || 1)
+      if (ehMesmoAnoDoModulo1) {
+        aliquotaTotal = config.transporteAliquota
+      } else {
+        aliquotaTotal = Number((totalIvaBase * 0.7).toFixed(2))
+      }
+      const ratioCbs = totalIvaBase > 0 ? cbsBase / totalIvaBase : 0
       aliqCbs = Number((aliquotaTotal * ratioCbs).toFixed(2))
       aliqIbs = Number((aliquotaTotal - aliqCbs).toFixed(2))
     } else if (grupo === 'aliquota_zero') {
-      // Aplica a alíquota da faixa de alíquota zero configurada no Módulo 1 (0%)
-      aliquotaTotal = config.cestaBasicaIsencao
+      aliquotaTotal = 0
       aliqCbs = 0
       aliqIbs = 0
     }
@@ -774,15 +830,31 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const debitoIbs = (valor * aliqIbs) / 100
     const totalDebito = debitoCbs + debitoIbs
 
-    // Créditos = valor × percentual de compras × alíquota total
+    // Créditos = valor × percentual de compras × alíquota total padrão da fase
     const pctCompras = Math.max(0, percentualComprasVendasSimples) / 100
-    // O crédito na aquisição ocorre na alíquota padrão plena (não-cumulatividade ampla)
-    const valorCreditos = valor * pctCompras * (config.totalIvaDual / 100)
+    // O crédito na aquisição ocorre na alíquota padrão plena da fase
+    const valorCreditos = valor * pctCompras * (totalIvaBase / 100)
 
     // A recolher = débito - créditos
     const valorARecolher = Math.max(0, totalDebito - valorCreditos)
     const aliquotaEfetiva = valor > 0 ? (valorARecolher / valor) * 100 : 0
     const valorTotalNotaFiscal = valor // No IVA por fora com split payment, o valor bruto da operação é a base
+
+    // Construção da etiqueta legal informativa com indicação da fase/ano
+    let etiquetaLegalExibida = ''
+    if (ano === 'atual') {
+      etiquetaLegalExibida = 'Sistema atual (pré-reforma) · CBS e IBS em 0,00%'
+    } else if (presetCorrespondente) {
+      etiquetaLegalExibida = `${presetCorrespondente.etiquetaOrigem} · fase ${ano}`
+    } else if (regimeOperacao === 'saude_educacao') {
+      etiquetaLegalExibida = `LC 214/2025 · redução de 60% · fase ${ano}`
+    } else if (regimeOperacao === 'transporte' || regimeOperacao === 'transporte_intelectual') {
+      etiquetaLegalExibida = `LC 214/2025 · redução de 30% · fase ${ano}`
+    } else if (regimeOperacao === 'cesta_basica') {
+      etiquetaLegalExibida = `LC 214/2025 · alíquota zero · fase ${ano}`
+    } else {
+      etiquetaLegalExibida = `LC 214/2025 · alíquota padrão · fase ${ano}`
+    }
 
     return {
       aliquotaCbsAplicada: aliqCbs,
@@ -795,8 +867,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       valorARecolher,
       aliquotaEfetiva,
       valorTotalNotaFiscal,
+      anoOperacao: ano,
+      etiquetaLegalExibida,
     }
-  }, [config, valorOperacao, regimeOperacao, percentualComprasVendasSimples])
+  }, [config, valorOperacao, regimeOperacao, anoOperacao, percentualComprasVendasSimples])
 
   // ==========================================
   // CÁLCULO MÓDULO 3 (Comparativo por Regime)
@@ -1637,7 +1711,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   // CÁLCULO MÓDULO 5 (Transição 2026 a 2033) COM CRÉDITO DE ESTOQUE
   // ==========================================
   const resultadoTransicao = useMemo(() => {
-    const anos = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
+    const anos: AnoTransicaoIbsCbs[] = ['atual', 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
     const fatAnual = Math.max(0, faturamentoAnualProjetado)
 
     // Carga atual estimada de referência para comparação conforme o ramo
@@ -1652,7 +1726,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const impostoAtual = (fatAnual * aliqAtualEstimada) / 100
 
     return anos.map((ano) => {
-      const dadosFase = CRONOGRAMA_FASES_TRANSICAO[ano as AnoTransicaoIbsCbs]
+      const dadosFase = CRONOGRAMA_FASES_TRANSICAO[ano]
       const fase = dadosFase.fase
       const aliqCbs = dadosFase.aliquotaCbs
       const aliqIbs = dadosFase.aliquotaIbs
@@ -1662,7 +1736,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       let statusPisCofins = ''
       let alertaCritico: string | undefined = undefined
 
-      if (ano === 2026) {
+      if (ano === 'atual') {
+        statusIcms = '100% Vigente'
+        statusIss = '100% Vigente'
+        statusIpi = '100% Vigente'
+        statusPisCofins = '100% Vigente'
+      } else if (ano === 2026) {
         statusIcms = '100% Vigente'
         statusIss = '100% Vigente'
         statusIpi = '100% Vigente'
@@ -1711,8 +1790,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
       // Cálculo de alíquota efetiva ponderada da transição
       let aliqEfetivaAno = aliqCbs + aliqIbs
-      if (ano === 2026) {
-        aliqEfetivaAno = aliqAtualEstimada // Em 2026 o teste é compensável sem ônus
+      if (ano === 'atual' || ano === 2026) {
+        aliqEfetivaAno = aliqAtualEstimada // Em 2026 o teste é compensável sem ônus; no atual é a própria carga vigente
       } else if (ano === 2027 || ano === 2028) {
         // CBS (8,7%) + ICMS/ISS integral remanescente
         const remanescente =
@@ -1722,7 +1801,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
               ? 0
               : config.lucroRealIcms
         aliqEfetivaAno = aliqCbs + remanescente
-      } else if (ano >= 2029 && ano <= 2032) {
+      } else if (typeof ano === 'number' && ano >= 2029 && ano <= 2032) {
         const fatorIbs = (ano - 2028) * 0.1 // 0.1, 0.2, 0.3, 0.4
         const fatorAntigo = 1 - fatorIbs
         const remanescente =
@@ -1737,7 +1816,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       }
 
       const impostoEstimado = (fatAnual * aliqEfetivaAno) / 100
-      const diferencaAno = impostoEstimado - impostoAtual
+      const diferencaAno = ano === 'atual' ? 0 : impostoEstimado - impostoAtual
 
       // Etapa 5: Crédito presumido de estoque abatido no primeiro ano de CBS plena (2027)
       const creditoEstoqueAno = ano === 2027 ? resultadoEstoque.economiaAno1 : 0
@@ -1879,6 +1958,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         setValorOperacao,
         regimeOperacao,
         setRegimeOperacao,
+        anoOperacao,
+        setAnoOperacao,
         percentualComprasVendasSimples,
         setPercentualComprasVendasSimples,
 

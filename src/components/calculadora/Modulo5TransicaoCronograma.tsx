@@ -51,11 +51,13 @@ export default function Modulo5TransicaoCronograma() {
   } = useCalculadoraIbsCbs()
 
   // Sincronizado com o ano selecionado no Módulo 1 (se houver) ou 2027 como padrão
-  const [anoSelecionado, setAnoSelecionado] = useState<number>(config.anoTransicao || 2027)
+  const [anoSelecionado, setAnoSelecionado] = useState<number | 'atual'>(
+    config.anoTransicao !== undefined ? config.anoTransicao : 2027,
+  )
 
   // Atualiza quando o ano no Módulo 1 mudar
   React.useEffect(() => {
-    if (config.anoTransicao) {
+    if (config.anoTransicao !== undefined) {
       setAnoSelecionado(config.anoTransicao)
     }
   }, [config.anoTransicao])
@@ -74,7 +76,7 @@ export default function Modulo5TransicaoCronograma() {
 
   // Dados para o gráfico Recharts de evolução da alíquota efetiva
   const dadosGrafico = resultadoTransicao.map((item) => ({
-    ano: String(item.ano),
+    ano: item.ano === 'atual' ? 'Atual' : String(item.ano),
     aliquotaEfetiva: item.aliquotaEfetivaTotal,
     aliquotaCbs: item.aliquotaCbs,
     aliquotaIbs: item.aliquotaIbs,
@@ -83,7 +85,7 @@ export default function Modulo5TransicaoCronograma() {
   }))
 
   const anoAtualDetalhe =
-    resultadoTransicao.find((item) => item.ano === anoSelecionado) || resultadoTransicao[1]
+    resultadoTransicao.find((item) => item.ano === anoSelecionado) || resultadoTransicao[0]
 
   // Totais comparativos acumulados no período de transição
   const totalTransicaoAcumulado = resultadoTransicao.reduce(
@@ -320,17 +322,17 @@ export default function Modulo5TransicaoCronograma() {
           </span>
         </div>
 
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-9 gap-2">
           {resultadoTransicao.map((item) => {
             const isSelected = item.ano === anoSelecionado
             const isCritical = item.ano === 2027 || item.ano === 2033
 
             return (
               <button
-                key={item.ano}
+                key={String(item.ano)}
                 type="button"
                 onClick={() => setAnoSelecionado(item.ano)}
-                className={`relative p-3 rounded-xl border transition-all text-center flex flex-col items-center justify-between min-h-[95px] ${
+                className={`relative p-2.5 rounded-xl border transition-all text-center flex flex-col items-center justify-between min-h-[95px] ${
                   isSelected
                     ? 'bg-[#07132B] text-white border-[#D4AF37] ring-2 ring-[#D4AF37]/50 shadow-lg scale-105 z-10'
                     : 'bg-white text-slate-700 border-slate-200 hover:border-[#D4AF37]/50 hover:bg-slate-50'
@@ -342,11 +344,12 @@ export default function Modulo5TransicaoCronograma() {
                   </span>
                 )}
                 <span
-                  className={`text-base font-extrabold ${isSelected ? 'text-[#D4AF37]' : 'text-slate-900'}`}
+                  className={`text-sm sm:text-base font-extrabold ${isSelected ? 'text-[#D4AF37]' : 'text-slate-900'}`}
                 >
-                  {item.ano}
+                  {item.ano === 'atual' ? 'Atual' : item.ano}
                 </span>
                 <span className="text-[10px] font-medium leading-tight line-clamp-2 mt-1">
+                  {item.ano === 'atual' && 'Pré-reforma'}
                   {item.ano === 2026 && 'Teste 0,1%'}
                   {item.ano === 2027 && 'CBS Plena'}
                   {item.ano === 2028 && 'Consolidação'}
@@ -374,7 +377,8 @@ export default function Modulo5TransicaoCronograma() {
         <div className="bg-[#07132B] text-white p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D4AF37]/30">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 uppercase mb-1">
-              Ano Selecionado: {anoAtualDetalhe.ano}
+              Ano Selecionado:{' '}
+              {anoAtualDetalhe.ano === 'atual' ? 'Ano atual (sistema atual)' : anoAtualDetalhe.ano}
             </div>
             <h3 className="text-xl font-heading font-extrabold text-white">
               {anoAtualDetalhe.fase}
@@ -383,7 +387,7 @@ export default function Modulo5TransicaoCronograma() {
 
           <div className="text-right sm:text-right">
             <span className="text-xs text-slate-400 block">
-              Imposto Projetado ({anoAtualDetalhe.ano})
+              Imposto Projetado ({anoAtualDetalhe.ano === 'atual' ? 'Atual' : anoAtualDetalhe.ano})
             </span>
             <span className="text-2xl font-mono font-extrabold text-[#D4AF37]">
               {formatarMoeda(anoAtualDetalhe.impostoEstimado)}

@@ -105,19 +105,23 @@ export default function Modulo1Configuracoes() {
         </CardHeader>
         <CardContent className="p-5 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Seletor 1: Ano da Transição (2026–2033) — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
+            {/* Seletor 1: Ano da Transição (Ano atual + 2026–2033) — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="seletorAnoTransicao" className="text-xs font-bold text-[#07132B]">
-                  Ano da transição (2026–2033)
+                  Ano da transição
                 </Label>
                 <span className="text-[11px] font-medium text-slate-500">
-                  Mesmos dados do Módulo 5
+                  Sistema atual ou transição LC 214
                 </span>
               </div>
               <Select
                 value={String(anoAtual)}
-                onValueChange={(val) => aplicarAnoTransicao(Number(val) as AnoTransicaoIbsCbs)}
+                onValueChange={(val) =>
+                  aplicarAnoTransicao(
+                    val === 'atual' ? 'atual' : (Number(val) as AnoTransicaoIbsCbs),
+                  )
+                }
               >
                 <SelectTrigger
                   id="seletorAnoTransicao"
@@ -128,12 +132,15 @@ export default function Modulo1Configuracoes() {
                 <SelectContent className="max-h-80">
                   {LISTA_ANOS_TRANSICAO.map((ano) => {
                     const dados = CRONOGRAMA_FASES_TRANSICAO[ano]
+                    const rotuloPrincipal =
+                      ano === 'atual'
+                        ? 'Ano atual (sistema atual) • Pré-reforma (0,00% IBS/CBS)'
+                        : `${ano} • ${dados.fase} (${dados.aliquotaCbs.toFixed(2)}% CBS + ${dados.aliquotaIbs.toFixed(2)}% IBS)`
                     return (
-                      <SelectItem key={ano} value={String(ano)} className="py-2">
+                      <SelectItem key={String(ano)} value={String(ano)} className="py-2">
                         <div className="flex flex-col text-left">
                           <span className="font-bold text-slate-900 text-xs">
-                            {ano} • {dados.fase} ({dados.aliquotaCbs.toFixed(2)}% CBS +{' '}
-                            {dados.aliquotaIbs.toFixed(2)}% IBS)
+                            {rotuloPrincipal}
                           </span>
                           <span className="text-[11px] text-slate-500 leading-tight">
                             {dados.subtitulo}
@@ -145,9 +152,9 @@ export default function Modulo1Configuracoes() {
                 </SelectContent>
               </Select>
               <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
-                <span>Fase vigente selecionada: {CRONOGRAMA_FASES_TRANSICAO[anoAtual]?.fase}</span>
+                <span>Fase selecionada: {CRONOGRAMA_FASES_TRANSICAO[anoAtual]?.fase}</span>
                 <span className="font-mono font-bold text-[#07132B]">
-                  Total: {CRONOGRAMA_FASES_TRANSICAO[anoAtual]?.totalIvaDual.toFixed(2)}%
+                  Total IBS/CBS: {CRONOGRAMA_FASES_TRANSICAO[anoAtual]?.totalIvaDual.toFixed(2)}%
                 </span>
               </div>
             </div>

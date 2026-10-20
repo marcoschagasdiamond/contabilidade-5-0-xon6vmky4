@@ -3,6 +3,9 @@ import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import {
   RegimeDiferenciadoTipo,
+  AnoTransicaoIbsCbs,
+  LISTA_ANOS_TRANSICAO,
+  CRONOGRAMA_FASES_TRANSICAO,
   PRESETS_SETORES_LC214,
   obterInfoRegimeOperacao,
 } from '@/types/calculadoraIbsCbs'
@@ -35,6 +38,8 @@ export default function Modulo2CalculadoraSimples() {
     setValorOperacao,
     regimeOperacao,
     setRegimeOperacao,
+    anoOperacao,
+    setAnoOperacao,
     percentualComprasVendasSimples,
     setPercentualComprasVendasSimples,
     resultadoSimples,
@@ -133,7 +138,7 @@ export default function Modulo2CalculadoraSimples() {
       </div>
 
       {/* Painel de Entradas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 border border-slate-200/80 p-6 rounded-2xl shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 bg-slate-50 border border-slate-200/80 p-6 rounded-2xl shadow-sm">
         {/* Campo 1: Valor da Operação */}
         <div className="space-y-2">
           <Label htmlFor="valorOperacao" className="text-sm font-bold text-[#07132B]">
@@ -157,7 +162,58 @@ export default function Modulo2CalculadoraSimples() {
           </span>
         </div>
 
-        {/* Campo 2: Regime Aplicado */}
+        {/* Campo 2: Ano da Operação (Ano atual + 2026–2033) — SEM ÍCONES */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="anoOperacao" className="text-sm font-bold text-[#07132B]">
+              Ano da Operação
+            </Label>
+            <span className="text-[11px] font-mono font-bold text-[#07132B] bg-[#D4AF37]/20 border border-[#D4AF37]/50 px-1.5 py-0.5 rounded">
+              {anoOperacao === 'atual' ? 'Pré-reforma' : `Fase ${anoOperacao}`}
+            </span>
+          </div>
+          <Select
+            value={String(anoOperacao)}
+            onValueChange={(val) =>
+              setAnoOperacao(val === 'atual' ? 'atual' : (Number(val) as AnoTransicaoIbsCbs))
+            }
+          >
+            <SelectTrigger
+              id="anoOperacao"
+              className="h-12 bg-white border-slate-300 shadow-sm font-medium"
+            >
+              <SelectValue placeholder="Selecione o ano da nota" />
+            </SelectTrigger>
+            <SelectContent className="max-h-80">
+              {LISTA_ANOS_TRANSICAO.map((ano) => {
+                const dados = CRONOGRAMA_FASES_TRANSICAO[ano]
+                const rotulo =
+                  ano === 'atual'
+                    ? 'Ano atual (sistema atual) • Pré-reforma'
+                    : `${ano} • ${dados.fase}`
+                return (
+                  <SelectItem key={String(ano)} value={String(ano)} className="py-2">
+                    <div className="flex flex-col text-left">
+                      <span className="font-bold text-slate-900 text-xs">{rotulo}</span>
+                      <span className="text-[11px] text-slate-500 leading-tight">
+                        {dados.subtitulo}
+                      </span>
+                    </div>
+                  </SelectItem>
+                )
+              })}
+            </SelectContent>
+          </Select>
+          <div className="flex items-center justify-between text-[11px] text-slate-500">
+            <span className="truncate">
+              {anoOperacao === 'atual'
+                ? 'Regime atual (0,00% IBS/CBS)'
+                : `CBS ${CRONOGRAMA_FASES_TRANSICAO[anoOperacao]?.aliquotaCbs.toFixed(2)}% + IBS ${CRONOGRAMA_FASES_TRANSICAO[anoOperacao]?.aliquotaIbs.toFixed(2)}%`}
+            </span>
+          </div>
+        </div>
+
+        {/* Campo 3: Regime Aplicado — SEM ÍCONES */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="regimeOperacao" className="text-sm font-bold text-[#07132B]">
@@ -182,9 +238,7 @@ export default function Modulo2CalculadoraSimples() {
               {presetsPadrao.map((preset) => (
                 <SelectItem key={preset.id} value={preset.id} className="py-2">
                   <div className="flex flex-col text-left">
-                    <span className="font-bold text-slate-900 text-xs">
-                      {preset.titulo} — {formatarPorcentagem(config.totalIvaDual)}
-                    </span>
+                    <span className="font-bold text-slate-900 text-xs">{preset.titulo}</span>
                     <span className="text-[11px] text-slate-500 leading-tight">
                       {preset.etiquetaOrigem} · {preset.subtitulo}
                     </span>
@@ -194,8 +248,7 @@ export default function Modulo2CalculadoraSimples() {
 
               {/* SEÇÃO (1): Redução de 60% (arts. 128–134) */}
               <div className="px-2 py-1.5 mt-2 bg-slate-100 text-[11px] font-bold text-slate-800 uppercase tracking-wider rounded">
-                (1) Redução de 60% — Arts. 128 a 134 (
-                {formatarPorcentagem(config.saudeEducacaoAliquota)})
+                (1) Redução de 60% — Arts. 128 a 134 da LC 214/2025
               </div>
               {presetsReducao60.map((preset) => (
                 <SelectItem key={preset.id} value={preset.id} className="py-2 pl-3">
@@ -210,8 +263,7 @@ export default function Modulo2CalculadoraSimples() {
 
               {/* SEÇÃO (2): Redução de 30% (art. 132) */}
               <div className="px-2 py-1.5 mt-2 bg-slate-100 text-[11px] font-bold text-slate-800 uppercase tracking-wider rounded">
-                (2) Redução de 30% — Profissões Regulamentadas (Art. 132) (
-                {formatarPorcentagem(config.transporteAliquota)})
+                (2) Redução de 30% — Profissões Regulamentadas (Art. 132)
               </div>
               {presetsReducao30.map((preset) => (
                 <SelectItem key={preset.id} value={preset.id} className="py-2 pl-3">
@@ -226,8 +278,7 @@ export default function Modulo2CalculadoraSimples() {
 
               {/* SEÇÃO (3): Alíquota Zero (arts. 8º, 129 e 146) */}
               <div className="px-2 py-1.5 mt-2 bg-slate-100 text-[11px] font-bold text-slate-800 uppercase tracking-wider rounded">
-                (3) Alíquota Zero — Arts. 8º, 129 e 146 (
-                {formatarPorcentagem(config.cestaBasicaIsencao)})
+                (3) Alíquota Zero — Arts. 8º, 129 e 146 da LC 214/2025
               </div>
               {presetsAliquotaZero.map((preset) => (
                 <SelectItem key={preset.id} value={preset.id} className="py-2 pl-3">
@@ -241,18 +292,21 @@ export default function Modulo2CalculadoraSimples() {
               ))}
             </SelectContent>
           </Select>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-500 gap-1">
+          <div className="flex flex-col text-[11px] text-slate-500 gap-0.5">
             <span className="truncate">
               Regra:{' '}
               <strong className="text-slate-800 font-semibold">{infoRegimeAtual.titulo}</strong>
             </span>
-            <span className="font-medium text-emerald-700 shrink-0">
-              {infoRegimeAtual.etiquetaOrigem}
+            <span
+              className="font-medium text-emerald-700 truncate"
+              title={resultadoSimples.etiquetaLegalExibida}
+            >
+              {resultadoSimples.etiquetaLegalExibida || infoRegimeAtual.etiquetaOrigem}
             </span>
           </div>
         </div>
 
-        {/* Campo 3: % de Compras sobre Vendas */}
+        {/* Campo 4: % de Compras sobre Vendas */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <Label htmlFor="percentualCompras" className="text-sm font-bold text-[#07132B]">

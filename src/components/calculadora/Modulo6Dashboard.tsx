@@ -158,9 +158,9 @@ export default function Modulo6Dashboard() {
     },
   ]
 
-  // 2. DADOS GRÁFICO 2: LINHA - Evolução 2026-2033
+  // 2. DADOS GRÁFICO 2: LINHA - Evolução Atual + 2026-2033
   const dadosGraficoLinha = resultadoTransicao.map((item) => ({
-    ano: String(item.ano),
+    ano: item.ano === 'atual' ? 'Atual' : String(item.ano),
     aliquota: item.aliquotaEfetivaTotal,
     imposto: item.impostoEstimado / (periodoDashboard === 'mensal' ? 12 : 1),
   }))
@@ -248,7 +248,9 @@ export default function Modulo6Dashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded bg-[#07132B] text-[#D4AF37] font-mono font-bold text-[11px]">
-                  Fase {config.anoTransicao || 2033}
+                  {config.anoTransicao === 'atual'
+                    ? 'Ano atual (sistema atual)'
+                    : `Fase ${config.anoTransicao || 2033}`}
                 </span>
                 <span className="text-slate-500 font-medium text-[11px]">
                   {PRESETS_SETORES_LC214.find((p) => p.id === config.presetSetor)?.baseLegal}

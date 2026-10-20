@@ -261,9 +261,12 @@ export function ModalCompararSimulacoes({
                       key={sim.id}
                       className="p-3 border-l border-slate-100 font-mono font-medium"
                     >
-                      {sim.parametros.config?.anoTransicao || sim.parametros.anoTransicao
-                        ? `Ano ${sim.parametros.config?.anoTransicao || sim.parametros.anoTransicao}`
-                        : '2033 (Pleno)'}
+                      {sim.parametros.config?.anoTransicao === 'atual' ||
+                      sim.parametros.anoTransicao === 'atual'
+                        ? 'Ano atual (sistema atual)'
+                        : sim.parametros.config?.anoTransicao || sim.parametros.anoTransicao
+                          ? `Ano ${sim.parametros.config?.anoTransicao || sim.parametros.anoTransicao}`
+                          : '2033 (Pleno)'}
                       <span className="text-[10px] text-slate-500 block">
                         CBS: {sim.parametros.config?.cbsPadrao ?? 8.8}% / IBS:{' '}
                         {sim.parametros.config?.ibsPadrao ?? 17.7}%

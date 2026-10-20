@@ -728,7 +728,7 @@ export const LISTA_UFS_ICMS: ItemUfIcms[] = [
   { uf: 'TO', nome: 'Tocantins', aliquotaInternaPadrao: 20 },
 ]
 
-export type AnoTransicaoIbsCbs = 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+export type AnoTransicaoIbsCbs = 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
 
 export type GrupoPresetSetor = 'geral' | 'reducao_60' | 'reducao_30' | 'aliquota_zero'
 
@@ -778,6 +778,16 @@ export interface DadosFaseTransicao {
  * Compartilhada entre Módulo 1 (preenchimento assistido) e Módulo 5 (cronograma 2026–2033).
  */
 export const CRONOGRAMA_FASES_TRANSICAO: Record<AnoTransicaoIbsCbs, DadosFaseTransicao> = {
+  atual: {
+    ano: 'atual',
+    fase: 'Ano atual (sistema atual)',
+    subtitulo: 'Regime atual pré-reforma · CBS e IBS em 0,00% (ICMS, ISS, PIS e COFINS integrais)',
+    aliquotaCbs: 0.0,
+    aliquotaIbs: 0.0,
+    totalIvaDual: 0.0,
+    etiquetaOrigem: 'Sistema atual (pré-reforma)',
+    baseLegal: 'Sistema Tributário Vigente pré-EC 132/2023 (PIS, COFINS, IPI, ICMS e ISS vigentes)',
+  },
   2026: {
     ano: 2026,
     fase: 'Fase de Teste Operacional',
@@ -861,7 +871,15 @@ export const CRONOGRAMA_FASES_TRANSICAO: Record<AnoTransicaoIbsCbs, DadosFaseTra
 }
 
 export const LISTA_ANOS_TRANSICAO: AnoTransicaoIbsCbs[] = [
-  2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033,
+  'atual',
+  2026,
+  2027,
+  2028,
+  2029,
+  2030,
+  2031,
+  2032,
+  2033,
 ]
 
 export interface OpcaoPresetSetor {

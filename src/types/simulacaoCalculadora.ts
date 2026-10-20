@@ -20,12 +20,13 @@ export interface ParametrosSimulacaoCalculadora {
   config: ConfiguracoesGerais
 
   // Preenchimento Assistido do Módulo 1
-  anoTransicao?: 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+  anoTransicao?: 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
   presetSetor?: string
 
   // Módulo 2 - Calculadora Simples
   valorOperacao: number
   regimeOperacao: RegimeDiferenciadoTipo
+  anoOperacao?: 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
   percentualComprasVendasSimples: number
 
   // Módulo 3 - Comparativo por Regime
@@ -84,6 +85,8 @@ export interface ResultadosSimulacaoCalculadora {
     valorARecolher: number
     aliquotaEfetiva: number
     valorTotalNotaFiscal: number
+    anoOperacao?: 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+    etiquetaLegalExibida?: string
   }
   resultadoComparativo: {
     lucroReal: {
@@ -126,7 +129,7 @@ export interface ResultadosSimulacaoCalculadora {
     economiaAnual: number
   }
   resultadoTransicao: Array<{
-    ano: number
+    ano: number | 'atual'
     fase: string
     aliquotaCbs: number
     aliquotaIbs: number

@@ -377,17 +377,25 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.text('MÓDULO 2 • OPERAÇÃO UNITÁRIA', margin + 4, currentY + 5.5)
 
   const infoRegimePdf = obterInfoRegimeOperacao(parametros.regimeOperacao || 'padrao')
+  const anoOperacaoPdf =
+    parametros.anoOperacao ??
+    resultados.resultadoSimples.anoOperacao ??
+    parametros.config.anoTransicao ??
+    2033
+  const etiquetaAnoOperacaoPdf =
+    anoOperacaoPdf === 'atual' ? 'Ano atual (pré-reforma)' : `Fase ${anoOperacaoPdf}`
+
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7)
   doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
   doc.text(
-    `Valor da Operação: ${formatarMoeda(parametros.valorOperacao)}`,
+    `Valor da Operação: ${formatarMoeda(parametros.valorOperacao)} | Ano: ${etiquetaAnoOperacaoPdf}`,
     margin + 4,
     currentY + 10.5,
   )
   doc.text(`Regime: ${infoRegimePdf.titulo.slice(0, 36)}...`, margin + 4, currentY + 15)
   doc.text(
-    `Alíquota Total Aplicada: ${resultados.resultadoSimples.aliquotaTotalAplicada.toFixed(2)}% (${infoRegimePdf.etiquetaOrigem})`,
+    `Alíquota Total Aplicada: ${resultados.resultadoSimples.aliquotaTotalAplicada.toFixed(2)}% (${resultados.resultadoSimples.etiquetaLegalExibida || infoRegimePdf.etiquetaOrigem})`,
     margin + 4,
     currentY + 19.5,
   )
@@ -559,7 +567,9 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   currentY += 6
 
   resultados.resultadoTransicao.forEach((item, idx) => {
-    const isDestaque = item.ano === 2026 || item.ano === 2027 || item.ano === 2033
+    const anoStr = String(item.ano)
+    const isDestaque =
+      anoStr === 'atual' || anoStr === '2026' || anoStr === '2027' || anoStr === '2033'
     doc.setFillColor(
       isDestaque ? 236 : idx % 2 === 0 ? 255 : 248,
       isDestaque ? 253 : idx % 2 === 0 ? 255 : 250,
@@ -576,7 +586,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
       isDestaque ? COR_SECUNDARIA[2] : COR_TEXTO[2],
     )
 
-    doc.text(`${item.ano}`, margin + 3, currentY + 3.8)
+    doc.text(`${anoStr === 'atual' ? 'Atual' : anoStr}`, margin + 3, currentY + 3.8)
     doc.text(item.fase, margin + 18, currentY + 3.8)
     doc.text(`${item.aliquotaCbs.toFixed(1)}%`, margin + 98, currentY + 3.8)
     doc.text(`${item.aliquotaIbs.toFixed(2)}%`, margin + 115, currentY + 3.8)
@@ -609,9 +619,13 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   if (parametros.config.presetSetor && parametros.config.presetSetor !== 'nenhum') {
     labelPresetPdf = ` (${parametros.config.presetSetor})`
   }
-  const infoAssistente = parametros.config.anoTransicao
-    ? ` | Fase Transição: ${parametros.config.anoTransicao}${labelPresetPdf}`
-    : ''
+  const rotuloAnoConfig =
+    parametros.config.anoTransicao === 'atual'
+      ? 'Ano atual (sistema atual)'
+      : parametros.config.anoTransicao
+        ? `${parametros.config.anoTransicao}`
+        : '2033'
+  const infoAssistente = ` | Fase Transição: ${rotuloAnoConfig}${labelPresetPdf}`
   doc.text(
     `CBS: ${parametros.config.cbsPadrao}% | IBS: ${parametros.config.ibsPadrao}% | Total IVA Dual: ${parametros.config.totalIvaDual}%${infoAssistente} | Saúde/Educação (-60%): ${parametros.config.saudeEducacaoAliquota}% | Transp. (-30%): ${parametros.config.transporteAliquota}%`,
     margin + 3,
