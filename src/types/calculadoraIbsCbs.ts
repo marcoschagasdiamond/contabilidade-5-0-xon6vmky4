@@ -1172,6 +1172,7 @@ export interface OrigemCamposAliquota {
   saudeEducacaoAliquota?: string
   transporteAliquota?: string
   cestaBasicaIsencao?: string
+  regimeAtualEmpresa?: string
 }
 
 export interface ConfiguracoesGerais {
