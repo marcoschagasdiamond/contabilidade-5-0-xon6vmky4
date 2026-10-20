@@ -17,6 +17,7 @@ import {
   User,
   LogIn,
   UserPlus,
+  LogOut,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
@@ -26,8 +27,14 @@ export default function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const { isAuthenticated, user, isAdmin } = useAuth()
+  const { isAuthenticated, user, isAdmin, logout } = useAuth()
   const { temDadosSalvos } = useDadosEmpresa()
+
+  const handleLogout = () => {
+    setIsMobileMenuOpen(false)
+    logout()
+    navigate('/')
+  }
 
   const handleToolNav = (e: React.MouseEvent<HTMLAnchorElement>, destino: string) => {
     e.preventDefault()
@@ -211,6 +218,16 @@ export default function Layout() {
                     Admin
                   </Link>
                 )}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  title="Sair da conta"
+                  aria-label="Sair da conta"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-red-500/15 border border-white/10 hover:border-red-400/30 transition-all duration-200 group"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-300 transition-colors" />
+                  <span>Sair</span>
+                </button>
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -358,14 +375,24 @@ export default function Layout() {
             <div className="pt-6 border-t border-white/10 flex flex-col gap-3">
               {isAuthenticated ? (
                 <div className="space-y-2">
-                  <Link
-                    to="/minha-conta"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full py-2.5 px-4 rounded-xl text-center font-semibold text-xs text-white bg-white/10 border border-white/20 flex items-center justify-center gap-2"
-                  >
-                    <User className="w-4 h-4 text-[#2ECC71]" />
-                    <span>Minha Conta ({user?.email})</span>
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/minha-conta"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex-1 py-2.5 px-3 rounded-xl font-semibold text-xs text-white bg-white/10 border border-white/20 flex items-center justify-center gap-2 truncate"
+                    >
+                      <User className="w-4 h-4 text-[#2ECC71] shrink-0" />
+                      <span className="truncate">Minha Conta</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="py-2.5 px-3.5 rounded-xl font-semibold text-xs text-slate-300 hover:text-white bg-white/5 hover:bg-red-500/15 border border-white/10 hover:border-red-400/30 flex items-center justify-center gap-1.5 transition-colors shrink-0 group"
+                    >
+                      <LogOut className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-300 transition-colors" />
+                      <span>Sair</span>
+                    </button>
+                  </div>
                   {isAdmin && (
                     <Link
                       to="/admin"
