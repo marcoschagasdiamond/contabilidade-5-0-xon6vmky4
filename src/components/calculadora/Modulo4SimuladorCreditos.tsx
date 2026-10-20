@@ -54,15 +54,15 @@ export default function Modulo4SimuladorCreditos() {
   const obterClasseTamanhoFonte = (texto: string) => {
     const len = texto.length
     if (len >= 18) {
-      return 'text-base sm:text-lg lg:text-base xl:text-lg'
+      return 'text-sm sm:text-base lg:text-sm xl:text-base'
     }
     if (len >= 14) {
-      return 'text-lg sm:text-xl lg:text-lg xl:text-xl'
+      return 'text-base sm:text-lg lg:text-base xl:text-lg'
     }
     if (len >= 11) {
-      return 'text-xl sm:text-2xl lg:text-xl xl:text-2xl'
+      return 'text-lg sm:text-xl lg:text-lg xl:text-xl'
     }
-    return 'text-2xl'
+    return 'text-xl'
   }
 
   return (
