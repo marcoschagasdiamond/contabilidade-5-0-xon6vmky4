@@ -421,12 +421,9 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
 
   const regimeOpPdf =
-  resultados.resultadoCreditos.regimeOperacao ||
-  parametros.regimeOperacao ||
-  'padrao'
-const grupoRegimePdf =
-  resultados.resultadoCreditos.grupoRegime ||
-  obterGrupoRegimeOperacao(regimeOpPdf)
+    resultados.resultadoCreditos.regimeOperacao || parametros.regimeOperacao || 'padrao'
+  const grupoRegimePdf =
+    resultados.resultadoCreditos.grupoRegime || obterGrupoRegimeOperacao(regimeOpPdf)
   const isAliquotaZeroPdf =
     Boolean(resultados.resultadoCreditos.isAliquotaZero) || grupoRegimePdf === 'aliquota_zero'
 
