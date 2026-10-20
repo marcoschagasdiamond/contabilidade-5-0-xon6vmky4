@@ -63,6 +63,7 @@ export interface ParametrosSimulacaoCalculadora {
   // Módulo 6 - Dashboard
   periodoDashboard: 'mensal' | 'anual'
   regimeAtualFiltro: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
+  regimeAtualEmpresa?: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
 
   // Metadados opcionais da empresa
   empresa?: string

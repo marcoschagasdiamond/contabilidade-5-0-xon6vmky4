@@ -1190,6 +1190,7 @@ export interface ConfiguracoesGerais {
   // Metadados do preenchimento assistido (Módulo 1)
   anoTransicao?: AnoTransicaoIbsCbs
   presetSetor?: PresetSetorIbsCbs
+  regimeAtualEmpresa?: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
   faturamentoMensal?: number
   percentualComprasVendas?: number
   etiquetasOrigem?: OrigemCamposAliquota
@@ -1222,6 +1223,7 @@ export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {
 
   anoTransicao: 2033,
   presetSetor: 'padrao',
+  regimeAtualEmpresa: 'Lucro Presumido',
   faturamentoMensal: 200000,
   percentualComprasVendas: 40,
 
