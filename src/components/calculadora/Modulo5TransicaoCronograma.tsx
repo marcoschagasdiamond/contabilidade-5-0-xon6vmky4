@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import { TipoAtividade, PRESETS_SETORES_LC214 } from '@/types/calculadoraIbsCbs'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -48,6 +49,7 @@ export default function Modulo5TransicaoCronograma() {
     config,
     origemDadosEmpresa,
     restaurarDadosEmpresaNoModulo,
+    origensPropagadas,
   } = useCalculadoraIbsCbs()
 
   // Sincronizado com o ano selecionado no Módulo 1 (se houver) ou 2027 como padrão
@@ -163,9 +165,14 @@ export default function Modulo5TransicaoCronograma() {
       {/* Painel de Entradas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 border border-slate-200/80 p-6 rounded-2xl shadow-sm">
         <div className="space-y-2">
-          <Label htmlFor="fatAnual" className="text-sm font-bold text-[#07132B]">
-            Faturamento Anual Projetado (R$)
-          </Label>
+          <div className="flex items-center justify-between gap-1 flex-wrap">
+            <Label htmlFor="fatAnual" className="text-sm font-bold text-[#07132B]">
+              Faturamento Anual Projetado (R$)
+            </Label>
+            {origensPropagadas?.modulo5Faturamento && (
+              <BadgeOrigemPropagada texto="vindo do Módulo 1 (×12) — editável aqui" />
+            )}
+          </div>
           <Input
             id="fatAnual"
             type="text"

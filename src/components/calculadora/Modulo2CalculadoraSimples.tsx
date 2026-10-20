@@ -31,6 +31,7 @@ import {
   Building2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
 export default function Modulo2CalculadoraSimples() {
   const {
@@ -46,6 +47,7 @@ export default function Modulo2CalculadoraSimples() {
     config,
     origemDadosEmpresa,
     restaurarDadosEmpresaNoModulo,
+    origensPropagadas,
   } = useCalculadoraIbsCbs()
 
   // Presets divididos pelos grupos legais da LC 214/2025 (mesma estrutura do Módulo 1, sem ícones)
@@ -141,9 +143,14 @@ export default function Modulo2CalculadoraSimples() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 bg-slate-50 border border-slate-200/80 p-6 rounded-2xl shadow-sm">
         {/* Campo 1: Valor da Operação */}
         <div className="space-y-2">
-          <Label htmlFor="valorOperacao" className="text-sm font-bold text-[#07132B]">
-            Valor da Operação (R$)
-          </Label>
+          <div className="flex items-center justify-between gap-1 flex-wrap">
+            <Label htmlFor="valorOperacao" className="text-sm font-bold text-[#07132B]">
+              Valor da Operação (R$)
+            </Label>
+            {origensPropagadas?.modulo2ValorOperacao && (
+              <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+            )}
+          </div>
           <div className="relative">
             <Input
               id="valorOperacao"
@@ -164,13 +171,18 @@ export default function Modulo2CalculadoraSimples() {
 
         {/* Campo 2: Ano da Transição (Ano atual + 2026–2033) — SEM ÍCONES */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-1 flex-wrap">
             <Label htmlFor="anoOperacao" className="text-sm font-bold text-[#07132B]">
               Ano da Transição
             </Label>
-            <span className="text-[11px] font-mono font-bold text-[#07132B] bg-[#D4AF37]/20 border border-[#D4AF37]/50 px-1.5 py-0.5 rounded">
-              {anoOperacao === 'atual' ? 'Pré-reforma' : `Fase ${anoOperacao}`}
-            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {origensPropagadas?.modulo2AnoOperacao && (
+                <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+              )}
+              <span className="text-[11px] font-mono font-bold text-[#07132B] bg-[#D4AF37]/20 border border-[#D4AF37]/50 px-1.5 py-0.5 rounded">
+                {anoOperacao === 'atual' ? 'Pré-reforma' : `Fase ${anoOperacao}`}
+              </span>
+            </div>
           </div>
           <Select
             value={String(anoOperacao)}
@@ -215,13 +227,18 @@ export default function Modulo2CalculadoraSimples() {
 
         {/* Campo 3: Regime Aplicado (Preset por Setor) — SEM ÍCONES */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-1 flex-wrap">
             <Label htmlFor="regimeOperacao" className="text-sm font-bold text-[#07132B]">
               Regime Aplicado (Preset por Setor)
             </Label>
-            <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
-              {formatarPorcentagem(resultadoSimples.aliquotaTotalAplicada)}
-            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {origensPropagadas?.modulo2RegimeOperacao && (
+                <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+              )}
+              <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                {formatarPorcentagem(resultadoSimples.aliquotaTotalAplicada)}
+              </span>
+            </div>
           </div>
           <Select
             value={regimeOperacao}
@@ -308,10 +325,15 @@ export default function Modulo2CalculadoraSimples() {
 
         {/* Campo 4: % de Compras sobre Vendas */}
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label htmlFor="percentualCompras" className="text-sm font-bold text-[#07132B]">
-              % de Compras sobre Vendas
-            </Label>
+          <div className="flex justify-between items-center gap-1 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Label htmlFor="percentualCompras" className="text-sm font-bold text-[#07132B]">
+                % de Compras sobre Vendas
+              </Label>
+              {origensPropagadas?.modulo2PercentualCompras && (
+                <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+              )}
+            </div>
             <span className="text-xs font-mono font-bold text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded">
               {percentualComprasVendasSimples}%
             </span>

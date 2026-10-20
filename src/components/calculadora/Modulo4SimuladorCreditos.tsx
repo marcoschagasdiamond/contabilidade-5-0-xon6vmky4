@@ -24,6 +24,7 @@ import {
   Info,
 } from 'lucide-react'
 import { obterInfoRegimeOperacao } from '@/types/calculadoraIbsCbs'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
 export default function Modulo4SimuladorCreditos() {
   const {
@@ -35,6 +36,7 @@ export default function Modulo4SimuladorCreditos() {
     anoOperacao,
     origemDadosEmpresa,
     restaurarDadosEmpresaNoModulo,
+    origensPropagadas,
   } = useCalculadoraIbsCbs()
 
   const handleValorChange = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -405,7 +407,7 @@ export default function Modulo4SimuladorCreditos() {
               tempo real.
             </p>
           </div>
-          <span className="text-xs text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex flex-wrap items-center gap-1">
+          <span className="text-xs text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex flex-wrap items-center gap-1.5">
             <span>Taxa Referência IVA Dual:</span>
             <strong className="text-[#07132B] font-mono font-bold">
               {isAliquotaZero ? '0,00% (zerada)' : formatarPorcentagem(aliqRefCreditos)}
@@ -418,6 +420,12 @@ export default function Modulo4SimuladorCreditos() {
                   ? 'Ano atual (0%) — vinda da calculadora simples'
                   : `fase ${anoEfetivoCreditos} — vinda da calculadora simples`}
             </span>
+            {origensPropagadas?.modulo2AnoOperacao && (
+              <BadgeOrigemPropagada
+                texto="ano original do Módulo 1"
+                title="O ano da operação no Módulo 2 foi mantido a partir do Módulo 1."
+              />
+            )}
           </span>
         </div>
 

@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import {
   TipoAtividade,
   RAMOS_PRINCIPAIS_ATIVOS,
@@ -113,6 +114,7 @@ export default function Modulo3ComparativoRegimes() {
     setDiasAntecipacaoSplit,
     origemDadosEmpresa,
     restaurarDadosEmpresaNoModulo,
+    origensPropagadas,
   } = useCalculadoraIbsCbs()
 
   const handleFaturamentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -221,9 +223,14 @@ export default function Modulo3ComparativoRegimes() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Campo: Faturamento Mensal */}
             <div className="space-y-2">
-              <Label htmlFor="fatMensal" className="text-sm font-bold text-[#07132B]">
-                Faturamento Mensal (R$)
-              </Label>
+              <div className="flex items-center justify-between gap-1 flex-wrap">
+                <Label htmlFor="fatMensal" className="text-sm font-bold text-[#07132B]">
+                  Faturamento Mensal (R$)
+                </Label>
+                {origensPropagadas?.modulo3Faturamento && (
+                  <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+                )}
+              </div>
               <Input
                 id="fatMensal"
                 type="text"
@@ -270,10 +277,15 @@ export default function Modulo3ComparativoRegimes() {
 
             {/* Campo: % Compras sobre Vendas */}
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="pctComprasComp" className="text-sm font-bold text-[#07132B]">
-                  % de Compras sobre Vendas
-                </Label>
+              <div className="flex justify-between items-center gap-1 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Label htmlFor="pctComprasComp" className="text-sm font-bold text-[#07132B]">
+                    % de Compras sobre Vendas
+                  </Label>
+                  {origensPropagadas?.modulo3PercentualCompras && (
+                    <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+                  )}
+                </div>
                 <span className="text-xs font-mono font-bold text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded">
                   {percentualComprasVendasComparativo}%
                 </span>
