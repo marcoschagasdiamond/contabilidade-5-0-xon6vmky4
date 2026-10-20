@@ -311,8 +311,8 @@ export default function Modulo4SimuladorCreditos() {
             <span className="text-slate-400">•</span>
             <span className="text-slate-700 font-medium">
               {anoEfetivoCreditos === 'atual'
-                ? 'Ano atual (0%) — vinda do Módulo 2'
-                : `fase ${anoEfetivoCreditos} — vinda do Módulo 2`}
+                ? 'Ano atual (0%) — vinda da calculadora simples'
+                : `fase ${anoEfetivoCreditos} — vinda da calculadora simples`}
             </span>
           </span>
         </div>
