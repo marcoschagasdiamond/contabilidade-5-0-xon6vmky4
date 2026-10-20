@@ -3,35 +3,20 @@ import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-do
 import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { DadosEmpresaPerfil, DADOS_EMPRESA_PADRAO } from '@/types/dadosEmpresa'
-import {
-  TipoAtividade,
-  SubatividadeServico,
-  SubatividadeIndustria,
-  SubatividadeComercio,
-  SUBATIVIDADES_SERVICO,
-  SUBATIVIDADES_INDUSTRIA,
-  SUBATIVIDADES_COMERCIO,
-  LISTA_UFS_ICMS,
-} from '@/types/calculadoraIbsCbs'
+import { LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
 import {
   SegmentoEmpresa,
-  LISTA_SEGMENTOS,
   CIDADES_ISS_MAPA,
-  RegimeAtualEmpresa,
-  PorteFuncionarios,
-  EmissaoNotaFiscal,
   obterAliquotaISS,
   obterAliquotaIcmsUf,
 } from '@/lib/regimes'
-import { ANOS_SIMULACAO_DISPONIVEIS, AnoBaseSimulacao } from '@/lib/reformaTributaria'
 import { formatarCNPJ, limparCNPJ, validarCNPJ } from '@/lib/cnpj'
-import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
+import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Slider } from '@/components/ui/slider'
 import {
   Select,
   SelectContent,
@@ -40,7 +25,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  Building2,
   Save,
   RotateCcw,
   Sparkles,
@@ -51,16 +35,8 @@ import {
   Calendar,
   FileSpreadsheet,
   ArrowRight,
-  TrendingUp,
-  Percent,
-  Receipt,
   Users,
-  LineChart,
-  Globe2,
-  MapPin,
-  Tag,
   ShieldCheck,
-  AlertCircle,
   ShoppingCart,
   Briefcase,
   Factory,
@@ -72,9 +48,6 @@ import {
   Hammer,
   UtensilsCrossed,
   Info,
-  Phone,
-  Mail,
-  User,
   LogIn,
   UserPlus,
   Cloud,
@@ -133,12 +106,6 @@ export default function DadosEmpresa() {
     const raw = e.target.value.replace(/\D/g, '')
     const valor = Number(raw) / 100
     setFormData((prev) => ({ ...prev, folhaPagamentoMensal: valor }))
-  }
-
-  const handleDespesasCreditosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/\D/g, '')
-    const valor = Number(raw) / 100
-    setFormData((prev) => ({ ...prev, despesasComCreditosMensais: valor }))
   }
 
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -994,7 +961,7 @@ export default function DadosEmpresa() {
                         type="button"
                         onClick={() => {
                           // Sincroniza também tipoAtividade aproximado para a calculadora caso não seja misto
-                          let autoTipo: TipoAtividade = formData.tipoAtividade
+                          let autoTipo = formData.tipoAtividade
                           if (!formData.atividadeMista) {
                             if (item.id === 'Comércio') autoTipo = 'comercio'
                             else if (item.id === 'Indústria') autoTipo = 'industria'
@@ -1136,96 +1103,23 @@ export default function DadosEmpresa() {
                     </p>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                  {/* Emissão de Nota Fiscal PF / PJ */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <Label
-                        htmlFor="emissaoNf"
-                        className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
-                      >
-                        Perfil dos Clientes / Emissão de NF
-                      </Label>
-                      <span className="text-[11px] text-slate-400">B2B ou B2C</span>
-                    </div>
-                    <Select
-                      value={formData.emissaoNf}
-                      onValueChange={(val) => setFormData((prev) => ({ ...prev, emissaoNf: val }))}
-                    >
-                      <SelectTrigger
-                        id="emissaoNf"
-                        className="h-12 bg-white border-slate-300 font-medium text-slate-800"
-                      >
-                        <SelectValue placeholder="Selecione o perfil de emissão" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Predominante para Pessoas Jurídicas (B2B)">
-                          Predominante para Pessoas Jurídicas (B2B)
-                        </SelectItem>
-                        <SelectItem value="Predominante para Consumidor Final / PF (B2C)">
-                          Predominante para Consumidor Final / PF (B2C)
-                        </SelectItem>
-                        <SelectItem value="Equilibrado (PF e PJ)">Equilibrado (PF e PJ)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Clientes PJ costumam exigir créditos fiscais ou reter impostos na fonte.
-                    </p>
-                  </div>
-
-                  {/* Operação mista de comércio e serviço */}
-                  <div>
-                    <Label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Atividade Mista (Comércio + Serviço)
-                    </Label>
-                    <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={formData.atividadeMista}
-                        onChange={(e) => {
-                          const isMisto = e.target.checked
-                          setFormData((prev) => ({
-                            ...prev,
-                            atividadeMista: isMisto,
-                            tipoAtividade: isMisto
-                              ? 'misto'
-                              : prev.tipoAtividade === 'misto'
-                                ? 'servico'
-                                : prev.tipoAtividade,
-                          }))
-                        }}
-                        className="mt-1 w-4 h-4 rounded text-[#2ECC71] focus:ring-[#2ECC71] border-slate-300"
-                      />
-                      <div className="text-xs">
-                        <span className="font-semibold text-slate-800 block">
-                          Minha empresa fatura tanto venda de mercadorias quanto serviços
-                        </span>
-                        <span className="text-slate-500 text-[11px] block mt-0.5">
-                          Ex: oficina mecânica que vende autopeças, empresa de TI que comercializa
-                          equipamentos.
-                        </span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
               </div>
 
-              {/* SUB-BLOCO E: PARÂMETROS OPERACIONAIS COMPLEMENTARES PARA CALCULADORAS */}
+              {/* SUB-BLOCO E: PARÂMETROS OPERACIONAIS FINANCEIROS */}
               <div className="pt-5 border-t border-slate-100 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#07132B]" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                      Parâmetros Econômicos Operacionais (Calculadoras e Motores)
+                      Parâmetros Econômicos Operacionais (Faturamento e Folha)
                     </h4>
                   </div>
                   <span className="text-[11px] text-slate-500">
-                    Alimenta o Passo 2 do Diagnóstico e Módulos 2 a 6
+                    Alimenta o Passo 2 do Diagnóstico e Módulos da Calculadora
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {/* Faturamento Mensal */}
                   <div className="space-y-2">
                     <Label htmlFor="fatMensal" className="text-sm font-bold text-[#07132B]">
@@ -1247,534 +1141,41 @@ export default function DadosEmpresa() {
                     </span>
                   </div>
 
-                  {/* % de Compras sobre Vendas */}
+                  {/* Folha de Pagamento Mensal */}
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label htmlFor="pctCompras" className="text-sm font-bold text-[#07132B]">
-                        % de Compras sobre Vendas *
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="folhaMensal"
+                        className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
+                      >
+                        <Users className="w-4 h-4 text-[#D4AF37]" />
+                        Folha Mensal (com Pró-labore) *
                       </Label>
-                      <span className="text-xs font-mono font-bold text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded">
-                        {formData.percentualComprasVendas}%
+                      <span
+                        className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
+                          fatorR >= 28
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        R = {fatorR.toFixed(1)}%
                       </span>
                     </div>
-                    <div className="relative">
-                      <Input
-                        id="pctCompras"
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={formData.percentualComprasVendas}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            percentualComprasVendas: Number(e.target.value),
-                          }))
-                        }
-                        className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm pr-10"
-                      />
-                      <span className="absolute right-4 top-3 text-slate-400 font-bold">%</span>
-                    </div>
-                    <span className="text-[11px] text-slate-500 block">
-                      Insumos e mercadorias que geram crédito no IVA Dual e Lucro Real.
-                    </span>
-                  </div>
-
-                  {/* O que vende (Ramo para a calculadora) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="tipoAtividade" className="text-sm font-bold text-[#07132B]">
-                      Ramo para Enquadramento Geral *
-                    </Label>
-                    <Select
-                      value={formData.tipoAtividade}
-                      onValueChange={(val) => {
-                        const novoTipo = val as TipoAtividade
-                        setFormData((prev) => ({
-                          ...prev,
-                          tipoAtividade: novoTipo,
-                          atividadeMista: novoTipo === 'misto',
-                        }))
-                      }}
-                    >
-                      <SelectTrigger
-                        id="tipoAtividade"
-                        className="h-12 bg-white border-slate-300 shadow-sm font-medium text-slate-800"
-                      >
-                        <SelectValue placeholder="Selecione o ramo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="servico">
-                          Serviço (ISS / Presunção 32% ou 16%)
-                        </SelectItem>
-                        <SelectItem value="comercio">
-                          Comércio (ICMS / ICMS-ST / Presunção 8%)
-                        </SelectItem>
-                        <SelectItem value="industria">
-                          Indústria (IPI / Imposto Seletivo / Presunção 8%)
-                        </SelectItem>
-                        <SelectItem value="misto">
-                          Misto (Serviço + Comércio com proporção customizada)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <span className="text-[11px] text-slate-500 block">
-                      Define regras incidentes (ISS, IPI, ICMS) e o Anexo do Simples.
-                    </span>
-                  </div>
-                </div>
-
-                {/* Subatividade detalhada conforme o ramo */}
-                <div className="p-4 sm:p-5 rounded-2xl border bg-slate-50/70 border-slate-200 mt-2">
-                  {formData.tipoAtividade === 'servico' && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label
-                          htmlFor="subServico"
-                          className="text-sm font-bold text-[#07132B] flex items-center gap-2"
-                        >
-                          <Tag className="w-4 h-4 text-[#D4AF37]" />
-                          Subatividade de Serviço (Presunção IRPJ/CSLL & Reduções IBS/CBS) *
-                        </Label>
-                        <span className="text-xs text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full font-semibold border border-blue-200">
-                          5 perfis regulatórios
-                        </span>
-                      </div>
-                      <Select
-                        value={formData.subatividadeServico}
-                        onValueChange={(val) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            subatividadeServico: val as SubatividadeServico,
-                          }))
-                        }
-                      >
-                        <SelectTrigger
-                          id="subServico"
-                          className="h-12 bg-white border-blue-300 font-medium"
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SUBATIVIDADES_SERVICO.map((item) => (
-                            <SelectItem key={item.id} value={item.id} className="py-2">
-                              <div>
-                                <span className="font-bold text-slate-900 block">{item.label}</span>
-                                <span className="text-xs text-slate-500 block">
-                                  {item.descricao}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {formData.tipoAtividade === 'industria' && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label
-                          htmlFor="subIndustria"
-                          className="text-sm font-bold text-[#07132B] flex items-center gap-2"
-                        >
-                          <Tag className="w-4 h-4 text-[#D4AF37]" />
-                          Subatividade Industrial (IPI & Imposto Seletivo) *
-                        </Label>
-                        <span className="text-xs text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full font-semibold border border-amber-200">
-                          Ajusta alíquotas industriais
-                        </span>
-                      </div>
-                      <Select
-                        value={formData.subatividadeIndustria}
-                        onValueChange={(val) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            subatividadeIndustria: val as SubatividadeIndustria,
-                          }))
-                        }
-                      >
-                        <SelectTrigger
-                          id="subIndustria"
-                          className="h-12 bg-white border-amber-300 font-medium"
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SUBATIVIDADES_INDUSTRIA.map((item) => (
-                            <SelectItem key={item.id} value={item.id} className="py-2">
-                              <div>
-                                <span className="font-bold text-slate-900 block">{item.label}</span>
-                                <span className="text-xs text-slate-500 block">
-                                  {item.descricao}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {formData.tipoAtividade === 'comercio' && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label
-                          htmlFor="subComercio"
-                          className="text-sm font-bold text-[#07132B] flex items-center gap-2"
-                        >
-                          <Tag className="w-4 h-4 text-[#D4AF37]" />
-                          Subatividade de Comércio (ICMS Próprio vs ICMS-ST / Atacado) *
-                        </Label>
-                        <span className="text-xs text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full font-semibold border border-emerald-200">
-                          Presunção de 8%
-                        </span>
-                      </div>
-                      <Select
-                        value={formData.subatividadeComercio}
-                        onValueChange={(val) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            subatividadeComercio: val as SubatividadeComercio,
-                          }))
-                        }
-                      >
-                        <SelectTrigger
-                          id="subComercio"
-                          className="h-12 bg-white border-emerald-300 font-medium"
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SUBATIVIDADES_COMERCIO.map((item) => (
-                            <SelectItem key={item.id} value={item.id} className="py-2">
-                              <div>
-                                <span className="font-bold text-slate-900 block">{item.label}</span>
-                                <span className="text-xs text-slate-500 block">
-                                  {item.descricao}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {formData.tipoAtividade === 'misto' && (
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-sm font-bold text-[#07132B] flex items-center gap-2">
-                          <Tag className="w-4 h-4 text-[#D4AF37]" />
-                          Proporção no Ramo Misto:
-                        </Label>
-                        <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded">
-                          {formData.proporcaoServicoMisto}% Serviço |{' '}
-                          {100 - formData.proporcaoServicoMisto}% Comércio
-                        </span>
-                      </div>
-                      <Slider
-                        value={[formData.proporcaoServicoMisto]}
-                        min={0}
-                        max={100}
-                        step={5}
-                        onValueChange={(val) =>
-                          setFormData((prev) => ({ ...prev, proporcaoServicoMisto: val[0] }))
-                        }
-                      />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                        <div className="space-y-1.5 bg-white p-3 rounded-lg border border-slate-200">
-                          <Label className="text-xs font-bold text-slate-800">
-                            Subatividade da parte de Serviço:
-                          </Label>
-                          <Select
-                            value={formData.subatividadeServico}
-                            onValueChange={(val) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                subatividadeServico: val as SubatividadeServico,
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="h-10 text-xs font-medium">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SUBATIVIDADES_SERVICO.map((item) => (
-                                <SelectItem key={item.id} value={item.id} className="text-xs">
-                                  {item.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-1.5 bg-white p-3 rounded-lg border border-slate-200">
-                          <Label className="text-xs font-bold text-slate-800">
-                            Subatividade da parte de Comércio:
-                          </Label>
-                          <Select
-                            value={formData.subatividadeComercio}
-                            onValueChange={(val) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                subatividadeComercio: val as SubatividadeComercio,
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="h-10 text-xs font-medium">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SUBATIVIDADES_COMERCIO.map((item) => (
-                                <SelectItem key={item.id} value={item.id} className="text-xs">
-                                  {item.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* ========================================================================= */}
-          {/* BLOCO 2: PARÂMETROS DE ALTA PRECISÃO TRIBUTÁRIA */}
-          {/* ========================================================================= */}
-          <Card className="border border-slate-200/90 shadow-md overflow-hidden bg-white rounded-2xl">
-            <div className="bg-slate-50 border-b border-slate-200 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#07132B] flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" />
-                  Bloco de Alta Precisão
-                </span>
-                <h3 className="text-xl font-heading font-extrabold text-[#07132B]">
-                  2. Parâmetros de alta precisão tributária
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Variáveis que refinam o Fator R (Simples), o Lucro Real contábil, créditos
-                  operacionais e a cronologia da Reforma.
-                </p>
-              </div>
-              <span className="text-xs font-mono font-medium text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 self-start sm:self-auto">
-                Ano-base: {formData.anoBaseTransicao}
-              </span>
-            </div>
-
-            <CardContent className="p-6 sm:p-8 space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Campo 2.1: Folha de Pagamento Mensal */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label
-                      htmlFor="folhaMensal"
-                      className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
-                    >
-                      <Users className="w-4 h-4 text-[#D4AF37]" />
-                      Folha Mensal (com Pró-labore) *
-                    </Label>
-                    <span
-                      className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-                        fatorR >= 28
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      R = {fatorR.toFixed(1)}%
-                    </span>
-                  </div>
-                  <Input
-                    id="folhaMensal"
-                    type="text"
-                    value={formData.folhaPagamentoMensal.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })}
-                    onChange={handleFolhaChange}
-                    className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm"
-                  />
-                  <span className="text-[11px] text-slate-500 block">
-                    Folha 12m: <strong>{formatarMoeda(folhaAnual)}</strong>. Se ≥ 28%, garante Anexo
-                    III.
-                  </span>
-                </div>
-
-                {/* Campo 2.2: Margem de Lucro Estimada (%) */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label
-                      htmlFor="margemLucro"
-                      className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
-                    >
-                      <LineChart className="w-4 h-4 text-[#D4AF37]" />
-                      Margem de Lucro Estimada (%) *
-                    </Label>
-                    <span className="text-xs font-mono font-bold text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded">
-                      {formData.margemLucroEstimada}%
-                    </span>
-                  </div>
-                  <div className="relative">
                     <Input
-                      id="margemLucro"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.5"
-                      value={formData.margemLucroEstimada}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          margemLucroEstimada: Number(e.target.value),
-                        }))
-                      }
-                      className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm pr-10"
+                      id="folhaMensal"
+                      type="text"
+                      value={formData.folhaPagamentoMensal.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      })}
+                      onChange={handleFolhaChange}
+                      className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm"
                     />
-                    <span className="absolute right-4 top-3 text-slate-400 font-bold">%</span>
-                  </div>
-                  <span className="text-[11px] text-slate-500 block">
-                    Lucro líquido contábil mensal estimado:{' '}
-                    <strong>
-                      {formatarMoeda(
-                        (formData.faturamentoMensal * formData.margemLucroEstimada) / 100,
-                      )}
-                    </strong>
-                    .
-                  </span>
-                </div>
-
-                {/* Campo 2.3: Despesas Mensais com Créditos */}
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="despesasCreditos"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
-                  >
-                    <Receipt className="w-4 h-4 text-[#D4AF37]" />
-                    Despesas Mensais com Créditos (R$) *
-                  </Label>
-                  <Input
-                    id="despesasCreditos"
-                    type="text"
-                    value={formData.despesasComCreditosMensais.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })}
-                    onChange={handleDespesasCreditosChange}
-                    className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm"
-                  />
-                  <span className="text-[11px] text-slate-500 block">
-                    Aluguel, energia, telecom e TI (gera crédito integral no IVA Dual).
-                  </span>
-                </div>
-
-                {/* Campo 2.4: % de Exportação */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label
-                      htmlFor="pctExportacao"
-                      className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
-                    >
-                      <Globe2 className="w-4 h-4 text-[#D4AF37]" />% de Exportação *
-                    </Label>
-                    <span className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
-                      {formData.percentualExportacao}%
+                    <span className="text-[11px] text-slate-500 block">
+                      Folha 12m: <strong>{formatarMoeda(folhaAnual)}</strong>. Se ≥ 28%, garante
+                      Anexo III.
                     </span>
                   </div>
-                  <div className="relative">
-                    <Input
-                      id="pctExportacao"
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={formData.percentualExportacao}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          percentualExportacao: Number(e.target.value),
-                        }))
-                      }
-                      className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm pr-10"
-                    />
-                    <span className="absolute right-4 top-3 text-slate-400 font-bold">%</span>
-                  </div>
-                  <span className="text-[11px] text-slate-500 block">
-                    Receita desonerada de IBS/CBS, PIS/COFINS e ICMS com créditos mantidos.
-                  </span>
-                </div>
-
-                {/* Campo 2.5: Regime Atual */}
-                <div className="space-y-2">
-                  <Label htmlFor="regimeAtual" className="text-sm font-bold text-[#07132B]">
-                    Regime Tributário Atual *
-                  </Label>
-                  <Select
-                    value={formData.regimeAtual}
-                    onValueChange={(val) => setFormData((prev) => ({ ...prev, regimeAtual: val }))}
-                  >
-                    <SelectTrigger
-                      id="regimeAtual"
-                      className="h-12 bg-white border-slate-300 font-medium text-slate-800"
-                    >
-                      <SelectValue placeholder="Selecione o regime atual" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Simples Nacional">Simples Nacional</SelectItem>
-                      <SelectItem value="Lucro Presumido">Lucro Presumido</SelectItem>
-                      <SelectItem value="Lucro Real">Lucro Real</SelectItem>
-                      <SelectItem value="MEI (Microempreendedor)">
-                        MEI (Microempreendedor)
-                      </SelectItem>
-                      <SelectItem value="Nova empresa / Ainda não optante">
-                        Nova empresa / Ainda não optante
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className="text-[11px] text-slate-500 block">
-                    Base de comparação para demonstrar economia frente ao modelo atual.
-                  </span>
-                </div>
-
-                {/* Campo 2.6: Ano-base da Transição (2026–2033) */}
-                <div className="space-y-2">
-                  <Label htmlFor="anoBase" className="text-sm font-bold text-[#07132B]">
-                    Ano-base da Transição (2026–2033) *
-                  </Label>
-                  <Select
-                    value={String(formData.anoBaseTransicao)}
-                    onValueChange={(val) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        anoBaseTransicao: Number(val) as AnoBaseSimulacao,
-                      }))
-                    }
-                  >
-                    <SelectTrigger
-                      id="anoBase"
-                      className="h-12 bg-white border-slate-300 font-medium text-slate-800"
-                    >
-                      <SelectValue placeholder="Selecione o ano-base" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ANOS_SIMULACAO_DISPONIVEIS.map((ano) => (
-                        <SelectItem key={ano} value={String(ano)}>
-                          {ano}{' '}
-                          {ano === 2026
-                            ? '— Teste Operacional 0,1%'
-                            : ano === 2027
-                              ? '— CBS Plena + Fim PIS/COFINS'
-                              : ano === 2028
-                                ? '— Consolidação CBS'
-                                : ano === 2033
-                                  ? '— Sistema Pleno 100%'
-                                  : `— IBS ${(ano - 2028) * 10}% / ICMS ${100 - (ano - 2028) * 10}%`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <span className="text-[11px] text-slate-500 block">
-                    Calibra a transição federativa no Diagnóstico e no Módulo 5.
-                  </span>
                 </div>
               </div>
             </CardContent>
