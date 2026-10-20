@@ -298,6 +298,10 @@ export default function Modulo6Dashboard() {
                   <SelectItem value="anual">Visão Anual</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1.5 leading-snug">
+                Alterna os valores em R$ entre mensal e anual — afeta o Quadro Comparativo e os
+                gráficos
+              </p>
             </div>
 
             {/* Filtro: Setor (com BadgeOrigemPropagada quando propagado) */}
@@ -326,6 +330,10 @@ export default function Modulo6Dashboard() {
                   <SelectItem value="misto">Misto</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1.5 leading-snug">
+                Define a atividade para as alíquotas — afeta os KPIs, o Gráfico 1 e o Quadro
+                Comparativo
+              </p>
             </div>
 
             {/* Filtro: Faturamento Mensal (com BadgeOrigemPropagada quando propagado) */}
@@ -345,6 +353,9 @@ export default function Modulo6Dashboard() {
                 onChange={handleFaturamentoChange}
                 className="h-10 bg-white font-mono font-bold text-xs"
               />
+              <p className="text-xs text-muted-foreground mt-1.5 leading-snug">
+                Base de todos os cálculos — afeta KPIs, quadro, gráficos e Split Payment
+              </p>
             </div>
 
             {/* Filtro: % Compras s/ Vendas (com BadgeOrigemPropagada quando propagado) */}
@@ -368,6 +379,9 @@ export default function Modulo6Dashboard() {
                   %
                 </span>
               </div>
+              <p className="text-xs text-muted-foreground mt-1.5 leading-snug">
+                Define o abatimento de créditos — afeta KPIs 2 a 4, quadro, gráficos e Split Payment
+              </p>
             </div>
           </div>
         </CardContent>
