@@ -63,8 +63,14 @@ export default function Modulo4SimuladorCreditos() {
   // Formatações dos 5 valores dos cards de resumo
   const strTotalAntigo = formatarMoeda(totalAntigo)
   const strTotalNovo = formatarMoeda(totalNovo)
-  const strAdicionalGanho = `+ ${formatarMoeda(adicionalGanho)}`
-  const strAumentoPercentual = `+ ${formatarPorcentagem(aumentoPercentual, 1)}`
+  const strAdicionalGanho =
+    adicionalGanho < 0
+      ? `− ${formatarMoeda(Math.abs(adicionalGanho))}`
+      : `+ ${formatarMoeda(adicionalGanho)}`
+  const strAumentoPercentual =
+    aumentoPercentual < 0
+      ? `− ${formatarPorcentagem(Math.abs(aumentoPercentual), 1)}`
+      : `+ ${formatarPorcentagem(aumentoPercentual, 1)}`
   const strEconomiaAnual = formatarMoeda(economiaAnual)
 
   // Escala responsiva da fonte com base na quantidade de caracteres para evitar estouro em cards compactos
@@ -220,46 +226,74 @@ export default function Modulo4SimuladorCreditos() {
         </Card>
 
         {/* Card 3: Crédito Adicional Ganho */}
-        <Card className="min-w-0 border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 to-white shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
+        <Card
+          className={`min-w-0 shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between ${
+            adicionalGanho < 0
+              ? 'border-red-200/80 bg-gradient-to-br from-red-50/40 to-white'
+              : 'border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 to-white'
+          }`}
+        >
           <CardContent className="p-4 sm:p-5 space-y-1.5 min-w-0 flex flex-col justify-between h-full">
             <div className="space-y-1.5">
               <span
-                className="text-[11px] sm:text-xs font-bold text-emerald-800 uppercase tracking-wider block leading-tight min-h-[2rem] flex items-center break-words"
+                className={`text-[11px] sm:text-xs font-bold uppercase tracking-wider block leading-tight min-h-[2rem] flex items-center break-words ${
+                  adicionalGanho < 0 ? 'text-red-800' : 'text-emerald-800'
+                }`}
                 title="Crédito Adicional Ganho"
               >
                 Crédito Adicional Ganho
               </span>
               <p
-                className={`${obterClasseTamanhoFonte(strAdicionalGanho)} font-mono font-extrabold text-emerald-700 tracking-tight break-words min-w-0`}
+                className={`${obterClasseTamanhoFonte(strAdicionalGanho)} font-mono font-extrabold ${
+                  adicionalGanho < 0 ? 'text-red-600' : 'text-emerald-700'
+                } tracking-tight break-words min-w-0`}
                 title={strAdicionalGanho}
               >
                 {strAdicionalGanho}
               </p>
             </div>
-            <span className="text-[11px] text-emerald-600 font-medium block leading-tight pt-1">
+            <span
+              className={`text-[11px] font-medium block leading-tight pt-1 ${
+                adicionalGanho < 0 ? 'text-red-600' : 'text-emerald-600'
+              }`}
+            >
               Ganho líquido mensal de crédito
             </span>
           </CardContent>
         </Card>
 
         {/* Card 4: Aumento Percentual */}
-        <Card className="min-w-0 border-slate-200 shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
+        <Card
+          className={`min-w-0 shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between ${
+            aumentoPercentual < 0
+              ? 'border-red-200/80 bg-gradient-to-br from-red-50/20 to-white'
+              : 'border-slate-200'
+          }`}
+        >
           <CardContent className="p-4 sm:p-5 space-y-1.5 min-w-0 flex flex-col justify-between h-full">
             <div className="space-y-1.5">
               <span
-                className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block leading-tight min-h-[2rem] flex items-center break-words"
+                className={`text-[11px] sm:text-xs uppercase tracking-wider block leading-tight min-h-[2rem] flex items-center break-words ${
+                  aumentoPercentual < 0 ? 'font-bold text-red-800' : 'font-semibold text-slate-500'
+                }`}
                 title="Aumento Percentual"
               >
                 Aumento Percentual
               </span>
               <p
-                className={`${obterClasseTamanhoFonte(strAumentoPercentual)} font-mono font-extrabold text-[#07132B] tracking-tight break-words min-w-0`}
+                className={`${obterClasseTamanhoFonte(strAumentoPercentual)} font-mono font-extrabold ${
+                  aumentoPercentual < 0 ? 'text-red-600' : 'text-[#07132B]'
+                } tracking-tight break-words min-w-0`}
                 title={strAumentoPercentual}
               >
                 {strAumentoPercentual}
               </p>
             </div>
-            <span className="text-[11px] text-slate-400 block leading-tight pt-1">
+            <span
+              className={`text-[11px] block leading-tight pt-1 ${
+                aumentoPercentual < 0 ? 'text-red-600 font-medium' : 'text-slate-400'
+              }`}
+            >
               Crescimento relativo na carteira de créditos
             </span>
           </CardContent>
@@ -290,6 +324,17 @@ export default function Modulo4SimuladorCreditos() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Linha explicativa quando o ganho total for negativo */}
+      {adicionalGanho < 0 && (
+        <div className="bg-red-50/90 border border-red-200/90 rounded-xl p-3 px-4 text-xs text-red-900 flex items-center gap-2 shadow-sm animate-fade-in">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>
+            Crédito menor que o atual: na fase selecionada a alíquota IBS/CBS ainda não supera a
+            carga de créditos do sistema antigo.
+          </span>
+        </div>
+      )}
 
       {/* Tabela Interativa de 18 Categorias Conforme Especificação */}
       <Card className="border-slate-200 shadow-lg overflow-hidden">
@@ -382,8 +427,16 @@ export default function Modulo4SimuladorCreditos() {
                         ({formatarPorcentagem(aliqNova, 1)})
                       </div>
                     </TableCell>
-                    <TableCell className="text-center font-mono font-bold text-emerald-700 bg-emerald-50/40 py-3">
-                      + {formatarMoeda(Math.max(0, ganho))}
+                    <TableCell
+                      className={`text-center font-mono font-bold py-3 ${
+                        ganho < 0
+                          ? 'text-red-600 bg-red-50/40'
+                          : 'text-emerald-700 bg-emerald-50/40'
+                      }`}
+                    >
+                      {ganho < 0
+                        ? `− ${formatarMoeda(Math.abs(ganho))}`
+                        : `+ ${formatarMoeda(ganho)}`}
                     </TableCell>
                   </TableRow>
                 )
@@ -401,8 +454,16 @@ export default function Modulo4SimuladorCreditos() {
                 <TableCell className="text-center font-mono text-[#D4AF37] bg-slate-800">
                   {formatarMoeda(totalNovo)}
                 </TableCell>
-                <TableCell className="text-center font-mono text-emerald-400 bg-emerald-950/40">
-                  + {formatarMoeda(adicionalGanho)}
+                <TableCell
+                  className={`text-center font-mono ${
+                    adicionalGanho < 0
+                      ? 'text-red-400 bg-red-950/40'
+                      : 'text-emerald-400 bg-emerald-950/40'
+                  }`}
+                >
+                  {adicionalGanho < 0
+                    ? `− ${formatarMoeda(Math.abs(adicionalGanho))}`
+                    : `+ ${formatarMoeda(adicionalGanho)}`}
                 </TableCell>
               </TableRow>
             </TableBody>

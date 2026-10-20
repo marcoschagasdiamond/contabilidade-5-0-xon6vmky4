@@ -1575,7 +1575,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       totalNovo += cNovo
     })
 
-    const adicionalGanho = Math.max(0, totalNovo - totalAntigo)
+    const adicionalGanho = totalNovo - totalAntigo
     const aumentoPercentual = totalAntigo > 0 ? (adicionalGanho / totalAntigo) * 100 : 0
     const economiaAnual = adicionalGanho * 12
 
