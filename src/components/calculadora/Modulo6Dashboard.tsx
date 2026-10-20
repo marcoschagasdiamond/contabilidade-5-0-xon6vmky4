@@ -3,6 +3,7 @@ import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import { TipoAtividade } from '@/types/calculadoraIbsCbs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -165,13 +166,34 @@ export default function Modulo6Dashboard() {
     imposto: item.impostoEstimado / (periodoDashboard === 'mensal' ? 12 : 1),
   }))
 
+  // Alíquota de referência efetiva dinâmica para apuração de créditos do Módulo 4
+  const aliqRefCreditos =
+    resultadoCreditos?.aliquotaReferencia !== undefined
+      ? resultadoCreditos.aliquotaReferencia
+      : config.totalIvaDual !== undefined
+        ? config.totalIvaDual
+        : 26.5
+  const isAliquotaZeroCreditos = Boolean(resultadoCreditos?.isAliquotaZero)
+
   // 3. DADOS GRÁFICO 3: PIZZA - Composição dos Créditos Antigos versus Novos
-  // Agrupa as principais fontes de crédito da lista de despesas
-  const dadosPizzaCreditos = despesasCreditos.slice(0, 5).map((item) => ({
-    name: item.nome,
-    antigo: (item.valorMensal * item.aliquotaAntiga) / 100,
-    novo: (item.valorMensal * 26.5) / 100,
-  }))
+  // Agrupa as principais fontes de crédito da lista de despesas usando a alíquota dinâmica do Módulo 4
+  const dadosPizzaCreditos = despesasCreditos.slice(0, 5).map((item) => {
+    const aliqNova = isAliquotaZeroCreditos
+      ? 0
+      : item.aliquotaNova !== undefined
+        ? item.aliquotaNova
+        : aliqRefCreditos
+
+    return {
+      name: item.nome,
+      antigo: (item.valorMensal * item.aliquotaAntiga) / 100,
+      novo: (item.valorMensal * aliqNova) / 100,
+      aliquotaNovaAplicada: aliqNova,
+    }
+  })
+
+  // Ano selecionado na simulação (config.anoTransicao ou anoOperacao)
+  const anoSimulacaoSelecionado = config.anoTransicao || 'atual'
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -448,6 +470,165 @@ export default function Modulo6Dashboard() {
         </Card>
       </div>
 
+      {/* MUDANÇA 1: QUADRO COMPARATIVO DA TRANSIÇÃO COMPLETA (ATUAL + 2026 A 2033) */}
+      <Card className="border-slate-200 shadow-lg overflow-hidden bg-white">
+        <div className="p-5 bg-[#07132B] text-white border-b border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+              <h3 className="font-heading font-bold text-lg text-white">
+                Quadro Comparativo da Transição Completa (LC 214/2025)
+              </h3>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Comparativo de todos os anos da reforma tributária (
+              {periodoDashboard === 'mensal' ? 'Valores Mensais' : 'Valores Anualizados'}),
+              independente do ano da simulação escolhido.
+            </p>
+          </div>
+          <div className="text-xs font-mono text-[#D4AF37] bg-white/10 px-3 py-1 rounded-lg border border-[#D4AF37]/40">
+            Ano selecionado na simulação:{' '}
+            <span className="font-bold text-white">
+              {anoSimulacaoSelecionado === 'atual' ? 'Ano Atual' : anoSimulacaoSelecionado}
+            </span>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-slate-100 text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200">
+              <tr>
+                <th className="px-5 py-3.5">Ano</th>
+                <th className="px-5 py-3.5">Fase da Transição (LC 214/2025)</th>
+                <th className="px-5 py-3.5 text-center">Alíquota IBS/CBS do Ano</th>
+                <th className="px-5 py-3.5 text-center">Alíquota Efetiva da Empresa</th>
+                <th className="px-5 py-3.5 text-center">
+                  Carga Tributária ({periodoDashboard === 'mensal' ? 'R$/mês' : 'R$/ano'})
+                </th>
+                <th className="px-5 py-3.5 text-center">Diferença vs. Sistema Atual</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {resultadoTransicao.map((item) => {
+                const isSelected = String(item.ano) === String(anoSimulacaoSelecionado)
+                const aliqTotalIbsCbs = Number((item.aliquotaCbs + item.aliquotaIbs).toFixed(2))
+
+                // Carga no período filtrado (mensal ou anual)
+                const cargaPeriodo =
+                  periodoDashboard === 'mensal' ? item.impostoEstimado / 12 : item.impostoEstimado
+
+                const cargaAtualPeriodo =
+                  periodoDashboard === 'mensal'
+                    ? item.impostoCenarioAtual / 12
+                    : item.impostoCenarioAtual
+
+                // Diferença: Imposto Carga Atual - Imposto Novo Carga (Economia positiva, Perda negativa)
+                // Se diferencaPeriodo > 0: economia (paga menos no novo sistema)
+                // Se diferencaPeriodo < 0: aumento de carga / perda
+                const diferencaPeriodo = item.ano === 'atual' ? 0 : cargaAtualPeriodo - cargaPeriodo
+
+                return (
+                  <tr
+                    key={item.ano}
+                    className={`transition-colors ${
+                      isSelected
+                        ? 'bg-[#D4AF37]/15 border-l-4 border-l-[#D4AF37] font-semibold text-slate-900 shadow-sm'
+                        : 'hover:bg-slate-50/80 text-slate-800'
+                    }`}
+                  >
+                    {/* Ano */}
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-sm text-[#07132B]">
+                          {item.ano === 'atual' ? 'Ano Atual' : item.ano}
+                        </span>
+                        {isSelected && (
+                          <Badge className="bg-[#D4AF37] hover:bg-[#D4AF37] text-[#07132B] font-bold text-[10px] px-2 py-0.5 border-none shadow-sm">
+                            Ano da Simulação
+                          </Badge>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Fase da Transição */}
+                    <td className="px-5 py-3.5">
+                      <div className="font-medium text-slate-800">{item.fase}</div>
+                      <div className="text-[11px] text-slate-500">
+                        {item.ano === 'atual'
+                          ? 'PIS, COFINS, IPI, ICMS e ISS vigentes'
+                          : item.ano === 2026
+                            ? 'CBS 0,90% + IBS 0,10% (ensaio compensável)'
+                            : item.ano === 2027
+                              ? 'CBS plena 8,70% e extinção definitiva de PIS/COFINS'
+                              : item.ano === 2028
+                                ? 'CBS plena consolidada e homologação CGIBS'
+                                : typeof item.ano === 'number' &&
+                                    item.ano >= 2029 &&
+                                    item.ano <= 2032
+                                  ? `IBS ${(item.ano - 2028) * 10}% da referência + ICMS/ISS ${(10 - (item.ano - 2028)) * 10}%`
+                                  : 'IVA Dual pleno (CBS 8,80% + IBS 17,70%), ICMS/ISS extintos'}
+                      </div>
+                    </td>
+
+                    {/* Alíquota IBS/CBS do Ano */}
+                    <td className="px-5 py-3.5 text-center font-mono">
+                      <span className="font-semibold text-slate-700">
+                        {formatarPorcentagem(aliqTotalIbsCbs)}
+                      </span>
+                      {item.ano !== 'atual' && (
+                        <div className="text-[10px] text-slate-400">
+                          (CBS {formatarPorcentagem(item.aliquotaCbs, 1)} + IBS{' '}
+                          {formatarPorcentagem(item.aliquotaIbs, 2)})
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Alíquota Efetiva da Empresa */}
+                    <td className="px-5 py-3.5 text-center font-mono">
+                      <span
+                        className={`font-bold ${
+                          isSelected ? 'text-[#07132B] text-base' : 'text-slate-800'
+                        }`}
+                      >
+                        {formatarPorcentagem(item.aliquotaEfetivaTotal)}
+                      </span>
+                    </td>
+
+                    {/* Carga Tributária em R$ */}
+                    <td className="px-5 py-3.5 text-center font-mono">
+                      <span
+                        className={`font-bold ${
+                          isSelected ? 'text-[#07132B] text-base' : 'text-slate-800'
+                        }`}
+                      >
+                        {formatarMoeda(cargaPeriodo)}
+                      </span>
+                    </td>
+
+                    {/* Diferença vs. Sistema Atual */}
+                    <td className="px-5 py-3.5 text-center font-mono font-bold whitespace-nowrap">
+                      {item.ano === 'atual' ? (
+                        <span className="text-slate-400 font-medium text-xs">— (Referência)</span>
+                      ) : diferencaPeriodo > 0 ? (
+                        <span className="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
+                          + {formatarMoeda(diferencaPeriodo)} (Economia)
+                        </span>
+                      ) : diferencaPeriodo < 0 ? (
+                        <span className="text-red-600 bg-red-50 px-2.5 py-1 rounded-md">
+                          − {formatarMoeda(Math.abs(diferencaPeriodo))}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500">R$ 0,00</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
       {/* ETAPA 4: BLOCO IMPACTO DO SPLIT PAYMENT NO FLUXO DE CAIXA NO DASHBOARD */}
       <BlocoSplitPayment
         resultadoSplitPayment={resultadoSplitPayment}
@@ -505,12 +686,13 @@ export default function Modulo6Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Gráfico 2 em Linha: Evolução 2026-2033 */}
+        {/* Gráfico 2 em Linha: Evolução 2026-2033 (Eixo duplo: Alíquota e Imposto Estimado) */}
         <Card className="border-slate-200 shadow-md">
           <CardHeader className="pb-2 border-b border-slate-100">
             <div className="flex justify-between items-center">
               <CardTitle className="text-base font-heading font-bold text-[#07132B]">
-                Gráfico 2: Evolução da Alíquota Efetiva (2026 a 2033)
+                Gráfico 2: Evolução da Alíquota & Imposto (
+                {periodoDashboard === 'mensal' ? 'Mensal' : 'Anual'})
               </CardTitle>
               <span className="text-xs text-slate-500 font-mono">Curva de Transição</span>
             </div>
@@ -520,13 +702,33 @@ export default function Modulo6Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={dadosGraficoLinha}
-                  margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
+                  margin={{ top: 10, right: 25, left: 0, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
                   <XAxis dataKey="ano" stroke="#64748B" fontSize={11} />
-                  <YAxis stroke="#64748B" fontSize={11} unit="%" />
+                  {/* Eixo Primário (Esquerda): Alíquota Efetiva (%) */}
+                  <YAxis
+                    yAxisId="left"
+                    stroke="#D4AF37"
+                    fontSize={11}
+                    unit="%"
+                    tickFormatter={(val) => `${val}%`}
+                  />
+                  {/* Eixo Secundário (Direita): Imposto Estimado em R$ */}
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="#38BDF8"
+                    fontSize={11}
+                    tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`}
+                  />
                   <Tooltip
-                    formatter={(val: any) => [`${Number(val).toFixed(2)}%`, 'Alíquota Efetiva']}
+                    formatter={(val: any, name: any) => {
+                      if (name === 'Imposto Estimado') {
+                        return [formatarMoeda(Number(val)), 'Imposto Estimado']
+                      }
+                      return [`${Number(val).toFixed(2)}%`, 'Alíquota Efetiva Total']
+                    }}
                     labelFormatter={(label) => `Ano ${label}`}
                     contentStyle={{
                       backgroundColor: '#07132B',
@@ -535,7 +737,16 @@ export default function Modulo6Dashboard() {
                       borderRadius: '8px',
                     }}
                   />
+                  <Legend
+                    verticalAlign="top"
+                    height={28}
+                    formatter={(value) => (
+                      <span className="text-xs font-semibold text-slate-700">{value}</span>
+                    )}
+                  />
+                  {/* Traço 1: Alíquota Efetiva Total (Dourado #D4AF37) no eixo primário */}
                   <Line
+                    yAxisId="left"
                     type="monotone"
                     dataKey="aliquota"
                     name="Alíquota Efetiva Total"
@@ -544,13 +755,25 @@ export default function Modulo6Dashboard() {
                     dot={{ r: 4, fill: '#07132B', stroke: '#D4AF37', strokeWidth: 2 }}
                     activeDot={{ r: 7 }}
                   />
+                  {/* Traço 2: Imposto Estimado em R$ (Azul #38BDF8) no eixo secundário */}
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="imposto"
+                    name="Imposto Estimado"
+                    stroke="#38BDF8"
+                    strokeWidth={2.5}
+                    strokeDasharray="4 4"
+                    dot={{ r: 3.5, fill: '#07132B', stroke: '#38BDF8', strokeWidth: 2 }}
+                    activeDot={{ r: 6 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* Gráfico 3 em Pizza: Composição de Créditos Antigos vs Novos */}
+        {/* Gráfico 3 em Pizza: Composição de Créditos Antigos vs Novos (Sincronizado dinamicamente) */}
         <Card className="border-slate-200 shadow-md lg:col-span-2">
           <CardHeader className="pb-2 border-b border-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -559,7 +782,11 @@ export default function Modulo6Dashboard() {
                   Gráfico 3: Comparação da Apropriação de Créditos por Categoria
                 </CardTitle>
                 <p className="text-xs text-slate-500">
-                  Créditos gerados no antigo regime vs créditos ampliados no IVA Dual (26,50%).
+                  Créditos gerados no antigo regime vs créditos ampliados no IVA Dual (
+                  {isAliquotaZeroCreditos
+                    ? '0,00% — Regime de Alíquota Zero'
+                    : formatarPorcentagem(aliqRefCreditos)}
+                  ).
                 </p>
               </div>
               <div className="flex items-center gap-3 text-xs font-semibold">
