@@ -43,6 +43,28 @@ export default function Modulo4SimuladorCreditos() {
   const { totalAntigo, totalNovo, adicionalGanho, aumentoPercentual, economiaAnual } =
     resultadoCreditos
 
+  // Formatações dos 5 valores dos cards de resumo
+  const strTotalAntigo = formatarMoeda(totalAntigo)
+  const strTotalNovo = formatarMoeda(totalNovo)
+  const strAdicionalGanho = `+ ${formatarMoeda(adicionalGanho)}`
+  const strAumentoPercentual = `+ ${formatarPorcentagem(aumentoPercentual, 1)}`
+  const strEconomiaAnual = formatarMoeda(economiaAnual)
+
+  // Escala responsiva da fonte com base na quantidade de caracteres para evitar estouro em cards compactos
+  const obterClasseTamanhoFonte = (texto: string) => {
+    const len = texto.length
+    if (len >= 18) {
+      return 'text-base sm:text-lg lg:text-base xl:text-lg'
+    }
+    if (len >= 14) {
+      return 'text-lg sm:text-xl lg:text-lg xl:text-xl'
+    }
+    if (len >= 11) {
+      return 'text-xl sm:text-2xl lg:text-xl xl:text-2xl'
+    }
+    return 'text-2xl'
+  }
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Cabeçalho do Módulo */}
@@ -118,77 +140,92 @@ export default function Modulo4SimuladorCreditos() {
       {/* Cards de Resumo e Métricas Conforme Especificação */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Card 1: Total Crédito Antigo */}
-        <Card className="border-slate-200/80 shadow hover:shadow-md transition-all">
-          <CardContent className="p-5 space-y-1.5">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+        <Card className="min-w-0 border-slate-200/80 shadow hover:shadow-md transition-all overflow-hidden">
+          <CardContent className="p-5 space-y-1.5 min-w-0">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block truncate">
               Crédito Antigo
             </span>
-            <p className="text-2xl font-mono font-extrabold text-slate-700">
-              {formatarMoeda(totalAntigo)}
+            <p
+              className={`${obterClasseTamanhoFonte(strTotalAntigo)} font-mono font-extrabold text-slate-700 tracking-tight break-words min-w-0`}
+              title={strTotalAntigo}
+            >
+              {strTotalAntigo}
             </p>
-            <span className="text-[11px] text-slate-400 block">
+            <span className="text-[11px] text-slate-400 block leading-tight">
               Regras restritivas (insumos diretos e PIS/COFINS)
             </span>
           </CardContent>
         </Card>
 
         {/* Card 2: Total Crédito Novo */}
-        <Card className="border-[#D4AF37]/40 bg-gradient-to-br from-amber-50/30 to-white shadow hover:shadow-md transition-all">
-          <CardContent className="p-5 space-y-1.5">
-            <span className="text-xs font-bold text-amber-900 uppercase tracking-wider block">
+        <Card className="min-w-0 border-[#D4AF37]/40 bg-gradient-to-br from-amber-50/30 to-white shadow hover:shadow-md transition-all overflow-hidden">
+          <CardContent className="p-5 space-y-1.5 min-w-0">
+            <span className="text-xs font-bold text-amber-900 uppercase tracking-wider block truncate">
               Crédito Novo (26,50%)
             </span>
-            <p className="text-2xl font-mono font-extrabold text-amber-950">
-              {formatarMoeda(totalNovo)}
+            <p
+              className={`${obterClasseTamanhoFonte(strTotalNovo)} font-mono font-extrabold text-amber-950 tracking-tight break-words min-w-0`}
+              title={strTotalNovo}
+            >
+              {strTotalNovo}
             </p>
-            <span className="text-[11px] text-amber-800/80 block">
+            <span className="text-[11px] text-amber-800/80 block leading-tight">
               Crédito sobre 100% dos bens e serviços adquiridos
             </span>
           </CardContent>
         </Card>
 
         {/* Card 3: Crédito Adicional Ganho */}
-        <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 to-white shadow hover:shadow-md transition-all">
-          <CardContent className="p-5 space-y-1.5">
-            <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider block">
+        <Card className="min-w-0 border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 to-white shadow hover:shadow-md transition-all overflow-hidden">
+          <CardContent className="p-5 space-y-1.5 min-w-0">
+            <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider block truncate">
               Crédito Adicional Ganho
             </span>
-            <p className="text-2xl font-mono font-extrabold text-emerald-700">
-              + {formatarMoeda(adicionalGanho)}
+            <p
+              className={`${obterClasseTamanhoFonte(strAdicionalGanho)} font-mono font-extrabold text-emerald-700 tracking-tight break-words min-w-0`}
+              title={strAdicionalGanho}
+            >
+              {strAdicionalGanho}
             </p>
-            <span className="text-[11px] text-emerald-600 font-medium block">
+            <span className="text-[11px] text-emerald-600 font-medium block leading-tight">
               Ganho líquido mensal de crédito
             </span>
           </CardContent>
         </Card>
 
         {/* Card 4: Aumento Percentual */}
-        <Card className="border-slate-200 shadow hover:shadow-md transition-all">
-          <CardContent className="p-5 space-y-1.5">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+        <Card className="min-w-0 border-slate-200 shadow hover:shadow-md transition-all overflow-hidden">
+          <CardContent className="p-5 space-y-1.5 min-w-0">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block truncate">
               Aumento Percentual
             </span>
-            <p className="text-2xl font-mono font-extrabold text-[#07132B]">
-              + {formatarPorcentagem(aumentoPercentual, 1)}
+            <p
+              className={`${obterClasseTamanhoFonte(strAumentoPercentual)} font-mono font-extrabold text-[#07132B] tracking-tight break-words min-w-0`}
+              title={strAumentoPercentual}
+            >
+              {strAumentoPercentual}
             </p>
-            <span className="text-[11px] text-slate-400 block">
+            <span className="text-[11px] text-slate-400 block leading-tight">
               Crescimento relativo na carteira de créditos
             </span>
           </CardContent>
         </Card>
 
         {/* Card 5: Economia Anual */}
-        <Card className="bg-[#07132B] text-white border border-[#D4AF37]/50 shadow-xl overflow-hidden relative sm:col-span-2 lg:col-span-1">
+        <Card className="min-w-0 bg-[#07132B] text-white border border-[#D4AF37]/50 shadow-xl overflow-hidden relative sm:col-span-2 lg:col-span-1">
           <div className="absolute top-0 right-0 w-24 h-24 bg-[#D4AF37]/20 rounded-full blur-xl pointer-events-none" />
-          <CardContent className="p-5 space-y-1.5 relative">
-            <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" />
+          <CardContent className="p-5 space-y-1.5 relative min-w-0">
+            <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider flex items-center gap-1 truncate">
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
               Economia Anual
             </span>
-            <p className="text-2xl font-mono font-extrabold text-white">
-              {formatarMoeda(economiaAnual)}
+            <p
+              className={`${obterClasseTamanhoFonte(strEconomiaAnual)} font-mono font-extrabold text-white tracking-tight break-words min-w-0`}
+              title={strEconomiaAnual}
+            >
+              {strEconomiaAnual}
             </p>
-            <span className="text-[11px] text-slate-300 block">
+            <span className="text-[11px] text-slate-300 block leading-tight">
               Fluxo financeiro preservado ao ano
             </span>
           </CardContent>
