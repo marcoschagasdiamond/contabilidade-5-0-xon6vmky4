@@ -305,7 +305,7 @@ export default function Modulo6Dashboard() {
               <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
                 <Label className="text-xs font-semibold text-slate-600">Setor</Label>
                 {origensPropagadas?.dashboardSetor && (
-                  <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+                  <BadgeOrigemPropagada texto="vindo das configurações — editável aqui" />
                 )}
               </div>
               <Select
@@ -333,7 +333,7 @@ export default function Modulo6Dashboard() {
               <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
                 <Label className="text-xs font-semibold text-slate-600">Faturamento Mensal</Label>
                 {origensPropagadas?.dashboardFaturamento && (
-                  <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+                  <BadgeOrigemPropagada texto="vindo das configurações — editável aqui" />
                 )}
               </div>
               <Input
@@ -352,7 +352,7 @@ export default function Modulo6Dashboard() {
               <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
                 <Label className="text-xs font-semibold text-slate-600">% Compras s/ Vendas</Label>
                 {origensPropagadas?.dashboardPercentualCompras && (
-                  <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+                  <BadgeOrigemPropagada texto="vindo das configurações — editável aqui" />
                 )}
               </div>
               <div className="relative">
