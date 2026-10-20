@@ -1,7 +1,11 @@
 import React, { useState } from 'react'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
-import { TipoAtividade } from '@/types/calculadoraIbsCbs'
+import {
+  TipoAtividade,
+  CRONOGRAMA_FASES_TRANSICAO,
+  PRESETS_SETORES_LC214,
+} from '@/types/calculadoraIbsCbs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
@@ -38,7 +42,6 @@ import {
   Percent,
   Wallet,
   TrendingUp,
-  Award,
   Filter,
   ArrowRight,
   ShieldAlert,
@@ -50,7 +53,6 @@ import {
 import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
 import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
-import { PRESETS_SETORES_LC214 } from '@/types/calculadoraIbsCbs'
 
 const CORES_PIZZA = ['#07132B', '#D4AF37', '#10B981', '#3B82F6', '#6366F1', '#EC4899', '#8B5CF6']
 
@@ -195,6 +197,89 @@ export default function Modulo6Dashboard() {
 
   // Ano selecionado na simulação (config.anoTransicao ou anoOperacao)
   const anoSimulacaoSelecionado = config.anoTransicao || 'atual'
+
+  // Cálculo do regime mais econômico para cada linha/ano da transição completa (Quadro Comparativo)
+  const regimesMaisEconomicosPorAno = React.useMemo(() => {
+    const lrTotal = resultadoComparativo.lucroReal.totalEfetivo
+    const lpTotal = resultadoComparativo.lucroPresumido.totalEfetivo
+    const snTotal = resultadoComparativo.simplesNacional.totalEfetivo
+
+    const mapa: Record<string, string> = {}
+
+    resultadoTransicao.forEach((item) => {
+      const ano = item.ano
+
+      if (ano === 'atual') {
+        // No sistema atual pré-reforma, concorrem os 3 regimes vigentes (Lucro Real, Lucro Presumido, Simples Nacional)
+        const cenarios = [
+          { nome: 'Lucro Real', total: lrTotal },
+          { nome: 'Lucro Presumido', total: lpTotal },
+          { nome: 'Simples Nacional', total: snTotal },
+        ].sort((a, b) => a.total - b.total)
+        mapa[String(ano)] = cenarios[0].nome
+        return
+      }
+
+      // Para os anos de 2026 a 2033:
+      // Alíquotas oficiais da fase daquele ano (LC 214/2025)
+      const faseAno = CRONOGRAMA_FASES_TRANSICAO[ano] || CRONOGRAMA_FASES_TRANSICAO[2033]
+      const cbsAno = faseAno.aliquotaCbs
+      const ibsAno = faseAno.aliquotaIbs
+      const totalIvaDualAno = faseAno.totalIvaDual
+
+      let ibsCbsTotalAno = resultadoComparativo.ibsCbs.totalEfetivo
+
+      if (ano !== config.anoTransicao) {
+        const fatInterno =
+          resultadoComparativo.dadosAdicionais?.receitaTributavelInterna ?? faturamentoMensal
+        const comprasValor = (faturamentoMensal * percentualComprasVendasComparativo) / 100
+        const reducaoPct = resultadoComparativo.ibsCbs.reducaoAplicadaPercentual || 0
+        const fatorReducao = Math.max(0, 1 - reducaoPct / 100)
+
+        const cbsNominal = (fatInterno * cbsAno * fatorReducao) / 100
+        const ibsNominal = (fatInterno * ibsAno * fatorReducao) / 100
+
+        const aliqIsEfetiva = resultadoComparativo.dadosAdicionais?.sujeitoImpostoSeletivo
+          ? resultadoComparativo.ibsCbs.impostoSeletivo > 0 && fatInterno > 0
+            ? (resultadoComparativo.ibsCbs.impostoSeletivo / fatInterno) * 100
+            : 0
+          : 0
+        const valorIS = (fatInterno * aliqIsEfetiva) / 100
+
+        const debitoTotal = cbsNominal + ibsNominal + valorIS
+
+        // Créditos da fase: compras e despesas operacionais proporcionais à alíquota total da fase
+        const creditosCompras = (comprasValor * totalIvaDualAno) / 100
+        const despesasValor =
+          config.totalIvaDual > 0 && resultadoComparativo.dadosAdicionais?.creditosDespesasIbsCbs
+            ? (resultadoComparativo.dadosAdicionais.creditosDespesasIbsCbs * 100) /
+              config.totalIvaDual
+            : (resultadoComparativo.dadosAdicionais?.creditosDespesasIbsCbs ?? 0)
+        const creditosDespesas = (despesasValor * totalIvaDualAno) / 100
+        const creditosTotal = creditosCompras + creditosDespesas
+
+        ibsCbsTotalAno = Math.max(0, debitoTotal - creditosTotal)
+      }
+
+      const cenarios = [
+        { nome: 'Lucro Real', total: lrTotal },
+        { nome: 'Lucro Presumido', total: lpTotal },
+        { nome: 'Simples Nacional', total: snTotal },
+        { nome: 'IBS/CBS', total: ibsCbsTotalAno },
+      ].sort((a, b) => a.total - b.total)
+
+      mapa[String(ano)] = cenarios[0].nome
+    })
+
+    return mapa
+  }, [
+    resultadoComparativo,
+    resultadoTransicao,
+    config.anoTransicao,
+    config.totalIvaDual,
+    faturamentoMensal,
+    percentualComprasVendasComparativo,
+  ])
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -510,6 +595,7 @@ export default function Modulo6Dashboard() {
                   Carga Tributária ({periodoDashboard === 'mensal' ? 'R$/mês' : 'R$/ano'})
                 </th>
                 <th className="px-5 py-3.5 text-center">Diferença vs. Sistema Atual</th>
+                <th className="px-5 py-3.5 text-center">Regime Mais Econômico</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -530,6 +616,9 @@ export default function Modulo6Dashboard() {
                 // Se diferencaPeriodo > 0: economia (paga menos no novo sistema)
                 // Se diferencaPeriodo < 0: aumento de carga / perda
                 const diferencaPeriodo = item.ano === 'atual' ? 0 : cargaAtualPeriodo - cargaPeriodo
+
+                const regimeMaisEconomico =
+                  regimesMaisEconomicosPorAno[String(item.ano)] || 'IBS/CBS'
 
                 return (
                   <tr
@@ -623,6 +712,23 @@ export default function Modulo6Dashboard() {
                         </span>
                       ) : (
                         <span className="text-slate-500">R$ 0,00</span>
+                      )}
+                    </td>
+
+                    {/* Regime Mais Econômico */}
+                    <td className="px-5 py-3.5 text-center whitespace-nowrap">
+                      {regimeMaisEconomico === 'Lucro Presumido' ? (
+                        <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-amber-50 text-amber-900 border border-[#D4AF37] shadow-sm">
+                          Lucro Presumido
+                        </span>
+                      ) : regimeMaisEconomico === 'IBS/CBS' ? (
+                        <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-sm">
+                          IBS/CBS
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2.5 py-1 text-xs font-medium text-slate-700 bg-slate-100 rounded-md">
+                          {regimeMaisEconomico}
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -897,8 +1003,9 @@ export default function Modulo6Dashboard() {
             </p>
           </div>
           <div className="inline-flex items-center gap-2 bg-[#07132B] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm">
-            <Award className="w-4 h-4 text-[#D4AF37]" />
-            Regime Recomendado:{' '}
+            {anoSimulacaoSelecionado === 'atual'
+              ? 'Regime Recomendado para o ano atual:'
+              : `Regime Recomendado para ${anoSimulacaoSelecionado}:`}{' '}
             <span className="text-[#D4AF37] uppercase">{regimeRecomendado}</span>
           </div>
         </div>
