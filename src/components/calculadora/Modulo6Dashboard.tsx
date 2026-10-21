@@ -585,7 +585,7 @@ export default function Modulo6Dashboard({
   ])
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div id="modulo6-dashboard-painel" className="space-y-8 animate-fade-in">
       {/* Cabeçalho do Módulo - FIXO (sticky) com hierarquia visual destacada para os 3 botões */}
       <div className="sticky top-16 z-30 bg-[#07132B]/95 backdrop-blur-md border-2 border-[#D4AF37]/50 rounded-2xl p-5 sm:p-6 text-white relative shadow-2xl transition-all">
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/15 rounded-full blur-3xl pointer-events-none" />

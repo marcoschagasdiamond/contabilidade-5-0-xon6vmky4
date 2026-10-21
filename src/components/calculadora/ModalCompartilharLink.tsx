@@ -92,13 +92,45 @@ export function ModalCompartilharLink({
   }
 
   const handleCompartilharNativo = async () => {
+    // Tenta compartilhar com imagem do Dashboard caso o elemento exista
+    const dashboardEl = document.getElementById('modulo6-dashboard-painel')
+    let arquivoImagem: File | null = null
+
+    if (dashboardEl && window.htmlToImage) {
+      try {
+        // Importante: skipFonts: true para não violar cross-origin stylesheet
+        const blob = await window.htmlToImage.toBlob(dashboardEl, {
+          skipFonts: true,
+          filter: (node: HTMLElement) => {
+            if (node && node.tagName && node.tagName.toLowerCase() === 'link') return false
+            if (node?.getAttribute?.('data-skip-capture') === 'true') return false
+            return true
+          },
+        })
+        if (blob) {
+          arquivoImagem = new File([blob], 'dashboard-reforma-tributaria.png', {
+            type: 'image/png',
+          })
+        }
+      } catch (errCapture) {
+        console.warn('Captura de imagem do Dashboard pulada com segurança:', errCapture)
+      }
+    }
+
     if (navigator.share) {
       try {
-        await navigator.share({
+        const shareData: ShareData = {
           title: 'Simulação Reforma Tributária IBS/CBS — Contabilidade 5.0',
           text: `Confira a simulação de impacto do novo IVA Dual (IBS/CBS) para ${parametros.empresa || 'nossa empresa'}.`,
           url: urlCompartilhamento,
-        })
+        }
+
+        // Se o navegador aceita compartilhar arquivos e temos a imagem
+        if (arquivoImagem && navigator.canShare && navigator.canShare({ files: [arquivoImagem] })) {
+          shareData.files = [arquivoImagem]
+        }
+
+        await navigator.share(shareData)
       } catch (err: any) {
         if (err?.name !== 'AbortError') {
           handleCopiarLink()

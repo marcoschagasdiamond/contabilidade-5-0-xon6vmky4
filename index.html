@@ -10,7 +10,67 @@
     <meta property="og:image" content="/og-image.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" crossorigin="anonymous">
+    <!-- html-to-image carregado via CDN com proteção global contra erros de stylesheet cross-origin (skipFonts: true) -->
+    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.min.js"></script>
+    <script>
+      (function() {
+        function aplicarProtecaoSkipFonts(lib) {
+          if (!lib || lib._skipFontsPatched) return;
+          var metodos = ['toPng', 'toBlob', 'toJpeg', 'toSvg', 'toCanvas', 'toPixelData'];
+          metodos.forEach(function(m) {
+            var orig = lib[m];
+            if (typeof orig === 'function') {
+              lib[m] = function(node, options) {
+                // Injeta skipFonts: true para impedir acesso às cssRules de stylesheets externas (CORS)
+                // e provê filter seguro por padrão
+                var opts = Object.assign({ skipFonts: true }, options || {});
+                opts.skipFonts = true;
+                if (!opts.filter) {
+                  opts.filter = function(domNode) {
+                    // Ignora tags de link/style externas para blindar contra cross-origin CSS
+                    if (domNode && domNode.tagName) {
+                      var tag = domNode.tagName.toLowerCase();
+                      if (tag === 'link' && domNode.rel === 'stylesheet') return false;
+                    }
+                    return true;
+                  };
+                }
+                try {
+                  return orig.call(lib, node, opts).catch(function(err) {
+                    console.warn('[html-to-image] Erro interceptado na captura:', err);
+                    throw err;
+                  });
+                } catch (syncErr) {
+                  console.warn('[html-to-image] Exceção síncrona na captura:', syncErr);
+                  return Promise.reject(syncErr);
+                }
+              };
+            }
+          });
+          lib._skipFontsPatched = true;
+        }
+
+        if (window.htmlToImage) {
+          aplicarProtecaoSkipFonts(window.htmlToImage);
+        }
+
+        var _libRef = window.htmlToImage;
+        try {
+          Object.defineProperty(window, 'htmlToImage', {
+            configurable: true,
+            enumerable: true,
+            get: function() { return _libRef; },
+            set: function(val) {
+              _libRef = val;
+              aplicarProtecaoSkipFonts(_libRef);
+            }
+          });
+        } catch (e) {
+          // fallback caso defineProperty não seja permitido
+        }
+      })();
+    </script>
   </head>
 
   <body>
