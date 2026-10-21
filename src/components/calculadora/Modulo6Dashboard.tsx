@@ -121,14 +121,6 @@ export default function Modulo6Dashboard() {
     }
   }
 
-  const {
-    aliquotaEfetivaAtual,
-    aliquotaEfetivaNova,
-    economiaMensalProjetada,
-    economiaAnualProjetada,
-    regimeRecomendado,
-  } = resultadoDashboard
-
   const handleFaturamentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, '')
     const valor = Number(raw) / 100
