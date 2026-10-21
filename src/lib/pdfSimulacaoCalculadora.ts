@@ -9,6 +9,9 @@ import {
   obterGrupoRegimeOperacao,
   CRONOGRAMA_FASES_TRANSICAO,
   CATEGORIAS_CREDITO_PADRAO,
+  TEXTO_FASE_TESTE_2026,
+  isAno2026,
+  isAno2026OuAtual,
 } from '@/types/calculadoraIbsCbs'
 import type { ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
 
@@ -273,7 +276,10 @@ export function calcularRegimesMaisEconomicosPorAno(
   resultados.resultadoTransicao.forEach((item) => {
     const ano = item.ano
 
-    if (ano === 'atual') {
+    // Em 2026 e no ano atual pré-reforma (art. 348 da LC 214/2025):
+    // A CBS (0,9%) e o IBS (0,1%) são fase de teste operacional compensável integralmente, sem ônus real.
+    // IBS/CBS NÃO concorre no regime recomendado (disputa apenas entre Lucro Real, Lucro Presumido e Simples Nacional).
+    if (isAno2026OuAtual(ano)) {
       const cenarios = [
         { nome: 'Lucro Real', total: lrTotal },
         { nome: 'Lucro Presumido', total: lpTotal },
@@ -639,28 +645,45 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
 
   currentY += 7
 
+  const anoDashboardSimulacao =
+    parametros.anoTransicaoDashboard === 'atual'
+      ? 'atual'
+      : parametros.anoTransicaoDashboard || parametros.config?.anoTransicao || 2033
+  const ehFaseTeste2026Simulacao = isAno2026(anoDashboardSimulacao)
+
   const regimes = [
     {
       nome: 'Simples Nacional',
       dados: resultados.resultadoComparativo.simplesNacional,
       isRecomendado: resultados.resultadoDashboard.regimeRecomendado === 'Simples Nacional',
+      notaEspecial: undefined as string | undefined,
     },
     {
       nome: 'Lucro Presumido',
       dados: resultados.resultadoComparativo.lucroPresumido,
       isRecomendado: resultados.resultadoDashboard.regimeRecomendado === 'Lucro Presumido',
+      notaEspecial: undefined as string | undefined,
     },
     {
       nome: 'Lucro Real',
       dados: resultados.resultadoComparativo.lucroReal,
       isRecomendado: resultados.resultadoDashboard.regimeRecomendado === 'Lucro Real',
+      notaEspecial: undefined as string | undefined,
     },
     {
-      nome: 'IBS / CBS (Reforma)',
-      dados: resultados.resultadoComparativo.ibsCbs,
+      nome: ehFaseTeste2026Simulacao ? 'IBS / CBS (2026 • Fase de Teste)' : 'IBS / CBS (Reforma)',
+      dados: ehFaseTeste2026Simulacao
+        ? {
+            ...resultados.resultadoComparativo.ibsCbs,
+            totalEfetivo: 0,
+            aliquotaEfetiva: 0,
+          }
+        : resultados.resultadoComparativo.ibsCbs,
       isRecomendado:
-        resultados.resultadoDashboard.regimeRecomendado === 'IBS/CBS' ||
-        resultados.resultadoDashboard.regimeRecomendado === 'IBS / CBS',
+        !ehFaseTeste2026Simulacao &&
+        (resultados.resultadoDashboard.regimeRecomendado === 'IBS/CBS' ||
+          resultados.resultadoDashboard.regimeRecomendado === 'IBS / CBS'),
+      notaEspecial: ehFaseTeste2026Simulacao ? TEXTO_FASE_TESTE_2026 : undefined,
     },
   ]
 
@@ -686,7 +709,19 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     doc.text(formatarMoeda(reg.dados.creditos), margin + 85, currentY + 5)
 
     doc.setFont('helvetica', 'bold')
-    doc.text(formatarMoeda(reg.dados.totalEfetivo), margin + 125, currentY + 5)
+    if (reg.notaEspecial) {
+      doc.setFontSize(6.2)
+      doc.text('R$ 0,00 (Compensável)', margin + 125, currentY + 4.2)
+      doc.setFont('helvetica', 'italic')
+      doc.setFontSize(5.2)
+      doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+      doc.text(reg.notaEspecial, margin + 125, currentY + 6.8)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(7.5)
+      doc.setTextColor(COR_VERDE_MEDIO[0], COR_VERDE_MEDIO[1], COR_VERDE_MEDIO[2])
+    } else {
+      doc.text(formatarMoeda(reg.dados.totalEfetivo), margin + 125, currentY + 5)
+    }
     doc.text(`${reg.dados.aliquotaEfetiva.toFixed(2)}%`, margin + 162, currentY + 5)
 
     currentY += 7.5
@@ -859,8 +894,16 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     )
 
     doc.text(`${anoStr === 'atual' ? 'Atual' : anoStr}`, margin + 3, currentY + 3.8)
-    const faseTrunc = item.fase.length > 34 ? item.fase.slice(0, 32) + '...' : item.fase
-    doc.text(faseTrunc, margin + 18, currentY + 3.8)
+    if (isAno2026(item.ano)) {
+      doc.text(
+        'Fase de teste — compensável integralmente, sem ônus real (art. 348, LC 214/2025)',
+        margin + 18,
+        currentY + 3.8,
+      )
+    } else {
+      const faseTrunc = item.fase.length > 34 ? item.fase.slice(0, 32) + '...' : item.fase
+      doc.text(faseTrunc, margin + 18, currentY + 3.8)
+    }
     doc.text(`${item.aliquotaCbs.toFixed(1)}%`, margin + 82, currentY + 3.8)
     doc.text(`${item.aliquotaIbs.toFixed(2)}%`, margin + 98, currentY + 3.8)
     doc.text(`${item.aliquotaEfetivaTotal.toFixed(2)}%`, margin + 114, currentY + 3.8)
@@ -917,10 +960,13 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   const ecoAnualStr = formatarMoeda(resultados.resultadoDashboard.economiaAnualProjetada)
   const ecoMensalStr = formatarMoeda(resultados.resultadoDashboard.economiaMensalProjetada)
 
+  const eh2026Dashboard = isAno2026(anoDashboardNum)
   const textoRecomendacao =
     anoDashboardNum === 'atual'
       ? `Para o cenário atual pré-reforma, o regime mais econômico apurado é o ${regimeRec}. Com a vigência da EC 132/2023 e LC 214/2025 a partir de 2026, a empresa deve acompanhar a esteira de desonerações da CBS e do IBS para reprogramar sua opção anual em janeiro.`
-      : `Para o ano ${anoDashboardNum}, o regime fiscal ${regimeRec} economiza ${ecoAnualStr} ao ano (${ecoMensalStr}/mês) em relação ao sistema atual suportado (${regimeAtualExibir}), correspondendo a uma alíquota efetiva projetada de ${resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%.`
+      : eh2026Dashboard
+        ? `Para o ano 2026, o regime recomendado apurado é o ${regimeRec}. Conforme o art. 348 da LC 214/2025, o ano de 2026 opera sob a regra "${TEXTO_FASE_TESTE_2026}", de modo que a apuração do IBS e da CBS não concorre na opção tributária e a carga efetiva líquida é tratada como zero/compensável, mantendo a disputa entre os regimes vigentes.`
+        : `Para o ano ${anoDashboardNum}, o regime fiscal ${regimeRec} economiza ${ecoAnualStr} ao ano (${ecoMensalStr}/mês) em relação ao sistema atual suportado (${regimeAtualExibir}), correspondendo a uma alíquota efetiva projetada de ${resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%.`
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
@@ -1232,8 +1278,16 @@ export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions
     {
       titulo: 'IBS / CBS (Reforma)',
       isDestaque: true,
-      getValores: (s) =>
-        `${formatarMoeda(s.resultados.resultadoComparativo.ibsCbs.totalEfetivo)} (${s.resultados.resultadoComparativo.ibsCbs.aliquotaEfetiva.toFixed(2)}%)`,
+      getValores: (s) => {
+        const anoSim =
+          s.parametros.anoTransicaoDashboard === 'atual'
+            ? 'atual'
+            : s.parametros.anoTransicaoDashboard || s.parametros.config?.anoTransicao || 2033
+        if (isAno2026(anoSim)) {
+          return 'R$ 0,00 (0,00%) — Fase de teste (art. 348)'
+        }
+        return `${formatarMoeda(s.resultados.resultadoComparativo.ibsCbs.totalEfetivo)} (${s.resultados.resultadoComparativo.ibsCbs.aliquotaEfetiva.toFixed(2)}%)`
+      },
     },
 
     // Seção Parâmetros
@@ -1380,8 +1434,16 @@ export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions
       doc.setFontSize(6.5)
       doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
       doc.text(anoStr === 'atual' ? 'Atual' : anoStr, margin + 3, currentY + 3.3)
-      const fTrunc = item.fase.length > 42 ? item.fase.slice(0, 40) + '...' : item.fase
-      doc.text(fTrunc, margin + 18, currentY + 3.3)
+      if (isAno2026(item.ano)) {
+        doc.text(
+          'Fase de teste — compensável integralmente, sem ônus real (art. 348, LC 214/2025)',
+          margin + 18,
+          currentY + 3.3,
+        )
+      } else {
+        const fTrunc = item.fase.length > 42 ? item.fase.slice(0, 40) + '...' : item.fase
+        doc.text(fTrunc, margin + 18, currentY + 3.3)
+      }
       doc.text(`${item.aliquotaEfetivaTotal.toFixed(2)}%`, margin + 90, currentY + 3.3)
       doc.text(formatarMoeda(item.impostoEstimado), margin + 120, currentY + 3.3)
 
@@ -1414,10 +1476,17 @@ export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions
   doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
   doc.text('NOTAS TÉCNICAS DO RESPONSÁVEL CONTÁBIL', margin + 5, currentY + 5)
 
-  const obsTexto =
-    observacoesContador ||
-    responsavelTecnico?.observacoes ||
-    `Dossiê comparativo emitido para subsidiar o planejamento tributário. Dentre os cenários avaliados, o "${simVencedora.nome}" apresentou a melhor eficiência tributária líquida consolidada.`
+  const anoVencedora =
+    simVencedora.parametros.anoTransicaoDashboard === 'atual'
+      ? 'atual'
+      : simVencedora.parametros.anoTransicaoDashboard ||
+        simVencedora.parametros.config?.anoTransicao ||
+        2033
+  const obsPadrao = isAno2026(anoVencedora)
+    ? `Dossiê comparativo emitido para subsidiar o planejamento tributário. Para 2026, vigora o art. 348 da LC 214/2025 (${TEXTO_FASE_TESTE_2026}). O cenário "${simVencedora.nome}" indica a melhor opção entre os regimes vigentes.`
+    : `Dossiê comparativo emitido para subsidiar o planejamento tributário. Dentre os cenários avaliados, o "${simVencedora.nome}" apresentou a melhor eficiência tributária líquida consolidada.`
+
+  const obsTexto = observacoesContador || responsavelTecnico?.observacoes || obsPadrao
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.2)

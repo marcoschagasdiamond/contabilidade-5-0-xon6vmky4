@@ -80,7 +80,6 @@ export function BlocoSplitPayment({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 uppercase tracking-wider">
-              <Zap className="w-3.5 h-3.5 text-[#D4AF37]" />
               Etapa 4 • Liquidação Financeira
             </div>
             <h3 className="text-xl font-heading font-extrabold text-white flex items-center gap-2">
@@ -273,7 +272,6 @@ export function BlocoSplitPayment({
         <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span className="text-xs font-bold text-[#07132B] uppercase tracking-wider flex items-center gap-1.5">
-              <Coins className="w-4 h-4 text-[#D4AF37]" />
               Calibração Financeira da Sua Empresa (Parâmetros Editáveis)
             </span>
             <span className="text-[11px] text-slate-500">
