@@ -1233,35 +1233,50 @@ export default function Modulo6Dashboard({
               </ResponsiveContainer>
             </div>
 
-            {/* Legenda reorganizada e claramente identificável para cada regime */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100">
-              {dadosGraficoBarras.map((entry) => (
-                <div
-                  key={entry.regime}
-                  className="flex flex-col p-2 rounded-lg bg-slate-50 border border-slate-200/80 text-xs"
-                >
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span
-                      className="w-3 h-3 rounded-full shrink-0"
-                      style={{ backgroundColor: entry.fill }}
-                    />
-                    <span
-                      className="font-bold text-slate-800 truncate text-[11px]"
-                      title={entry.regime}
-                    >
-                      {entry.regime}
-                    </span>
+            {/* Legenda do Gráfico 1: Coluna única vertical com marcador colorido, nome, carga, alíquota e ano do cálculo */}
+            <div className="flex flex-col gap-2 pt-3 border-t border-slate-100">
+              {dadosGraficoBarras.map((entry) => {
+                const rotuloAnoLegenda =
+                  anoSimulacaoSelecionado === 'atual'
+                    ? 'Ano atual'
+                    : String(anoSimulacaoSelecionado)
+
+                return (
+                  <div
+                    key={entry.regime}
+                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 text-xs hover:bg-slate-100/60 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      {/* Marcador colorido pequeno (quadradinho) com a mesma cor da barra no gráfico */}
+                      <span
+                        className="w-3 h-3 rounded-sm shrink-0 border border-black/10"
+                        style={{ backgroundColor: entry.fill }}
+                        aria-hidden="true"
+                      />
+                      <span className="font-bold text-slate-800 text-xs" title={entry.regime}>
+                        {entry.regime}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 font-mono text-xs flex-wrap">
+                      <span className="font-extrabold text-[#07132B]">
+                        {formatarMoeda(entry.carga)}
+                        <span className="text-[11px] font-normal text-slate-500 ml-0.5">
+                          /{periodoDashboard === 'mensal' ? 'mês' : 'ano'}
+                        </span>
+                      </span>
+                      <span className="text-slate-400 select-none">·</span>
+                      <span className="font-semibold text-slate-700">
+                        {formatarPorcentagem(entry.aliquota)}
+                      </span>
+                      <span className="text-slate-400 select-none">·</span>
+                      <span className="px-2 py-0.5 rounded bg-white text-slate-700 border border-slate-200 text-[11px] font-semibold">
+                        Ano: {rotuloAnoLegenda}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-baseline justify-between font-mono text-[11px] gap-1">
-                    <span className="font-extrabold text-[#07132B]">
-                      {formatarMoeda(entry.carga)}
-                    </span>
-                    <span className="text-slate-500 font-semibold text-[10px]">
-                      {formatarPorcentagem(entry.aliquota)}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </CardContent>
         </Card>
