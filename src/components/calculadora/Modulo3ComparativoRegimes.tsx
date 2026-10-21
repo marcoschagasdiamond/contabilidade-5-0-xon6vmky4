@@ -71,6 +71,7 @@ import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
 
 export default function Modulo3ComparativoRegimes() {
   const {
+    config,
     faturamentoMensal,
     setFaturamentoMensal,
     tipoAtividade,

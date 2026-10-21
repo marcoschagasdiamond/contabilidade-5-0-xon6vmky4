@@ -55,7 +55,6 @@ import {
   BookmarkPlus,
   FileDown,
   Share2,
-  Zap,
 } from 'lucide-react'
 import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
 import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
