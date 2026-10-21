@@ -615,15 +615,15 @@ export default function Modulo6Dashboard({
         </div>
       </div>
 
-      {/* Barra de Filtros Globais Conforme Especificação */}
-      <Card className="border-slate-200/80 bg-slate-50/90 shadow-sm">
-        <CardHeader className="py-4 px-6 border-b border-slate-200/60 flex flex-row items-center gap-2">
+      {/* Barra de Filtros Globais Conforme Especificação - Fixo (sticky) em telas médias/grandes abaixo do cabeçalho */}
+      <Card className="border-slate-200/80 bg-slate-50/95 backdrop-blur-md shadow-md md:sticky md:top-48 lg:top-44 z-20 transition-all">
+        <CardHeader className="py-3 px-5 sm:px-6 border-b border-slate-200/60 flex flex-row items-center gap-2">
           <Filter className="w-4 h-4 text-[#D4AF37]" />
           <CardTitle className="text-sm font-bold text-[#07132B]">
             Filtros do Dashboard (Sincronização em Tempo Real)
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-5">
           {/* Informação do Preset Ativo e Ano da Transição da Simulação */}
           {config.presetSetor && config.presetSetor !== 'nenhum' && (
             <div className="mb-4 p-3 bg-amber-50/80 border border-[#D4AF37]/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
