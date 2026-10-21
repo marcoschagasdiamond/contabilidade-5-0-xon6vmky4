@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
+import { ModalGerarPdf, type ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
 import { gerarRelatorioSimulacaoPDF } from '@/lib/pdfSimulacaoCalculadora'
 import { excluirSimulacao, renomearSimulacao } from '@/services/simulacoesCalculadora'
 import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
@@ -53,6 +54,7 @@ interface ListaSimulacoesProps {
   selecionadasParaComparar: string[]
   onToggleSelecionada: (id: string) => void
   onAbrirComparador: () => void
+  onAbrirPdfComparativo?: () => void
 }
 
 export function ListaSimulacoes({
@@ -62,6 +64,7 @@ export function ListaSimulacoes({
   selecionadasParaComparar,
   onToggleSelecionada,
   onAbrirComparador,
+  onAbrirPdfComparativo,
 }: ListaSimulacoesProps) {
   const { toast } = useToast()
 
@@ -73,6 +76,10 @@ export function ListaSimulacoes({
   const [simulacaoRenomear, setSimulacaoRenomear] = useState<SimulacaoCalculadora | null>(null)
   const [novoNome, setNovoNome] = useState('')
   const [renomeando, setRenomeando] = useState(false)
+
+  // Estado para gerar PDF Individual com Modal de Responsável Técnico
+  const [simulacaoParaPdf, setSimulacaoParaPdf] = useState<SimulacaoCalculadora | null>(null)
+  const [gerandoPdf, setGerandoPdf] = useState(false)
 
   const handleExcluir = async () => {
     if (!simulacaoExcluir) return
@@ -123,32 +130,43 @@ export function ListaSimulacoes({
     }
   }
 
-  const handleBaixarPdfIndividual = (sim: SimulacaoCalculadora) => {
+  const handleAbrirModalPdfIndividual = (sim: SimulacaoCalculadora) => {
+    setSimulacaoParaPdf(sim)
+  }
+
+  const handleConfirmarPdfIndividual = (dadosTecnico: ResponsavelTecnicoDados) => {
+    if (!simulacaoParaPdf) return
     try {
+      setGerandoPdf(true)
       gerarRelatorioSimulacaoPDF({
-        nomeSimulacao: sim.nome,
-        parametros: sim.parametros,
-        resultados: sim.resultados,
-        empresa: sim.empresa,
-        cnpj: sim.cnpj,
-        dataGeracao: new Date(sim.created).toLocaleDateString('pt-BR', {
+        nomeSimulacao: simulacaoParaPdf.nome,
+        parametros: simulacaoParaPdf.parametros,
+        resultados: simulacaoParaPdf.resultados,
+        empresa: simulacaoParaPdf.empresa,
+        cnpj: simulacaoParaPdf.cnpj,
+        dataGeracao: new Date(simulacaoParaPdf.created).toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric',
           hour: '2-digit',
           minute: '2-digit',
         }),
+        responsavelTecnico: dadosTecnico,
+        observacoesContador: dadosTecnico.observacoes,
       })
       toast({
         title: 'Relatório PDF gerado!',
-        description: `O arquivo da simulação "${sim.nome}" foi baixado.`,
+        description: `O arquivo da simulação "${simulacaoParaPdf.nome}" foi baixado.`,
       })
+      setSimulacaoParaPdf(null)
     } catch (err: any) {
       toast({
         title: 'Erro ao gerar PDF',
         description: err?.message || 'Falha na renderização do PDF.',
         variant: 'destructive',
       })
+    } finally {
+      setGerandoPdf(false)
     }
   }
 
@@ -176,15 +194,28 @@ export function ListaSimulacoes({
         </div>
 
         {selecionadasParaComparar.length >= 2 && (
-          <Button
-            type="button"
-            size="sm"
-            onClick={onAbrirComparador}
-            className="h-7 text-xs bg-[#07132B] hover:bg-[#0B1E3F] text-[#D4AF37] flex items-center gap-1 font-bold animate-pulse"
-          >
-            <Scale className="w-3.5 h-3.5" />
-            Comparar ({selecionadasParaComparar.length})
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              size="sm"
+              onClick={onAbrirComparador}
+              className="h-7 text-xs bg-[#07132B] hover:bg-[#0B1E3F] text-[#D4AF37] font-bold"
+            >
+              Comparar ({selecionadasParaComparar.length})
+            </Button>
+            {onAbrirPdfComparativo && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onAbrirPdfComparativo}
+                className="h-7 text-[11px] border-[#D4AF37] text-[#0A1A13] hover:bg-[#D4AF37]/10 font-bold"
+                title="Baixar PDF Comparativo dos cenários marcados"
+              >
+                PDF Comparativo
+              </Button>
+            )}
+          </div>
         )}
       </div>
 
@@ -279,7 +310,7 @@ export function ListaSimulacoes({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="text-xs">
                       <DropdownMenuItem
-                        onClick={() => handleBaixarPdfIndividual(sim)}
+                        onClick={() => handleAbrirModalPdfIndividual(sim)}
                         className="cursor-pointer gap-2"
                       >
                         <FileDown className="w-3.5 h-3.5 text-emerald-600" />
@@ -353,6 +384,17 @@ export function ListaSimulacoes({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* MODAL DO RESPONSÁVEL TÉCNICO PARA PDF INDIVIDUAL */}
+      <ModalGerarPdf
+        open={!!simulacaoParaPdf}
+        onOpenChange={(open) => !open && setSimulacaoParaPdf(null)}
+        titulo={`Emitir Relatório: "${simulacaoParaPdf?.nome}"`}
+        descricao="Preencha os dados do Responsável Técnico para inclusão no cabeçalho e parecer do documento."
+        modo="individual"
+        onConfirmar={handleConfirmarPdfIndividual}
+        gerando={gerandoPdf}
+      />
 
       {/* MODAL CONFIRMAÇÃO DE EXCLUSÃO */}
       <AlertDialog

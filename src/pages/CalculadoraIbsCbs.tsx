@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalculadoraProvider, useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
+import { Button } from '@/components/ui/button'
 import {
   Building2,
   BookmarkPlus,
@@ -32,6 +33,8 @@ import {
   ModalCompartilharLink,
   decodificarParametrosDaUrl,
 } from '@/components/calculadora/ModalCompartilharLink'
+import { ModalGerarPdf, type ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
+import { gerarRelatorioComparativoPDF } from '@/lib/pdfSimulacaoCalculadora'
 import {
   isTipoAtividadeLegado,
   LABELS_RAMOS_LEGADOS,
@@ -117,11 +120,14 @@ function CalculadoraConteudo() {
   const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
   const [modalCompararAberto, setModalCompararAberto] = useState(false)
   const [modalCompartilharAberto, setModalCompartilharAberto] = useState(false)
+  const [modalPdfAtualAberto, setModalPdfAtualAberto] = useState(false)
+  const [modalPdfComparativoAberto, setModalPdfComparativoAberto] = useState(false)
+  const [gerandoPdfComparativo, setGerandoPdfComparativo] = useState(false)
+  const [gerandoPdf, setGerandoPdf] = useState(false)
   const [paywallSimulacaoAberto, setPaywallSimulacaoAberto] = useState(false)
   const [simulacoes, setSimulacoes] = useState<SimulacaoCalculadora[]>([])
   const [carregandoSimulacoes, setCarregandoSimulacoes] = useState(false)
   const [selecionadasComparar, setSelecionadasComparar] = useState<string[]>([])
-  const [gerandoPdf, setGerandoPdf] = useState(false)
 
   // Etapa 6: Detecção de link compartilhado via query string (?simulacao=...)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -229,6 +235,10 @@ function CalculadoraConteudo() {
   }
 
   const handleBaixarPdfAtual = () => {
+    setModalPdfAtualAberto(true)
+  }
+
+  const handleConfirmarPdfAtual = (dadosTecnico: ResponsavelTecnicoDados) => {
     try {
       setGerandoPdf(true)
       const params = obterSnapshotParametros()
@@ -240,12 +250,15 @@ function CalculadoraConteudo() {
         resultados: res,
         empresa: params.empresa,
         cnpj: params.cnpj,
+        responsavelTecnico: dadosTecnico,
+        observacoesContador: dadosTecnico.observacoes,
       })
 
       toast({
         title: 'Relatório PDF gerado!',
         description: 'O download com os resultados dos 6 módulos foi iniciado com sucesso.',
       })
+      setModalPdfAtualAberto(false)
     } catch (err: any) {
       toast({
         title: 'Erro ao gerar relatório',
@@ -258,6 +271,30 @@ function CalculadoraConteudo() {
   }
 
   const simulacoesParaComparar = simulacoes.filter((s) => selecionadasComparar.includes(s.id))
+
+  const handleConfirmarPdfComparativo = (dadosTecnico: ResponsavelTecnicoDados) => {
+    try {
+      setGerandoPdfComparativo(true)
+      gerarRelatorioComparativoPDF({
+        simulacoes: simulacoesParaComparar,
+        responsavelTecnico: dadosTecnico,
+        observacoesContador: dadosTecnico.observacoes,
+      })
+      toast({
+        title: 'PDF Comparativo gerado!',
+        description: `Dossiê comparativo com ${simulacoesParaComparar.length} cenários baixado com sucesso.`,
+      })
+      setModalPdfComparativoAberto(false)
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao gerar PDF',
+        description: err?.message || 'Falha ao compilar comparativo em PDF.',
+        variant: 'destructive',
+      })
+    } finally {
+      setGerandoPdfComparativo(false)
+    }
+  }
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -485,21 +522,34 @@ function CalculadoraConteudo() {
                 selecionadasParaComparar={selecionadasComparar}
                 onToggleSelecionada={handleToggleSelecionada}
                 onAbrirComparador={() => setModalCompararAberto(true)}
+                onAbrirPdfComparativo={() => setModalPdfComparativoAberto(true)}
               />
             </div>
 
             {/* Bloco de consumo Freemium */}
             <FreemiumBadge tipo="simulacao" variante="barra" className="mt-2" />
 
-            <div className="pt-2 border-t border-slate-100 px-3 py-2 bg-slate-50/70 rounded-xl">
+            <div className="pt-2 border-t border-slate-100 px-3 py-2 bg-slate-50/70 rounded-xl space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#07132B]">
                 <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
                 Cenários Salvos
               </div>
-              <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+              <p className="text-[11px] text-slate-500 leading-snug">
                 Marque 2 ou 3 simulações na lista acima para comparar os regimes e economias lado a
                 lado.
               </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={selecionadasComparar.length < 2 || selecionadasComparar.length > 3}
+                onClick={() => setModalPdfComparativoAberto(true)}
+                className="w-full text-xs font-bold border-[#D4AF37] text-[#0A1A13] hover:bg-[#D4AF37]/10 disabled:opacity-40"
+              >
+                {selecionadasComparar.length >= 2 && selecionadasComparar.length <= 3
+                  ? `Baixar PDF Comparativo (${selecionadasComparar.length})`
+                  : 'Baixar PDF Comparativo'}
+              </Button>
             </div>
           </aside>
 
@@ -510,7 +560,12 @@ function CalculadoraConteudo() {
             {moduloAtivo === 'modulo3' && <Modulo3ComparativoRegimes />}
             {moduloAtivo === 'modulo4' && <Modulo4SimuladorCreditos />}
             {moduloAtivo === 'modulo5' && <Modulo5TransicaoCronograma />}
-            {moduloAtivo === 'modulo6' && <Modulo6Dashboard />}
+            {moduloAtivo === 'modulo6' && (
+              <Modulo6Dashboard
+                simulacoesComparar={simulacoesParaComparar}
+                onAbrirPdfComparativo={() => setModalPdfComparativoAberto(true)}
+              />
+            )}
 
             {/* AVISO LEGAL DE ESTIMATIVA CONFORME ESPECIFICAÇÃO */}
             <div className="mt-12 p-5 rounded-2xl bg-slate-100/80 border border-slate-200 text-slate-600 text-xs space-y-2">
@@ -567,6 +622,28 @@ function CalculadoraConteudo() {
         open={modalCompartilharAberto}
         onOpenChange={setModalCompartilharAberto}
         parametros={obterSnapshotParametros()}
+      />
+
+      {/* MODAL RESPONSÁVEL TÉCNICO PARA PDF DA SIMULAÇÃO ATUAL */}
+      <ModalGerarPdf
+        open={modalPdfAtualAberto}
+        onOpenChange={setModalPdfAtualAberto}
+        titulo="Emitir Relatório da Simulação Vigente"
+        descricao="Preencha os dados do Responsável Técnico para inclusão no cabeçalho e parecer do dossiê."
+        modo="individual"
+        onConfirmar={handleConfirmarPdfAtual}
+        gerando={gerandoPdf}
+      />
+
+      {/* MODAL RESPONSÁVEL TÉCNICO PARA PDF COMPARATIVO */}
+      <ModalGerarPdf
+        open={modalPdfComparativoAberto}
+        onOpenChange={setModalPdfComparativoAberto}
+        titulo={`Emitir PDF Comparativo (${simulacoesParaComparar.length} cenários)`}
+        descricao="Preencha os dados do Responsável Técnico para assinar o dossiê comparativo oficial."
+        modo="comparativo"
+        onConfirmar={handleConfirmarPdfComparativo}
+        gerando={gerandoPdfComparativo}
       />
 
       {/* PAYWALL MODAL QUANDO ATINGE O LIMITE DE SIMULAÇÕES */}

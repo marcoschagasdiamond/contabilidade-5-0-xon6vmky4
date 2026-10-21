@@ -14,7 +14,12 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
-import { gerarRelatorioSimulacaoPDF } from '@/lib/pdfSimulacaoCalculadora'
+import {
+  gerarRelatorioSimulacaoPDF,
+  gerarRelatorioComparativoPDF,
+} from '@/lib/pdfSimulacaoCalculadora'
+import { ModalGerarPdf, type ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
+import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
 import { ModalSalvarSimulacao } from '@/components/calculadora/ModalSalvarSimulacao'
 import { ModalCompartilharLink } from '@/components/calculadora/ModalCompartilharLink'
 import {
@@ -58,7 +63,15 @@ import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropag
 
 const CORES_PIZZA = ['#07132B', '#D4AF37', '#10B981', '#3B82F6', '#6366F1', '#EC4899', '#8B5CF6']
 
-export default function Modulo6Dashboard() {
+interface Modulo6DashboardProps {
+  simulacoesComparar?: SimulacaoCalculadora[]
+  onAbrirPdfComparativo?: () => void
+}
+
+export default function Modulo6Dashboard({
+  simulacoesComparar = [],
+  onAbrirPdfComparativo,
+}: Modulo6DashboardProps) {
   const {
     config,
     faturamentoMensal,
@@ -92,28 +105,54 @@ export default function Modulo6Dashboard() {
   const { toast } = useToast()
   const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
   const [modalCompartilharAberto, setModalCompartilharAberto] = useState(false)
+  const [modalGerarPdfAberto, setModalGerarPdfAberto] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
-  const handleBaixarPdfDashboard = () => {
+  const temComparativoDisponivel = simulacoesComparar.length >= 2 && simulacoesComparar.length <= 3
+
+  const handleAbrirModalPdfDashboard = () => {
+    setModalGerarPdfAberto(true)
+  }
+
+  const handleConfirmarPdf = (
+    dadosTecnico: ResponsavelTecnicoDados,
+    escolha?: 'atual' | 'comparativo',
+  ) => {
     try {
       setGerandoPdf(true)
-      const params = obterSnapshotParametros()
-      const res = obterSnapshotResultados()
-      gerarRelatorioSimulacaoPDF({
-        nomeSimulacao: 'Simulação Executiva - Dashboard',
-        parametros: params,
-        resultados: res,
-        empresa: params.empresa,
-        cnpj: params.cnpj,
-      })
-      toast({
-        title: 'Relatório PDF gerado!',
-        description: 'Download do relatório completo com a identidade Diamond Group iniciado.',
-      })
+
+      if (escolha === 'comparativo' && temComparativoDisponivel) {
+        gerarRelatorioComparativoPDF({
+          simulacoes: simulacoesComparar,
+          responsavelTecnico: dadosTecnico,
+          observacoesContador: dadosTecnico.observacoes,
+        })
+        toast({
+          title: 'PDF Comparativo gerado!',
+          description: `Dossiê comparativo com ${simulacoesComparar.length} cenários baixado com sucesso.`,
+        })
+      } else {
+        const params = obterSnapshotParametros()
+        const res = obterSnapshotResultados()
+        gerarRelatorioSimulacaoPDF({
+          nomeSimulacao: 'Simulação Executiva - Dashboard',
+          parametros: params,
+          resultados: res,
+          empresa: params.empresa,
+          cnpj: params.cnpj,
+          responsavelTecnico: dadosTecnico,
+          observacoesContador: dadosTecnico.observacoes,
+        })
+        toast({
+          title: 'Relatório PDF gerado!',
+          description: 'Download do relatório individual completo iniciado com sucesso.',
+        })
+      }
+      setModalGerarPdfAberto(false)
     } catch (err: any) {
       toast({
         title: 'Erro ao gerar PDF',
-        description: err?.message || 'Falha ao compilar relatório.',
+        description: err?.message || 'Falha ao compilar relatório em PDF.',
         variant: 'destructive',
       })
     } finally {
@@ -561,15 +600,14 @@ export default function Modulo6Dashboard() {
                 <span>Salvar Simulação</span>
               </Button>
 
-              {/* Botão Primário em Destaque: Baixar Relatório em PDF */}
+              {/* Botão Primário em Destaque: Baixar Relatório em PDF (sem ícones — apenas texto e cores) */}
               <Button
                 type="button"
-                onClick={handleBaixarPdfDashboard}
+                onClick={handleAbrirModalPdfDashboard}
                 disabled={gerandoPdf}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs h-10 px-4 shadow-[0_0_15px_rgba(16,185,129,0.4)] border border-emerald-400 flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs h-10 px-4 shadow-[0_0_15px_rgba(16,185,129,0.4)] border border-emerald-400 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 title="Exportar dossiê completo em PDF"
               >
-                <FileDown className="w-4 h-4 stroke-[2.5]" />
                 <span>{gerandoPdf ? 'Gerando...' : 'Baixar Relatório em PDF'}</span>
               </Button>
             </div>
@@ -1631,6 +1669,18 @@ export default function Modulo6Dashboard() {
         open={modalCompartilharAberto}
         onOpenChange={setModalCompartilharAberto}
         parametros={obterSnapshotParametros()}
+      />
+
+      {/* Modal Gerar Relatório Técnico em PDF */}
+      <ModalGerarPdf
+        open={modalGerarPdfAberto}
+        onOpenChange={setModalGerarPdfAberto}
+        titulo="Emitir Relatório Executivo em PDF"
+        descricao="Preencha os dados do Responsável Técnico para inclusão formal no cabeçalho e parecer do dossiê."
+        modo={temComparativoDisponivel ? 'escolha' : 'individual'}
+        quantidadeSimulacoesComparar={simulacoesComparar.length}
+        onConfirmar={handleConfirmarPdf}
+        gerando={gerandoPdf}
       />
     </div>
   )

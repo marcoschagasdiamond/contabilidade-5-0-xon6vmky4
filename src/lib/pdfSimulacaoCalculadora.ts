@@ -2,8 +2,15 @@ import { jsPDF } from 'jspdf'
 import type {
   ParametrosSimulacaoCalculadora,
   ResultadosSimulacaoCalculadora,
+  SimulacaoCalculadora,
 } from '@/types/simulacaoCalculadora'
-import { obterInfoRegimeOperacao, obterGrupoRegimeOperacao } from '@/types/calculadoraIbsCbs'
+import {
+  obterInfoRegimeOperacao,
+  obterGrupoRegimeOperacao,
+  CRONOGRAMA_FASES_TRANSICAO,
+  CATEGORIAS_CREDITO_PADRAO,
+} from '@/types/calculadoraIbsCbs'
+import type { ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
 
 export interface GerarPdfSimulacaoOptions {
   nomeSimulacao: string
@@ -12,18 +19,318 @@ export interface GerarPdfSimulacaoOptions {
   empresa?: string
   cnpj?: string
   dataGeracao?: string
+  responsavelTecnico?: ResponsavelTecnicoDados
+  observacoesContador?: string
+}
+
+export interface GerarPdfComparativoOptions {
+  simulacoes: SimulacaoCalculadora[]
+  dataGeracao?: string
+  responsavelTecnico?: ResponsavelTecnicoDados
+  observacoesContador?: string
+}
+
+// ==========================================
+// PALETA VISUAL DIAMOND GROUP
+// ==========================================
+const COR_VERDE_ESCURO = [10, 26, 19] as const // #0A1A13 (Verde Escuro Primário Diamond)
+const COR_VERDE_MEDIO = [20, 50, 36] as const // #143224 (Verde Escuro Secundário)
+const COR_DOURADO = [212, 175, 55] as const // #D4AF37 (Dourado Diamond)
+const COR_DOURADO_CLARO = [245, 230, 180] as const
+const COR_EMERALD = [16, 185, 129] as const // #10B981
+const COR_TEXTO = [30, 41, 59] as const // slate-800
+const COR_MUTED = [100, 116, 139] as const // slate-500
+const COR_BG_LIGHT = [248, 250, 252] as const // slate-50
+const COR_BORDA = [226, 232, 240] as const // slate-200
+
+export const formatarMoeda = (val: number): string => {
+  return (
+    'R$ ' +
+    (val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  )
+}
+
+export const formatarPorcentagem = (val: number, casas = 2): string => {
+  return (val || 0).toFixed(casas).replace('.', ',') + '%'
 }
 
 /**
- * Utilitário profissional para geração de relatório em PDF da Calculadora IBS/CBS
- * Identidade visual: Diamond Group
- * - Azul Escuro Primário (#07132B / rgb(7, 19, 43))
- * - Azul Escuro Secundário (#0B1E3F / rgb(11, 30, 63))
- * - Dourado (#D4AF37 / rgb(212, 175, 55))
- * - Verde (#2ECC71 / rgb(46, 204, 113))
+ * Desenha o logotipo oficial da Contabilidade 5.0 em vetores nativos do jsPDF
+ * Hexágono estilizado com seta ascendente verde/dourada
  */
+export function desenharLogoContabilidade50(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  size = 14,
+  fundoEscuro = true,
+): void {
+  const cx = x + size / 2
+  const cy = y + size / 2
+  const r = size / 2
+
+  // Pontos do hexágono regular com topo pontiagudo
+  // Ângulos: -90, -30, 30, 90, 150, 210 graus
+  const pontos: Array<{ x: number; y: number }> = []
+  for (let i = 0; i < 6; i++) {
+    const angulo = (-90 + i * 60) * (Math.PI / 180)
+    pontos.push({
+      x: cx + r * Math.cos(angulo),
+      y: cy + r * Math.sin(angulo),
+    })
+  }
+
+  // Preenchimento do hexágono
+  if (fundoEscuro) {
+    doc.setFillColor(COR_VERDE_MEDIO[0], COR_VERDE_MEDIO[1], COR_VERDE_MEDIO[2])
+    doc.setDrawColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  } else {
+    doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.setDrawColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  }
+  doc.setLineWidth(0.6)
+
+  // Traçar polígono do hexágono
+  const lines: number[][] = []
+  for (let i = 1; i < pontos.length; i++) {
+    lines.push([pontos[i].x - pontos[i - 1].x, pontos[i].y - pontos[i - 1].y])
+  }
+  doc.lines(lines, pontos[0].x, pontos[0].y, [1, 1], 'FD', true)
+
+  // Seta ascendente em vetor dourado no centro (TrendingUp)
+  doc.setDrawColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  doc.setFillColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  doc.setLineWidth(0.8)
+
+  const sW = size * 0.28
+  const sH = size * 0.28
+  const startX = cx - sW * 0.8
+  const startY = cy + sH * 0.6
+  const midX = cx - sW * 0.1
+  const midY = cy + sH * 0.1
+  const endX = cx + sW * 0.7
+  const endY = cy - sH * 0.6
+
+  // Linha em zigue-zague subindo
+  doc.line(startX, startY, midX, midY)
+  doc.line(midX, midY, midX + sW * 0.2, midY + sH * 0.2)
+  doc.line(midX + sW * 0.2, midY + sH * 0.2, endX, endY)
+
+  // Ponta da seta (triângulo no endX, endY)
+  const pSize = size * 0.14
+  doc.triangle(
+    endX,
+    endY,
+    endX - pSize * 1.3,
+    endY + pSize * 0.2,
+    endX - pSize * 0.3,
+    endY + pSize * 1.2,
+    'FD',
+  )
+}
+
+/**
+ * Adiciona o bloco do Responsável Técnico Contábil no documento
+ */
+export function adicionarBlocoResponsavelTecnico(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  width: number,
+  dados?: ResponsavelTecnicoDados,
+): number {
+  const altura = 24
+  doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
+  doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+  doc.roundedRect(x, y, width, altura, 2, 2, 'FD')
+
+  // Borda lateral decorativa em dourado
+  doc.setFillColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  doc.rect(x, y, 2.5, altura, 'F')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text('RESPONSÁVEL TÉCNICO CONTÁBIL', x + 5, y + 5)
+
+  doc.setFontSize(7.5)
+  doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+
+  const col1X = x + 5
+  const col2X = x + width / 2 + 2
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('Nome:', col1X, y + 11)
+  doc.setFont('helvetica', 'normal')
+  doc.text(dados?.nome || 'Não informado', col1X + 16, y + 11)
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('CRC:', col1X, y + 17)
+  doc.setFont('helvetica', 'normal')
+  doc.text(dados?.crc || 'Não informado', col1X + 16, y + 17)
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('E-mail:', col2X, y + 11)
+  doc.setFont('helvetica', 'normal')
+  doc.text(dados?.email || 'Não informado', col2X + 16, y + 11)
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('Telefone:', col2X, y + 17)
+  doc.setFont('helvetica', 'normal')
+  doc.text(dados?.telefone || 'Não informado', col2X + 16, y + 17)
+
+  return y + altura + 5
+}
+
+/**
+ * Adiciona o bloco de assinatura formal no final do relatório
+ */
+export function adicionarBlocoAssinatura(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  width: number,
+  dados?: ResponsavelTecnicoDados,
+  cidadeUf = 'São Paulo - SP',
+): number {
+  const altura = 36
+  doc.setFillColor(255, 255, 255)
+  doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+  doc.roundedRect(x, y, width, altura, 2, 2, 'D')
+
+  const linhaWidth = 85
+  const linhaX = x + (width - linhaWidth) / 2
+  const linhaY = y + 18
+
+  // Linha de assinatura
+  doc.setDrawColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.setLineWidth(0.5)
+  doc.line(linhaX, linhaY, linhaX + linhaWidth, linhaY)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8.5)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  const nomeAssina = dados?.nome ? dados.nome.toUpperCase() : 'CONTADOR RESPONSÁVEL'
+  doc.text(nomeAssina, x + width / 2, linhaY + 4.5, { align: 'center' })
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.5)
+  doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+  const crcAssina = dados?.crc ? `Registro CRC: ${dados.crc}` : 'Contabilista Habilitado no CRC'
+  doc.text(crcAssina, x + width / 2, linhaY + 9, { align: 'center' })
+
+  const dataExtenso = new Date().toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  })
+  doc.setFontSize(7)
+  doc.text(`${cidadeUf}, ${dataExtenso}`, x + width / 2, linhaY + 14, { align: 'center' })
+
+  return y + altura + 5
+}
+
+/**
+ * Aplica o rodapé em todas as páginas do documento
+ */
+function aplicarRodapePadrao(doc: jsPDF, margin: number, pageWidth: number, pageHeight: number) {
+  const totalPages = doc.internal.pages.length - 1
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i)
+    doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+    doc.setLineWidth(0.3)
+    doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(6.8)
+    doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+    doc.text(
+      'Contabilidade 5.0 — Diamond Group | Inteligência Fiscal & BPO Estratégico | contato@contabilidade50.com.br',
+      margin,
+      pageHeight - 7,
+    )
+    doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: 'right' })
+  }
+}
+
+/**
+ * Recalcula o regime mais econômico para cada ano da transição (Quadro Comparativo)
+ * Mesma lógica já homologada no Modulo6Dashboard
+ */
+export function calcularRegimesMaisEconomicosPorAno(
+  parametros: ParametrosSimulacaoCalculadora,
+  resultados: ResultadosSimulacaoCalculadora,
+): Record<string, string> {
+  const lrTotal = resultados.resultadoComparativo.lucroReal.totalEfetivo
+  const lpTotal = resultados.resultadoComparativo.lucroPresumido.totalEfetivo
+  const snTotal = resultados.resultadoComparativo.simplesNacional.totalEfetivo
+
+  const mapa: Record<string, string> = {}
+  const fatMensal = parametros.faturamentoMensal || 1
+  const pctCompras = parametros.percentualComprasVendasComparativo || 0
+  const anoConfig = parametros.config?.anoTransicao
+
+  resultados.resultadoTransicao.forEach((item) => {
+    const ano = item.ano
+
+    if (ano === 'atual') {
+      const cenarios = [
+        { nome: 'Lucro Real', total: lrTotal },
+        { nome: 'Lucro Presumido', total: lpTotal },
+        { nome: 'Simples Nacional', total: snTotal },
+      ].sort((a, b) => a.total - b.total)
+      mapa[String(ano)] = cenarios[0].nome
+      return
+    }
+
+    const faseAno = CRONOGRAMA_FASES_TRANSICAO[ano] || CRONOGRAMA_FASES_TRANSICAO[2033]
+    const cbsAno = faseAno.aliquotaCbs
+    const ibsAno = faseAno.aliquotaIbs
+    const totalIvaDualAno = faseAno.totalIvaDual
+
+    let ibsCbsTotalAno = resultados.resultadoComparativo.ibsCbs.totalEfetivo
+
+    if (ano !== anoConfig) {
+      const comprasValor = (fatMensal * pctCompras) / 100
+      const cbsNominal = (fatMensal * cbsAno) / 100
+      const ibsNominal = (fatMensal * ibsAno) / 100
+      const debitoTotal = cbsNominal + ibsNominal
+
+      const creditosCompras = (comprasValor * totalIvaDualAno) / 100
+      const creditosDespesas =
+        ((parametros.despesasComCreditosMensais || 0) * totalIvaDualAno) / 100
+      const creditosTotal = creditosCompras + creditosDespesas
+
+      ibsCbsTotalAno = Math.max(0, debitoTotal - creditosTotal)
+    }
+
+    const cenarios = [
+      { nome: 'Lucro Real', total: lrTotal },
+      { nome: 'Lucro Presumido', total: lpTotal },
+      { nome: 'Simples Nacional', total: snTotal },
+      { nome: 'IBS/CBS', total: ibsCbsTotalAno },
+    ].sort((a, b) => a.total - b.total)
+
+    mapa[String(ano)] = cenarios[0].nome
+  })
+
+  return mapa
+}
+
+// ============================================================================
+// 1) ENRIQUECER O PDF INDIVIDUAL (REFORMULAÇÃO COMPLETA)
+// ============================================================================
 export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): void {
-  const { nomeSimulacao, parametros, resultados, empresa, cnpj, dataGeracao } = options
+  const {
+    nomeSimulacao,
+    parametros,
+    resultados,
+    empresa,
+    cnpj,
+    dataGeracao,
+    responsavelTecnico,
+    observacoesContador,
+  } = options
 
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -38,21 +345,13 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
 
   let currentY = 0
 
-  // Cores Diamond Group
-  const COR_PRIMARIA = [7, 19, 43] as const // #07132B
-  const COR_SECUNDARIA = [11, 30, 63] as const // #0B1E3F
-  const COR_DOURADO = [212, 175, 55] as const // #D4AF37
-  const COR_VERDE = [46, 204, 113] as const // #2ECC71
-  const COR_TEXTO = [30, 41, 59] as const // slate-800
-  const COR_MUTED = [100, 116, 139] as const // slate-500
-  const COR_BG_LIGHT = [248, 250, 252] as const // slate-50
-  const COR_BORDA = [226, 232, 240] as const // slate-200
-
-  const formatarMoeda = (val: number): string => {
-    return (
-      'R$ ' +
-      (val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    )
+  const adicionarCabecalhoCompacto = () => {
+    doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.rect(margin, 10, contentWidth, 3, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+    doc.text('CONTABILIDADE 5.0 — SIMULADOR IBS / CBS (DIAMOND GROUP)', margin, 8)
   }
 
   const verificarQuebraPagina = (espacoNecessario: number) => {
@@ -63,35 +362,30 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     }
   }
 
-  const adicionarCabecalhoCompacto = () => {
-    doc.setFillColor(COR_PRIMARIA[0], COR_PRIMARIA[1], COR_PRIMARIA[2])
-    doc.rect(margin, 10, contentWidth, 3, 'F')
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8)
-    doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
-    doc.text('CONTABILIDADE 5.0 — SIMULADOR IBS / CBS (DIAMOND GROUP)', margin, 8)
-  }
-
   // ==========================================
-  // CABEÇALHO PRINCIPAL DIAMOND GROUP
+  // PÁGINA 1: CABEÇALHO COM LOGO DIAMOND GROUP
   // ==========================================
-  doc.setFillColor(COR_PRIMARIA[0], COR_PRIMARIA[1], COR_PRIMARIA[2])
-  doc.rect(0, 0, pageWidth, 40, 'F')
+  doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.rect(0, 0, pageWidth, 42, 'F')
 
   // Faixa dourada decorativa
   doc.setFillColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
-  doc.rect(0, 40, pageWidth, 2.5, 'F')
+  doc.rect(0, 42, pageWidth, 2.5, 'F')
 
-  // Marca / Logo textual
+  // Logotipo desenhado em vetor (hexágono + seta)
+  desenharLogoContabilidade50(doc, margin, 11, 19, true)
+
+  // Textos da marca ao lado do logo
+  const brandX = margin + 24
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(18)
-  doc.text('CONTABILIDADE 5.0', margin, 17)
+  doc.setFontSize(17)
+  doc.text('CONTABILIDADE 5.0', brandX, 19)
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
+  doc.setFontSize(8.5)
   doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
-  doc.text('DIAMOND GROUP • MOTOR TRIBUTÁRIO IBS / CBS (EC 132/2023 & LC 214/2025)', margin, 24)
+  doc.text('DIAMOND GROUP • INTELIGÊNCIA TRIBUTÁRIA & TRANSIÇÃO IBS/CBS', brandX, 26)
 
   const dataString =
     dataGeracao ||
@@ -104,60 +398,88 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     })
 
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8)
+  doc.setFontSize(7.5)
   doc.setTextColor(203, 213, 225)
   doc.text(
-    `Simulação: "${nomeSimulacao}" | Gerado em: ${dataString} | Documento Estratégico`,
-    margin,
-    32,
+    `Cenário: "${nomeSimulacao}" | Emissão: ${dataString} | Dossiê Técnico Individual`,
+    brandX,
+    33,
   )
 
-  currentY = 50
+  currentY = 51
 
   // ==========================================
-  // BLOCO 1: DADOS DA EMPRESA & IDENTIFICAÇÃO DO CENÁRIO
+  // BLOCO: RESPONSÁVEL TÉCNICO (PREENCHÍVEL / PERSISTIDO)
   // ==========================================
+  currentY = adicionarBlocoResponsavelTecnico(
+    doc,
+    margin,
+    currentY,
+    contentWidth,
+    responsavelTecnico,
+  )
+
+  // ==========================================
+  // BLOCO 1: IDENTIFICAÇÃO DA EMPRESA & METADADOS DA SIMULAÇÃO
+  // ==========================================
+  const nomeEmpresaExibir = empresa || parametros.empresa || 'Empresa em Simulação'
+  const cnpjExibir = cnpj || parametros.cnpj || 'Não informado'
+  const periodoExibir = (parametros.periodoDashboard || 'mensal').toUpperCase()
+  const regimeAtualExibir =
+    parametros.regimeAtualFiltro || parametros.regimeAtualEmpresa || 'Simples Nacional'
+  const anoTransicaoExibir =
+    parametros.anoTransicaoDashboard === 'atual'
+      ? 'Ano Atual (Pré-Reforma)'
+      : parametros.anoTransicaoDashboard
+        ? `Ano ${parametros.anoTransicaoDashboard}`
+        : parametros.config?.anoTransicao === 'atual'
+          ? 'Ano Atual (Pré-Reforma)'
+          : `Ano ${parametros.config?.anoTransicao || 2033}`
+
   doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
   doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-  doc.roundedRect(margin, currentY, contentWidth, 38, 2, 2, 'FD')
+  doc.roundedRect(margin, currentY, contentWidth, 42, 2, 2, 'FD')
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
-  doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
-  doc.text('IDENTIFICAÇÃO DA EMPRESA E PARÂMETROS OPERACIONAIS', margin + 4, currentY + 6)
+  doc.setFontSize(8.5)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text('IDENTIFICAÇÃO DA EMPRESA E METADADOS DA SIMULAÇÃO', margin + 4, currentY + 6)
 
-  doc.setFontSize(8)
+  // Badge dourado do Ano da Transição selecionado no Dashboard
+  doc.setFillColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  doc.roundedRect(margin + contentWidth - 52, currentY + 2.5, 48, 5, 1, 1, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(6.5)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text(`FASE: ${anoTransicaoExibir.toUpperCase()}`, margin + contentWidth - 28, currentY + 6, {
+    align: 'center',
+  })
+
+  doc.setFontSize(7.5)
   doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
 
   // Coluna 1
-  const nomeEmpresaExibir = empresa || parametros.empresa || 'Empresa em Simulação'
-  const cnpjExibir = cnpj || parametros.cnpj || 'Não informado'
-
   doc.setFont('helvetica', 'bold')
-  doc.text('Empresa / Cliente:', margin + 4, currentY + 13)
+  doc.text('Empresa / Razão Social:', margin + 4, currentY + 13)
   doc.setFont('helvetica', 'normal')
-  doc.text(nomeEmpresaExibir, margin + 32, currentY + 13)
+  doc.text(nomeEmpresaExibir, margin + 40, currentY + 13)
 
   doc.setFont('helvetica', 'bold')
   doc.text('CNPJ:', margin + 4, currentY + 18)
   doc.setFont('helvetica', 'normal')
-  doc.text(cnpjExibir, margin + 32, currentY + 18)
+  doc.text(cnpjExibir, margin + 40, currentY + 18)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Faturamento:', margin + 4, currentY + 23)
+  doc.text('Regime Atual da Empresa:', margin + 4, currentY + 23)
   doc.setFont('helvetica', 'normal')
-  doc.text(
-    `${formatarMoeda(parametros.faturamentoMensal)}/mês (${formatarMoeda(parametros.faturamentoMensal * 12)}/ano)`,
-    margin + 32,
-    currentY + 23,
-  )
+  doc.text(regimeAtualExibir, margin + 40, currentY + 23)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Folha / Margem:', margin + 4, currentY + 28)
+  doc.text('Período de Análise:', margin + 4, currentY + 28)
   doc.setFont('helvetica', 'normal')
   doc.text(
-    `${formatarMoeda(parametros.folhaPagamentoMensal)}/mês | Margem: ${parametros.margemLucroEstimada}%`,
-    margin + 32,
+    `Visão ${periodoExibir} (${formatarMoeda(parametros.faturamentoMensal)}/mês)`,
+    margin + 40,
     currentY + 28,
   )
 
@@ -166,12 +488,21 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFont('helvetica', 'normal')
   doc.text(
     `${parametros.percentualComprasVendasComparativo}% das vendas (${formatarMoeda((parametros.faturamentoMensal * parametros.percentualComprasVendasComparativo) / 100)}/mês)`,
-    margin + 32,
+    margin + 40,
     currentY + 33,
   )
 
+  doc.setFont('helvetica', 'bold')
+  doc.text('Folha / Margem:', margin + 4, currentY + 38)
+  doc.setFont('helvetica', 'normal')
+  doc.text(
+    `${formatarMoeda(parametros.folhaPagamentoMensal)}/mês | Margem: ${parametros.margemLucroEstimada}%`,
+    margin + 40,
+    currentY + 38,
+  )
+
   // Coluna 2
-  const col2X = margin + 98
+  const col2X = margin + 104
   doc.setFont('helvetica', 'bold')
   doc.text('Ramo de Atividade:', col2X, currentY + 13)
   doc.setFont('helvetica', 'normal')
@@ -199,30 +530,35 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.text(`${parametros.ufOrigem || 'SP'}`, col2X + 32, currentY + 18)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Despesas c/ Crédito:', col2X, currentY + 23)
+  doc.text('Ano Transição Dashboard:', col2X, currentY + 23)
   doc.setFont('helvetica', 'normal')
-  doc.text(`${formatarMoeda(parametros.despesasComCreditosMensais)}/mês`, col2X + 32, currentY + 23)
+  doc.text(anoTransicaoExibir, col2X + 32, currentY + 23)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Exportação:', col2X, currentY + 28)
+  doc.text('Despesas c/ Crédito:', col2X, currentY + 28)
   doc.setFont('helvetica', 'normal')
-  doc.text(`${parametros.percentualExportacao || 0}% da receita`, col2X + 32, currentY + 28)
+  doc.text(`${formatarMoeda(parametros.despesasComCreditosMensais)}/mês`, col2X + 32, currentY + 28)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Alíquotas IVA Dual:', col2X, currentY + 33)
+  doc.text('Exportação:', col2X, currentY + 33)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`${parametros.percentualExportacao || 0}% da receita`, col2X + 32, currentY + 33)
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('IVA Dual Referência:', col2X, currentY + 38)
   doc.setFont('helvetica', 'normal')
   doc.text(
     `CBS ${parametros.config.cbsPadrao}% + IBS ${parametros.config.ibsPadrao}% = ${parametros.config.totalIvaDual}%`,
     col2X + 32,
-    currentY + 33,
+    currentY + 38,
   )
 
-  currentY += 44
+  currentY += 48
 
   // ==========================================
   // BLOCO 2: RESUMO EXECUTIVO (MÓDULO 6 - DASHBOARD)
   // ==========================================
-  doc.setFillColor(COR_PRIMARIA[0], COR_PRIMARIA[1], COR_PRIMARIA[2])
+  doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
   doc.roundedRect(margin, currentY, contentWidth, 32, 2, 2, 'F')
 
   doc.setFont('helvetica', 'bold')
@@ -234,7 +570,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFontSize(14)
   doc.setTextColor(255, 255, 255)
   doc.text(
-    `Recomendado: ${resultados.resultadoDashboard.regimeRecomendado}`,
+    `Regime Recomendado: ${resultados.resultadoDashboard.regimeRecomendado}`,
     margin + 6,
     currentY + 16,
   )
@@ -243,7 +579,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFontSize(8)
   doc.setTextColor(226, 232, 240)
   doc.text(
-    `Alíquota Efetiva Atual: ${resultados.resultadoDashboard.aliquotaEfetivaAtual.toFixed(2)}%  →  Nova Alíquota (IBS/CBS): ${resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%`,
+    `Alíquota Efetiva Atual (${regimeAtualExibir}): ${resultados.resultadoDashboard.aliquotaEfetivaAtual.toFixed(2)}%  →  Nova Alíquota (IBS/CBS): ${resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%`,
     margin + 6,
     currentY + 23,
   )
@@ -251,7 +587,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   // Card de Economia Anual
   const ecoWidth = 56
   const ecoX = margin + contentWidth - ecoWidth - 6
-  doc.setFillColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
+  doc.setFillColor(COR_VERDE_MEDIO[0], COR_VERDE_MEDIO[1], COR_VERDE_MEDIO[2])
   doc.roundedRect(ecoX, currentY + 4, ecoWidth, 24, 2, 2, 'F')
 
   doc.setFontSize(6.5)
@@ -260,7 +596,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
-  doc.setTextColor(COR_VERDE[0], COR_VERDE[1], COR_VERDE[2])
+  doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
   doc.text(
     formatarMoeda(resultados.resultadoDashboard.economiaAnualProjetada),
     ecoX + 4,
@@ -279,19 +615,18 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   currentY += 38
 
   // ==========================================
-  // BLOCO 3: MÓDULO 3 - COMPARATIVO DE REGIMES
+  // BLOCO 3: MÓDULO 3 - COMPARATIVO DOS 4 REGIMES
   // ==========================================
   verificarQuebraPagina(50)
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(10)
-  doc.setTextColor(COR_PRIMARIA[0], COR_PRIMARIA[1], COR_PRIMARIA[2])
+  doc.setFontSize(9.5)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
   doc.text('MÓDULO 3 • COMPARATIVO DE REGIMES TRIBUTÁRIOS', margin, currentY + 4)
 
   currentY += 7
 
-  // Cabeçalho da Tabela
-  doc.setFillColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
+  doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
   doc.rect(margin, currentY, contentWidth, 7, 'F')
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(7.5)
@@ -341,9 +676,9 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     doc.setFont('helvetica', reg.isRecomendado ? 'bold' : 'normal')
     doc.setFontSize(7.5)
     doc.setTextColor(
-      reg.isRecomendado ? COR_SECUNDARIA[0] : COR_TEXTO[0],
-      reg.isRecomendado ? COR_SECUNDARIA[1] : COR_TEXTO[1],
-      reg.isRecomendado ? COR_SECUNDARIA[2] : COR_TEXTO[2],
+      reg.isRecomendado ? COR_VERDE_MEDIO[0] : COR_TEXTO[0],
+      reg.isRecomendado ? COR_VERDE_MEDIO[1] : COR_TEXTO[1],
+      reg.isRecomendado ? COR_VERDE_MEDIO[2] : COR_TEXTO[2],
     )
 
     doc.text(`${reg.nome}${reg.isRecomendado ? ' (Recomendado)' : ''}`, margin + 3, currentY + 5)
@@ -357,259 +692,156 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     currentY += 7.5
   })
 
+  currentY += 8
+
+  // ==========================================
+  // BLOCO 4: MÓDULO 4 - QUADRO DE CRÉDITOS POR CATEGORIA (ANTIGO VS. NOVO IVA DUAL)
+  // ==========================================
+  verificarQuebraPagina(60)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9.5)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text(
+    'MÓDULO 4 • QUADRO DE CRÉDITOS POR CATEGORIA (ANTIGO VS. NOVO IVA DUAL)',
+    margin,
+    currentY + 3,
+  )
+
   currentY += 6
 
-  // ==========================================
-  // BLOCO 4: MÓDULO 2 (CALCULADORA SIMPLES) & MÓDULO 4 (CRÉDITOS)
-  // ==========================================
-  verificarQuebraPagina(40)
-
-  const halfWidth = (contentWidth - 6) / 2
-
-  // Box Módulo 2
+  // Resumo numérico do Módulo 4
+  const resCred = resultados.resultadoCreditos
   doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
   doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-  doc.roundedRect(margin, currentY, halfWidth, 36, 2, 2, 'FD')
+  doc.roundedRect(margin, currentY, contentWidth, 14, 1.5, 1.5, 'FD')
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(8.5)
-  doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
-  doc.text('MÓDULO 2 • OPERAÇÃO UNITÁRIA', margin + 4, currentY + 5.5)
-
-  const infoRegimePdf = obterInfoRegimeOperacao(parametros.regimeOperacao || 'padrao')
-  const anoOperacaoPdf =
-    parametros.anoOperacao ??
-    resultados.resultadoSimples.anoOperacao ??
-    parametros.config.anoTransicao ??
-    2033
-  const etiquetaAnoOperacaoPdf =
-    anoOperacaoPdf === 'atual' ? 'Ano atual (pré-reforma)' : `Fase ${anoOperacaoPdf}`
-
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7)
+  doc.setFontSize(7.2)
   doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
   doc.text(
-    `Valor da Operação: ${formatarMoeda(parametros.valorOperacao)} | Ano: ${etiquetaAnoOperacaoPdf}`,
+    `Total Crédito Antigo: ${formatarMoeda(resCred.totalAntigo)}/mês  |  Crédito Novo IVA Dual: ${formatarMoeda(resCred.totalNovo)}/mês  |  Ganho Líquido: ${resCred.adicionalGanho >= 0 ? '+' : ''}${formatarMoeda(resCred.adicionalGanho)}/mês  |  Economia Anual: ${formatarMoeda(resCred.economiaAnual)}`,
     margin + 4,
-    currentY + 10.5,
+    currentY + 8.5,
   )
-  doc.text(`Regime: ${infoRegimePdf.titulo.slice(0, 36)}...`, margin + 4, currentY + 15)
-  doc.text(
-    `Alíquota Total Aplicada: ${resultados.resultadoSimples.aliquotaTotalAplicada.toFixed(2)}% (${resultados.resultadoSimples.etiquetaLegalExibida || infoRegimePdf.etiquetaOrigem})`,
-    margin + 4,
-    currentY + 19.5,
-  )
-  doc.text(
-    `Débito CBS (${resultados.resultadoSimples.aliquotaCbsAplicada}%): ${formatarMoeda(resultados.resultadoSimples.debitoCbs)}`,
-    margin + 4,
-    currentY + 24,
-  )
-  doc.text(
-    `Débito IBS (${resultados.resultadoSimples.aliquotaIbsAplicada}%): ${formatarMoeda(resultados.resultadoSimples.debitoIbs)}`,
-    margin + 4,
-    currentY + 28.5,
-  )
+
+  currentY += 17
+
+  // Cabeçalho da Tabela de Créditos
+  doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.rect(margin, currentY, contentWidth, 6, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(6.8)
   doc.setFont('helvetica', 'bold')
-  doc.text(
-    `Valor Líquido a Recolher: ${formatarMoeda(resultados.resultadoSimples.valorARecolher)}`,
-    margin + 4,
-    currentY + 33,
-  )
+  doc.text('Categoria de Despesa / Insumo', margin + 3, currentY + 4.2)
+  doc.text('Base Mensal', margin + 66, currentY + 4.2)
+  doc.text('Alíq. Antiga', margin + 92, currentY + 4.2)
+  doc.text('Crédito Antigo', margin + 112, currentY + 4.2)
+  doc.text('Alíq. Nova', margin + 137, currentY + 4.2)
+  doc.text('Crédito Novo', margin + 155, currentY + 4.2)
+  doc.text('Ganho', margin + 173, currentY + 4.2)
 
-  // Box Módulo 4
-  const box4X = margin + halfWidth + 6
-  doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
+  currentY += 6
 
-  const regimeOpPdf =
-    resultados.resultadoCreditos.regimeOperacao || parametros.regimeOperacao || 'padrao'
-  const grupoRegimePdf =
-    resultados.resultadoCreditos.grupoRegime || obterGrupoRegimeOperacao(regimeOpPdf)
-  const isAliquotaZeroPdf =
-    Boolean(resultados.resultadoCreditos.isAliquotaZero) || grupoRegimePdf === 'aliquota_zero'
+  const categoriasExibir =
+    parametros.despesasCreditos && parametros.despesasCreditos.length > 0
+      ? parametros.despesasCreditos
+      : CATEGORIAS_CREDITO_PADRAO
 
-  const boxHeight = isAliquotaZeroPdf ? 40 : 36
-  doc.roundedRect(box4X, currentY, halfWidth, boxHeight, 2, 2, 'FD')
+  const aliqRefGeral = resCred.isAliquotaZero ? 0 : (resCred.aliquotaReferencia ?? 26.5)
 
-  const anoCreditosPdf =
-    resultados.resultadoCreditos.anoOperacao ||
-    parametros.anoOperacao ||
-    parametros.config?.anoTransicao ||
-    2033
-  const rotuloAnoCreditosPdf =
-    anoCreditosPdf === 'atual' ? 'Ano atual (0%)' : `Fase ${anoCreditosPdf}`
-  const infoTaxaCreditosPdf = isAliquotaZeroPdf
-    ? ' • 0,00% (zerada)'
-    : resultados.resultadoCreditos.aliquotaReferencia !== undefined
-      ? ` • ${resultados.resultadoCreditos.aliquotaReferencia.toFixed(2)}%`
-      : ''
+  categoriasExibir.forEach((cat, idx) => {
+    verificarQuebraPagina(6)
 
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(8.5)
-  doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
-  doc.text('MÓDULO 4 • SIMULADOR DE CRÉDITOS (18 CATEGORIAS)', box4X + 4, currentY + 6)
+    const baseVal = cat.valorMensal || 0
+    const aliqAntiga = cat.aliquotaAntiga || 0
+    const credAntigo = (baseVal * aliqAntiga) / 100
 
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7.5)
-  doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
-  doc.text(
-    `Créditos Regime Antigo: ${formatarMoeda(resultados.resultadoCreditos.totalAntigo)}/mês`,
-    box4X + 4,
-    currentY + 11.5,
-  )
-  doc.text(
-    `Créditos Novo IVA Dual (${rotuloAnoCreditosPdf}${infoTaxaCreditosPdf}): ${formatarMoeda(resultados.resultadoCreditos.totalNovo)}/mês`,
-    box4X + 4,
-    currentY + 16.5,
-  )
+    let aliqNova = aliqRefGeral
+    if (resCred.isAliquotaZero) {
+      aliqNova = 0
+    } else if (cat.aliquotaNova !== undefined) {
+      aliqNova = cat.aliquotaNova
+    }
 
-  const ganhoCreditosPdf = resultados.resultadoCreditos.adicionalGanho
-  const strGanhoPdf =
-    ganhoCreditosPdf < 0
-      ? `−${formatarMoeda(Math.abs(ganhoCreditosPdf))}`
-      : `+${formatarMoeda(ganhoCreditosPdf)}`
-  const strAumentoPctPdf =
-    resultados.resultadoCreditos.aumentoPercentual < 0
-      ? `−${Math.abs(resultados.resultadoCreditos.aumentoPercentual).toFixed(1)}%`
-      : `+${resultados.resultadoCreditos.aumentoPercentual.toFixed(1)}%`
+    const credNovo = (baseVal * aliqNova) / 100
+    const ganho = credNovo - credAntigo
 
-  doc.text(`Ganho Mensal em Créditos: ${strGanhoPdf}/mês`, box4X + 4, currentY + 21.5)
-  doc.text(`Aumento Percentual: ${strAumentoPctPdf} de aproveitamento`, box4X + 4, currentY + 26.5)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(
-    ganhoCreditosPdf < 0 ? 185 : COR_VERDE[0],
-    ganhoCreditosPdf < 0 ? 28 : COR_VERDE[1],
-    ganhoCreditosPdf < 0 ? 28 : COR_VERDE[2],
-  )
-  doc.text(
-    `Economia Anual em Créditos: ${formatarMoeda(resultados.resultadoCreditos.economiaAnual)}`,
-    box4X + 4,
-    currentY + 31.5,
-  )
-
-  if (isAliquotaZeroPdf) {
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(6.2)
-    doc.setTextColor(180, 83, 9)
-    doc.text(
-      'Nota: Alíquota zero (arts. 8º, 129 e 146 LC 214) não gera crédito na cadeia (crédito morre).',
-      box4X + 4,
-      currentY + 36.5,
+    doc.setFillColor(
+      idx % 2 === 0 ? 255 : 248,
+      idx % 2 === 0 ? 255 : 250,
+      idx % 2 === 0 ? 255 : 252,
     )
-  }
+    doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+    doc.rect(margin, currentY, contentWidth, 5.2, 'FD')
 
-  currentY += isAliquotaZeroPdf ? 46 : 42
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(6.5)
+    doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
 
-  // ==========================================
-  // BLOCO NOVO: SPLIT PAYMENT & CRÉDITO DE ESTOQUE
-  // ==========================================
-  if (resultados.resultadoSplitPayment || resultados.resultadoEstoque) {
-    verificarQuebraPagina(38)
+    // Trunca nome para caber na coluna
+    const nomeTrunc = cat.nome.length > 36 ? cat.nome.slice(0, 34) + '...' : cat.nome
+    doc.text(nomeTrunc, margin + 3, currentY + 3.6)
+    doc.text(formatarMoeda(baseVal), margin + 66, currentY + 3.6)
+    doc.text(`${aliqAntiga.toFixed(1)}%`, margin + 92, currentY + 3.6)
+    doc.text(formatarMoeda(credAntigo), margin + 112, currentY + 3.6)
+    doc.text(`${aliqNova.toFixed(1)}%`, margin + 137, currentY + 3.6)
+    doc.text(formatarMoeda(credNovo), margin + 155, currentY + 3.6)
 
-    // Caixa Split Payment
-    if (resultados.resultadoSplitPayment) {
-      doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
-      doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-      doc.roundedRect(margin, currentY, halfWidth, 32, 2, 2, 'FD')
-
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(8)
-      doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
-      doc.text('SPLIT PAYMENT • FLUXO DE CAIXA', margin + 4, currentY + 5.5)
-
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(7)
-      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
-      doc.text(
-        `Retenção na Nota (IBS/CBS): ${formatarMoeda(resultados.resultadoSplitPayment.retencaoMensalNota)}/mês`,
-        margin + 4,
-        currentY + 11.5,
-      )
-      doc.text(
-        `Recolhimento Antigo (Dia 20): ${formatarMoeda(resultados.resultadoSplitPayment.recolhimentoAtualMensal)}/mês`,
-        margin + 4,
-        currentY + 16.5,
-      )
-      doc.text(
-        `Taxa de Capital de Giro: ${resultados.resultadoSplitPayment.taxaMensalCapital.toFixed(2)}% a.m. (~${resultados.resultadoSplitPayment.diasAntecipacao} dias)`,
-        margin + 4,
-        currentY + 21.5,
-      )
-      doc.setFont('helvetica', 'bold')
+    doc.setFont('helvetica', 'bold')
+    if (ganho > 0) {
+      doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
+      doc.text(`+${formatarMoeda(ganho)}`, margin + 173, currentY + 3.6)
+    } else if (ganho < 0) {
       doc.setTextColor(185, 28, 28)
-      doc.text(
-        `Custo da Antecipação: ${formatarMoeda(resultados.resultadoSplitPayment.custoCapitalAnual)}/ano`,
-        margin + 4,
-        currentY + 27,
-      )
+      doc.text(`-${formatarMoeda(Math.abs(ganho))}`, margin + 173, currentY + 3.6)
+    } else {
+      doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+      doc.text('R$ 0,00', margin + 173, currentY + 3.6)
     }
 
-    // Caixa Crédito de Estoque
-    if (resultados.resultadoEstoque) {
-      doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
-      doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-      doc.roundedRect(box4X, currentY, halfWidth, 32, 2, 2, 'FD')
+    currentY += 5.2
+  })
 
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(8)
-      doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
-      doc.text('CRÉDITO PRESUMIDO DE ESTOQUE', box4X + 4, currentY + 5.5)
-
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(7)
-      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
-      doc.text(
-        `Estoque na Virada: ${formatarMoeda(resultados.resultadoEstoque.valorEstoqueVirada)}`,
-        box4X + 4,
-        currentY + 11.5,
-      )
-      doc.text(
-        `Alíquota de Crédito Presumido: ${resultados.resultadoEstoque.aliquotaCreditoPresumido.toFixed(2)}% (CBS)`,
-        box4X + 4,
-        currentY + 16.5,
-      )
-      doc.text('Aproveitamento no 1º Ano da Transição (2027)', box4X + 4, currentY + 21.5)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(COR_VERDE[0], COR_VERDE[1], COR_VERDE[2])
-      doc.text(
-        `Abatimento de Estoque: -${formatarMoeda(resultados.resultadoEstoque.economiaAno1)}`,
-        box4X + 4,
-        currentY + 27,
-      )
-    }
-
-    currentY += 38
-  }
+  currentY += 8
 
   // ==========================================
-  // BLOCO 5: MÓDULO 5 - CRONOGRAMA DE TRANSIÇÃO (2026-2033)
+  // BLOCO 5: MÓDULO 5 - CRONOGRAMA DA TRANSIÇÃO COM COLUNA 'REGIME MAIS ECONÔMICO'
   // ==========================================
-  verificarQuebraPagina(55)
+  verificarQuebraPagina(65)
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(10)
-  doc.setTextColor(COR_PRIMARIA[0], COR_PRIMARIA[1], COR_PRIMARIA[2])
+  doc.setFontSize(9.5)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
   doc.text('MÓDULO 5 • CRONOGRAMA DA TRANSIÇÃO TRIBUTÁRIA (2026–2033)', margin, currentY + 3)
 
   currentY += 6
 
-  doc.setFillColor(COR_PRIMARIA[0], COR_PRIMARIA[1], COR_PRIMARIA[2])
+  // Cabeçalho com a nova coluna 'Regime Mais Econômico'
+  doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
   doc.rect(margin, currentY, contentWidth, 6, 'F')
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(7)
+  doc.setFontSize(6.8)
   doc.setFont('helvetica', 'bold')
   doc.text('Ano', margin + 3, currentY + 4.2)
   doc.text('Fase Constitucional da Reforma', margin + 18, currentY + 4.2)
-  doc.text('CBS', margin + 98, currentY + 4.2)
-  doc.text('IBS', margin + 115, currentY + 4.2)
-  doc.text('Alíq. Efetiva', margin + 132, currentY + 4.2)
-  doc.text('Imposto Projetado', margin + 155, currentY + 4.2)
+  doc.text('CBS', margin + 82, currentY + 4.2)
+  doc.text('IBS', margin + 98, currentY + 4.2)
+  doc.text('Alíq. Efetiva', margin + 114, currentY + 4.2)
+  doc.text('Imposto Projetado', margin + 134, currentY + 4.2)
+  doc.text('Regime Mais Econômico', margin + 158, currentY + 4.2)
 
   currentY += 6
 
+  const mapaVencedorAno = calcularRegimesMaisEconomicosPorAno(parametros, resultados)
+
   resultados.resultadoTransicao.forEach((item, idx) => {
+    verificarQuebraPagina(6)
     const anoStr = String(item.ano)
     const isDestaque =
       anoStr === 'atual' || anoStr === '2026' || anoStr === '2027' || anoStr === '2033'
+    const regimeVencedor = mapaVencedorAno[anoStr] || 'IBS/CBS'
+
     doc.setFillColor(
       isDestaque ? 236 : idx % 2 === 0 ? 255 : 248,
       isDestaque ? 253 : idx % 2 === 0 ? 255 : 250,
@@ -619,116 +851,586 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     doc.rect(margin, currentY, contentWidth, 5.5, 'FD')
 
     doc.setFont('helvetica', isDestaque ? 'bold' : 'normal')
-    doc.setFontSize(7)
+    doc.setFontSize(6.8)
     doc.setTextColor(
-      isDestaque ? COR_SECUNDARIA[0] : COR_TEXTO[0],
-      isDestaque ? COR_SECUNDARIA[1] : COR_TEXTO[1],
-      isDestaque ? COR_SECUNDARIA[2] : COR_TEXTO[2],
+      isDestaque ? COR_VERDE_MEDIO[0] : COR_TEXTO[0],
+      isDestaque ? COR_VERDE_MEDIO[1] : COR_TEXTO[1],
+      isDestaque ? COR_VERDE_MEDIO[2] : COR_TEXTO[2],
     )
 
     doc.text(`${anoStr === 'atual' ? 'Atual' : anoStr}`, margin + 3, currentY + 3.8)
-    doc.text(item.fase, margin + 18, currentY + 3.8)
-    doc.text(`${item.aliquotaCbs.toFixed(1)}%`, margin + 98, currentY + 3.8)
-    doc.text(`${item.aliquotaIbs.toFixed(2)}%`, margin + 115, currentY + 3.8)
-    doc.text(`${item.aliquotaEfetivaTotal.toFixed(2)}%`, margin + 132, currentY + 3.8)
-    doc.text(formatarMoeda(item.impostoEstimado), margin + 155, currentY + 3.8)
+    const faseTrunc = item.fase.length > 34 ? item.fase.slice(0, 32) + '...' : item.fase
+    doc.text(faseTrunc, margin + 18, currentY + 3.8)
+    doc.text(`${item.aliquotaCbs.toFixed(1)}%`, margin + 82, currentY + 3.8)
+    doc.text(`${item.aliquotaIbs.toFixed(2)}%`, margin + 98, currentY + 3.8)
+    doc.text(`${item.aliquotaEfetivaTotal.toFixed(2)}%`, margin + 114, currentY + 3.8)
+    doc.text(formatarMoeda(item.impostoEstimado), margin + 134, currentY + 3.8)
+
+    // Coluna Regime Mais Econômico com destaque sutil
+    doc.setFont('helvetica', 'bold')
+    if (regimeVencedor === 'IBS/CBS') {
+      doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
+    } else if (regimeVencedor === 'Lucro Presumido') {
+      doc.setTextColor(180, 83, 9)
+    } else {
+      doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    }
+    doc.text(regimeVencedor, margin + 158, currentY + 3.8)
 
     currentY += 5.5
   })
 
+  currentY += 10
+
+  // ==========================================
+  // PÁGINA FINAL: CONCLUSÃO, RECOMENDAÇÃO EM TEXTO, OBSERVAÇÕES & ASSINATURA
+  // ==========================================
+  doc.addPage()
+  currentY = 20
+  adicionarCabecalhoCompacto()
+  currentY = 28
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(13)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text('PARECER TÉCNICO CONCLUSIVO & RECOMENDAÇÃO ESTRATÉGICA', margin, currentY)
+
   currentY += 8
 
-  // ==========================================
-  // BLOCO 6: MÓDULO 1 - ALÍQUOTAS E CONFIGURAÇÕES
-  // ==========================================
-  verificarQuebraPagina(30)
-
+  // Box Parecer Técnico Recomendado
   doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
   doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-  doc.roundedRect(margin, currentY, contentWidth, 18, 1.5, 1.5, 'FD')
+  doc.roundedRect(margin, currentY, contentWidth, 42, 2, 2, 'FD')
+  doc.setFillColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  doc.rect(margin, currentY, 2.5, 42, 'F')
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(7.5)
-  doc.setTextColor(COR_SECUNDARIA[0], COR_SECUNDARIA[1], COR_SECUNDARIA[2])
-  doc.text('MÓDULO 1 • PARÂMETROS GERAIS DO IVA DUAL UTILIZADOS', margin + 3, currentY + 4.5)
+  doc.setFontSize(9)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text('RECOMENDAÇÃO TÉCNICA PRINCIPAL', margin + 6, currentY + 7)
+
+  const anoDashboardNum =
+    parametros.anoTransicaoDashboard === 'atual'
+      ? 'atual'
+      : parametros.anoTransicaoDashboard || 2033
+  const regimeRec = resultados.resultadoDashboard.regimeRecomendado
+  const ecoAnualStr = formatarMoeda(resultados.resultadoDashboard.economiaAnualProjetada)
+  const ecoMensalStr = formatarMoeda(resultados.resultadoDashboard.economiaMensalProjetada)
+
+  const textoRecomendacao =
+    anoDashboardNum === 'atual'
+      ? `Para o cenário atual pré-reforma, o regime mais econômico apurado é o ${regimeRec}. Com a vigência da EC 132/2023 e LC 214/2025 a partir de 2026, a empresa deve acompanhar a esteira de desonerações da CBS e do IBS para reprogramar sua opção anual em janeiro.`
+      : `Para o ano ${anoDashboardNum}, o regime fiscal ${regimeRec} economiza ${ecoAnualStr} ao ano (${ecoMensalStr}/mês) em relação ao sistema atual suportado (${regimeAtualExibir}), correspondendo a uma alíquota efetiva projetada de ${resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%.`
 
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(6.8)
+  doc.setFontSize(8)
+  doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+  const linhasRec = doc.splitTextToSize(textoRecomendacao, contentWidth - 12)
+  doc.text(linhasRec, margin + 6, currentY + 14)
+
+  const textoComplementar =
+    'Critérios utilizados na apuração técnica: confrontação das alíquotas nominais da LC 214/2025; cômputo da não-cumulatividade plena sobre as 18 categorias de compras e insumos; preservação da folha de pagamento e margem operacional informadas; impacto temporal do Split Payment no fluxo de caixa operacional.'
+  const linhasCrit = doc.splitTextToSize(textoComplementar, contentWidth - 12)
+  doc.setFont('helvetica', 'italic')
+  doc.setFontSize(7.2)
   doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
-  let labelPresetPdf = ''
-  if (parametros.config.presetSetor && parametros.config.presetSetor !== 'nenhum') {
-    labelPresetPdf = ` (${parametros.config.presetSetor})`
-  }
-  const rotuloAnoConfig =
-    parametros.config.anoTransicao === 'atual'
-      ? 'Ano atual (sistema atual)'
-      : parametros.config.anoTransicao
-        ? `${parametros.config.anoTransicao}`
-        : '2033'
-  const infoAssistente = ` | Fase Transição: ${rotuloAnoConfig}${labelPresetPdf}`
-  doc.text(
-    `CBS: ${parametros.config.cbsPadrao}% | IBS: ${parametros.config.ibsPadrao}% | Total IVA Dual: ${parametros.config.totalIvaDual}%${infoAssistente} | Saúde/Educação (-60%): ${parametros.config.saudeEducacaoAliquota}% | Transp. (-30%): ${parametros.config.transporteAliquota}%`,
-    margin + 3,
-    currentY + 9,
-  )
-  doc.text(
-    `Lucro Real PIS: ${parametros.config.lucroRealPis}% / COFINS: ${parametros.config.lucroRealCofins}% / ICMS: ${parametros.config.lucroRealIcms}% / ISS: ${parametros.config.lucroRealIss}% | Lucro Presumido PIS: ${parametros.config.lucroPresumidoPis}% / COFINS: ${parametros.config.lucroPresumidoCofins}%`,
-    margin + 3,
-    currentY + 14,
-  )
-  doc.text(
-    `Regimes Diferenciados: Saúde/Educação (${parametros.config.saudeEducacaoAliquota}% — redução de 60%) | Transporte de Passageiros (${parametros.config.transporteAliquota}% — redução de 30%) | Cesta Básica Nacional (${parametros.config.cestaBasicaIsencao}% — Alíquota Zero)`,
-    margin + 3,
-    currentY + 13.5,
-  )
+  doc.text(linhasCrit, margin + 6, currentY + 28)
 
-  currentY += 22
+  currentY += 48
 
-  // ==========================================
-  // BLOCO 7: AVISO LEGAL INSTITUCIONAL
-  // ==========================================
-  verificarQuebraPagina(24)
-
-  doc.setFillColor(254, 242, 242)
-  doc.setDrawColor(254, 202, 202)
-  doc.roundedRect(margin, currentY, contentWidth, 18, 1.5, 1.5, 'FD')
+  // Box Observações do Contador
+  doc.setFillColor(255, 255, 255)
+  doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+  doc.roundedRect(margin, currentY, contentWidth, 36, 2, 2, 'D')
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(7)
-  doc.setTextColor(185, 28, 28)
-  doc.text('AVISO LEGAL & LIMITAÇÕES TÉCNICAS DA SIMULAÇÃO', margin + 3, currentY + 4.5)
+  doc.setFontSize(8.5)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text('NOTAS & OBSERVAÇÕES ESPECÍFICAS DO CONTADOR', margin + 5, currentY + 6)
+
+  const textoObs =
+    observacoesContador ||
+    responsavelTecnico?.observacoes ||
+    'Sem observações adicionais inseridas pelo responsável técnico nesta data. O planejamento tributário formal deve considerar a publicação dos regulamentos do CGIBS e as legislações estaduais/municipais dos anos correntes.'
 
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(6.2)
-  doc.setTextColor(127, 29, 29)
-  const aviso = doc.splitTextToSize(
-    'Este relatório consolida estimativas fiscais baseadas nas normas constitucionais da Reforma Tributária (EC 132/2023 e LC 214/2025). As alíquotas oficiais de referência e regras de não-cumulatividade plena dependerão de atos regulamentares do Senado Federal e do Comitê Gestor do IBS (CGIBS). Não substitui planejamento contábil formal ou parecer emitido por profissional habilitado.',
-    contentWidth - 6,
-  )
-  doc.text(aviso, margin + 3, currentY + 8.5)
+  doc.setFontSize(7.5)
+  doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+  const linhasObs = doc.splitTextToSize(textoObs, contentWidth - 10)
+  doc.text(linhasObs, margin + 5, currentY + 12)
 
-  // ==========================================
-  // RODAPÉ EM TODAS AS PÁGINAS (DIAMOND GROUP)
-  // ==========================================
-  const totalPages = doc.internal.pages.length - 1
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(6.8)
-    doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
-    doc.text(
-      'Contabilidade 5.0 — Diamond Group | Inteligência Fiscal, Consultoria & BPO | contato@contabilidade50.com.br',
-      margin,
-      pageHeight - 8,
-    )
-    doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin - 20, pageHeight - 8)
-  }
+  currentY += 44
 
-  // Nome do arquivo formatado
+  // Bloco de Assinatura
+  const cidadeEmpresa = parametros.ufOrigem
+    ? `São Paulo - ${parametros.ufOrigem}`
+    : 'São Paulo - SP'
+  adicionarBlocoAssinatura(doc, margin, currentY, contentWidth, responsavelTecnico, cidadeEmpresa)
+
+  // Aplica rodapé com paginação
+  aplicarRodapePadrao(doc, margin, pageWidth, pageHeight)
+
+  // Salvar
   const nomeSanitizado = (nomeSimulacao || 'simulacao')
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '_')
     .replace(/_+/g, '_')
-  const nomeArquivo = `simulacao-ibs-cbs-${nomeSanitizado}.pdf`
-  doc.save(nomeArquivo)
+  doc.save(`simulacao-ibs-cbs-${nomeSanitizado}.pdf`)
+}
+
+// ============================================================================
+// 3) CRIAR O PDF COMPARATIVO (2 OU 3 SIMULAÇÕES SALVAS)
+// ============================================================================
+export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions): void {
+  const { simulacoes, dataGeracao, responsavelTecnico, observacoesContador } = options
+
+  if (!simulacoes || simulacoes.length < 2) {
+    throw new Error('O relatório comparativo requer ao menos 2 simulações selecionadas.')
+  }
+
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  })
+
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const margin = 16
+  const contentWidth = pageWidth - margin * 2
+
+  let currentY = 0
+
+  const adicionarCabecalhoCompacto = () => {
+    doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.rect(margin, 10, contentWidth, 3, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+    doc.text('CONTABILIDADE 5.0 — DOSSIÊ COMPARATIVO DE CENÁRIOS (DIAMOND GROUP)', margin, 8)
+  }
+
+  const verificarQuebraPagina = (espacoNecessario: number) => {
+    if (currentY + espacoNecessario > pageHeight - 20) {
+      doc.addPage()
+      currentY = 20
+      adicionarCabecalhoCompacto()
+    }
+  }
+
+  // ==========================================
+  // CAPA / CABEÇALHO DO COMPARATIVO
+  // ==========================================
+  doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.rect(0, 0, pageWidth, 44, 'F')
+
+  doc.setFillColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  doc.rect(0, 44, pageWidth, 2.5, 'F')
+
+  // Logo vetorial
+  desenharLogoContabilidade50(doc, margin, 12, 20, true)
+
+  const brandX = margin + 25
+  doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(17)
+  doc.text('CONTABILIDADE 5.0', brandX, 20)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8.5)
+  doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  doc.text('DIAMOND GROUP • DOSSIÊ COMPARATIVO MULTI-CENÁRIOS IBS / CBS', brandX, 27)
+
+  const dataStr =
+    dataGeracao ||
+    new Date().toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.5)
+  doc.setTextColor(203, 213, 225)
+  doc.text(
+    `Comparação técnica entre ${simulacoes.length} cenários selecionados | Emissão: ${dataStr}`,
+    brandX,
+    34,
+  )
+
+  currentY = 53
+
+  // Responsável Técnico
+  currentY = adicionarBlocoResponsavelTecnico(
+    doc,
+    margin,
+    currentY,
+    contentWidth,
+    responsavelTecnico,
+  )
+
+  // ==========================================
+  // CAPA: SIMULAÇÕES INCLUÍDAS (NOMES / DATAS)
+  // ==========================================
+  doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
+  doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+  doc.roundedRect(margin, currentY, contentWidth, 24, 2, 2, 'FD')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8.5)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text('CENÁRIOS INCLUÍDOS NO DOSSIÊ COMPARATIVO', margin + 4, currentY + 6)
+
+  const simColW = contentWidth / simulacoes.length
+  simulacoes.forEach((sim, idx) => {
+    const sX = margin + idx * simColW + 4
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+    doc.text(`Cenário #${idx + 1}: ${sim.nome}`, sX, currentY + 12)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7)
+    doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+    const dataSim = new Date(sim.created).toLocaleDateString('pt-BR')
+    const empSim = sim.empresa || 'Empresa Geral'
+    doc.text(`${empSim} • Criado em ${dataSim}`, sX, currentY + 17)
+    doc.text(`Fat: ${formatarMoeda(sim.parametros.faturamentoMensal)}/mês`, sX, currentY + 21)
+  })
+
+  currentY += 29
+
+  // ==========================================
+  // DESTAQUE DA SIMULAÇÃO COM MAIOR ECONOMIA
+  // ==========================================
+  // Identifica a simulação com maior economia anual
+  const simVencedora = [...simulacoes].sort(
+    (a, b) =>
+      (b.resultados.resultadoDashboard.economiaAnualProjetada || 0) -
+      (a.resultados.resultadoDashboard.economiaAnualProjetada || 0),
+  )[0]
+
+  doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.roundedRect(margin, currentY, contentWidth, 28, 2, 2, 'F')
+  doc.setFillColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  doc.rect(margin, currentY, 3, 28, 'F')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8)
+  doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  doc.text('DESTAQUE • CENÁRIO COM MAIOR ECONOMIA TRIBUTÁRIA PROJETADA', margin + 7, currentY + 7)
+
+  doc.setFontSize(12)
+  doc.setTextColor(255, 255, 255)
+  doc.text(
+    `"${simVencedora.nome}" — Recomendado: ${simVencedora.resultados.resultadoDashboard.regimeRecomendado}`,
+    margin + 7,
+    currentY + 15,
+  )
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8)
+  doc.setTextColor(226, 232, 240)
+  doc.text(
+    `Economia Anual de ${formatarMoeda(simVencedora.resultados.resultadoDashboard.economiaAnualProjetada)} (${formatarMoeda(simVencedora.resultados.resultadoDashboard.economiaMensalProjetada)}/mês) | Nova Alíquota: ${simVencedora.resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%`,
+    margin + 7,
+    currentY + 22,
+  )
+
+  currentY += 34
+
+  // ==========================================
+  // TABELA COMPARATIVA LADO A LADO
+  // ==========================================
+  verificarQuebraPagina(70)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9.5)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text('MATRIZ COMPARATIVA LADO A LADO', margin, currentY + 3)
+
+  currentY += 6
+
+  const colMetricaW = 54
+  const colCenarioW = (contentWidth - colMetricaW) / simulacoes.length
+
+  // Cabeçalho da Matriz
+  doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.rect(margin, currentY, contentWidth, 7, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(7.5)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Métrica / Parâmetro Fiscal', margin + 3, currentY + 4.8)
+
+  simulacoes.forEach((s, i) => {
+    const colX = margin + colMetricaW + i * colCenarioW
+    const nomeTrunc = s.nome.length > 20 ? s.nome.slice(0, 18) + '...' : s.nome
+    doc.text(nomeTrunc, colX + 3, currentY + 4.8)
+  })
+
+  currentY += 7
+
+  const linhasMatriz: Array<{
+    titulo: string
+    isSecao?: boolean
+    getValores: (sim: SimulacaoCalculadora) => string
+    isDestaque?: boolean
+  }> = [
+    // Seção Resultados
+    {
+      titulo: 'RESULTADOS & RECOMENDAÇÃO',
+      isSecao: true,
+      getValores: () => '',
+    },
+    {
+      titulo: 'Regime Recomendado',
+      isDestaque: true,
+      getValores: (s) => s.resultados.resultadoDashboard.regimeRecomendado,
+    },
+    {
+      titulo: 'Alíquota Efetiva Atual',
+      getValores: (s) => `${s.resultados.resultadoDashboard.aliquotaEfetivaAtual.toFixed(2)}%`,
+    },
+    {
+      titulo: 'Nova Alíquota (IBS/CBS)',
+      getValores: (s) => `${s.resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%`,
+    },
+    {
+      titulo: 'Economia Mensal Projetada',
+      isDestaque: true,
+      getValores: (s) => formatarMoeda(s.resultados.resultadoDashboard.economiaMensalProjetada),
+    },
+    {
+      titulo: 'Economia Anual Projetada',
+      isDestaque: true,
+      getValores: (s) => formatarMoeda(s.resultados.resultadoDashboard.economiaAnualProjetada),
+    },
+
+    // Seção Carga dos 4 Regimes
+    {
+      titulo: 'CARGA EFETIVA MENSAL DOS 4 REGIMES',
+      isSecao: true,
+      getValores: () => '',
+    },
+    {
+      titulo: 'Simples Nacional',
+      getValores: (s) =>
+        `${formatarMoeda(s.resultados.resultadoComparativo.simplesNacional.totalEfetivo)} (${s.resultados.resultadoComparativo.simplesNacional.aliquotaEfetiva.toFixed(2)}%)`,
+    },
+    {
+      titulo: 'Lucro Presumido',
+      getValores: (s) =>
+        `${formatarMoeda(s.resultados.resultadoComparativo.lucroPresumido.totalEfetivo)} (${s.resultados.resultadoComparativo.lucroPresumido.aliquotaEfetiva.toFixed(2)}%)`,
+    },
+    {
+      titulo: 'Lucro Real',
+      getValores: (s) =>
+        `${formatarMoeda(s.resultados.resultadoComparativo.lucroReal.totalEfetivo)} (${s.resultados.resultadoComparativo.lucroReal.aliquotaEfetiva.toFixed(2)}%)`,
+    },
+    {
+      titulo: 'IBS / CBS (Reforma)',
+      isDestaque: true,
+      getValores: (s) =>
+        `${formatarMoeda(s.resultados.resultadoComparativo.ibsCbs.totalEfetivo)} (${s.resultados.resultadoComparativo.ibsCbs.aliquotaEfetiva.toFixed(2)}%)`,
+    },
+
+    // Seção Parâmetros
+    {
+      titulo: 'PARÂMETROS OPERACIONAIS',
+      isSecao: true,
+      getValores: () => '',
+    },
+    {
+      titulo: 'Faturamento Mensal',
+      getValores: (s) => formatarMoeda(s.parametros.faturamentoMensal),
+    },
+    {
+      titulo: 'Fase da Transição',
+      getValores: (s) =>
+        s.parametros.config?.anoTransicao === 'atual'
+          ? 'Atual'
+          : `Ano ${s.parametros.config?.anoTransicao || 2033}`,
+    },
+    {
+      titulo: 'Ramo / Setor',
+      getValores: (s) => s.parametros.tipoAtividade,
+    },
+    {
+      titulo: 'Compras (% Vendas)',
+      getValores: (s) => `${s.parametros.percentualComprasVendasComparativo}%`,
+    },
+    {
+      titulo: 'Folha de Pagamento',
+      getValores: (s) => formatarMoeda(s.parametros.folhaPagamentoMensal),
+    },
+    {
+      titulo: 'Margem / Desp. Créditos',
+      getValores: (s) =>
+        `${s.parametros.margemLucroEstimada}% | ${formatarMoeda(s.parametros.despesasComCreditosMensais)}`,
+    },
+  ]
+
+  linhasMatriz.forEach((linha, idx) => {
+    verificarQuebraPagina(6.5)
+
+    if (linha.isSecao) {
+      doc.setFillColor(COR_VERDE_MEDIO[0], COR_VERDE_MEDIO[1], COR_VERDE_MEDIO[2])
+      doc.rect(margin, currentY, contentWidth, 5.5, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(7)
+      doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+      doc.text(linha.titulo, margin + 3, currentY + 3.8)
+      currentY += 5.5
+      return
+    }
+
+    doc.setFillColor(
+      idx % 2 === 0 ? 255 : 248,
+      idx % 2 === 0 ? 255 : 250,
+      idx % 2 === 0 ? 255 : 252,
+    )
+    doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+    doc.rect(margin, currentY, contentWidth, 6, 'FD')
+
+    doc.setFont('helvetica', linha.isDestaque ? 'bold' : 'normal')
+    doc.setFontSize(7)
+    doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+    doc.text(linha.titulo, margin + 3, currentY + 4.2)
+
+    simulacoes.forEach((s, i) => {
+      const colX = margin + colMetricaW + i * colCenarioW
+      const val = linha.getValores(s)
+      doc.setFont('helvetica', linha.isDestaque ? 'bold' : 'normal')
+      if (linha.isDestaque && s.id === simVencedora.id) {
+        doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
+      } else {
+        doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      }
+      doc.text(val, colX + 3, currentY + 4.2)
+    })
+
+    currentY += 6
+  })
+
+  currentY += 10
+
+  // ==========================================
+  // CRONOGRAMA DA TRANSIÇÃO POR CENÁRIO (COM 'REGIME MAIS ECONÔMICO')
+  // ==========================================
+  doc.addPage()
+  currentY = 20
+  adicionarCabecalhoCompacto()
+  currentY = 28
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text('CRONOGRAMA DE TRANSIÇÃO (2026–2033) POR CENÁRIO', margin, currentY)
+
+  currentY += 6
+
+  simulacoes.forEach((sim, idx) => {
+    verificarQuebraPagina(40)
+
+    doc.setFillColor(COR_VERDE_MEDIO[0], COR_VERDE_MEDIO[1], COR_VERDE_MEDIO[2])
+    doc.rect(margin, currentY, contentWidth, 5.5, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7.5)
+    doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+    doc.text(
+      `CENÁRIO #${idx + 1}: ${sim.nome.toUpperCase()} (${sim.empresa || 'Empresa Geral'})`,
+      margin + 3,
+      currentY + 3.8,
+    )
+
+    currentY += 5.5
+
+    // Cabeçalho da tabela do cronograma
+    doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.rect(margin, currentY, contentWidth, 5, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(6.5)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Ano', margin + 3, currentY + 3.5)
+    doc.text('Fase da Reforma', margin + 18, currentY + 3.5)
+    doc.text('Alíq. Efetiva', margin + 90, currentY + 3.5)
+    doc.text('Imposto Projetado', margin + 120, currentY + 3.5)
+    doc.text('Regime Mais Econômico', margin + 152, currentY + 3.5)
+
+    currentY += 5
+
+    const mapaAno = calcularRegimesMaisEconomicosPorAno(sim.parametros, sim.resultados)
+
+    sim.resultados.resultadoTransicao.forEach((item, cIdx) => {
+      const anoStr = String(item.ano)
+      const isDest = anoStr === 'atual' || anoStr === '2026' || anoStr === '2033'
+      const regVencedor = mapaAno[anoStr] || 'IBS/CBS'
+
+      doc.setFillColor(
+        isDest ? 236 : cIdx % 2 === 0 ? 255 : 248,
+        isDest ? 253 : cIdx % 2 === 0 ? 255 : 250,
+        isDest ? 245 : cIdx % 2 === 0 ? 255 : 252,
+      )
+      doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+      doc.rect(margin, currentY, contentWidth, 4.8, 'FD')
+
+      doc.setFont('helvetica', isDest ? 'bold' : 'normal')
+      doc.setFontSize(6.5)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      doc.text(anoStr === 'atual' ? 'Atual' : anoStr, margin + 3, currentY + 3.3)
+      const fTrunc = item.fase.length > 42 ? item.fase.slice(0, 40) + '...' : item.fase
+      doc.text(fTrunc, margin + 18, currentY + 3.3)
+      doc.text(`${item.aliquotaEfetivaTotal.toFixed(2)}%`, margin + 90, currentY + 3.3)
+      doc.text(formatarMoeda(item.impostoEstimado), margin + 120, currentY + 3.3)
+
+      doc.setFont('helvetica', 'bold')
+      if (regVencedor === 'IBS/CBS') {
+        doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
+      } else {
+        doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+      }
+      doc.text(regVencedor, margin + 152, currentY + 3.3)
+
+      currentY += 4.8
+    })
+
+    currentY += 6
+  })
+
+  // ==========================================
+  // PÁGINA FINAL: OBSERVAÇÕES E ASSINATURA
+  // ==========================================
+  verificarQuebraPagina(65)
+
+  // Box Observações
+  doc.setFillColor(255, 255, 255)
+  doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+  doc.roundedRect(margin, currentY, contentWidth, 26, 2, 2, 'D')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text('NOTAS TÉCNICAS DO RESPONSÁVEL CONTÁBIL', margin + 5, currentY + 5)
+
+  const obsTexto =
+    observacoesContador ||
+    responsavelTecnico?.observacoes ||
+    `Dossiê comparativo emitido para subsidiar o planejamento tributário. Dentre os cenários avaliados, o "${simVencedora.nome}" apresentou a melhor eficiência tributária líquida consolidada.`
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.2)
+  doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+  const linhasObs = doc.splitTextToSize(obsTexto, contentWidth - 10)
+  doc.text(linhasObs, margin + 5, currentY + 11)
+
+  currentY += 32
+
+  adicionarBlocoAssinatura(doc, margin, currentY, contentWidth, responsavelTecnico)
+
+  // Rodapé
+  aplicarRodapePadrao(doc, margin, pageWidth, pageHeight)
+
+  doc.save(`comparativo-ibs-cbs-${simulacoes.length}-cenarios.pdf`)
 }
