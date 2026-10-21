@@ -30,7 +30,12 @@ import {
   CRONOGRAMA_FASES_TRANSICAO,
   PRESETS_SETORES_LC214,
   obterGrupoRegimeOperacao,
+  TEXTO_FASE_TESTE_2026,
+  isAno2026,
+  isAno2026OuAtual,
 } from '@/types/calculadoraIbsCbs'
+
+export { TEXTO_FASE_TESTE_2026, isAno2026, isAno2026OuAtual }
 import { TABELAS_SIMPLES } from '@/lib/regimes'
 import {
   carregarDadosEmpresa,

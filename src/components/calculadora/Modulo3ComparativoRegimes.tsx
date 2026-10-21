@@ -1005,6 +1005,7 @@ export default function Modulo3ComparativoRegimes() {
         regimeAtualNome={regimeAtualFiltro}
         onRegimeAtualChange={(novoRegime) => setRegimeAtualFiltro(novoRegime)}
         origemPropagada={origensPropagadas?.dashboardRegimeAtual}
+        anoTransicao={config.anoTransicao}
       />
 
       {/* Card de Conclusão / Vencedor */}

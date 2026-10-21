@@ -384,16 +384,27 @@ export default function Modulo6Dashboard({
 
     const taxaDecimal = Math.max(0, taxaMensalCapitalGiro) / 100
     const fatorTempo = Math.max(1, diasAntecipacaoSplit) / 30
-    const custoCapitalMensal = retencaoMensalNota * taxaDecimal * fatorTempo
+    const is2026OuAtual =
+      anoSimulacaoSelecionado === 'atual' || String(anoSimulacaoSelecionado) === '2026'
+
+    const custoCapitalMensal = is2026OuAtual ? 0 : retencaoMensalNota * taxaDecimal * fatorTempo
     const custoCapitalAnual = custoCapitalMensal * 12
+
+    const retencaoFinal = is2026OuAtual ? 0 : retencaoMensalNota
+    const diferencaFinal = is2026OuAtual ? 0 : diferencaFluxoCaixa
+
+    const explicacaoSimples = is2026OuAtual
+      ? 'Em 2026 (art. 348 da LC 214/2025), a CBS (0,9%) e o IBS (0,1%) atuam em fase de teste piloto compensável integralmente com PIS/COFINS. Não há retenção antecipada nem impacto de custo financeiro no capital de giro nesta fase.'
+      : resultadoSplitPayment.explicacaoSimples
 
     return {
       ...resultadoSplitPayment,
-      retencaoMensalNota,
+      retencaoMensalNota: retencaoFinal,
       recolhimentoAtualMensal,
-      diferencaFluxoCaixa,
+      diferencaFluxoCaixa: diferencaFinal,
       custoCapitalMensal,
       custoCapitalAnual,
+      explicacaoSimples,
     }
   }, [
     faturamentoMensal,
@@ -403,6 +414,7 @@ export default function Modulo6Dashboard({
     taxaMensalCapitalGiro,
     diasAntecipacaoSplit,
     resultadoSplitPayment,
+    anoSimulacaoSelecionado,
   ])
 
   // 1. DADOS GRÁFICO 1: BARRAS - Comparativo dos 4 regimes (com IBS/CBS da fase do Dashboard)
@@ -1133,6 +1145,7 @@ export default function Modulo6Dashboard({
         setDiasAntecipacaoSplit={setDiasAntecipacaoSplit}
         regimeAtualNome={regimeAtualFiltro}
         origemPropagada={origensPropagadas?.dashboardRegimeAtual}
+        anoTransicao={anoSimulacaoSelecionado}
       />
 
       {/* 3 Gráficos Conforme Especificação */}

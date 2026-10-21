@@ -897,6 +897,19 @@ export const LISTA_ANOS_TRANSICAO: AnoTransicaoIbsCbs[] = [
   2033,
 ]
 
+/**
+ * Constante oficial do tratamento do ano 2026 — Fase de Teste Operacional
+ * Art. 348 da Lei Complementar nº 214/2025
+ */
+export const TEXTO_FASE_TESTE_2026 =
+  'Fase de teste — compensável integralmente, sem ônus real (art. 348, LC 214/2025)'
+
+export const isAno2026 = (ano: string | number | undefined | null): boolean =>
+  ano !== undefined && ano !== null && String(ano) === '2026'
+
+export const isAno2026OuAtual = (ano: string | number | undefined | null): boolean =>
+  ano === 'atual' || String(ano) === '2026'
+
 export interface OpcaoPresetSetor {
   id: PresetSetorIbsCbs
   grupo: GrupoPresetSetor

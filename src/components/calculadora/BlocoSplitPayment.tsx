@@ -13,15 +13,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  Coins,
-  ArrowRight,
-  TrendingDown,
-  Clock,
-  HelpCircle,
-  AlertCircle,
-  Sparkles,
-  Zap,
-} from 'lucide-react'
+  TEXTO_FASE_TESTE_2026,
+  isAno2026OuAtual,
+  AnoTransicaoIbsCbs,
+} from '@/types/calculadoraIbsCbs'
+import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 
 interface BlocoSplitPaymentProps {
   resultadoSplitPayment: {
@@ -41,6 +37,7 @@ interface BlocoSplitPaymentProps {
   regimeAtualNome: string
   onRegimeAtualChange?: (regime: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional') => void
   origemPropagada?: boolean
+  anoTransicao?: AnoTransicaoIbsCbs
 }
 
 export function BlocoSplitPayment({
@@ -52,7 +49,21 @@ export function BlocoSplitPayment({
   regimeAtualNome,
   onRegimeAtualChange,
   origemPropagada,
+  anoTransicao: anoTransicaoProp,
 }: BlocoSplitPaymentProps) {
+  // Se anoTransicao não foi passado explicitamente via prop, consulta o contexto
+  let anoDoContexto: AnoTransicaoIbsCbs | undefined
+  try {
+    const ctx = useCalculadoraIbsCbs()
+    anoDoContexto = ctx.anoTransicaoDashboard ?? ctx.config.anoTransicao
+  } catch {
+    anoDoContexto = undefined
+  }
+
+  const anoEfetivo = anoTransicaoProp ?? anoDoContexto ?? 2033
+  const ehFaseTeste2026 = String(anoEfetivo) === '2026'
+  const ehAnoAtual = anoEfetivo === 'atual'
+  const ehTesteOuAtual = ehFaseTeste2026 || ehAnoAtual
   const {
     retencaoMensalNota,
     recolhimentoAtualMensal,
@@ -87,7 +98,7 @@ export function BlocoSplitPayment({
               Custo de Capital da Antecipação
             </span>
             <span className="text-xl font-mono font-extrabold text-[#D4AF37]">
-              {formatarMoeda(custoCapitalAnual)}
+              {ehTesteOuAtual ? 'R$ 0,00' : formatarMoeda(custoCapitalAnual)}
               <span className="text-xs font-normal text-slate-300 ml-1">/ano</span>
             </span>
           </div>
@@ -164,17 +175,48 @@ export function BlocoSplitPayment({
                 2. Novo Sistema (Split Payment)
               </span>
               <span className="text-[10px] font-bold bg-[#D4AF37] text-[#07132B] px-2 py-0.5 rounded">
-                No ato do pagamento
+                {ehTesteOuAtual ? 'Fase de Teste (2026)' : 'No ato do pagamento'}
               </span>
             </div>
-            <p className="text-2xl font-mono font-bold text-[#07132B]">
-              {formatarMoeda(retencaoMensalNota)}
-              <span className="text-xs text-slate-600 font-normal">/mês</span>
-            </p>
-            <p className="text-[11px] text-slate-600 leading-snug">
-              O banco/adquirente retém o imposto na liquidação da fatura. A empresa só recebe em
-              conta o valor líquido da nota fiscal.
-            </p>
+            {ehFaseTeste2026 ? (
+              <>
+                <p className="text-xl font-mono font-bold text-amber-900">
+                  R$ 0,00
+                  <span className="text-xs text-slate-600 font-normal ml-1">/mês</span>
+                </p>
+                <div className="p-2 rounded bg-amber-100/70 border border-amber-300/80 text-[11px] font-semibold text-amber-950 leading-snug">
+                  {TEXTO_FASE_TESTE_2026}
+                </div>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  Em 2026, a apuração de teste da CBS (0,9%) e IBS (0,1%) não gera retenção no ato
+                  do pagamento: sem impacto sobre o fluxo de recebimento.
+                </p>
+              </>
+            ) : ehAnoAtual ? (
+              <>
+                <p className="text-xl font-mono font-bold text-slate-700">
+                  R$ 0,00
+                  <span className="text-xs text-slate-500 font-normal ml-1">/mês</span>
+                </p>
+                <div className="p-2 rounded bg-slate-100 border border-slate-200 text-[11px] font-medium text-slate-700 leading-snug">
+                  Sistema Atual pré-reforma (split payment não aplicável)
+                </div>
+                <p className="text-[11px] text-slate-500 leading-snug">
+                  No ano atual, o split payment não existe na legislação vigente.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl font-mono font-bold text-[#07132B]">
+                  {formatarMoeda(retencaoMensalNota)}
+                  <span className="text-xs text-slate-600 font-normal">/mês</span>
+                </p>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  O banco/adquirente retém o imposto na liquidação da fatura. A empresa só recebe em
+                  conta o valor líquido da nota fiscal.
+                </p>
+              </>
+            )}
           </div>
 
           {/* Diferença e Custo Financeiro */}
@@ -184,18 +226,46 @@ export function BlocoSplitPayment({
                 3. Custo de Capital da Antecipação
               </span>
               <span className="text-[10px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
-                {taxaMensalCapitalGiro}% a.m.
+                {ehTesteOuAtual ? 'Isento em 2026' : `${taxaMensalCapitalGiro}% a.m.`}
               </span>
             </div>
-            <p className="text-2xl font-mono font-bold text-rose-700">
-              {formatarMoeda(custoCapitalMensal)}
-              <span className="text-xs text-rose-500 font-normal">/mês</span>
-            </p>
-            <p className="text-[11px] text-rose-800 leading-snug">
-              Custo de oportunidade do capital de giro adiantado (
-              <strong className="font-mono">{formatarMoeda(custoCapitalAnual)}</strong> por ano a
-              menos rendendo ou juros adicionais).
-            </p>
+            {ehFaseTeste2026 ? (
+              <>
+                <p className="text-xl font-mono font-bold text-emerald-700">
+                  R$ 0,00
+                  <span className="text-xs text-emerald-600 font-normal ml-1">/mês</span>
+                </p>
+                <div className="p-2 rounded bg-emerald-100/70 border border-emerald-300/80 text-[11px] font-semibold text-emerald-950 leading-snug">
+                  {TEXTO_FASE_TESTE_2026}
+                </div>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  Sem custo financeiro adicional em 2026: ensaio operacional sem antecipação de
+                  caixa do contribuinte.
+                </p>
+              </>
+            ) : ehAnoAtual ? (
+              <>
+                <p className="text-xl font-mono font-bold text-slate-600">
+                  R$ 0,00
+                  <span className="text-xs text-slate-500 font-normal ml-1">/mês</span>
+                </p>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  Sem custo financeiro de antecipação no sistema vigente.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl font-mono font-bold text-rose-700">
+                  {formatarMoeda(custoCapitalMensal)}
+                  <span className="text-xs text-rose-500 font-normal">/mês</span>
+                </p>
+                <p className="text-[11px] text-rose-800 leading-snug">
+                  Custo de oportunidade do capital de giro adiantado (
+                  <strong className="font-mono">{formatarMoeda(custoCapitalAnual)}</strong> por ano
+                  a menos rendendo ou juros adicionais).
+                </p>
+              </>
+            )}
           </div>
         </div>
 
@@ -298,18 +368,23 @@ export function BlocoSplitPayment({
         {/* Bloco em Linguagem Simples "Sem Juridiquês" Conforme Especificação */}
         <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-4 space-y-2">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#D4AF37]" />
             <span className="text-xs font-bold uppercase tracking-wide text-amber-950">
               O que o Split Payment Significa para o Bolso da Sua Empresa (Sem Juridiquês)
             </span>
           </div>
+          {ehFaseTeste2026 && (
+            <div className="p-2.5 rounded-lg bg-amber-100/90 border border-amber-300 text-xs font-semibold text-amber-950">
+              {TEXTO_FASE_TESTE_2026}
+            </div>
+          )}
           <p className="text-xs text-amber-950 leading-relaxed">{explicacaoSimples}</p>
           <div className="pt-2 border-t border-amber-200/60 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-amber-900">
             <div className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] mt-1.5 shrink-0" />
               <span>
                 <strong>Como se preparar:</strong> revisar fluxo de caixa projetado, pois a empresa
-                precisará de um colchão de capital de giro maior no primeiro mês de implantação.
+                precisará de um colchão de capital de giro maior no primeiro mês de implantação
+                plena (a partir de 2027).
               </span>
             </div>
             <div className="flex items-start gap-2">
