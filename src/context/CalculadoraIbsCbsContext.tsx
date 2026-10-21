@@ -126,6 +126,8 @@ interface CalculadoraContextType {
   setPeriodoDashboard: (p: 'mensal' | 'anual') => void
   regimeAtualFiltro: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
   setRegimeAtualFiltro: (r: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional') => void
+  anoTransicaoDashboard: AnoTransicaoIbsCbs
+  setAnoTransicaoDashboard: (ano: AnoTransicaoIbsCbs) => void
 
   // Integração Dados da Empresa
   origemDadosEmpresa: boolean
@@ -142,6 +144,7 @@ interface CalculadoraContextType {
     modulo4Categorias: boolean
     modulo5Faturamento: boolean
     dashboardRegimeAtual: boolean
+    dashboardAnoTransicao: boolean
     dashboardSetor: boolean
     dashboardFaturamento: boolean
     dashboardPercentualCompras: boolean
@@ -158,6 +161,7 @@ interface CalculadoraContextType {
     modulo4Categorias: boolean
     modulo5Faturamento: boolean
     dashboardRegimeAtual: boolean
+    dashboardAnoTransicao: boolean
     dashboardSetor: boolean
     dashboardFaturamento: boolean
     dashboardPercentualCompras: boolean
@@ -437,12 +441,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       }))
     }
 
-    // Se anoTransicao for alterado no Módulo 1, propaga para anoOperacao do M2
+    // Se anoTransicao for alterado no Módulo 1, propaga para anoOperacao do M2 e anoTransicaoDashboard do M6
     if (novas.anoTransicao !== undefined) {
       setAnoOperacaoState(novas.anoTransicao)
+      setAnoTransicaoDashboardState(novas.anoTransicao)
       setEditadoLocalmente((prev) => ({
         ...prev,
         modulo2AnoOperacao: false,
+        dashboardAnoTransicao: false,
       }))
     }
 
@@ -544,12 +550,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       }
     })
 
-    // PROPAGAÇÃO AUTOMÁTICA AO MÓDULO 2 (Ano da Operação/Transição)
+    // PROPAGAÇÃO AUTOMÁTICA AO MÓDULO 2 (Ano da Operação/Transição) E AO MÓDULO 6 (Dashboard)
     // Uma nova alteração no Módulo 1 repropaga o valor e redefine a flag de edição local
     setAnoOperacaoState(ano)
+    setAnoTransicaoDashboardState(ano)
     setEditadoLocalmente((prev) => ({
       ...prev,
       modulo2AnoOperacao: false,
+      dashboardAnoTransicao: false,
     }))
   }
 
@@ -633,6 +641,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     modulo4Categorias: false,
     modulo5Faturamento: false,
     dashboardRegimeAtual: false,
+    dashboardAnoTransicao: false,
     dashboardSetor: false,
     dashboardFaturamento: false,
     dashboardPercentualCompras: false,
@@ -812,6 +821,15 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     setRegimeAtualFiltroState(r)
   }
 
+  const [anoTransicaoDashboard, setAnoTransicaoDashboardState] = useState<AnoTransicaoIbsCbs>(
+    () => config.anoTransicao || 2033,
+  )
+
+  const setAnoTransicaoDashboard = (ano: AnoTransicaoIbsCbs) => {
+    setEditadoLocalmente((prev) => ({ ...prev, dashboardAnoTransicao: true }))
+    setAnoTransicaoDashboardState(ano)
+  }
+
   // Listener para sincronização automática se o usuário salvar dados em outra aba ou na página /dados-empresa
   React.useEffect(() => {
     const handleSync = () => {
@@ -858,6 +876,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       diasAntecipacaoSplit,
       periodoDashboard,
       regimeAtualFiltro,
+      anoTransicaoDashboard,
       empresa: perfil.nomeEmpresa,
       cnpj: perfil.cnpj,
       nomeContato: perfil.nomeContato,
@@ -954,6 +973,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       if (p.config?.regimeAtualEmpresa === undefined) {
         setConfig((prev) => ({ ...prev, regimeAtualEmpresa: p.regimeAtualFiltro }))
       }
+    }
+    if (p.anoTransicaoDashboard !== undefined) {
+      setAnoTransicaoDashboard(p.anoTransicaoDashboard)
     }
   }
 
@@ -2214,6 +2236,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       modulo4Categorias: !editadoLocalmente.modulo4Categorias,
       modulo5Faturamento: !editadoLocalmente.modulo5Faturamento,
       dashboardRegimeAtual: !editadoLocalmente.dashboardRegimeAtual,
+      dashboardAnoTransicao: !editadoLocalmente.dashboardAnoTransicao,
       dashboardSetor: !editadoLocalmente.dashboardSetor,
       dashboardFaturamento: !editadoLocalmente.dashboardFaturamento,
       dashboardPercentualCompras: !editadoLocalmente.dashboardPercentualCompras,
@@ -2297,6 +2320,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         setPeriodoDashboard,
         regimeAtualFiltro,
         setRegimeAtualFiltro,
+        anoTransicaoDashboard,
+        setAnoTransicaoDashboard,
 
         origemDadosEmpresa,
         restaurarDadosEmpresaNoModulo,

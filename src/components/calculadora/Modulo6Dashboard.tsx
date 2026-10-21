@@ -3,6 +3,8 @@ import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import {
   TipoAtividade,
+  AnoTransicaoIbsCbs,
+  LISTA_ANOS_TRANSICAO,
   CRONOGRAMA_FASES_TRANSICAO,
   PRESETS_SETORES_LC214,
 } from '@/types/calculadoraIbsCbs'
@@ -68,6 +70,8 @@ export default function Modulo6Dashboard() {
     periodoDashboard,
     setPeriodoDashboard,
     regimeAtualFiltro,
+    anoTransicaoDashboard,
+    setAnoTransicaoDashboard,
     origensPropagadas,
     resultadoDashboard,
     resultadoComparativo,
@@ -134,7 +138,224 @@ export default function Modulo6Dashboard() {
   // Multiplicador mensal vs anual para visualização no dashboard
   const mult = periodoDashboard === 'anual' ? 12 : 1
 
-  // 1. DADOS GRÁFICO 1: BARRAS - Comparativo dos 4 regimes
+  // Ano selecionado no Dashboard (espelhado do Módulo 1 com prevalência local)
+  const anoSimulacaoSelecionado = anoTransicaoDashboard ?? config.anoTransicao ?? 2033
+
+  // ==========================================
+  // CÁLCULOS DINÂMICOS DO IBS/CBS PARA O ANO SELECIONADO NO DASHBOARD
+  // Fonte da verdade oficial da transição (LC 214/2025): mesma lógica do quadro comparativo e do cronograma
+  // ==========================================
+  const dadosFaseAnoDashboard =
+    anoSimulacaoSelecionado === 'atual'
+      ? CRONOGRAMA_FASES_TRANSICAO['atual']
+      : CRONOGRAMA_FASES_TRANSICAO[anoSimulacaoSelecionado] || CRONOGRAMA_FASES_TRANSICAO[2033]
+
+  const ehMesmoAnoDoModulo1 =
+    config.anoTransicao !== undefined &&
+    String(config.anoTransicao) === String(anoSimulacaoSelecionado)
+
+  // Alíquotas nominais e de referência da fase selecionada no Dashboard
+  const totalIvaFaseDashboard =
+    anoSimulacaoSelecionado === 'atual'
+      ? 0
+      : ehMesmoAnoDoModulo1
+        ? config.totalIvaDual
+        : dadosFaseAnoDashboard.totalIvaDual
+
+  const cbsFaseDashboard =
+    anoSimulacaoSelecionado === 'atual'
+      ? 0
+      : ehMesmoAnoDoModulo1
+        ? config.cbsPadrao
+        : dadosFaseAnoDashboard.aliquotaCbs
+
+  const ibsFaseDashboard =
+    anoSimulacaoSelecionado === 'atual'
+      ? 0
+      : ehMesmoAnoDoModulo1
+        ? config.ibsPadrao
+        : dadosFaseAnoDashboard.aliquotaIbs
+
+  // Apuração do IBS/CBS para o ano selecionado no Dashboard
+  const ibsCbsAnoDashboard = React.useMemo(() => {
+    const fatBruto = Math.max(0, faturamentoMensal)
+    const fatInterno = resultadoComparativo.dadosAdicionais?.receitaTributavelInterna ?? fatBruto
+    const comprasValor = (fatBruto * Math.max(0, percentualComprasVendasComparativo)) / 100
+    const reducaoPct = resultadoComparativo.ibsCbs.reducaoAplicadaPercentual || 0
+    const fatorReducao = Math.max(0, 1 - reducaoPct / 100)
+
+    if (anoSimulacaoSelecionado === 'atual') {
+      // No ano atual (pré-reforma), não há incidência de CBS/IBS
+      return {
+        totalNominal: 0,
+        cbsNominal: 0,
+        ibsNominal: 0,
+        impostoSeletivo: 0,
+        creditosTotal: 0,
+        creditosCompras: 0,
+        creditosDespesas: 0,
+        totalEfetivo: 0,
+        aliquotaEfetiva: 0,
+        aliquotaReferenciaFase: 0,
+      }
+    }
+
+    if (ehMesmoAnoDoModulo1) {
+      // Quando coincide com o ano do Módulo 1, mantém a sincronia com os valores do Módulo 3
+      return {
+        totalNominal: resultadoComparativo.ibsCbs.totalNominal,
+        cbsNominal: resultadoComparativo.ibsCbs.pisOuCbs,
+        ibsNominal: resultadoComparativo.ibsCbs.cofinsOuIbs,
+        impostoSeletivo: resultadoComparativo.ibsCbs.impostoSeletivo,
+        creditosTotal: resultadoComparativo.ibsCbs.creditos,
+        creditosCompras: (comprasValor * config.totalIvaDual) / 100,
+        creditosDespesas: resultadoComparativo.dadosAdicionais?.creditosDespesasIbsCbs ?? 0,
+        totalEfetivo: resultadoComparativo.ibsCbs.totalEfetivo,
+        aliquotaEfetiva: resultadoComparativo.ibsCbs.aliquotaEfetiva,
+        aliquotaReferenciaFase: config.totalIvaDual,
+      }
+    }
+
+    // Para qualquer outro ano selecionado no Dashboard (2026 a 2033):
+    const cbsNominal = (fatInterno * cbsFaseDashboard * fatorReducao) / 100
+    const ibsNominal = (fatInterno * ibsFaseDashboard * fatorReducao) / 100
+
+    const aliqIsEfetiva = resultadoComparativo.dadosAdicionais?.sujeitoImpostoSeletivo
+      ? resultadoComparativo.ibsCbs.impostoSeletivo > 0 && fatInterno > 0
+        ? (resultadoComparativo.ibsCbs.impostoSeletivo / fatInterno) * 100
+        : 0
+      : 0
+    const valorIS = (fatInterno * aliqIsEfetiva) / 100
+    const totalNominal = cbsNominal + ibsNominal + valorIS
+
+    // Créditos da fase: compras e despesas proporcionais à alíquota total da fase
+    const creditosCompras = (comprasValor * totalIvaFaseDashboard) / 100
+    const despesasValor =
+      config.totalIvaDual > 0 && resultadoComparativo.dadosAdicionais?.creditosDespesasIbsCbs
+        ? (resultadoComparativo.dadosAdicionais.creditosDespesasIbsCbs * 100) / config.totalIvaDual
+        : (resultadoComparativo.dadosAdicionais?.creditosDespesasIbsCbs ?? 0)
+    const creditosDespesas = (despesasValor * totalIvaFaseDashboard) / 100
+    const creditosTotal = creditosCompras + creditosDespesas
+
+    const totalEfetivo = Math.max(0, totalNominal - creditosTotal)
+    const aliquotaEfetiva = fatBruto > 0 ? (totalEfetivo / fatBruto) * 100 : 0
+
+    return {
+      totalNominal,
+      cbsNominal,
+      ibsNominal,
+      impostoSeletivo: valorIS,
+      creditosTotal,
+      creditosCompras,
+      creditosDespesas,
+      totalEfetivo,
+      aliquotaEfetiva,
+      aliquotaReferenciaFase: totalIvaFaseDashboard,
+    }
+  }, [
+    anoSimulacaoSelecionado,
+    ehMesmoAnoDoModulo1,
+    faturamentoMensal,
+    percentualComprasVendasComparativo,
+    resultadoComparativo,
+    cbsFaseDashboard,
+    ibsFaseDashboard,
+    totalIvaFaseDashboard,
+    config.totalIvaDual,
+  ])
+
+  // KPIs dinâmicos refletindo o ano selecionado no Dashboard
+  const {
+    aliquotaEfetivaAtual,
+    aliquotaEfetivaNova,
+    economiaMensalProjetada,
+    economiaAnualProjetada,
+    regimeRecomendado,
+  } = React.useMemo(() => {
+    let aliqAtual = 0
+    let cargaAtualMensal = 0
+
+    if (regimeAtualFiltro === 'Lucro Real') {
+      aliqAtual = resultadoComparativo.lucroReal.aliquotaEfetiva
+      cargaAtualMensal = resultadoComparativo.lucroReal.totalEfetivo
+    } else if (regimeAtualFiltro === 'Lucro Presumido') {
+      aliqAtual = resultadoComparativo.lucroPresumido.aliquotaEfetiva
+      cargaAtualMensal = resultadoComparativo.lucroPresumido.totalEfetivo
+    } else {
+      aliqAtual = resultadoComparativo.simplesNacional.aliquotaEfetiva
+      cargaAtualMensal = resultadoComparativo.simplesNacional.totalEfetivo
+    }
+
+    const aliqNova = ibsCbsAnoDashboard.aliquotaEfetiva
+    const cargaNovaMensal = ibsCbsAnoDashboard.totalEfetivo
+
+    const economiaMensal = cargaAtualMensal - cargaNovaMensal
+    const economiaAnual = economiaMensal * 12
+
+    // Determina o regime recomendado para o ano selecionado no Dashboard
+    const cenarios = [
+      { nome: 'Lucro Real', total: resultadoComparativo.lucroReal.totalEfetivo },
+      { nome: 'Lucro Presumido', total: resultadoComparativo.lucroPresumido.totalEfetivo },
+      { nome: 'Simples Nacional', total: resultadoComparativo.simplesNacional.totalEfetivo },
+      ...(anoSimulacaoSelecionado === 'atual'
+        ? []
+        : [{ nome: 'IBS/CBS', total: ibsCbsAnoDashboard.totalEfetivo }]),
+    ].sort((a, b) => a.total - b.total)
+
+    return {
+      aliquotaEfetivaAtual: aliqAtual,
+      aliquotaEfetivaNova: aliqNova,
+      economiaMensalProjetada: economiaMensal,
+      economiaAnualProjetada: economiaAnual,
+      regimeRecomendado: cenarios[0]?.nome || resultadoComparativo.regimeMaisVantajoso,
+    }
+  }, [regimeAtualFiltro, resultadoComparativo, ibsCbsAnoDashboard, anoSimulacaoSelecionado])
+
+  // Split Payment dinâmico baseado no ano selecionado no Dashboard
+  const resultadoSplitPaymentDinamico = React.useMemo(() => {
+    const fatInterno =
+      resultadoComparativo.dadosAdicionais?.receitaTributavelInterna ?? faturamentoMensal
+
+    // Retenção imediata no momento da venda com base na fase do ano do Dashboard
+    const reducaoPct = resultadoComparativo.ibsCbs.reducaoAplicadaPercentual || 0
+    const fatorReducao = Math.max(0, 1 - reducaoPct / 100)
+    const aliquotaSaidaEfetiva = totalIvaFaseDashboard * fatorReducao
+
+    const retencaoMensalNota = (fatInterno * aliquotaSaidaEfetiva) / 100
+
+    let recolhimentoAtualMensal = resultadoComparativo.simplesNacional.totalEfetivo
+    if (regimeAtualFiltro === 'Lucro Real') {
+      recolhimentoAtualMensal = resultadoComparativo.lucroReal.totalEfetivo
+    } else if (regimeAtualFiltro === 'Lucro Presumido') {
+      recolhimentoAtualMensal = resultadoComparativo.lucroPresumido.totalEfetivo
+    }
+
+    const diferencaFluxoCaixa = retencaoMensalNota - recolhimentoAtualMensal
+
+    const taxaDecimal = Math.max(0, taxaMensalCapitalGiro) / 100
+    const fatorTempo = Math.max(1, diasAntecipacaoSplit) / 30
+    const custoCapitalMensal = retencaoMensalNota * taxaDecimal * fatorTempo
+    const custoCapitalAnual = custoCapitalMensal * 12
+
+    return {
+      ...resultadoSplitPayment,
+      retencaoMensalNota,
+      recolhimentoAtualMensal,
+      diferencaFluxoCaixa,
+      custoCapitalMensal,
+      custoCapitalAnual,
+    }
+  }, [
+    faturamentoMensal,
+    resultadoComparativo,
+    totalIvaFaseDashboard,
+    regimeAtualFiltro,
+    taxaMensalCapitalGiro,
+    diasAntecipacaoSplit,
+    resultadoSplitPayment,
+  ])
+
+  // 1. DADOS GRÁFICO 1: BARRAS - Comparativo dos 4 regimes (com IBS/CBS da fase do Dashboard)
   const dadosGraficoBarras = [
     {
       regime: 'Lucro Real',
@@ -155,9 +376,12 @@ export default function Modulo6Dashboard() {
       fill: '#0284C7',
     },
     {
-      regime: 'IBS / CBS (Novo)',
-      carga: resultadoComparativo.ibsCbs.totalEfetivo * mult,
-      aliquota: resultadoComparativo.ibsCbs.aliquotaEfetiva,
+      regime:
+        anoSimulacaoSelecionado === 'atual'
+          ? 'IBS / CBS (Ano Atual)'
+          : `IBS / CBS (${anoSimulacaoSelecionado})`,
+      carga: ibsCbsAnoDashboard.totalEfetivo * mult,
+      aliquota: ibsCbsAnoDashboard.aliquotaEfetiva,
       fill: '#D4AF37',
     },
   ]
@@ -169,17 +393,18 @@ export default function Modulo6Dashboard() {
     imposto: item.impostoEstimado / (periodoDashboard === 'mensal' ? 12 : 1),
   }))
 
-  // Alíquota de referência efetiva dinâmica para apuração de créditos do Módulo 4
+  // Alíquota de referência efetiva dinâmica para apuração de créditos do Gráfico 3
+  // Respeita a fase da transição selecionada no Dashboard
   const aliqRefCreditos =
-    resultadoCreditos?.aliquotaReferencia !== undefined
-      ? resultadoCreditos.aliquotaReferencia
-      : config.totalIvaDual !== undefined
-        ? config.totalIvaDual
-        : 26.5
-  const isAliquotaZeroCreditos = Boolean(resultadoCreditos?.isAliquotaZero)
+    anoSimulacaoSelecionado === 'atual'
+      ? 0
+      : ehMesmoAnoDoModulo1 && resultadoCreditos?.aliquotaReferencia !== undefined
+        ? resultadoCreditos.aliquotaReferencia
+        : totalIvaFaseDashboard
+  const isAliquotaZeroCreditos =
+    anoSimulacaoSelecionado === 'atual' || Boolean(resultadoCreditos?.isAliquotaZero)
 
-  // 3. DADOS GRÁFICO 3: PIZZA - Composição dos Créditos Antigos versus Novos
-  // Agrupa as principais fontes de crédito da lista de despesas usando a alíquota dinâmica do Módulo 4
+  // 3. DADOS GRÁFICO 3: PIZZA - Composição dos Créditos Antigos versus Novos (sincronizado com o ano do Dashboard)
   const dadosPizzaCreditos = despesasCreditos.slice(0, 5).map((item) => {
     const aliqNova = isAliquotaZeroCreditos
       ? 0
@@ -195,8 +420,24 @@ export default function Modulo6Dashboard() {
     }
   })
 
-  // Ano selecionado na simulação (config.anoTransicao ou anoOperacao)
-  const anoSimulacaoSelecionado = config.anoTransicao || 'atual'
+  // Totais de créditos do Gráfico 3 dinâmicos
+  const totalCreditosGrafico3 = React.useMemo(() => {
+    let antigo = 0
+    let novo = 0
+    despesasCreditos.forEach((item) => {
+      const v = Math.max(0, item.valorMensal)
+      const cAntigo = (v * item.aliquotaAntiga) / 100
+      const aliqNova = isAliquotaZeroCreditos
+        ? 0
+        : item.aliquotaNova !== undefined
+          ? item.aliquotaNova
+          : aliqRefCreditos
+      const cNovo = (v * aliqNova) / 100
+      antigo += cAntigo
+      novo += cNovo
+    })
+    return { antigo, novo }
+  }, [despesasCreditos, isAliquotaZeroCreditos, aliqRefCreditos])
 
   // Cálculo do regime mais econômico para cada linha/ano da transição completa (Quadro Comparativo)
   const regimesMaisEconomicosPorAno = React.useMemo(() => {
@@ -367,7 +608,7 @@ export default function Modulo6Dashboard() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Filtro: Período (mantido intacto — visualização mensal/anual) */}
             <div>
               <Label className="text-xs font-semibold text-slate-600 block mb-1.5">Período</Label>
@@ -386,6 +627,51 @@ export default function Modulo6Dashboard() {
               <p className="text-xs text-muted-foreground mt-1.5 leading-snug">
                 Alterna os valores em R$ entre mensal e anual — afeta o Quadro Comparativo e os
                 gráficos
+              </p>
+            </div>
+
+            {/* Filtro: Ano da Transição (espelhado do Módulo 1 com BadgeOrigemPropagada e prevalência local) */}
+            <div>
+              <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
+                <Label className="text-xs font-semibold text-slate-600">Ano da Transição</Label>
+                {origensPropagadas?.dashboardAnoTransicao && (
+                  <BadgeOrigemPropagada texto="vindo das configurações — editável aqui" />
+                )}
+              </div>
+              <Select
+                value={String(anoTransicaoDashboard)}
+                onValueChange={(val) => {
+                  const ano = val === 'atual' ? 'atual' : (Number(val) as AnoTransicaoIbsCbs)
+                  setAnoTransicaoDashboard(ano)
+                }}
+              >
+                <SelectTrigger className="h-10 bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  {LISTA_ANOS_TRANSICAO.map((ano) => {
+                    const dados = CRONOGRAMA_FASES_TRANSICAO[ano]
+                    const rotuloPrincipal =
+                      ano === 'atual' ? 'Ano atual (sistema atual)' : `${ano} • ${dados.fase}`
+                    return (
+                      <SelectItem key={String(ano)} value={String(ano)} className="py-1.5">
+                        <div className="flex flex-col text-left">
+                          <span className="font-bold text-slate-900 text-xs">
+                            {rotuloPrincipal}
+                          </span>
+                          <span className="text-[10px] text-slate-500 leading-tight">
+                            {ano === 'atual'
+                              ? 'Pré-reforma · CBS e IBS 0,00%'
+                              : `${dados.aliquotaCbs.toFixed(2)}% CBS + ${dados.aliquotaIbs.toFixed(2)}% IBS (${dados.totalIvaDual.toFixed(2)}%)`}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1.5 leading-snug">
+                Define a fase da transição usada nos KPIs, gráficos e Split Payment
               </p>
             </div>
 
@@ -739,9 +1025,9 @@ export default function Modulo6Dashboard() {
         </div>
       </Card>
 
-      {/* ETAPA 4: BLOCO IMPACTO DO SPLIT PAYMENT NO FLUXO DE CAIXA NO DASHBOARD */}
+      {/* ETAPA 4: BLOCO IMPACTO DO SPLIT PAYMENT NO FLUXO DE CAIXA NO DASHBOARD (Sincronizado com ano do Dashboard) */}
       <BlocoSplitPayment
-        resultadoSplitPayment={resultadoSplitPayment}
+        resultadoSplitPayment={resultadoSplitPaymentDinamico}
         taxaMensalCapitalGiro={taxaMensalCapitalGiro}
         setTaxaMensalCapitalGiro={setTaxaMensalCapitalGiro}
         diasAntecipacaoSplit={diasAntecipacaoSplit}
@@ -903,11 +1189,11 @@ export default function Modulo6Dashboard() {
               <div className="flex items-center gap-3 text-xs font-semibold">
                 <span className="flex items-center gap-1.5 text-slate-600">
                   <span className="w-3 h-3 rounded-full bg-slate-400" />
-                  Total Antigo: {formatarMoeda(resultadoCreditos.totalAntigo)}
+                  Total Antigo: {formatarMoeda(totalCreditosGrafico3.antigo)}
                 </span>
                 <span className="flex items-center gap-1.5 text-emerald-700">
                   <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                  Total Novo: {formatarMoeda(resultadoCreditos.totalNovo)}
+                  Total Novo: {formatarMoeda(totalCreditosGrafico3.novo)}
                 </span>
               </div>
             </div>
@@ -1101,16 +1387,18 @@ export default function Modulo6Dashboard() {
               <tr className="bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 font-bold">
                 <td className="px-6 py-4 text-[#07132B] flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" />
-                  IBS / CBS (Novo Sistema)
+                  {anoSimulacaoSelecionado === 'atual'
+                    ? 'IBS / CBS (Ano Atual)'
+                    : `IBS / CBS (${anoSimulacaoSelecionado})`}
                 </td>
                 <td className="px-6 py-4 text-center font-mono font-extrabold text-[#07132B]">
-                  {formatarMoeda(resultadoComparativo.ibsCbs.totalEfetivo)}
+                  {formatarMoeda(ibsCbsAnoDashboard.totalEfetivo)}
                 </td>
                 <td className="px-6 py-4 text-center font-mono font-extrabold text-emerald-800">
-                  {formatarMoeda(resultadoComparativo.ibsCbs.creditos)}
+                  {formatarMoeda(ibsCbsAnoDashboard.creditosTotal)}
                 </td>
                 <td className="px-6 py-4 text-center font-mono font-extrabold text-[#07132B]">
-                  {formatarPorcentagem(resultadoComparativo.ibsCbs.aliquotaEfetiva)}
+                  {formatarPorcentagem(ibsCbsAnoDashboard.aliquotaEfetiva)}
                 </td>
                 <td className="px-6 py-4 text-center">
                   <span

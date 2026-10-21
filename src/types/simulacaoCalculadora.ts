@@ -64,6 +64,7 @@ export interface ParametrosSimulacaoCalculadora {
   periodoDashboard: 'mensal' | 'anual'
   regimeAtualFiltro: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
   regimeAtualEmpresa?: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
+  anoTransicaoDashboard?: 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
 
   // Metadados opcionais da empresa
   empresa?: string
