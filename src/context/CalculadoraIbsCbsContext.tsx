@@ -1673,12 +1673,17 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const ibsCbsAliqEfetiva =
       faturamentoBruto > 0 ? (ibsCbsTotalEfetivo / faturamentoBruto) * 100 : 0
 
-    // Comparativo e ranking
+    // Comparativo e ranking: em 2026 ou ano atual, IBS/CBS não concorre no regime recomendado (art. 348 LC 214/2025)
+    const ehAno2026OuAtualComparativo =
+      config.anoTransicao === 'atual' || String(config.anoTransicao) === '2026'
+
     const cenarios = [
       { nome: 'Lucro Real', total: lrTotalEfetivo, aliq: lrAliqEfetiva },
       { nome: 'Lucro Presumido', total: lpTotalEfetivo, aliq: lpAliqEfetiva },
       { nome: 'Simples Nacional', total: snTotalEfetivo, aliq: snAliqEfetivaSobreTotal },
-      { nome: 'IBS/CBS', total: ibsCbsTotalEfetivo, aliq: ibsCbsAliqEfetiva },
+      ...(ehAno2026OuAtualComparativo
+        ? []
+        : [{ nome: 'IBS/CBS', total: ibsCbsTotalEfetivo, aliq: ibsCbsAliqEfetiva }]),
     ]
 
     const cenariosOrdenados = [...cenarios].sort((a, b) => a.total - b.total)
@@ -1906,6 +1911,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   // ETAPA 4: SPLIT PAYMENT (IMPACTO NO FLUXO DE CAIXA)
   // ==========================================
   const resultadoSplitPayment = useMemo(() => {
+    const anoAtualSplit = anoTransicaoDashboard ?? config.anoTransicao ?? 2033
+    const is2026OuAtualSplit = anoAtualSplit === 'atual' || String(anoAtualSplit) === '2026'
+
     // No IBS/CBS, o imposto bruto é retido diretamente na liquidação da nota/pagamento bancário
     // Valor mensal retido na nota (split payment bruto da saída)
     const fatInterno =
@@ -1934,20 +1942,24 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const diferencaFluxoCaixa = retencaoMensalNota - recolhimentoAtualMensal
 
     // Custo de oportunidade / capital de giro da antecipação
-    // A empresa deixa de rentabilizar esse valor durante a média de dias de antecipação (padrão 30 dias)
-    // Custo capital mensal = valor retido antecipado × taxa mensal × (dias / 30)
     const taxaDecimal = Math.max(0, taxaMensalCapitalGiro) / 100
     const fatorTempo = Math.max(1, diasAntecipacaoSplit) / 30
-    const custoCapitalMensal = retencaoMensalNota * taxaDecimal * fatorTempo
+    const custoCapitalMensal = is2026OuAtualSplit
+      ? 0
+      : retencaoMensalNota * taxaDecimal * fatorTempo
     const custoCapitalAnual = custoCapitalMensal * 12
 
-    const explicacaoSimples =
-      'No novo sistema (IBS/CBS), a retenção tributária ocorre automaticamente na conta bancária no instante em que o cliente paga a nota (split payment). No modelo atual, a empresa recebe 100% do valor da venda e só desembolsa o imposto por guia no dia 20 do mês seguinte, utilizando esse caixa como capital de giro sem juros por até 30 a 50 dias. Essa antecipação gera um custo financeiro invisível equivalente aos juros de capital de giro ou perda de rendimento no CDI.'
+    const retencaoFinal = is2026OuAtualSplit ? 0 : retencaoMensalNota
+    const diferencaFinal = is2026OuAtualSplit ? 0 : diferencaFluxoCaixa
+
+    const explicacaoSimples = is2026OuAtualSplit
+      ? 'Em 2026 (art. 348 da LC 214/2025), a CBS (0,9%) e o IBS (0,1%) atuam em fase de teste piloto compensável integralmente com PIS/COFINS. Não há retenção antecipada nem impacto de custo financeiro no capital de giro nesta fase.'
+      : 'No novo sistema (IBS/CBS), a retenção tributária ocorre automaticamente na conta bancária no instante em que o cliente paga a nota (split payment). No modelo atual, a empresa recebe 100% do valor da venda e só desembolsa o imposto por guia no dia 20 do mês seguinte, utilizando esse caixa como capital de giro sem juros por até 30 a 50 dias. Essa antecipação gera um custo financeiro invisível equivalente aos juros de capital de giro ou perda de rendimento no CDI.'
 
     return {
-      retencaoMensalNota,
+      retencaoMensalNota: retencaoFinal,
       recolhimentoAtualMensal,
-      diferencaFluxoCaixa,
+      diferencaFluxoCaixa: diferencaFinal,
       taxaMensalCapital: taxaMensalCapitalGiro,
       diasAntecipacao: diasAntecipacaoSplit,
       custoCapitalMensal,
@@ -1961,6 +1973,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     regimeAtualFiltro,
     taxaMensalCapitalGiro,
     diasAntecipacaoSplit,
+    anoTransicaoDashboard,
+    config.anoTransicao,
   ])
 
   // ==========================================
@@ -2127,10 +2141,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   // CÁLCULO MÓDULO 6 (Dashboard KPIs)
   // ==========================================
   const resultadoDashboard = useMemo(() => {
+    const anoDashboard = anoTransicaoDashboard ?? config.anoTransicao ?? 2033
+    const is2026 = String(anoDashboard) === '2026'
+    const isAtual = anoDashboard === 'atual'
+    const is2026OuAtual = is2026 || isAtual
+
     // Alíquota atual baseada no regime selecionado no filtro
     let aliqAtual = 0
     let cargaAtualMensal = 0
-    const fat = faturamentoMensal
 
     if (regimeAtualFiltro === 'Lucro Real') {
       aliqAtual = resultadoComparativo.lucroReal.aliquotaEfetiva
@@ -2143,21 +2161,34 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       cargaAtualMensal = resultadoComparativo.simplesNacional.totalEfetivo
     }
 
-    const aliqNova = resultadoComparativo.ibsCbs.aliquotaEfetiva
-    const cargaNovaMensal = resultadoComparativo.ibsCbs.totalEfetivo
+    // Regra central 2026 (art. 348 LC 214/2025): CBS 0,9% + IBS 0,1% é compensável integralmente com PIS/COFINS,
+    // sem ônus real líquido. A carga IBS/CBS exibida é zero/compensável.
+    const aliqNova = is2026OuAtual ? 0 : resultadoComparativo.ibsCbs.aliquotaEfetiva
+    const cargaNovaMensal = is2026OuAtual ? 0 : resultadoComparativo.ibsCbs.totalEfetivo
 
-    // Economia = carga atual - carga nova
-    const economiaMensal = cargaAtualMensal - cargaNovaMensal
+    // Em 2026 e atual, não há economia fantasma para o novo sistema (a comparação real vale a partir de 2027)
+    const economiaMensal = is2026OuAtual ? 0 : cargaAtualMensal - cargaNovaMensal
     const economiaAnual = economiaMensal * 12
+
+    // Regime recomendado: para 2026 e atual, IBS/CBS NÃO concorre (disputa sai apenas entre Real, Presumido e Simples)
+    const cenariosTradicionais = [
+      { nome: 'Lucro Real', total: resultadoComparativo.lucroReal.totalEfetivo },
+      { nome: 'Lucro Presumido', total: resultadoComparativo.lucroPresumido.totalEfetivo },
+      { nome: 'Simples Nacional', total: resultadoComparativo.simplesNacional.totalEfetivo },
+    ].sort((a, b) => a.total - b.total)
+
+    const regimeRec = is2026OuAtual
+      ? cenariosTradicionais[0]?.nome || 'Simples Nacional'
+      : resultadoComparativo.regimeMaisVantajoso
 
     return {
       aliquotaEfetivaAtual: aliqAtual,
       aliquotaEfetivaNova: aliqNova,
       economiaMensalProjetada: economiaMensal,
       economiaAnualProjetada: economiaAnual,
-      regimeRecomendado: resultadoComparativo.regimeMaisVantajoso,
+      regimeRecomendado: regimeRec,
     }
-  }, [faturamentoMensal, regimeAtualFiltro, resultadoComparativo])
+  }, [regimeAtualFiltro, resultadoComparativo, anoTransicaoDashboard, config.anoTransicao])
 
   // Função para obter o snapshot dos resultados derivados atuais
   const obterSnapshotResultados = (): ResultadosSimulacaoCalculadora => {

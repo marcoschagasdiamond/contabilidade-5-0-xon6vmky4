@@ -231,6 +231,23 @@ export default function Modulo6Dashboard({
       }
     }
 
+    if (String(anoSimulacaoSelecionado) === '2026') {
+      // Em 2026 (art. 348 da LC 214/2025), a CBS (0,9%) e o IBS (0,1%) são em fase de teste,
+      // compensáveis integralmente com PIS/COFINS, gerando custo líquido / carga líquida zero
+      return {
+        totalNominal: 0,
+        cbsNominal: 0,
+        ibsNominal: 0,
+        impostoSeletivo: 0,
+        creditosTotal: 0,
+        creditosCompras: 0,
+        creditosDespesas: 0,
+        totalEfetivo: 0,
+        aliquotaEfetiva: 0,
+        aliquotaReferenciaFase: totalIvaFaseDashboard,
+      }
+    }
+
     if (ehMesmoAnoDoModulo1) {
       // Quando coincide com o ano do Módulo 1, mantém a sincronia com os valores do Módulo 3
       return {
@@ -323,14 +340,16 @@ export default function Modulo6Dashboard({
     const economiaMensal = cargaAtualMensal - cargaNovaMensal
     const economiaAnual = economiaMensal * 12
 
-    // Determina o regime recomendado para o ano selecionado no Dashboard
+    const is2026OuAtual =
+      anoSimulacaoSelecionado === 'atual' || String(anoSimulacaoSelecionado) === '2026'
+
+    // Determina o regime recomendado para o ano selecionado no Dashboard:
+    // Para 2026 e atual, IBS/CBS NÃO concorre (sai apenas entre Lucro Real, Lucro Presumido e Simples Nacional)
     const cenarios = [
       { nome: 'Lucro Real', total: resultadoComparativo.lucroReal.totalEfetivo },
       { nome: 'Lucro Presumido', total: resultadoComparativo.lucroPresumido.totalEfetivo },
       { nome: 'Simples Nacional', total: resultadoComparativo.simplesNacional.totalEfetivo },
-      ...(anoSimulacaoSelecionado === 'atual'
-        ? []
-        : [{ nome: 'IBS/CBS', total: ibsCbsAnoDashboard.totalEfetivo }]),
+      ...(is2026OuAtual ? [] : [{ nome: 'IBS/CBS', total: ibsCbsAnoDashboard.totalEfetivo }]),
     ].sort((a, b) => a.total - b.total)
 
     return {
@@ -481,8 +500,9 @@ export default function Modulo6Dashboard({
     resultadoTransicao.forEach((item) => {
       const ano = item.ano
 
-      if (ano === 'atual') {
-        // No sistema atual pré-reforma, concorrem os 3 regimes vigentes (Lucro Real, Lucro Presumido, Simples Nacional)
+      if (ano === 'atual' || String(ano) === '2026') {
+        // No sistema atual e em 2026 (fase de teste art. 348 LC 214/2025),
+        // concorrem apenas os 3 regimes vigentes (Lucro Real, Lucro Presumido, Simples Nacional)
         const cenarios = [
           { nome: 'Lucro Real', total: lrTotal },
           { nome: 'Lucro Presumido', total: lpTotal },
@@ -492,7 +512,7 @@ export default function Modulo6Dashboard({
         return
       }
 
-      // Para os anos de 2026 a 2033:
+      // Para os anos de 2027 a 2033:
       // Alíquotas oficiais da fase daquele ano (LC 214/2025)
       const faseAno = CRONOGRAMA_FASES_TRANSICAO[ano] || CRONOGRAMA_FASES_TRANSICAO[2033]
       const cbsAno = faseAno.aliquotaCbs
