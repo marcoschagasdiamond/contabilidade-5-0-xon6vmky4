@@ -396,7 +396,7 @@ export default function Modulo6Dashboard() {
   const isAliquotaZeroCreditos =
     anoSimulacaoSelecionado === 'atual' || Boolean(resultadoCreditos?.isAliquotaZero)
 
-  // 3. DADOS GRÁFICO 3: PIZZA - Composição dos Créditos Antigos versus Novos (sincronizado com o ano do Dashboard)
+  // 3. DADOS GRÁFICO 3: PIZZA - Composição dos Créditos Antigos versus Novos (sincronizado com o ano do Dashboard e filtro mensal/anual)
   const dadosPizzaCreditos = despesasCreditos.slice(0, 5).map((item) => {
     const aliqNova = isAliquotaZeroCreditos
       ? 0
@@ -406,18 +406,18 @@ export default function Modulo6Dashboard() {
 
     return {
       name: item.nome,
-      antigo: (item.valorMensal * item.aliquotaAntiga) / 100,
-      novo: (item.valorMensal * aliqNova) / 100,
+      antigo: (item.valorMensal * mult * item.aliquotaAntiga) / 100,
+      novo: (item.valorMensal * mult * aliqNova) / 100,
       aliquotaNovaAplicada: aliqNova,
     }
   })
 
-  // Totais de créditos do Gráfico 3 dinâmicos
+  // Totais de créditos do Gráfico 3 dinâmicos (seguindo o multiplicador mensal/anual)
   const totalCreditosGrafico3 = React.useMemo(() => {
     let antigo = 0
     let novo = 0
     despesasCreditos.forEach((item) => {
-      const v = Math.max(0, item.valorMensal)
+      const v = Math.max(0, item.valorMensal * mult)
       const cAntigo = (v * item.aliquotaAntiga) / 100
       const aliqNova = isAliquotaZeroCreditos
         ? 0
@@ -429,7 +429,7 @@ export default function Modulo6Dashboard() {
       novo += cNovo
     })
     return { antigo, novo }
-  }, [despesasCreditos, isAliquotaZeroCreditos, aliqRefCreditos])
+  }, [despesasCreditos, isAliquotaZeroCreditos, aliqRefCreditos, mult])
 
   // Cálculo do regime mais econômico para cada linha/ano da transição completa (Quadro Comparativo)
   const regimesMaisEconomicosPorAno = React.useMemo(() => {
@@ -516,52 +516,61 @@ export default function Modulo6Dashboard() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Cabeçalho do Módulo */}
-      <div className="bg-[#07132B] border border-[#D4AF37]/30 rounded-2xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xl">
-        <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Cabeçalho do Módulo - FIXO (sticky) com hierarquia visual destacada para os 3 botões */}
+      <div className="sticky top-16 z-30 bg-[#07132B]/95 backdrop-blur-md border-2 border-[#D4AF37]/50 rounded-2xl p-5 sm:p-6 text-white relative shadow-2xl transition-all">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/15 rounded-full blur-3xl pointer-events-none" />
         <div className="relative space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 tracking-wider uppercase">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/15 border border-[#D4AF37]/40 tracking-wider uppercase">
             <LayoutDashboard className="w-3.5 h-3.5" />
             Módulo 6 • Painel Executivo Integrado
           </div>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-heading font-extrabold text-white tracking-tight">
                 Dashboard Executivo da Reforma Tributária
               </h2>
-              <p className="text-slate-300 text-sm sm:text-base max-w-2xl mt-1">
+              <p className="text-slate-300 text-xs sm:text-sm max-w-2xl mt-1 leading-snug">
                 Visão gerencial consolidada que consome todos os módulos anteriores. Visualize KPIs
                 de impacto, gráficos comparativos de regimes e evolução temporal das obrigações
                 fiscais.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+
+            {/* Três Botões de Ação com Destaque e Hierarquia Visual Clara */}
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0 bg-white/5 p-1.5 rounded-xl border border-white/10 shadow-inner">
+              {/* Botão Secundário 1: Compartilhar */}
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setModalCompartilharAberto(true)}
-                className="bg-white/10 hover:bg-white/20 text-[#D4AF37] border-[#D4AF37]/50 font-bold text-xs h-9 shadow-md flex items-center gap-1.5"
+                className="bg-[#07132B] hover:bg-white/15 text-[#D4AF37] border-2 border-[#D4AF37]/60 font-bold text-xs h-10 px-3.5 shadow-md flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 title="Compartilhar link da simulação"
               >
-                <Share2 className="w-4 h-4" />
-                Compartilhar
+                <Share2 className="w-4 h-4 text-[#D4AF37]" />
+                <span>Compartilhar</span>
               </Button>
+
+              {/* Botão Secundário 2: Salvar Simulação */}
               <Button
                 type="button"
                 onClick={() => setModalSalvarAberto(true)}
-                className="bg-[#D4AF37] hover:bg-[#E5C158] text-[#07132B] font-bold text-xs h-9 shadow-md flex items-center gap-1.5"
+                className="bg-gradient-to-r from-[#D4AF37] to-[#E5C158] hover:from-[#c49f2e] hover:to-[#D4AF37] text-[#07132B] font-extrabold text-xs h-10 px-4 shadow-lg border border-[#D4AF37] flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                title="Salvar esta simulação na sua conta"
               >
-                <BookmarkPlus className="w-4 h-4" />
-                Salvar Simulação
+                <BookmarkPlus className="w-4 h-4 stroke-[2.5]" />
+                <span>Salvar Simulação</span>
               </Button>
+
+              {/* Botão Primário em Destaque: Baixar Relatório em PDF */}
               <Button
                 type="button"
                 onClick={handleBaixarPdfDashboard}
                 disabled={gerandoPdf}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs h-9 shadow-md flex items-center gap-1.5"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs h-10 px-4 shadow-[0_0_15px_rgba(16,185,129,0.4)] border border-emerald-400 flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                title="Exportar dossiê completo em PDF"
               >
-                <FileDown className="w-4 h-4" />
-                {gerandoPdf ? 'Gerando...' : 'Baixar Relatório PDF'}
+                <FileDown className="w-4 h-4 stroke-[2.5]" />
+                <span>{gerandoPdf ? 'Gerando...' : 'Baixar Relatório em PDF'}</span>
               </Button>
             </div>
           </div>
@@ -794,47 +803,87 @@ export default function Modulo6Dashboard() {
         </Card>
 
         {/* KPI 3: Economia Mensal Projetada */}
-        <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 to-white shadow hover:shadow-md transition-all">
-          <CardContent className="p-5 space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold uppercase tracking-wider text-emerald-800">
-                Economia Mensal Projetada
-              </span>
-              <span className="font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px]">
-                {economiaMensalProjetada >= 0 ? 'Redução' : 'Acréscimo'}
-              </span>
-            </div>
-            <p className="text-3xl font-mono font-extrabold text-emerald-700">
-              {formatarMoeda(Math.abs(economiaMensalProjetada))}
-            </p>
-            <p className="text-[11px] text-slate-500">
-              {economiaMensalProjetada >= 0
-                ? 'Economia líquida estimada por competência mensal'
-                : 'Necessidade de ajuste via tomada de créditos adicionais'}
-            </p>
-          </CardContent>
-        </Card>
+        {(() => {
+          const strValorMensal = formatarMoeda(Math.abs(economiaMensalProjetada))
+          // Fonte adaptativa baseada no comprimento do valor formatado
+          const tamanhoFonteMensal =
+            strValorMensal.length > 18
+              ? 'text-base sm:text-lg'
+              : strValorMensal.length > 15
+                ? 'text-lg sm:text-xl'
+                : strValorMensal.length > 12
+                  ? 'text-xl sm:text-2xl'
+                  : 'text-2xl sm:text-3xl'
+
+          return (
+            <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 to-white shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
+              <CardContent className="p-5 space-y-1.5 min-w-0">
+                <div className="flex items-center justify-between text-xs gap-1">
+                  <span className="font-bold uppercase tracking-wider text-emerald-800 truncate">
+                    Economia Mensal Projetada
+                  </span>
+                  <span className="font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px] shrink-0">
+                    {economiaMensalProjetada >= 0 ? 'Redução' : 'Acréscimo'}
+                  </span>
+                </div>
+                <div className="py-0.5 min-w-0 overflow-hidden">
+                  <p
+                    className={`${tamanhoFonteMensal} font-mono font-extrabold text-emerald-700 truncate tracking-tight`}
+                    title={strValorMensal}
+                  >
+                    {strValorMensal}
+                  </p>
+                </div>
+                <p className="text-[11px] text-slate-500 line-clamp-2">
+                  {economiaMensalProjetada >= 0
+                    ? 'Economia líquida estimada por competência mensal'
+                    : 'Necessidade de ajuste via tomada de créditos adicionais'}
+                </p>
+              </CardContent>
+            </Card>
+          )
+        })()}
 
         {/* KPI 4: Economia Anual Projetada */}
-        <Card className="bg-[#07132B] text-white border border-[#D4AF37]/50 shadow-xl overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-28 h-28 bg-[#D4AF37]/20 rounded-full blur-xl pointer-events-none" />
-          <CardContent className="p-5 space-y-1.5 relative">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold uppercase tracking-wider text-[#D4AF37]">
-                Economia Anual Projetada
-              </span>
-              <span className="bg-[#D4AF37]/20 text-[#D4AF37] px-2 py-0.5 rounded text-[10px] font-bold">
-                12 meses
-              </span>
-            </div>
-            <p className="text-3xl font-mono font-extrabold text-white">
-              {formatarMoeda(Math.abs(economiaAnualProjetada))}
-            </p>
-            <p className="text-[11px] text-slate-300">
-              Impacto no fluxo de caixa anualizado da companhia
-            </p>
-          </CardContent>
-        </Card>
+        {(() => {
+          const strValorAnual = formatarMoeda(Math.abs(economiaAnualProjetada))
+          // Fonte adaptativa baseada no comprimento do valor formatado
+          const tamanhoFonteAnual =
+            strValorAnual.length > 18
+              ? 'text-base sm:text-lg'
+              : strValorAnual.length > 15
+                ? 'text-lg sm:text-xl'
+                : strValorAnual.length > 12
+                  ? 'text-xl sm:text-2xl'
+                  : 'text-2xl sm:text-3xl'
+
+          return (
+            <Card className="bg-[#07132B] text-white border border-[#D4AF37]/50 shadow-xl overflow-hidden relative flex flex-col justify-between">
+              <div className="absolute top-0 right-0 w-28 h-28 bg-[#D4AF37]/20 rounded-full blur-xl pointer-events-none" />
+              <CardContent className="p-5 space-y-1.5 relative min-w-0">
+                <div className="flex items-center justify-between text-xs gap-1">
+                  <span className="font-bold uppercase tracking-wider text-[#D4AF37] truncate">
+                    Economia Anual Projetada
+                  </span>
+                  <span className="bg-[#D4AF37]/20 text-[#D4AF37] px-2 py-0.5 rounded text-[10px] font-bold shrink-0">
+                    12 meses
+                  </span>
+                </div>
+                <div className="py-0.5 min-w-0 overflow-hidden">
+                  <p
+                    className={`${tamanhoFonteAnual} font-mono font-extrabold text-white truncate tracking-tight`}
+                    title={strValorAnual}
+                  >
+                    {strValorAnual}
+                  </p>
+                </div>
+                <p className="text-[11px] text-slate-300 line-clamp-2">
+                  Impacto no fluxo de caixa anualizado da companhia
+                </p>
+              </CardContent>
+            </Card>
+          )
+        })()}
       </div>
 
       {/* MUDANÇA 1: QUADRO COMPARATIVO DA TRANSIÇÃO COMPLETA (ATUAL + 2026 A 2033) */}
@@ -1032,36 +1081,109 @@ export default function Modulo6Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfico 1 em Barras: Comparativo dos 4 Regimes */}
         <Card className="border-slate-200 shadow-md">
-          <CardHeader className="pb-2 border-b border-slate-100">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-base font-heading font-bold text-[#07132B]">
-                Gráfico 1: Comparativo por Regime (
-                {periodoDashboard === 'mensal' ? 'Mensal' : 'Anual'})
-              </CardTitle>
-              <span className="text-xs text-slate-500 font-mono">Valores em R$</span>
+          <CardHeader className="pb-3 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <div>
+                <CardTitle className="text-base font-heading font-bold text-[#07132B]">
+                  Gráfico 1: Comparativo por Regime (
+                  {periodoDashboard === 'mensal' ? 'Mensal' : 'Anual'})
+                </CardTitle>
+                <p className="text-xs text-slate-500">
+                  Carga tributária nos 4 cenários fiscais (
+                  {periodoDashboard === 'mensal' ? 'R$/mês' : 'R$/ano'})
+                </p>
+              </div>
+              <span className="text-xs text-slate-500 font-mono self-start sm:self-auto bg-slate-100 px-2 py-0.5 rounded">
+                Valores em R$
+              </span>
             </div>
           </CardHeader>
-          <CardContent className="pt-4">
-            <div className="h-64 w-full">
+          <CardContent className="pt-4 space-y-4">
+            <div className="h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={dadosGraficoBarras}
-                  margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                  margin={{ top: 20, right: 15, left: 10, bottom: 45 }}
+                  barCategoryGap="22%"
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                  <XAxis dataKey="regime" stroke="#64748B" fontSize={11} interval={0} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                  <XAxis
+                    dataKey="regime"
+                    stroke="#64748B"
+                    interval={0}
+                    height={40}
+                    tick={(tickProps: any) => {
+                      const { x, y, payload } = tickProps
+                      const texto = String(payload.value || '')
+                      // Identifica o regime para cor específica do pill
+                      const isIbs = texto.includes('IBS')
+                      const isSimples = texto.includes('Simples')
+                      const isReal = texto.includes('Real')
+
+                      let pillBg = '#F1F5F9'
+                      let pillStroke = '#CBD5E1'
+                      let textColor = '#334155'
+
+                      if (isIbs) {
+                        pillBg = '#FEF3C7'
+                        pillStroke = '#D4AF37'
+                        textColor = '#78350F'
+                      } else if (isSimples) {
+                        pillBg = '#E0F2FE'
+                        pillStroke = '#7DD3FC'
+                        textColor = '#0369A1'
+                      } else if (isReal) {
+                        pillBg = '#F8FAFC'
+                        pillStroke = '#94A3B8'
+                        textColor = '#0F172A'
+                      }
+
+                      // Largura dinâmica estimada baseada no comprimento do texto
+                      const pillWidth = Math.max(76, texto.length * 6.5 + 14)
+
+                      return (
+                        <g transform={`translate(${x},${y})`}>
+                          <rect
+                            x={-pillWidth / 2}
+                            y={6}
+                            width={pillWidth}
+                            height={22}
+                            rx={11}
+                            fill={pillBg}
+                            stroke={pillStroke}
+                            strokeWidth={1}
+                          />
+                          <text
+                            x={0}
+                            y={21}
+                            textAnchor="middle"
+                            fill={textColor}
+                            fontSize={10.5}
+                            fontWeight={600}
+                            fontFamily="inherit"
+                          >
+                            {texto}
+                          </text>
+                        </g>
+                      )
+                    }}
+                  />
                   <YAxis
                     stroke="#64748B"
                     fontSize={11}
                     tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
-                    formatter={(val: any) => [formatarMoeda(Number(val)), 'Carga Total']}
+                    formatter={(val: any, _name: any, item: any) => [
+                      `${formatarMoeda(Number(val))} (${item?.payload?.aliquota ? formatarPorcentagem(item.payload.aliquota) : ''})`,
+                      'Carga Efetiva',
+                    ]}
                     contentStyle={{
                       backgroundColor: '#07132B',
                       borderColor: '#D4AF37',
                       color: '#fff',
                       borderRadius: '8px',
+                      fontSize: '12px',
                     }}
                   />
                   <Bar dataKey="carga" radius={[6, 6, 0, 0]}>
@@ -1071,6 +1193,37 @@ export default function Modulo6Dashboard() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+
+            {/* Legenda reorganizada e claramente identificável para cada regime */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100">
+              {dadosGraficoBarras.map((entry) => (
+                <div
+                  key={entry.regime}
+                  className="flex flex-col p-2 rounded-lg bg-slate-50 border border-slate-200/80 text-xs"
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: entry.fill }}
+                    />
+                    <span
+                      className="font-bold text-slate-800 truncate text-[11px]"
+                      title={entry.regime}
+                    >
+                      {entry.regime}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between font-mono text-[11px] gap-1">
+                    <span className="font-extrabold text-[#07132B]">
+                      {formatarMoeda(entry.carga)}
+                    </span>
+                    <span className="text-slate-500 font-semibold text-[10px]">
+                      {formatarPorcentagem(entry.aliquota)}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -1164,57 +1317,60 @@ export default function Modulo6Dashboard() {
 
         {/* Gráfico 3 em Pizza: Composição de Créditos Antigos vs Novos (Sincronizado dinamicamente) */}
         <Card className="border-slate-200 shadow-md lg:col-span-2">
-          <CardHeader className="pb-2 border-b border-slate-100">
+          <CardHeader className="pb-3 border-b border-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <CardTitle className="text-base font-heading font-bold text-[#07132B]">
-                  Gráfico 3: Comparação da Apropriação de Créditos por Categoria
+                  Gráfico 3: Comparação da Apropriação de Créditos por Categoria (
+                  {periodoDashboard === 'mensal' ? 'Mensal' : 'Anual'})
                 </CardTitle>
                 <p className="text-xs text-slate-500">
                   Créditos gerados no antigo regime vs créditos ampliados no IVA Dual (
                   {isAliquotaZeroCreditos
                     ? '0,00% — Regime de Alíquota Zero'
                     : formatarPorcentagem(aliqRefCreditos)}
-                  ).
+                  ) • Valores em {periodoDashboard === 'mensal' ? 'R$/mês' : 'R$/ano'}.
                 </p>
               </div>
               <div className="flex items-center gap-3 text-xs font-semibold">
-                <span className="flex items-center gap-1.5 text-slate-600">
-                  <span className="w-3 h-3 rounded-full bg-slate-400" />
+                <span className="flex items-center gap-1.5 text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
                   Total Antigo: {formatarMoeda(totalCreditosGrafico3.antigo)}
                 </span>
-                <span className="flex items-center gap-1.5 text-emerald-700">
-                  <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                   Total Novo: {formatarMoeda(totalCreditosGrafico3.novo)}
                 </span>
               </div>
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              <div>
-                <h5 className="text-xs font-bold uppercase text-slate-500 text-center mb-2">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Pizza com Raio Otimizado e Margens Aumentadas */}
+              <div className="lg:col-span-5 flex flex-col items-center">
+                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center mb-2">
                   Distribuição de Créditos Novos (Top 5 Despesas)
                 </h5>
-                <div className="h-56 w-full">
+                <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
+                    <PieChart margin={{ top: 12, right: 12, bottom: 12, left: 12 }}>
                       <Pie
                         data={dadosPizzaCreditos}
                         dataKey="novo"
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        outerRadius={75}
-                        label={({ name, percent }) =>
-                          `${name.slice(0, 10)}... (${(percent * 100).toFixed(0)}%)`
-                        }
-                        labelLine={false}
+                        innerRadius={36}
+                        outerRadius={68}
+                        paddingAngle={3}
+                        isAnimationActive={false}
                       >
                         {dadosPizzaCreditos.map((entry, index) => (
                           <Cell
                             key={`cell-pie-${index}`}
                             fill={CORES_PIZZA[index % CORES_PIZZA.length]}
+                            stroke="#ffffff"
+                            strokeWidth={2}
                           />
                         ))}
                       </Pie>
@@ -1225,43 +1381,95 @@ export default function Modulo6Dashboard() {
                           borderColor: '#D4AF37',
                           color: '#fff',
                           borderRadius: '8px',
+                          fontSize: '12px',
                         }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
+                <div className="text-[11px] text-slate-500 text-center font-medium">
+                  Total de Créditos Novos ({periodoDashboard === 'mensal' ? 'mês' : 'ano'}):{' '}
+                  <strong className="text-emerald-700 font-mono">
+                    {formatarMoeda(dadosPizzaCreditos.reduce((acc, curr) => acc + curr.novo, 0))}
+                  </strong>
+                </div>
               </div>
 
-              {/* Comparativo de Barras Horizontais das Categorias */}
-              <div className="space-y-3">
-                <h5 className="text-xs font-bold uppercase text-slate-500 mb-2">
-                  Ganho Efetivo por Despesa
-                </h5>
-                {dadosPizzaCreditos.map((cat, idx) => {
-                  const ganho = cat.novo - cat.antigo
-                  return (
-                    <div key={cat.name} className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="font-semibold text-slate-700">{cat.name}</span>
-                        <span className="font-mono text-emerald-700 font-bold">
-                          +{formatarMoeda(ganho)}
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden flex">
+              {/* LEGENDA LATERAL LEGÍVEL: Nome da categoria, valor em R$ e percentual */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <h5 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                    Legenda de Categorias & Ganho de Créditos
+                  </h5>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    Visão {periodoDashboard === 'mensal' ? 'Mensal' : 'Anual'}
+                  </span>
+                </div>
+
+                {/* Lista da Legenda com Nome, Valor R$, Percentual e barra de progresso */}
+                <div className="space-y-2.5">
+                  {(() => {
+                    const somaNovos =
+                      dadosPizzaCreditos.reduce((acc, curr) => acc + curr.novo, 0) || 1
+                    return dadosPizzaCreditos.map((cat, idx) => {
+                      const ganho = cat.novo - cat.antigo
+                      const cor = CORES_PIZZA[idx % CORES_PIZZA.length]
+                      const percentual = ((cat.novo / somaNovos) * 100).toFixed(1)
+
+                      return (
                         <div
-                          className="bg-slate-400 h-full"
-                          style={{ width: `${(cat.antigo / (cat.novo || 1)) * 100}%` }}
-                        />
-                        <div
-                          className="bg-emerald-500 h-full"
-                          style={{
-                            width: `${(Math.max(0, ganho) / (cat.novo || 1)) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
+                          key={cat.name}
+                          className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100/70 transition-colors space-y-1.5"
+                        >
+                          <div className="flex items-center justify-between gap-2 text-xs">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className="w-3.5 h-3.5 rounded-md shrink-0 border border-black/10"
+                                style={{ backgroundColor: cor }}
+                              />
+                              <span className="font-bold text-slate-800 truncate" title={cat.name}>
+                                {cat.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2.5 shrink-0 font-mono text-xs">
+                              <span className="font-bold text-[#07132B]">
+                                {formatarMoeda(cat.novo)}
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded bg-white text-slate-700 border border-slate-200 text-[10px] font-bold">
+                                {percentual}%
+                              </span>
+                              <span
+                                className={`font-bold text-[11px] ${
+                                  ganho >= 0 ? 'text-emerald-700' : 'text-red-600'
+                                }`}
+                              >
+                                {ganho >= 0
+                                  ? `+${formatarMoeda(ganho)}`
+                                  : `−${formatarMoeda(Math.abs(ganho))}`}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Comparativo visual: Antigo x Novo */}
+                          <div className="w-full bg-slate-200/80 rounded-full h-1.5 overflow-hidden flex">
+                            <div
+                              className="bg-slate-400 h-full"
+                              style={{ width: `${(cat.antigo / (cat.novo || 1)) * 100}%` }}
+                              title={`Crédito antigo: ${formatarMoeda(cat.antigo)}`}
+                            />
+                            <div
+                              className="bg-emerald-500 h-full"
+                              style={{
+                                width: `${(Math.max(0, ganho) / (cat.novo || 1)) * 100}%`,
+                              }}
+                              title={`Ganho com reforma: +${formatarMoeda(Math.max(0, ganho))}`}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
               </div>
             </div>
           </CardContent>
