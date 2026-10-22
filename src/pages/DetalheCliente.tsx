@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { obterClientePorId, excluirCliente } from '@/services/clientes'
 import {
@@ -12,6 +12,11 @@ import {
   vincularDiagnosticoACliente,
   type DiagnosticoRecord,
 } from '@/services/diagnosticos'
+import {
+  listarConversasPorCliente,
+  excluirConversaAssistente,
+  type ConversaAssistente,
+} from '@/services/conversasAssistente'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { ModalCliente } from '@/components/clientes/ModalCliente'
 import { Badge } from '@/components/ui/badge'
@@ -25,10 +30,11 @@ import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
  * Página de Detalhe do Cliente (/clientes/:id)
  * Requisitos:
  * 1) Dados cadastrais e fiscais do cliente.
- * 2) Histórico com simulações salvas e diagnósticos feitos (com datas).
+ * 2) Histórico com simulações salvas, diagnósticos feitos e conversas arquivadas do Assistente.
  * 3) Links diretos para abrir cada simulação ou diagnóstico.
- * 4) Opção de vincular simulações/diagnósticos existentes que estejam sem vínculo ("Simulações existentes permanecem acessíveis e podem ser vinculadas depois").
- * 5) Botão para definir como "Cliente Ativo" na Calculadora e Diagnósticos.
+ * 4) Terceira aba "Conversas do Assistente" com visualização em leitura e atalho para reabrir no Dashboard.
+ * 5) Opção de vincular simulações/diagnósticos existentes que estejam sem vínculo.
+ * 6) Botão para definir como "Cliente Ativo" na Calculadora e Diagnósticos.
  * Visual: Padrão Diamond Group (#07132B e #D4AF37).
  * Regra: SEM ÍCONES — texto, badges e marcadores de status.
  */
@@ -46,12 +52,18 @@ export default function DetalheCliente() {
   // Histórico
   const [simulacoes, setSimulacoes] = useState<SimulacaoCalculadora[]>([])
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoRecord[]>([])
+  const [conversas, setConversas] = useState<ConversaAssistente[]>([])
 
   // Modal para vincular simulações/diagnósticos existentes
   const [modalVincularAberto, setModalVincularAberto] = useState(false)
   const [todasSimulacoes, setTodasSimulacoes] = useState<SimulacaoCalculadora[]>([])
   const [todosDiagnosticos, setTodosDiagnosticos] = useState<DiagnosticoRecord[]>([])
-  const [abaHistorico, setAbaHistorico] = useState<'simulacoes' | 'diagnosticos'>('simulacoes')
+  const [abaHistorico, setAbaHistorico] = useState<'simulacoes' | 'diagnosticos' | 'conversas'>(
+    'simulacoes',
+  )
+
+  // Modal de leitura detalhada de conversa arquivada
+  const [conversaVisualizando, setConversaVisualizando] = useState<ConversaAssistente | null>(null)
 
   const isAtivo = clienteAtivoId === id
 
@@ -63,12 +75,14 @@ export default function DetalheCliente() {
       setCliente(cli)
 
       if (cli) {
-        const [sims, diags] = await Promise.all([
+        const [sims, diags, convs] = await Promise.all([
           listarSimulacoesPorCliente(id),
           getDiagnosticosPorCliente(id),
+          listarConversasPorCliente(id),
         ])
         setSimulacoes(sims)
         setDiagnosticos(diags)
+        setConversas(convs)
       }
     } catch (err) {
       console.error('Erro ao carregar dados do cliente:', err)
@@ -156,6 +170,33 @@ export default function DetalheCliente() {
         variant: 'destructive',
       })
     }
+  }
+
+  const handleExcluirConversa = async (conversaId: string) => {
+    if (!window.confirm('Deseja realmente remover esta conversa arquivada?')) return
+    try {
+      await excluirConversaAssistente(conversaId)
+      toast({
+        title: 'Conversa removida',
+        description: 'O registro da conversa foi excluído com sucesso.',
+      })
+      if (conversaVisualizando?.id === conversaId) {
+        setConversaVisualizando(null)
+      }
+      setConversas((prev) => prev.filter((c) => c.id !== conversaId))
+    } catch (err) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível remover a conversa.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleReabrirNoDashboard = () => {
+    if (!cliente) return
+    selecionarClienteAtivo(cliente.id)
+    navigate('/calculadora-ibs-cbs#assistente-analise-container')
   }
 
   const handleExcluirCliente = async () => {
@@ -391,8 +432,8 @@ export default function DetalheCliente() {
               Executar nova análise vinculada a {cliente.nome}
             </h3>
             <p className="text-xs text-slate-300">
-              Ao abrir a Calculadora ou Diagnóstico com este cliente ativo, os resultados serão
-              associados automaticamente à carteira.
+              Ao abrir a Calculadora ou Diagnóstico com este cliente ativo, os resultados e
+              conversas do assistente serão associados automaticamente à carteira.
             </p>
           </div>
 
@@ -409,6 +450,14 @@ export default function DetalheCliente() {
             </Button>
             <Button
               type="button"
+              onClick={handleReabrirNoDashboard}
+              variant="outline"
+              className="border-[#D4AF37]/50 text-[#D4AF37] hover:bg-white/10 text-xs font-bold"
+            >
+              Consultar Assistente de Análise
+            </Button>
+            <Button
+              type="button"
               onClick={() => {
                 selecionarClienteAtivo(cliente.id)
                 navigate('/diagnostico')
@@ -421,11 +470,11 @@ export default function DetalheCliente() {
           </div>
         </div>
 
-        {/* HISTÓRICO DO CLIENTE (SIMULAÇÕES E DIAGNÓSTICOS) */}
+        {/* HISTÓRICO DO CLIENTE (SIMULAÇÕES, DIAGNÓSTICOS E CONVERSAS DO ASSISTENTE) */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           {/* Barra de Abas */}
           <div className="border-b border-slate-200 bg-slate-50/70 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setAbaHistorico('simulacoes')}
@@ -449,17 +498,42 @@ export default function DetalheCliente() {
               >
                 Diagnósticos Tributários ({diagnosticos.length})
               </button>
+
+              <button
+                type="button"
+                onClick={() => setAbaHistorico('conversas')}
+                className={`text-xs px-4 py-2 rounded-xl font-bold transition-all ${
+                  abaHistorico === 'conversas'
+                    ? 'bg-[#07132B] text-[#D4AF37] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 bg-transparent'
+                }`}
+              >
+                Conversas do Assistente ({conversas.length})
+              </button>
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={abrirModalVincular}
-              className="text-xs border-[#D4AF37]/50 text-[#07132B] hover:bg-amber-50 font-semibold"
-            >
-              + Vincular Simulação / Diagnóstico Existente
-            </Button>
+            {abaHistorico !== 'conversas' && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={abrirModalVincular}
+                className="text-xs border-[#D4AF37]/50 text-[#07132B] hover:bg-amber-50 font-semibold"
+              >
+                + Vincular Simulação / Diagnóstico Existente
+              </Button>
+            )}
+
+            {abaHistorico === 'conversas' && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleReabrirNoDashboard}
+                className="text-xs bg-[#07132B] text-[#D4AF37] hover:bg-[#0c1f44] font-bold"
+              >
+                Nova Pergunta no Assistente →
+              </Button>
+            )}
           </div>
 
           {/* ABA 1: SIMULAÇÕES CALCULADORA IBS/CBS */}
@@ -657,8 +731,180 @@ export default function DetalheCliente() {
               )}
             </div>
           )}
+
+          {/* ABA 3: CONVERSAS ARQUIVADAS DO ASSISTENTE DE ANÁLISE */}
+          {abaHistorico === 'conversas' && (
+            <div className="p-6">
+              {conversas.length === 0 ? (
+                <div className="text-center py-12 space-y-3">
+                  <span className="text-sm font-semibold text-slate-700 block">
+                    Nenhuma conversa arquivada para este cliente
+                  </span>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    Ao utilizar o Assistente de Análise na Calculadora IBS/CBS com o cliente ativo
+                    selecionado, os pareceres, perguntas e respostas serão arquivados aqui para você
+                    reabrir no mês seguinte e verificar o que foi analisado.
+                  </p>
+                  <div className="pt-2 flex justify-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleReabrirNoDashboard}
+                      className="bg-[#07132B] text-[#D4AF37] hover:bg-[#0B1E3F] text-xs font-bold"
+                    >
+                      Abrir Assistente com {cliente.nome}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {conversas.map((conv) => (
+                    <div
+                      key={conv.id}
+                      className="bg-slate-50/70 hover:bg-slate-50 border border-slate-200 rounded-xl p-4.5 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#07132B]" />
+                          <h4 className="text-sm font-bold text-[#07132B] truncate">
+                            {conv.titulo}
+                          </h4>
+                          <Badge className="bg-[#07132B] text-[#D4AF37] text-[10px]">
+                            {conv.mensagens?.length || 0} mensagens
+                          </Badge>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                          <span>
+                            Última atualização: <strong>{formatarData(conv.updated)}</strong>
+                          </span>
+                          <span>
+                            Iniciada em: <strong>{formatarData(conv.created)}</strong>
+                          </span>
+                        </div>
+
+                        {/* Preview da última mensagem */}
+                        {conv.mensagens && conv.mensagens.length > 0 && (
+                          <p className="text-xs text-slate-600 line-clamp-1 italic bg-white p-2 rounded border border-slate-200 max-w-2xl">
+                            "{conv.mensagens[conv.mensagens.length - 1].texto}"
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => setConversaVisualizando(conv)}
+                          className="text-xs bg-[#07132B] text-[#D4AF37] hover:bg-[#0c1f44] font-bold h-8 px-3"
+                        >
+                          Ler Parecer Completo
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleReabrirNoDashboard}
+                          className="text-xs border-[#D4AF37] text-[#07132B] hover:bg-amber-50 font-bold h-8 px-3"
+                        >
+                          Continuar Perguntando
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={() => handleExcluirConversa(conv.id)}
+                          className="text-xs text-slate-400 hover:text-red-600 px-2 py-1 hover:bg-red-50 rounded transition-colors"
+                          title="Excluir do histórico"
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* MODAL DE LEITURA COMPLETA DA CONVERSA ARQUIVADA */}
+      {conversaVisualizando && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#07132B] text-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-2 border-[#D4AF37]">
+            <div className="p-5 border-b border-[#D4AF37]/30 bg-slate-900 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge className="bg-[#D4AF37] text-[#07132B] font-bold text-[10px]">
+                    Histórico Arquivado
+                  </Badge>
+                  <span className="text-xs text-slate-400">
+                    {formatarData(conversaVisualizando.updated)}
+                  </span>
+                </div>
+                <h3 className="font-heading font-extrabold text-base sm:text-lg text-white">
+                  {conversaVisualizando.titulo}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConversaVisualizando(null)}
+                className="text-slate-400 hover:text-white text-xs font-bold px-2 py-1 rounded"
+              >
+                Fechar [X]
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4 flex-1 text-xs sm:text-sm">
+              {conversaVisualizando.mensagens.map((msg, idx) => {
+                const isUser = msg.papel === 'usuario'
+                return (
+                  <div
+                    key={idx}
+                    className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} space-y-1`}
+                  >
+                    <span className="text-[10px] font-mono text-slate-400 px-1">
+                      {isUser ? 'Pergunta do Contador' : 'Parecer do Assistente'} •{' '}
+                      {formatarData(msg.data)}
+                    </span>
+                    <div
+                      className={`max-w-[90%] rounded-2xl p-4 leading-relaxed whitespace-pre-wrap ${
+                        isUser
+                          ? 'bg-gradient-to-r from-[#D4AF37] to-[#E5C158] text-[#07132B] font-medium shadow'
+                          : 'bg-slate-900 text-slate-100 border border-[#D4AF37]/30 shadow'
+                      }`}
+                    >
+                      {msg.texto}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="p-4 bg-slate-900 border-t border-[#D4AF37]/30 flex items-center justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setConversaVisualizando(null)}
+                className="text-xs text-slate-300 border-white/20 hover:bg-white/10"
+              >
+                Fechar Visualização
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setConversaVisualizando(null)
+                  handleReabrirNoDashboard()
+                }}
+                className="bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] font-bold text-xs h-8 px-4"
+              >
+                Abrir no Assistente e Continuar Análise →
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL EDITAR CLIENTE */}
       <ModalCliente

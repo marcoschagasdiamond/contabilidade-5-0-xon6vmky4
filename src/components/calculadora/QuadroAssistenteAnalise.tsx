@@ -1,14 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import pb from '@/lib/pocketbase/client'
-import {
-  streamAgentChat,
-  displayableMessages,
-  type DisplayMessage,
-  type AgentCitation,
-} from '@/lib/skipAi'
+import { streamAgentChat, type DisplayMessage, type AgentCitation } from '@/lib/skipAi'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import {
+  salvarConversaAssistente,
+  listarConversasAssistente,
+  listarConversasPorCliente,
+  listarConversasGerais,
+  type ConversaAssistente,
+  type MensagemConversaAssistente,
+} from '@/services/conversasAssistente'
 
 interface QuadroAssistenteAnaliseProps {
   /** Callback opcional quando o usuário fecha o quadro */
@@ -17,7 +22,7 @@ interface QuadroAssistenteAnaliseProps {
   abertoInicial?: boolean
 }
 
-const SUGESTOES_RAPIDAS = [
+const SUGESTOES_RAPIDAS_BASE = [
   'As minhas simulações salvas estão corretas?',
   'Qual das minhas simulações apresenta o melhor custo tributário?',
   'Qual o impacto da transição 2026–2033 nos meus cenários salvos?',
@@ -28,14 +33,23 @@ export function QuadroAssistenteAnalise({
   onFechar,
   abertoInicial = true,
 }: QuadroAssistenteAnaliseProps) {
+  const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
+
   const [aberto, setAberto] = useState(abertoInicial)
   const [mensagens, setMensagens] = useState<DisplayMessage[]>([])
   const [conversaId, setConversaId] = useState<string | null>(null)
+  const [registroConversaId, setRegistroConversaId] = useState<string | null>(null)
   const [inputMensagem, setInputMensagem] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [statusAtividade, setStatusAtividade] = useState<string | null>(null)
   const [citacoesAtivas, setCitacoesAtivas] = useState<AgentCitation[] | null>(null)
+
+  // Drawer / painel de histórico de conversas arquivadas
+  const [mostrarHistorico, setMostrarHistorico] = useState(false)
+  const [conversasArquivadas, setConversasArquivadas] = useState<ConversaAssistente[]>([])
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false)
+  const [filtroHistorico, setFiltroHistorico] = useState<'cliente' | 'geral' | 'todas'>('cliente')
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const finalMensagensRef = useRef<HTMLDivElement>(null)
@@ -56,21 +70,105 @@ export function QuadroAssistenteAnalise({
     }
   }, [])
 
+  // Sugestões de perguntas dinâmicas (considerando o cliente ativo)
+  const sugestoesPerguntas = React.useMemo(() => {
+    if (clienteAtivo) {
+      return [
+        `Analise as simulações do cliente ${clienteAtivo.nome} e recomende o melhor regime`,
+        `Qual o impacto da transição 2026–2033 para ${clienteAtivo.nome}?`,
+        `O regime ${clienteAtivo.regime_atual} ainda é vantajoso para ${clienteAtivo.nome}?`,
+        'Como o Split Payment afeta o caixa desta empresa?',
+      ]
+    }
+    return SUGESTOES_RAPIDAS_BASE
+  }, [clienteAtivo])
+
   // Inicializa conversa com mensagem de boas-vindas executiva (sem ícones)
+  const criarMensagemBoasVindas = useCallback(() => {
+    const saudacaoCliente = clienteAtivo
+      ? `Olá! Sou o Assistente de Análise Tributária da Calculadora IBS/CBS (Diamond Group).\n\nEstou com o contexto focado no cliente ativo: **${clienteAtivo.nome}** (${clienteAtivo.regime_atual} • ${clienteAtivo.segmento} • ${clienteAtivo.uf}). Todas as respostas e consultas priorizarão as simulações e dados deste cliente.\n\nPosso auditar premissas, comparar regimes vigentes com o IVA Dual (LC 214/2025) e projetar economias. O que gostaria de analisar para ${clienteAtivo.nome}?`
+      : 'Olá! Sou o Assistente de Análise Tributária da Calculadora IBS/CBS (Diamond Group). Tenho acesso direto às suas simulações salvas e aos parâmetros da Reforma Tributária (LC 214/2025 e EC 132/2023).\n\nPosso auditar suas premissas, comparar cenários salvos, avaliar cargas efetivas e verificar economias projetadas. O que gostaria de analisar hoje?'
+
+    return {
+      id: 'welcome-msg',
+      role: 'assistant' as const,
+      content: saudacaoCliente,
+      created: new Date().toISOString(),
+    }
+  }, [clienteAtivo])
+
   useEffect(() => {
     if (mensagens.length === 0) {
-      setMensagens([
-        {
-          id: 'welcome-msg',
-          role: 'assistant',
-          content:
-            'Olá! Sou o Assistente de Análise Tributária da Calculadora IBS/CBS (Diamond Group). Tenho acesso direto às suas simulações salvas e aos parâmetros da Reforma Tributária (LC 214/2025 e EC 132/2023).\n\nPosso auditar suas premissas, comparar cenários salvos, avaliar cargas efetivas e verificar economias projetadas. O que gostaria de analisar hoje?',
-          created: new Date().toISOString(),
-        },
-      ])
+      setMensagens([criarMensagemBoasVindas()])
     }
-  }, [mensagens.length])
+  }, [mensagens.length, criarMensagemBoasVindas])
 
+  // Carrega histórico arquivado
+  const carregarHistoricoConversas = useCallback(async () => {
+    try {
+      setCarregandoHistorico(true)
+      let lista: ConversaAssistente[] = []
+      if (filtroHistorico === 'cliente' && clienteAtivoId) {
+        lista = await listarConversasPorCliente(clienteAtivoId)
+      } else if (filtroHistorico === 'geral') {
+        lista = await listarConversasGerais()
+      } else {
+        lista = await listarConversasAssistente()
+      }
+      setConversasArquivadas(lista)
+    } catch (err) {
+      console.error('Erro ao carregar histórico de conversas:', err)
+    } finally {
+      setCarregandoHistorico(false)
+    }
+  }, [clienteAtivoId, filtroHistorico])
+
+  useEffect(() => {
+    if (mostrarHistorico) {
+      carregarHistoricoConversas()
+    }
+  }, [mostrarHistorico, carregarHistoricoConversas])
+
+  // Ajusta filtro inicial caso mude o cliente ativo
+  useEffect(() => {
+    if (clienteAtivoId) {
+      setFiltroHistorico('cliente')
+    } else {
+      setFiltroHistorico('geral')
+    }
+  }, [clienteAtivoId])
+
+  // Reabrir uma conversa arquivada
+  const handleReabrirConversa = (conversa: ConversaAssistente) => {
+    if (enviando && abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+      setEnviando(false)
+      setStatusAtividade(null)
+    }
+
+    setConversaId(conversa.conversa_id_nativo || null)
+    setRegistroConversaId(conversa.id)
+    setErro(null)
+    setCitacoesAtivas(null)
+
+    const msgsDisplay: DisplayMessage[] = (conversa.mensagens || []).map((m, idx) => ({
+      id: `arquivada-${conversa.id}-${idx}`,
+      role: m.papel === 'usuario' ? 'user' : 'assistant',
+      content: m.texto,
+      created: m.data || conversa.updated,
+    }))
+
+    if (msgsDisplay.length === 0) {
+      setMensagens([criarMensagemBoasVindas()])
+    } else {
+      setMensagens(msgsDisplay)
+    }
+
+    setMostrarHistorico(false)
+  }
+
+  // Enviar mensagem
   const handleEnviar = async (textoParaEnviar?: string) => {
     const texto = (textoParaEnviar || inputMensagem).trim()
     if (!texto || enviando) return
@@ -101,7 +199,11 @@ export function QuadroAssistenteAnalise({
 
     setMensagens((prev) => [...prev, mensagemUsuario, assistenteTemp])
     setEnviando(true)
-    setStatusAtividade('Consultando base de conhecimento e simulações...')
+    setStatusAtividade(
+      clienteAtivo
+        ? `Consultando dados de ${clienteAtivo.nome} e base tributária...`
+        : 'Consultando base de conhecimento e simulações...',
+    )
 
     const abort = new AbortController()
     abortControllerRef.current = abort
@@ -117,6 +219,8 @@ export function QuadroAssistenteAnalise({
         body: JSON.stringify({
           message: texto,
           conversation_id: conversaId,
+          cliente_id: clienteAtivoId || '',
+          cliente_nome: clienteAtivo?.nome || '',
         }),
         signal: abort.signal,
       })
@@ -130,7 +234,11 @@ export function QuadroAssistenteAnalise({
         },
         onToolCallStart: (info) => {
           if (info.name.includes('simulacoes')) {
-            setStatusAtividade('Consultando suas simulações salvas no banco de dados...')
+            setStatusAtividade(
+              clienteAtivo
+                ? `Consultando simulações salvas de ${clienteAtivo.nome}...`
+                : 'Consultando suas simulações salvas no banco de dados...',
+            )
           } else {
             setStatusAtividade(`Executando consulta técnica (${info.name})...`)
           }
@@ -152,8 +260,10 @@ export function QuadroAssistenteAnalise({
         setConversaId(novoConvId)
       }
 
-      setMensagens((prev) =>
-        prev.map((msg) =>
+      // Atualiza lista de mensagens final
+      let mensagensAtualizadas: DisplayMessage[] = []
+      setMensagens((prev) => {
+        const next = prev.map((msg) =>
           msg.id === assistenteTempId
             ? {
                 ...msg,
@@ -162,8 +272,41 @@ export function QuadroAssistenteAnalise({
                 citations: resultado.citations,
               }
             : msg,
-        ),
-      )
+        )
+        mensagensAtualizadas = next
+        return next
+      })
+
+      // Arquiva automaticamente a conversa na coleção 'conversas_assistente'
+      // vinculando ao cliente_id ativo (ou vazio se geral)
+      try {
+        const mensagensParaSalvar: MensagemConversaAssistente[] = mensagensAtualizadas
+          .filter((m) => m.content && m.content.trim().length > 0)
+          .map((m) => ({
+            papel: m.role === 'user' ? 'usuario' : 'assistente',
+            texto: m.content,
+            data: m.created,
+          }))
+
+        const tituloConversa = clienteAtivo
+          ? `Análise — ${clienteAtivo.nome} (${new Date().toLocaleDateString('pt-BR')})`
+          : `Análise Geral (${new Date().toLocaleDateString('pt-BR')})`
+
+        const salva = await salvarConversaAssistente({
+          id: registroConversaId || undefined,
+          conversa_id_nativo: novoConvId || conversaId || undefined,
+          cliente_id: clienteAtivoId || '',
+          cliente_nome: clienteAtivo?.nome || '',
+          titulo: tituloConversa,
+          mensagens: mensagensParaSalvar,
+        })
+
+        if (salva?.id) {
+          setRegistroConversaId(salva.id)
+        }
+      } catch (saveErr) {
+        console.warn('Erro ao auto-arquivar conversa do assistente:', saveErr)
+      }
     } catch (err: any) {
       if (err?.name === 'AbortError') {
         setStatusAtividade(null)
@@ -199,20 +342,13 @@ export function QuadroAssistenteAnalise({
     setStatusAtividade(null)
   }
 
-  const handleLimparConversa = () => {
+  const handleNovaConversa = () => {
     if (enviando) handleCancelar()
     setConversaId(null)
+    setRegistroConversaId(null)
     setErro(null)
     setCitacoesAtivas(null)
-    setMensagens([
-      {
-        id: 'welcome-msg-reset',
-        role: 'assistant',
-        content:
-          'Conversa reiniciada. Pergunte sobre qualquer aspecto das suas simulações salvas ou cenários da LC 214/2025.',
-        created: new Date().toISOString(),
-      },
-    ])
+    setMensagens([criarMensagemBoasVindas()])
   }
 
   const handleAlternarAberto = () => {
@@ -220,6 +356,21 @@ export function QuadroAssistenteAnalise({
     setAberto(proximo)
     if (!proximo && onFechar) {
       onFechar()
+    }
+  }
+
+  const formatarDataHora = (iso?: string) => {
+    if (!iso) return '—'
+    try {
+      return new Date(iso).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    } catch {
+      return iso
     }
   }
 
@@ -242,7 +393,16 @@ export function QuadroAssistenteAnalise({
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleLimparConversa}
+              onClick={() => setMostrarHistorico((prev) => !prev)}
+              className="text-xs text-[#07132B] border-[#D4AF37]/50 hover:bg-amber-50 font-bold"
+            >
+              {mostrarHistorico ? 'Ocultar Histórico Arquivado' : 'Histórico de Conversas'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleNovaConversa}
               className="text-xs text-slate-700 border-slate-300 hover:bg-slate-100 font-semibold"
             >
               Nova Conversa
@@ -260,7 +420,7 @@ export function QuadroAssistenteAnalise({
         )}
       </div>
 
-      {/* Quadro de Chat — fluxo normal da página (respeita sticky do cabeçalho e filtros) */}
+      {/* Quadro de Chat — fluxo normal da página */}
       {aberto && (
         <Card className="bg-[#07132B] text-white border-2 border-[#D4AF37] shadow-2xl rounded-2xl overflow-hidden relative animate-fade-in">
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
@@ -269,21 +429,46 @@ export function QuadroAssistenteAnalise({
           <CardHeader className="p-5 sm:p-6 border-b border-[#D4AF37]/30 bg-slate-900/60 relative">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <div className="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 mb-1.5">
-                  Inteligência Tributária • LC 214/2025 • Diamond Group
+                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                  <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40">
+                    Inteligência Tributária • LC 214/2025 • Diamond Group
+                  </span>
+
+                  {/* Badge de indicação do Cliente Ativo (ou Modo Geral) */}
+                  {clienteAtivo ? (
+                    <Badge className="bg-emerald-950 text-emerald-300 border border-emerald-500/50 text-[10px] font-bold">
+                      Cliente Ativo: {clienteAtivo.nome}
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="border-slate-500 text-slate-300 text-[10px]"
+                    >
+                      Modo Geral (Sem cliente ativo)
+                    </Badge>
+                  )}
                 </div>
+
                 <CardTitle className="text-lg sm:text-xl font-heading font-extrabold text-white tracking-tight">
                   Assistente de Análise — Calculadora IBS/CBS
                 </CardTitle>
                 <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-3xl leading-relaxed">
-                  Consulte diretamente o agente nativo para comparar suas simulações salvas, auditar
-                  cargas tributárias, validar premissas da transição 2026–2033 e conferir se seus
-                  números atendem aos critérios legais da Reforma Tributária.
+                  {clienteAtivo
+                    ? `Pergunte ao assistente sobre as simulações e projeções tributárias de ${clienteAtivo.nome}. A conversa fica arquivada no histórico deste cliente.`
+                    : 'Consulte diretamente o agente nativo para comparar suas simulações salvas, auditar cargas tributárias e validar premissas da transição 2026–2033.'}
                 </p>
               </div>
-              <div className="flex items-center gap-2 self-start sm:self-auto font-mono text-xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                <span className="text-slate-300">Agente Conectado às Simulações</span>
+
+              <div className="flex flex-col items-start sm:items-end gap-1 font-mono text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                  <span className="text-slate-300">
+                    {clienteAtivo ? 'Focado no Cliente Ativo' : 'Agente Geral Conectado'}
+                  </span>
+                </div>
+                {registroConversaId && (
+                  <span className="text-[10px] text-[#D4AF37]">Conversa salva no histórico</span>
+                )}
               </div>
             </div>
 
@@ -293,7 +478,7 @@ export function QuadroAssistenteAnalise({
                 Sugestões de Perguntas:
               </span>
               <div className="flex flex-wrap gap-2">
-                {SUGESTOES_RAPIDAS.map((sugestao, idx) => (
+                {sugestoesPerguntas.map((sugestao, idx) => (
                   <button
                     key={idx}
                     type="button"
@@ -307,6 +492,117 @@ export function QuadroAssistenteAnalise({
               </div>
             </div>
           </CardHeader>
+
+          {/* PAINEL INLINE DE HISTÓRICO ARQUIVADO (quando acionado pelo botão) */}
+          {mostrarHistorico && (
+            <div className="border-b border-[#D4AF37]/30 bg-slate-950/90 p-4 sm:p-5 space-y-3 animate-fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#D4AF37]">
+                    Conversas Anteriores Arquivadas
+                  </h4>
+                </div>
+                <div className="flex items-center gap-2">
+                  {clienteAtivo && (
+                    <button
+                      type="button"
+                      onClick={() => setFiltroHistorico('cliente')}
+                      className={`text-xs px-2.5 py-1 rounded font-semibold transition-colors ${
+                        filtroHistorico === 'cliente'
+                          ? 'bg-[#D4AF37] text-[#07132B]'
+                          : 'text-slate-300 hover:text-white'
+                      }`}
+                    >
+                      Deste Cliente ({clienteAtivo.nome.slice(0, 15)}...)
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setFiltroHistorico('geral')}
+                    className={`text-xs px-2.5 py-1 rounded font-semibold transition-colors ${
+                      filtroHistorico === 'geral'
+                        ? 'bg-[#D4AF37] text-[#07132B]'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    Modo Geral
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroHistorico('todas')}
+                    className={`text-xs px-2.5 py-1 rounded font-semibold transition-colors ${
+                      filtroHistorico === 'todas'
+                        ? 'bg-[#D4AF37] text-[#07132B]'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    Todas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarHistorico(false)}
+                    className="text-xs text-slate-400 hover:text-white ml-2 px-2 py-1"
+                  >
+                    Fechar [X]
+                  </button>
+                </div>
+              </div>
+
+              {carregandoHistorico ? (
+                <div className="text-center py-6 text-xs text-slate-400">
+                  Carregando conversas arquivadas...
+                </div>
+              ) : conversasArquivadas.length === 0 ? (
+                <div className="text-center py-6 text-xs text-slate-400 italic">
+                  Nenhuma conversa encontrada neste filtro. As conversas que você tiver com o
+                  assistente serão salvas automaticamente aqui.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                  {conversasArquivadas.map((conv) => (
+                    <div
+                      key={conv.id}
+                      className="p-3 rounded-xl bg-slate-900 border border-[#D4AF37]/30 hover:border-[#D4AF37] transition-all flex flex-col justify-between gap-2"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <strong className="text-xs text-white truncate block">
+                            {conv.titulo}
+                          </strong>
+                          <span className="text-[10px] text-slate-400 shrink-0">
+                            {formatarDataHora(conv.updated)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                          {conv.cliente_nome ? (
+                            <span className="text-[#D4AF37] truncate">
+                              Cliente: {conv.cliente_nome}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">Geral</span>
+                          )}
+                          <span>•</span>
+                          <span>{conv.mensagens?.length || 0} mensagens</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => handleReabrirConversa(conv)}
+                          className="bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] font-bold text-xs h-7 px-3"
+                        >
+                          Reabrir Esta Conversa
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Área de Mensagens */}
           <CardContent className="p-4 sm:p-6 space-y-4 relative">
@@ -339,7 +635,7 @@ export function QuadroAssistenteAnalise({
                 )
               })}
 
-              {/* Status de Atividade (Spinner textual / texto de progresso sem ícones) */}
+              {/* Status de Atividade (texto de progresso sem ícones) */}
               {statusAtividade && (
                 <div className="p-3 rounded-xl bg-slate-900/70 border border-[#D4AF37]/30 text-xs font-mono text-[#D4AF37] flex items-center justify-between">
                   <span>{statusAtividade}</span>
@@ -386,7 +682,11 @@ export function QuadroAssistenteAnalise({
                       handleEnviar()
                     }
                   }}
-                  placeholder="Ex.: Compare minhas simulações salvas e me diga se o Lucro Presumido continua mais vantajoso que o Simples em 2027..."
+                  placeholder={
+                    clienteAtivo
+                      ? `Pergunte sobre as simulações de ${clienteAtivo.nome} (ex.: compare com o Simples em 2027)...`
+                      : 'Ex.: Compare minhas simulações salvas e me diga se o Lucro Presumido continua mais vantajoso que o Simples em 2027...'
+                  }
                   rows={3}
                   disabled={enviando}
                   className="bg-slate-900/90 text-white placeholder:text-slate-400 border border-[#D4AF37]/40 focus-visible:ring-[#D4AF37] resize-none text-xs sm:text-sm font-sans"
@@ -426,4 +726,5 @@ export function QuadroAssistenteAnalise({
     </div>
   )
 }
+
 export default QuadroAssistenteAnalise
