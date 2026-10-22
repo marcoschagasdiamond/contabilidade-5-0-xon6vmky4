@@ -1057,9 +1057,6 @@ export default function Modulo6Dashboard({
         })()}
       </div>
 
-      {/* QUADRO DO ASSISTENTE DE ANÁLISE — CALCULADORA IBS/CBS (AGENTE NATIVO SKIP CLOUD) */}
-      <QuadroAssistenteAnalise abertoInicial={false} />
-
       {/* BLOCO: CONCLUSÃO ANALÍTICA (ENTRE OS KPIS E O QUADRO/GRÁFICOS) */}
       {/* Padrão Visual Diamond Group: verde escuro/dourado, cards escuros, SEM ícones */}
       <Card className="bg-[#07132B] text-white border-2 border-[#D4AF37]/60 shadow-2xl overflow-hidden relative">
@@ -1924,6 +1921,10 @@ export default function Modulo6Dashboard({
           </table>
         </div>
       </Card>
+
+      {/* QUADRO DO ASSISTENTE DE ANÁLISE — CALCULADORA IBS/CBS (AGENTE NATIVO SKIP CLOUD) */}
+      {/* Posicionado ao final da página do Dashboard — após Conclusão Analítica e Split Payment, como última seção */}
+      <QuadroAssistenteAnalise abertoInicial={false} />
 
       {/* Modal Salvar Simulação invocado a partir do Dashboard */}
       <ModalSalvarSimulacao
