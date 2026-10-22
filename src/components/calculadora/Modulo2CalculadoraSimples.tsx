@@ -20,16 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Link } from 'react-router-dom'
-import {
-  Calculator,
-  Wallet,
-  Receipt,
-  Percent,
-  FileCheck,
-  RotateCcw,
-  Sparkles,
-  Building2,
-} from 'lucide-react'
+import { Calculator, RotateCcw, Sparkles, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
@@ -356,160 +347,233 @@ export default function Modulo2CalculadoraSimples() {
         </div>
       </div>
 
-      {/* Resultados em Cards Conforme Especificação */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-heading font-bold text-[#07132B] flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-[#D4AF37]" />
-            Demonstrativo de Apuração da Nota Fiscal
-          </h3>
-          <span className="text-xs text-slate-500">
-            Fórmula: Débito = Valor × Alíquota | Créditos = Compras × 26,50% | A Recolher = Débito -
-            Créditos
-          </span>
-        </div>
+      {/* Resultados em Cards Conforme Especificação — Padrão Diamond Group, sem ícones */}
+      {(() => {
+        // Formatações dos 7 valores exibidos
+        const strDebitoCbs = formatarMoeda(resultadoSimples.debitoCbs)
+        const strDebitoIbs = formatarMoeda(resultadoSimples.debitoIbs)
+        const strTotalDebito = formatarMoeda(resultadoSimples.totalDebito)
+        const strValorCreditos = `- ${formatarMoeda(resultadoSimples.valorCreditos)}`
+        const strValorARecolher = formatarMoeda(resultadoSimples.valorARecolher)
+        const strAliquotaEfetiva = formatarPorcentagem(resultadoSimples.aliquotaEfetiva)
+        const strValorTotalNota = formatarMoeda(resultadoSimples.valorTotalNotaFiscal)
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Card: Débito CBS */}
-          <Card className="border-slate-200/80 shadow hover:shadow-md transition-all">
-            <CardContent className="p-5 space-y-2">
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <span className="font-semibold uppercase tracking-wider">Débito CBS (Federal)</span>
-                <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded font-bold">
-                  {formatarPorcentagem(resultadoSimples.aliquotaCbsAplicada)}
-                </span>
-              </div>
-              <p className="text-2xl font-mono font-extrabold text-[#07132B]">
-                {formatarMoeda(resultadoSimples.debitoCbs)}
-              </p>
-              <p className="text-[11px] text-slate-400">
-                Substitui PIS e COFINS com split payment na fonte
-              </p>
-            </CardContent>
-          </Card>
+        // Escalas responsivas de tipografia para evitar transbordamento em qualquer resolução
+        const obterTamanhoFontePadrao = (texto: string) => {
+          const len = texto.length
+          if (len >= 20) return 'text-sm sm:text-base'
+          if (len >= 16) return 'text-base sm:text-lg'
+          if (len >= 13) return 'text-lg sm:text-xl'
+          return 'text-xl sm:text-2xl'
+        }
 
-          {/* Card: Débito IBS */}
-          <Card className="border-slate-200/80 shadow hover:shadow-md transition-all">
-            <CardContent className="p-5 space-y-2">
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <span className="font-semibold uppercase tracking-wider">
-                  Débito IBS (Estados/Mun.)
-                </span>
-                <span className="font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">
-                  {formatarPorcentagem(resultadoSimples.aliquotaIbsAplicada)}
-                </span>
-              </div>
-              <p className="text-2xl font-mono font-extrabold text-[#07132B]">
-                {formatarMoeda(resultadoSimples.debitoIbs)}
-              </p>
-              <p className="text-[11px] text-slate-400">
-                Substitui ICMS e ISS no Comitê Gestor do IBS
-              </p>
-            </CardContent>
-          </Card>
+        const obterTamanhoFonteDestaque = (texto: string) => {
+          const len = texto.length
+          if (len >= 20) return 'text-base sm:text-lg lg:text-xl'
+          if (len >= 16) return 'text-lg sm:text-xl lg:text-2xl'
+          if (len >= 13) return 'text-xl sm:text-2xl lg:text-3xl'
+          return 'text-2xl sm:text-3xl'
+        }
 
-          {/* Card: Total de Débito */}
-          <Card className="border-[#D4AF37]/40 bg-gradient-to-br from-amber-50/40 to-white shadow hover:shadow-md transition-all">
-            <CardContent className="p-5 space-y-2">
-              <div className="flex items-center justify-between text-xs text-slate-600">
-                <span className="font-bold uppercase tracking-wider text-amber-900">
-                  Total de Débito
-                </span>
-                <span className="font-mono text-amber-900 bg-amber-100 px-2 py-0.5 rounded font-bold">
-                  {formatarPorcentagem(resultadoSimples.aliquotaTotalAplicada)}
-                </span>
+        return (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37] inline-block shrink-0" />
+                <h3 className="text-lg font-heading font-bold text-[#07132B]">
+                  Demonstrativo de Apuração da Nota Fiscal
+                </h3>
               </div>
-              <p className="text-2xl font-mono font-extrabold text-amber-950">
-                {formatarMoeda(resultadoSimples.totalDebito)}
-              </p>
-              <p className="text-[11px] text-slate-500">
-                Incidência bruta antes da apropriação dos créditos
-              </p>
-            </CardContent>
-          </Card>
+              <span className="text-xs text-slate-500">
+                Fórmula: Débito = Valor × Alíquota | Créditos = Compras × 26,50% | A Recolher =
+                Débito - Créditos
+              </span>
+            </div>
 
-          {/* Card: Valor dos Créditos */}
-          <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 to-white shadow hover:shadow-md transition-all">
-            <CardContent className="p-5 space-y-2">
-              <div className="flex items-center justify-between text-xs text-slate-600">
-                <span className="font-bold uppercase tracking-wider text-emerald-800">
-                  Valor dos Créditos
-                </span>
-                <span className="font-mono text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded font-bold">
-                  {percentualComprasVendasSimples}% compras
-                </span>
-              </div>
-              <p className="text-2xl font-mono font-extrabold text-emerald-700">
-                - {formatarMoeda(resultadoSimples.valorCreditos)}
-              </p>
-              <p className="text-[11px] text-slate-500">
-                Crédito financeiro irrestrito sobre insumos adquiridos
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Linha 1: 4 Quadros de Débitos e Créditos */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Quadro 1: Débito CBS */}
+              <Card className="min-w-0 border-slate-200/80 shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
+                <CardContent className="p-4 sm:p-5 space-y-2 min-w-0 flex flex-col justify-between h-full">
+                  <div className="flex items-center justify-between text-xs text-slate-500 gap-1">
+                    <span className="font-semibold uppercase tracking-wider truncate">
+                      Débito CBS (Federal)
+                    </span>
+                    <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded font-bold shrink-0 text-[11px]">
+                      {formatarPorcentagem(resultadoSimples.aliquotaCbsAplicada)}
+                    </span>
+                  </div>
+                  <div className="py-0.5 min-w-0 overflow-hidden">
+                    <p
+                      className={`${obterTamanhoFontePadrao(strDebitoCbs)} font-mono font-extrabold text-[#07132B] truncate tracking-tight`}
+                      title={strDebitoCbs}
+                    >
+                      {strDebitoCbs}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-400 line-clamp-2">
+                    Substitui PIS e COFINS com split payment na fonte
+                  </p>
+                </CardContent>
+              </Card>
 
-        {/* Linha Inferior com Cards de Destaque */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-          {/* Card: Valor a Recolher */}
-          <Card className="bg-[#07132B] text-white border border-[#D4AF37]/50 shadow-xl overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/20 rounded-full blur-2xl pointer-events-none" />
-            <CardContent className="p-6 space-y-2 relative">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold tracking-wider text-[#D4AF37] uppercase flex items-center gap-1.5">
-                  <Wallet className="w-4 h-4" />
-                  Valor a Recolher (Líquido)
-                </span>
-                <span className="bg-[#D4AF37]/20 text-[#D4AF37] px-2 py-0.5 rounded text-[11px] font-bold">
-                  Débito - Crédito
-                </span>
-              </div>
-              <p className="text-3xl font-mono font-extrabold text-white">
-                {formatarMoeda(resultadoSimples.valorARecolher)}
-              </p>
-              <p className="text-xs text-slate-300">
-                Guia final efetiva gerada pelo motor fiscal do IVA Dual.
-              </p>
-            </CardContent>
-          </Card>
+              {/* Quadro 2: Débito IBS */}
+              <Card className="min-w-0 border-slate-200/80 shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
+                <CardContent className="p-4 sm:p-5 space-y-2 min-w-0 flex flex-col justify-between h-full">
+                  <div className="flex items-center justify-between text-xs text-slate-500 gap-1">
+                    <span className="font-semibold uppercase tracking-wider truncate">
+                      Débito IBS (Estados/Mun.)
+                    </span>
+                    <span className="font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold shrink-0 text-[11px]">
+                      {formatarPorcentagem(resultadoSimples.aliquotaIbsAplicada)}
+                    </span>
+                  </div>
+                  <div className="py-0.5 min-w-0 overflow-hidden">
+                    <p
+                      className={`${obterTamanhoFontePadrao(strDebitoIbs)} font-mono font-extrabold text-[#07132B] truncate tracking-tight`}
+                      title={strDebitoIbs}
+                    >
+                      {strDebitoIbs}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-400 line-clamp-2">
+                    Substitui ICMS e ISS no Comitê Gestor do IBS
+                  </p>
+                </CardContent>
+              </Card>
 
-          {/* Card: Alíquota Efetiva */}
-          <Card className="border-slate-200 bg-white shadow-md">
-            <CardContent className="p-6 space-y-2">
-              <div className="flex items-center justify-between text-xs text-slate-600">
-                <span className="font-bold uppercase tracking-wider flex items-center gap-1.5 text-slate-800">
-                  <Percent className="w-4 h-4 text-[#D4AF37]" />
-                  Alíquota Efetiva Final
-                </span>
-              </div>
-              <p className="text-3xl font-mono font-extrabold text-[#07132B]">
-                {formatarPorcentagem(resultadoSimples.aliquotaEfetiva)}
-              </p>
-              <p className="text-xs text-slate-500">
-                Impacto percentual real sobre o faturamento bruto da nota.
-              </p>
-            </CardContent>
-          </Card>
+              {/* Quadro 3: Total de Débito */}
+              <Card className="min-w-0 border-[#D4AF37]/40 bg-gradient-to-br from-amber-50/40 to-white shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
+                <CardContent className="p-4 sm:p-5 space-y-2 min-w-0 flex flex-col justify-between h-full">
+                  <div className="flex items-center justify-between text-xs text-slate-600 gap-1">
+                    <span className="font-bold uppercase tracking-wider text-amber-900 truncate">
+                      Total de Débito
+                    </span>
+                    <span className="font-mono text-amber-900 bg-amber-100 px-2 py-0.5 rounded font-bold shrink-0 text-[11px]">
+                      {formatarPorcentagem(resultadoSimples.aliquotaTotalAplicada)}
+                    </span>
+                  </div>
+                  <div className="py-0.5 min-w-0 overflow-hidden">
+                    <p
+                      className={`${obterTamanhoFontePadrao(strTotalDebito)} font-mono font-extrabold text-amber-950 truncate tracking-tight`}
+                      title={strTotalDebito}
+                    >
+                      {strTotalDebito}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-500 line-clamp-2">
+                    Incidência bruta antes da apropriação dos créditos
+                  </p>
+                </CardContent>
+              </Card>
 
-          {/* Card: Valor Total da Nota Fiscal */}
-          <Card className="border-slate-200 bg-white shadow-md">
-            <CardContent className="p-6 space-y-2">
-              <div className="flex items-center justify-between text-xs text-slate-600">
-                <span className="font-bold uppercase tracking-wider flex items-center gap-1.5 text-slate-800">
-                  <FileCheck className="w-4 h-4 text-emerald-600" />
-                  Valor Total da Nota Fiscal
-                </span>
-              </div>
-              <p className="text-3xl font-mono font-extrabold text-[#07132B]">
-                {formatarMoeda(resultadoSimples.valorTotalNotaFiscal)}
-              </p>
-              <p className="text-xs text-slate-500">
-                Valor total faturado (imposto destacado por fora transparente).
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              {/* Quadro 4: Valor dos Créditos */}
+              <Card className="min-w-0 border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 to-white shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
+                <CardContent className="p-4 sm:p-5 space-y-2 min-w-0 flex flex-col justify-between h-full">
+                  <div className="flex items-center justify-between text-xs text-slate-600 gap-1">
+                    <span className="font-bold uppercase tracking-wider text-emerald-800 truncate">
+                      Valor dos Créditos
+                    </span>
+                    <span className="font-mono text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded font-bold shrink-0 text-[11px]">
+                      {percentualComprasVendasSimples}% compras
+                    </span>
+                  </div>
+                  <div className="py-0.5 min-w-0 overflow-hidden">
+                    <p
+                      className={`${obterTamanhoFontePadrao(strValorCreditos)} font-mono font-extrabold text-emerald-700 truncate tracking-tight`}
+                      title={strValorCreditos}
+                    >
+                      {strValorCreditos}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-500 line-clamp-2">
+                    Crédito financeiro irrestrito sobre insumos adquiridos
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Linha 2: 3 Quadros de Síntese e Fechamento da Nota Fiscal */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              {/* Quadro 5: Valor a Recolher (Líquido) */}
+              <Card className="min-w-0 bg-[#07132B] text-white border border-[#D4AF37]/50 shadow-xl overflow-hidden relative flex flex-col justify-between">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/20 rounded-full blur-2xl pointer-events-none" />
+                <CardContent className="p-5 sm:p-6 space-y-2.5 relative min-w-0 flex flex-col justify-between h-full">
+                  <div className="flex items-center justify-between text-xs gap-1">
+                    <span className="font-bold tracking-wider text-[#D4AF37] uppercase truncate">
+                      Valor a Recolher (Líquido)
+                    </span>
+                    <span className="bg-[#D4AF37]/20 text-[#D4AF37] px-2 py-0.5 rounded text-[11px] font-bold shrink-0">
+                      Débito − Crédito
+                    </span>
+                  </div>
+                  <div className="py-0.5 min-w-0 overflow-hidden">
+                    <p
+                      className={`${obterTamanhoFonteDestaque(strValorARecolher)} font-mono font-extrabold text-white truncate tracking-tight`}
+                      title={strValorARecolher}
+                    >
+                      {strValorARecolher}
+                    </p>
+                  </div>
+                  <p className="text-xs text-slate-300 line-clamp-2">
+                    Guia final efetiva gerada pelo motor fiscal do IVA Dual.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Quadro 6: Alíquota Efetiva Final */}
+              <Card className="min-w-0 border-slate-200 bg-white shadow-md overflow-hidden flex flex-col justify-between">
+                <CardContent className="p-5 sm:p-6 space-y-2.5 min-w-0 flex flex-col justify-between h-full">
+                  <div className="flex items-center justify-between text-xs text-slate-600 gap-1">
+                    <span className="font-bold uppercase tracking-wider text-slate-800 truncate">
+                      Alíquota Efetiva Final
+                    </span>
+                    <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px] font-mono font-bold shrink-0">
+                      Efetiva
+                    </span>
+                  </div>
+                  <div className="py-0.5 min-w-0 overflow-hidden">
+                    <p
+                      className={`${obterTamanhoFonteDestaque(strAliquotaEfetiva)} font-mono font-extrabold text-[#07132B] truncate tracking-tight`}
+                      title={strAliquotaEfetiva}
+                    >
+                      {strAliquotaEfetiva}
+                    </p>
+                  </div>
+                  <p className="text-xs text-slate-500 line-clamp-2">
+                    Impacto percentual real sobre o faturamento bruto da nota.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Quadro 7: Valor Total da Nota Fiscal */}
+              <Card className="min-w-0 border-slate-200 bg-white shadow-md overflow-hidden flex flex-col justify-between">
+                <CardContent className="p-5 sm:p-6 space-y-2.5 min-w-0 flex flex-col justify-between h-full">
+                  <div className="flex items-center justify-between text-xs text-slate-600 gap-1">
+                    <span className="font-bold uppercase tracking-wider text-slate-800 truncate">
+                      Valor Total da Nota Fiscal
+                    </span>
+                    <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-mono font-bold shrink-0">
+                      Por Fora
+                    </span>
+                  </div>
+                  <div className="py-0.5 min-w-0 overflow-hidden">
+                    <p
+                      className={`${obterTamanhoFonteDestaque(strValorTotalNota)} font-mono font-extrabold text-[#07132B] truncate tracking-tight`}
+                      title={strValorTotalNota}
+                    >
+                      {strValorTotalNota}
+                    </p>
+                  </div>
+                  <p className="text-xs text-slate-500 line-clamp-2">
+                    Valor total faturado (imposto destacado por fora transparente).
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
