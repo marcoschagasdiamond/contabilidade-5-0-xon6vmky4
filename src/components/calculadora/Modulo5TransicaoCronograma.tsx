@@ -189,9 +189,14 @@ export default function Modulo5TransicaoCronograma() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="setorTransicao" className="text-sm font-bold text-[#07132B]">
-            Setor Econômico da Empresa
-          </Label>
+          <div className="flex items-center justify-between gap-1 flex-wrap">
+            <Label htmlFor="setorTransicao" className="text-sm font-bold text-[#07132B]">
+              Setor Econômico da Empresa
+            </Label>
+            {origensPropagadas?.modulo5SetorTransicao && (
+              <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+            )}
+          </div>
           <Select
             value={setorTransicao}
             onValueChange={(val) => setSetorTransicao(val as TipoAtividade)}

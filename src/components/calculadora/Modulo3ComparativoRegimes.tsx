@@ -251,9 +251,14 @@ export default function Modulo3ComparativoRegimes() {
 
             {/* Campo: O que vende (Ramo Principal) */}
             <div className="space-y-2">
-              <Label htmlFor="tipoAtividade" className="text-sm font-bold text-[#07132B]">
-                O que Vende (Ramo Principal)
-              </Label>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Label htmlFor="tipoAtividade" className="text-sm font-bold text-[#07132B]">
+                  O que Vende (Ramo Principal)
+                </Label>
+                {origensPropagadas?.modulo3TipoAtividade && (
+                  <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
+                )}
+              </div>
               <Select
                 value={tipoAtividade}
                 onValueChange={(val) => setTipoAtividade(val as TipoAtividade)}

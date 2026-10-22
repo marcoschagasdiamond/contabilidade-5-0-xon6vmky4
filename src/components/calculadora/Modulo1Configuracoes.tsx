@@ -19,7 +19,24 @@ import {
   CRONOGRAMA_FASES_TRANSICAO,
   LISTA_ANOS_TRANSICAO,
   PRESETS_SETORES_LC214,
+  RAMOS_PRINCIPAIS_ATIVOS,
+  SUBATIVIDADES_AGRONEGOCIO,
+  SUBATIVIDADES_COMERCIO,
+  SUBATIVIDADES_CONSTRUCAO,
+  SUBATIVIDADES_FOOD_SERVICE,
+  SUBATIVIDADES_INDUSTRIA,
+  SUBATIVIDADES_LOCACAO,
+  SUBATIVIDADES_SERVICO,
+  SubatividadeAgro,
+  SubatividadeComercio,
+  SubatividadeConstrucao,
+  SubatividadeFoodService,
+  SubatividadeIndustria,
+  SubatividadeLocacao,
+  SubatividadeServico,
+  TipoAtividade,
 } from '@/types/calculadoraIbsCbs'
+import { Slider } from '@/components/ui/slider'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { ModalCliente } from '@/components/clientes/ModalCliente'
 import { Badge } from '@/components/ui/badge'
@@ -200,7 +217,7 @@ export default function Modulo1Configuracoes() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Seletor 1: Ano da Transição (Ano atual + 2026–2033) — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -262,7 +279,7 @@ export default function Modulo1Configuracoes() {
                   Regime Aplicado (Preset por Setor)
                 </Label>
                 <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                  Aplica reduções de uma vez
+                  Aplica reduções
                 </span>
               </div>
               <Select
@@ -357,11 +374,526 @@ export default function Modulo1Configuracoes() {
                 </span>
                 {presetAtual !== 'nenhum' && (
                   <span className="font-semibold text-emerald-700 shrink-0">
-                    {presetAtivoObj?.baseLegal || 'Redução legal aplicada'}
+                    {presetAtivoObj?.baseLegal || 'Redução legal'}
                   </span>
                 )}
               </div>
             </div>
+
+            {/* Seletor 3: O que Vende (Ramo Principal) — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="tipoAtividadeM1" className="text-xs font-bold text-[#07132B]">
+                  O que Vende (Ramo Principal)
+                </Label>
+                {config.etiquetasOrigem?.tipoAtividade ? (
+                  <BadgeOrigemPropagada origem="dados-empresa" />
+                ) : (
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    Propaga aos Módulos 3, 5 e Dashboard
+                  </span>
+                )}
+              </div>
+              <Select
+                value={config.tipoAtividade || 'servico'}
+                onValueChange={(val) => updateConfig({ tipoAtividade: val as TipoAtividade })}
+              >
+                <SelectTrigger
+                  id="tipoAtividadeM1"
+                  className="h-12 bg-white border-slate-300 text-[#07132B] font-semibold shadow-sm"
+                >
+                  <SelectValue placeholder="Selecione o ramo principal" />
+                </SelectTrigger>
+                <SelectContent className="max-w-xl">
+                  {RAMOS_PRINCIPAIS_ATIVOS.map((ramo) => (
+                    <SelectItem key={ramo.id} value={ramo.id} className="py-2">
+                      <div className="flex flex-col text-left">
+                        <span className="font-bold text-slate-900 text-xs">{ramo.label}</span>
+                        <span className="text-[11px] text-slate-500 leading-tight">
+                          {ramo.subtitulo}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                <span>Define tributos incidentes e regras setoriais</span>
+                <span className="font-mono font-bold text-[#07132B]">8 ramos ativos</span>
+              </div>
+            </div>
+          </div>
+
+          {/* SELETOR CONDICIONAL DE SUBATIVIDADE CORRESPONDENTE AO RAMO NO MÓDULO 1 — SEM ÍCONES */}
+          <div className="pt-2">
+            {/* 1. Ramo Serviço */}
+            {config.tipoAtividade === 'servico' && (
+              <div className="bg-gradient-to-r from-blue-50/70 to-indigo-50/50 border border-blue-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label htmlFor="subServicoM1" className="text-xs font-bold text-[#07132B]">
+                    Subatividade de Serviço (Refina Presunção IRPJ/CSLL e Reduções IBS/CBS)
+                  </Label>
+                  <span className="text-[11px] text-blue-700 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-blue-200">
+                    5 perfis regulatórios disponíveis
+                  </span>
+                </div>
+                <Select
+                  value={config.subatividadeServico || 'servico_comum'}
+                  onValueChange={(val) =>
+                    updateConfig({ subatividadeServico: val as SubatividadeServico })
+                  }
+                >
+                  <SelectTrigger
+                    id="subServicoM1"
+                    className="h-11 bg-white border-blue-300 shadow-sm font-medium text-slate-800 text-xs"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade de serviço" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_SERVICO.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block text-xs">
+                            {item.label}
+                          </span>
+                          <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="text-[11px] text-blue-900/90 bg-blue-100/60 p-2.5 rounded-lg leading-snug">
+                  {config.subatividadeServico === 'tecnologia_software' ||
+                  config.subatividadeServico === 'saude_educacao'
+                    ? 'Aplica redução de 60% na alíquota padrão do IBS/CBS (regime diferenciado).'
+                    : config.subatividadeServico === 'transporte'
+                      ? 'Presunção de 16% no Lucro Presumido + redução de 30% no IBS/CBS.'
+                      : 'Presunção integral de 32% sobre a receita e ISS municipal cheio.'}
+                </div>
+              </div>
+            )}
+
+            {/* 2. Ramo Indústria */}
+            {config.tipoAtividade === 'industria' && (
+              <div className="bg-gradient-to-r from-amber-50/70 to-orange-50/50 border border-amber-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label htmlFor="subIndustriaM1" className="text-xs font-bold text-[#07132B]">
+                    Subatividade Industrial (Ajusta IPI e Imposto Seletivo)
+                  </Label>
+                  <span className="text-[11px] text-amber-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-amber-200">
+                    Impacta Lucro Real, Presumido e IVA Dual
+                  </span>
+                </div>
+                <Select
+                  value={config.subatividadeIndustria || 'industria_comum'}
+                  onValueChange={(val) =>
+                    updateConfig({ subatividadeIndustria: val as SubatividadeIndustria })
+                  }
+                >
+                  <SelectTrigger
+                    id="subIndustriaM1"
+                    className="h-11 bg-white border-amber-300 shadow-sm font-medium text-slate-800 text-xs"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade industrial" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_INDUSTRIA.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block text-xs">
+                            {item.label}
+                          </span>
+                          <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {config.subatividadeIndustria === 'produto_imposto_seletivo' && (
+                  <div className="bg-rose-50/80 border border-rose-200 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-rose-900 block">
+                        Alíquota de Referência do Imposto Seletivo (IS):
+                      </span>
+                      <p className="text-[11px] text-rose-700 leading-tight">
+                        Incidência monofásica/adicional no novo sistema sobre bens nocivos à
+                        saúde/meio ambiente.
+                      </p>
+                    </div>
+                    <div className="relative w-28">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={config.aliquotaImpostoSeletivo ?? 10}
+                        onChange={(e) =>
+                          updateConfig({ aliquotaImpostoSeletivo: Number(e.target.value) })
+                        }
+                        className="h-9 bg-white font-mono font-bold text-rose-900 border-rose-300 pr-7 text-right text-xs"
+                      />
+                      <span className="absolute right-2.5 top-2 text-xs text-rose-500 font-bold">
+                        %
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-[11px] text-amber-900/90 bg-amber-100/60 p-2.5 rounded-lg leading-snug">
+                  {config.subatividadeIndustria === 'industria_ipi_alto'
+                    ? 'IPI elevado em 15% entra como débito e permite crédito nas aquisições produtivas.'
+                    : config.subatividadeIndustria === 'industria_ipi_baixo_zero'
+                      ? 'IPI zerado (0%) sem impacto de imposto sobre produtos industrializados.'
+                      : config.subatividadeIndustria === 'produto_imposto_seletivo'
+                        ? `Aplica ${config.aliquotaImpostoSeletivo ?? 10}% de Imposto Seletivo no cenário IBS/CBS mantido no novo sistema.`
+                        : 'IPI padrão de 5% aplicado no Lucro Real e Presumido.'}
+                </div>
+              </div>
+            )}
+
+            {/* 3. Ramo Comércio */}
+            {config.tipoAtividade === 'comercio' && (
+              <div className="bg-gradient-to-r from-emerald-50/70 to-teal-50/50 border border-emerald-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label htmlFor="subComercioM1" className="text-xs font-bold text-[#07132B]">
+                    Subatividade de Comércio (ICMS Próprio vs ICMS-ST / Atacado)
+                  </Label>
+                  <span className="text-[11px] text-emerald-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Ajusta presunção de 8% e alíquotas de saída
+                  </span>
+                </div>
+                <Select
+                  value={config.subatividadeComercio || 'varejo_comum'}
+                  onValueChange={(val) =>
+                    updateConfig({ subatividadeComercio: val as SubatividadeComercio })
+                  }
+                >
+                  <SelectTrigger
+                    id="subComercioM1"
+                    className="h-11 bg-white border-emerald-300 shadow-sm font-medium text-slate-800 text-xs"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade de comércio" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_COMERCIO.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block text-xs">
+                            {item.label}
+                          </span>
+                          <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="text-[11px] text-emerald-900/90 bg-emerald-100/60 p-2.5 rounded-lg leading-snug">
+                  {config.subatividadeComercio === 'com_icms_st'
+                    ? 'No ICMS-ST, o ICMS próprio da saída cai para ≈ 0% (já recolhido na fábrica). No novo IBS/CBS a ST é extinta em prol do split payment.'
+                    : config.subatividadeComercio === 'atacado_distribuicao'
+                      ? 'Atacado/distribuição com ICMS reduzido de ~12% (operações interestaduais/benefícios fiscais).'
+                      : 'Varejo comum com ICMS integral estadual e presunção padrão de 8% no Lucro Presumido.'}
+                </div>
+              </div>
+            )}
+
+            {/* 4. Ramo Agronegócio */}
+            {config.tipoAtividade === 'agronegocio' && (
+              <div className="bg-gradient-to-r from-lime-50/70 to-emerald-50/50 border border-lime-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label htmlFor="subAgroM1" className="text-xs font-bold text-[#07132B]">
+                    Subatividade Agropecuária (Reduções IBS/CBS e Enquadramento Simples)
+                  </Label>
+                  <span className="text-[11px] text-lime-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-lime-200">
+                    4 perfis regulatórios rurais
+                  </span>
+                </div>
+                <Select
+                  value={config.subatividadeAgro || 'producao_agricola_graos'}
+                  onValueChange={(val) =>
+                    updateConfig({ subatividadeAgro: val as SubatividadeAgro })
+                  }
+                >
+                  <SelectTrigger
+                    id="subAgroM1"
+                    className="h-11 bg-white border-lime-300 shadow-sm font-medium text-slate-800 text-xs"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade do agronegócio" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_AGRONEGOCIO.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block text-xs">
+                            {item.label}
+                          </span>
+                          <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="text-[11px] text-lime-950 bg-lime-100/70 p-2.5 rounded-lg leading-snug">
+                  {config.subatividadeAgro === 'hortifruti_cesta_basica'
+                    ? 'Cesta Básica Nacional / Hortifrúti: alíquota ZERO (isenção de 100%) no IBS e CBS com manutenção de créditos.'
+                    : config.subatividadeAgro === 'agroindustria_processamento'
+                      ? 'Agroindústria: enquadramento no Anexo II do Simples Nacional (Indústria) e redução de 60% no IBS/CBS.'
+                      : 'Produtor rural: Anexo I do Simples Nacional com redução de 60% na alíquota padrão do IBS/CBS.'}
+                </div>
+              </div>
+            )}
+
+            {/* 5. Ramo Construção Civil */}
+            {config.tipoAtividade === 'construcao_civil' && (
+              <div className="bg-gradient-to-r from-orange-50/70 to-amber-50/50 border border-orange-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label htmlFor="subConstrucaoM1" className="text-xs font-bold text-[#07132B]">
+                    Subatividade de Construção Civil e Engenharia
+                  </Label>
+                  <span className="text-[11px] text-orange-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-orange-200">
+                    Anexo IV vs III (Fator R)
+                  </span>
+                </div>
+                <Select
+                  value={config.subatividadeConstrucao || 'obras_edificacoes_ret'}
+                  onValueChange={(val) =>
+                    updateConfig({ subatividadeConstrucao: val as SubatividadeConstrucao })
+                  }
+                >
+                  <SelectTrigger
+                    id="subConstrucaoM1"
+                    className="h-11 bg-white border-orange-300 shadow-sm font-medium text-slate-800 text-xs"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade da construção civil" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_CONSTRUCAO.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block text-xs">
+                            {item.label}
+                          </span>
+                          <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="text-[11px] text-orange-950 bg-orange-100/70 p-2.5 rounded-lg leading-snug">
+                  {config.subatividadeConstrucao === 'engenharia_projetos'
+                    ? 'Engenharia e Projetos: sujeitos ao Fator R (LC 123/2006). Folha ≥ 28% qualifica para o Anexo III; se < 28%, cai no Anexo V.'
+                    : 'Obras e Edificações: Anexo IV do Simples Nacional com CPP patronal (20%) recolhida por fora na folha de pagamento.'}
+                </div>
+              </div>
+            )}
+
+            {/* 6. Ramo Aluguel / Locação de Bens */}
+            {config.tipoAtividade === 'locacao_bens' && (
+              <div className="bg-gradient-to-r from-sky-50/70 to-blue-50/50 border border-sky-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label htmlFor="subLocacaoM1" className="text-xs font-bold text-[#07132B]">
+                    Subatividade de Aluguel e Locação de Bens
+                  </Label>
+                  <span className="text-[11px] text-sky-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-sky-200">
+                    Anexo III sem ISS (Súmula 31)
+                  </span>
+                </div>
+                <Select
+                  value={config.subatividadeLocacao || 'locacao_veiculos_maquinas'}
+                  onValueChange={(val) =>
+                    updateConfig({ subatividadeLocacao: val as SubatividadeLocacao })
+                  }
+                >
+                  <SelectTrigger
+                    id="subLocacaoM1"
+                    className="h-11 bg-white border-sky-300 shadow-sm font-medium text-slate-800 text-xs"
+                  >
+                    <SelectValue placeholder="Selecione a subatividade de locação" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_LOCACAO.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block text-xs">
+                            {item.label}
+                          </span>
+                          <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="text-[11px] text-sky-950 bg-sky-100/70 p-2.5 rounded-lg leading-snug">
+                  {config.subatividadeLocacao === 'coworking_espacos'
+                    ? 'Coworking mescla locação e serviços administrativos: submete-se à regra do Fator R (Anexo III vs V).'
+                    : 'Locação pura de bens móveis: não incide ISS (Súmula Vinculante 31 STF) e enquadra-se diretamente no Anexo III.'}
+                </div>
+              </div>
+            )}
+
+            {/* 7. Ramo Bares, Restaurantes e Food Service */}
+            {config.tipoAtividade === 'food_service' && (
+              <div className="bg-gradient-to-r from-red-50/70 to-rose-50/50 border border-red-200/80 p-4 sm:p-5 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <Label htmlFor="subFoodServiceM1" className="text-xs font-bold text-[#07132B]">
+                    Subatividade de Bares, Restaurantes e Food Service
+                  </Label>
+                  <span className="text-[11px] text-red-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-red-200">
+                    Anexo I + Imposto Seletivo & Créditos Delivery
+                  </span>
+                </div>
+                <Select
+                  value={config.subatividadeFoodService || 'restaurante_a_la_carte_buffet'}
+                  onValueChange={(val) =>
+                    updateConfig({ subatividadeFoodService: val as SubatividadeFoodService })
+                  }
+                >
+                  <SelectTrigger
+                    id="subFoodServiceM1"
+                    className="h-11 bg-white border-red-300 shadow-sm font-medium text-slate-800 text-xs"
+                  >
+                    <SelectValue placeholder="Selecione o perfil de food service" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-xl">
+                    {SUBATIVIDADES_FOOD_SERVICE.map((item) => (
+                      <SelectItem key={item.id} value={item.id} className="py-2">
+                        <div className="text-left">
+                          <span className="font-semibold text-slate-900 block text-xs">
+                            {item.label}
+                          </span>
+                          <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">
+                            {item.descricao}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {config.subatividadeFoodService === 'bar_balada_bebidas' && (
+                  <div className="bg-rose-50/80 border border-rose-200 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-rose-900 block">
+                        Alíquota do Imposto Seletivo sobre Bebidas Alcoólicas:
+                      </span>
+                      <p className="text-[11px] text-rose-700 leading-tight">
+                        Incidência adicional monofásica no novo sistema sobre bebidas alcoólicas.
+                      </p>
+                    </div>
+                    <div className="relative w-28">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={config.aliquotaImpostoSeletivo ?? 10}
+                        onChange={(e) =>
+                          updateConfig({ aliquotaImpostoSeletivo: Number(e.target.value) })
+                        }
+                        className="h-9 bg-white font-mono font-bold text-rose-900 border-rose-300 pr-7 text-right text-xs"
+                      />
+                      <span className="absolute right-2.5 top-2 text-xs text-rose-500 font-bold">
+                        %
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-[11px] text-red-950 bg-red-100/70 p-2.5 rounded-lg leading-snug">
+                  {config.subatividadeFoodService === 'bar_balada_bebidas'
+                    ? `Enquadramento no Anexo I com incidência adicional de ${config.aliquotaImpostoSeletivo ?? 10}% de Imposto Seletivo sobre bebidas.`
+                    : config.subatividadeFoodService === 'delivery_marmitaria'
+                      ? 'Enquadramento no Anexo I e geração de 26,5% de crédito de IBS/CBS sobre comissões pagas aos aplicativos de entrega.'
+                      : 'Enquadramento no Anexo I do Simples Nacional (refeições equiparadas a comércio) e presunção de 8% de IRPJ.'}
+                </div>
+              </div>
+            )}
+
+            {/* 8. Ramo Misto */}
+            {config.tipoAtividade === 'misto' && (
+              <div className="bg-amber-50/70 border border-amber-200 p-4 sm:p-5 rounded-xl space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-xs font-bold text-amber-950">
+                    Atividade Mista: Calibração das Duas Partes Proporcionais
+                  </Label>
+                  <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded">
+                    {config.proporcaoServicoMisto ?? 50}% Serviço |{' '}
+                    {100 - (config.proporcaoServicoMisto ?? 50)}% Comércio
+                  </span>
+                </div>
+
+                <Slider
+                  value={[config.proporcaoServicoMisto ?? 50]}
+                  min={0}
+                  max={100}
+                  step={5}
+                  onValueChange={(val) => updateConfig({ proporcaoServicoMisto: val[0] })}
+                  className="py-1"
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                  <div className="space-y-1.5 bg-white p-3 rounded-lg border border-amber-200">
+                    <Label className="text-xs font-bold text-slate-800">
+                      Subatividade para a parte de Serviço ({config.proporcaoServicoMisto ?? 50}%):
+                    </Label>
+                    <Select
+                      value={config.subatividadeServico || 'servico_comum'}
+                      onValueChange={(val) =>
+                        updateConfig({ subatividadeServico: val as SubatividadeServico })
+                      }
+                    >
+                      <SelectTrigger className="h-9 bg-slate-50 border-slate-300 text-xs font-medium">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUBATIVIDADES_SERVICO.map((item) => (
+                          <SelectItem key={item.id} value={item.id} className="text-xs">
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5 bg-white p-3 rounded-lg border border-amber-200">
+                    <Label className="text-xs font-bold text-slate-800">
+                      Subatividade para a parte de Comércio (
+                      {100 - (config.proporcaoServicoMisto ?? 50)}%):
+                    </Label>
+                    <Select
+                      value={config.subatividadeComercio || 'varejo_comum'}
+                      onValueChange={(val) =>
+                        updateConfig({ subatividadeComercio: val as SubatividadeComercio })
+                      }
+                    >
+                      <SelectTrigger className="h-9 bg-slate-50 border-slate-300 text-xs font-medium">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUBATIVIDADES_COMERCIO.map((item) => (
+                          <SelectItem key={item.id} value={item.id} className="text-xs">
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Parâmetros Operacionais Base para Propagação Automática aos Módulos 2, 3, 5 e Dashboard */}

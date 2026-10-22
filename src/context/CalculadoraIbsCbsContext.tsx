@@ -707,8 +707,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     modulo2PercentualCompras: false,
     modulo3Faturamento: false,
     modulo3PercentualCompras: false,
+    modulo3TipoAtividade: false,
     modulo4Categorias: false,
     modulo5Faturamento: false,
+    modulo5SetorTransicao: false,
     dashboardRegimeAtual: false,
     dashboardAnoTransicao: false,
     dashboardSetor: false,
@@ -765,7 +767,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   )
 
   const setTipoAtividade = (novoTipo: TipoAtividade) => {
-    setEditadoLocalmente((prev) => ({ ...prev, dashboardSetor: true }))
+    setEditadoLocalmente((prev) => ({
+      ...prev,
+      modulo3TipoAtividade: true,
+      dashboardSetor: true,
+    }))
     setTipoAtividadeState(normalizarTipoAtividade(novoTipo))
   }
   // Subatividades por ramo
@@ -860,6 +866,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   )
 
   const setSetorTransicao = (novoSector: TipoAtividade) => {
+    setEditadoLocalmente((prev) => ({
+      ...prev,
+      modulo5SetorTransicao: true,
+      dashboardSetor: true,
+    }))
     setSetorTransicaoState(normalizarTipoAtividade(novoSector))
   }
   // Etapa 5: Valor do estoque na virada (padrão estimado em ~1 a 2 meses de compras da empresa)
@@ -956,14 +967,42 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const restaurarSimulacao = (p: ParametrosSimulacaoCalculadora) => {
     if (p.config) {
       // Compatibilidade retroativa com simulações antigas que não tinham anoTransicao ou presetSetor
+      const tipoAtivRestaurado = normalizarTipoAtividade(p.tipoAtividade || p.config.tipoAtividade)
       const configRestaurada: ConfiguracoesGerais = {
         ...CONFIGURACOES_PADRAO,
         ...p.config,
+        tipoAtividade: tipoAtivRestaurado,
+        subatividadeServico: p.subatividadeServico || p.config.subatividadeServico,
+        subatividadeIndustria: p.subatividadeIndustria || p.config.subatividadeIndustria,
+        subatividadeComercio: p.subatividadeComercio || p.config.subatividadeComercio,
+        subatividadeAgro: (p as any).subatividadeAgro || p.config.subatividadeAgro,
+        subatividadeConstrucao:
+          (p as any).subatividadeConstrucao || p.config.subatividadeConstrucao,
+        subatividadeLocacao: (p as any).subatividadeLocacao || p.config.subatividadeLocacao,
+        subatividadeFoodService:
+          (p as any).subatividadeFoodService || p.config.subatividadeFoodService,
+        proporcaoServicoMisto: p.proporcaoServicoMisto ?? p.config.proporcaoServicoMisto,
+        aliquotaImpostoSeletivo: p.aliquotaImpostoSeletivo ?? p.config.aliquotaImpostoSeletivo,
         anoTransicao: p.anoTransicao || p.config.anoTransicao,
         presetSetor: (p.presetSetor || p.config.presetSetor) as PresetSetorIbsCbs | undefined,
         etiquetasOrigem: p.config.etiquetasOrigem,
       }
       setConfig(configRestaurada)
+    } else if (p.tipoAtividade) {
+      const tipoAtivRestaurado = normalizarTipoAtividade(p.tipoAtividade)
+      setConfig((prev) => ({
+        ...prev,
+        tipoAtividade: tipoAtivRestaurado,
+        subatividadeServico: p.subatividadeServico || prev.subatividadeServico,
+        subatividadeIndustria: p.subatividadeIndustria || prev.subatividadeIndustria,
+        subatividadeComercio: p.subatividadeComercio || prev.subatividadeComercio,
+        subatividadeAgro: (p as any).subatividadeAgro || prev.subatividadeAgro,
+        subatividadeConstrucao: (p as any).subatividadeConstrucao || prev.subatividadeConstrucao,
+        subatividadeLocacao: (p as any).subatividadeLocacao || prev.subatividadeLocacao,
+        subatividadeFoodService: (p as any).subatividadeFoodService || prev.subatividadeFoodService,
+        proporcaoServicoMisto: p.proporcaoServicoMisto ?? prev.proporcaoServicoMisto,
+        aliquotaImpostoSeletivo: p.aliquotaImpostoSeletivo ?? prev.aliquotaImpostoSeletivo,
+      }))
     }
     if (p.valorOperacao !== undefined) setValorOperacao(p.valorOperacao)
     if (p.regimeOperacao) {
@@ -2333,8 +2372,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       modulo2PercentualCompras: !editadoLocalmente.modulo2PercentualCompras,
       modulo3Faturamento: !editadoLocalmente.modulo3Faturamento,
       modulo3PercentualCompras: !editadoLocalmente.modulo3PercentualCompras,
+      modulo3TipoAtividade: !editadoLocalmente.modulo3TipoAtividade,
       modulo4Categorias: !editadoLocalmente.modulo4Categorias,
       modulo5Faturamento: !editadoLocalmente.modulo5Faturamento,
+      modulo5SetorTransicao: !editadoLocalmente.modulo5SetorTransicao,
       dashboardRegimeAtual: !editadoLocalmente.dashboardRegimeAtual,
       dashboardAnoTransicao: !editadoLocalmente.dashboardAnoTransicao,
       dashboardSetor: !editadoLocalmente.dashboardSetor,
