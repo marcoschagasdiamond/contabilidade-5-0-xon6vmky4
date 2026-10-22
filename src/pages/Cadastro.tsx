@@ -131,10 +131,10 @@ export default function Cadastro() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Pergunta: Você é contador ou empresário? (SEM ÍCONES) */}
+            {/* Pergunta: Você é analista ou empresário? (SEM ÍCONES) */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
-                Você é contador ou empresário? *
+                Você é analista ou empresário? *
               </label>
               <p className="text-xs text-slate-500 mb-3">
                 Personalizamos sua área de trabalho e ferramentas de acordo com a sua atuação.
@@ -149,7 +149,7 @@ export default function Cadastro() {
                       : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <span className="block font-bold text-sm">Contador</span>
+                  <span className="block font-bold text-sm">Analista</span>
                   <span
                     className={`block text-[11px] mt-0.5 ${
                       perfil === 'contador' ? 'text-slate-300' : 'text-slate-500'

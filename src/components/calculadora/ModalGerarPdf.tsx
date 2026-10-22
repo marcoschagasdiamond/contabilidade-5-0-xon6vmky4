@@ -196,7 +196,7 @@ export function ModalGerarPdf({
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="contador@empresa.com.br"
+                  placeholder="analista@empresa.com.br"
                   className="text-xs h-9"
                   required
                 />
@@ -218,7 +218,7 @@ export function ModalGerarPdf({
 
             <div className="space-y-1">
               <Label htmlFor="resp-obs" className="text-xs text-slate-700 flex justify-between">
-                <span>Observações do Contador (opcional)</span>
+                <span>Observações do Analista (opcional)</span>
                 <span className="text-[10px] text-slate-400">Incluído na página final</span>
               </Label>
               <Textarea

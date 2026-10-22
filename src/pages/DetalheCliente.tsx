@@ -863,7 +863,7 @@ export default function DetalheCliente() {
                     className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} space-y-1`}
                   >
                     <span className="text-[10px] font-mono text-slate-400 px-1">
-                      {isUser ? 'Pergunta do Contador' : 'Parecer do Assistente'} •{' '}
+                      {isUser ? 'Pergunta do Analista' : 'Parecer do Assistente'} •{' '}
                       {formatarData(msg.data)}
                     </span>
                     <div

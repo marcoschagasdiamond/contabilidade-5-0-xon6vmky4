@@ -68,7 +68,7 @@ const UFS_BRASIL = [
 ]
 
 /**
- * Modal para cadastro ou edição de cliente do contador.
+ * Modal para cadastro ou edição de cliente do analista.
  * Regra: SEM ÍCONES — apenas texto, badges e marcadores de status.
  */
 export function ModalCliente({
@@ -183,7 +183,7 @@ export function ModalCliente({
             </DialogTitle>
           </div>
           <DialogDescription className="text-xs text-slate-500">
-            Cadastre os dados cadastrais e fiscais da empresa cliente do contador.
+            Cadastre os dados cadastrais e fiscais da empresa cliente do analista.
           </DialogDescription>
         </DialogHeader>
 

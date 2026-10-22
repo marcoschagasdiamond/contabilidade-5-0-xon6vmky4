@@ -384,7 +384,7 @@ export default function Carteira() {
                 </span>
               </div>
               <h1 className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-white tracking-tight">
-                Carteira de Clientes do Contador
+                Carteira de Clientes do Analista
               </h1>
               <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
                 Visão unificada de toda a base de clientes: status de diagnósticos concluídos,
@@ -900,7 +900,7 @@ export default function Carteira() {
             </strong>
           </div>
           <p className="text-xs text-slate-300 leading-relaxed">
-            A Carteira do Contador agrega todos os dados fiscais gerados na Calculadora IBS/CBS, no
+            A Carteira do Analista agrega todos os dados fiscais gerados na Calculadora IBS/CBS, no
             Diagnóstico 360° e na trilha de transição tributária (EC 132/2023 e LC 214/2025). O
             alerta do Simples Nacional monitora se as projeções de faturamento anualizado aproximam
             ou superam o teto de <strong>R$ 4,8 milhões</strong> ou o sublimite de{' '}

@@ -148,7 +148,7 @@ export default function MinhaConta() {
                     Conta Ativa
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-slate-200 border border-white/20">
-                    {isEmpresario ? 'Perfil: Empresário (Cliente)' : 'Perfil: Contador'}
+                    {isEmpresario ? 'Perfil: Empresário (Cliente)' : 'Perfil: Analista'}
                   </span>
                   {isAdmin && (
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#D4AF37] text-[#07132B]">
@@ -300,11 +300,11 @@ export default function MinhaConta() {
               </div>
             </div>
 
-            {/* Acesso rápido às ferramentas (Exclusivo para Contador / Admin) */}
+            {/* Acesso rápido às ferramentas (Exclusivo para Analista / Admin) */}
             {isContador && (
               <div className="bg-slate-100/80 rounded-2xl p-5 border border-slate-200 text-xs space-y-3">
                 <span className="font-bold text-slate-900 block text-sm">
-                  Painel do Contador & Ferramentas
+                  Painel do Analista & Ferramentas
                 </span>
                 <Link
                   to="/carteira"
@@ -466,7 +466,7 @@ export default function MinhaConta() {
                     </h3>
                     <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
                       {isEmpresario
-                        ? 'Você ainda não possui diagnósticos tributários registrados. Fale com seu contador ou execute uma análise.'
+                        ? 'Você ainda não possui diagnósticos tributários registrados. Fale com seu analista ou execute uma análise.'
                         : 'Execute o simulador tributário para descobrir o regime ideal sob o novo sistema IBS/CBS.'}
                     </p>
                     {isContador && (
@@ -601,7 +601,7 @@ export default function MinhaConta() {
                       Nenhuma simulação salva encontrada
                     </h3>
                     <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-                      Quando seu contador ou você salvarem cenários na Calculadora IBS/CBS, eles
+                      Quando seu analista ou você salvarem cenários na Calculadora IBS/CBS, eles
                       ficarão visíveis e acessíveis aqui.
                     </p>
                     <Link

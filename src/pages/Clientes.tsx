@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import type { Cliente } from '@/types/cliente'
 
 /**
- * Página "Clientes" — Carteira de Clientes do Contador (~100 clientes)
+ * Página "Clientes" — Carteira de Clientes do Analista (~100 clientes)
  * Requisitos:
  * 1) Listagem em cards com dados completos (nome, CNPJ/CPF, UF, segmento, regime atual, e-mail, telefone).
  * 2) Busca por nome, CNPJ/CPF, segmento ou UF.
@@ -79,7 +79,7 @@ export default function Clientes() {
                 </span>
               </div>
               <h1 className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-white tracking-tight">
-                Carteira de Clientes do Contador
+                Carteira de Clientes do Analista
               </h1>
               <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
                 Centralize o cadastro de empresas atendidas, defina o cliente ativo para carregar na

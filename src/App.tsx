@@ -75,8 +75,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-// Rota protegida exclusiva para Contador / Admin (bloqueia perfil Empresário)
-function ContadorRoute({ children }: { children: React.ReactNode }) {
+// Rota protegida exclusiva para Analista / Admin (bloqueia perfil Empresário)
+function AnalistaRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, isEmpresario } = useAuth()
   const location = useLocation()
 
@@ -223,31 +223,31 @@ const App = () => (
                   element={<Navigate to="/reforma-tributaria" replace />}
                 />
                 <Route path="/reforma-tributaria/glossario" element={<SubpageGlossarioFontes />} />
-                {/* Carteira de Clientes do Contador (Restrita a Contadores) */}
+                {/* Carteira de Clientes do Analista (Restrita a Analistas) */}
                 <Route
                   path="/carteira"
                   element={
-                    <ContadorRoute>
+                    <AnalistaRoute>
                       <Carteira />
-                    </ContadorRoute>
+                    </AnalistaRoute>
                   }
                 />
                 <Route
                   path="/clientes"
                   element={
-                    <ContadorRoute>
+                    <AnalistaRoute>
                       <Clientes />
-                    </ContadorRoute>
+                    </AnalistaRoute>
                   }
                 />
                 <Route
                   path="/clientes/:id"
                   element={
-                    <ContadorRoute>
+                    <AnalistaRoute>
                       <DetalheCliente />
-                    </ContadorRoute>
+                    </AnalistaRoute>
                   }
-                />
+                />{' '}
                 {/* Hub e Trilha dos 4 Diagnósticos Tributários */}
                 <Route path="/diagnosticos" element={<DiagnosticosHub />} />
                 <Route path="/diagnostico-360" element={<Diagnostico360 />} />
