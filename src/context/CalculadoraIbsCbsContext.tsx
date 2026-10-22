@@ -146,8 +146,10 @@ interface CalculadoraContextType {
     modulo2PercentualCompras: boolean
     modulo3Faturamento: boolean
     modulo3PercentualCompras: boolean
+    modulo3TipoAtividade: boolean
     modulo4Categorias: boolean
     modulo5Faturamento: boolean
+    modulo5SetorTransicao: boolean
     dashboardRegimeAtual: boolean
     dashboardAnoTransicao: boolean
     dashboardSetor: boolean
@@ -163,8 +165,10 @@ interface CalculadoraContextType {
     modulo2PercentualCompras: boolean
     modulo3Faturamento: boolean
     modulo3PercentualCompras: boolean
+    modulo3TipoAtividade: boolean
     modulo4Categorias: boolean
     modulo5Faturamento: boolean
+    modulo5SetorTransicao: boolean
     dashboardRegimeAtual: boolean
     dashboardAnoTransicao: boolean
     dashboardSetor: boolean
@@ -358,17 +362,34 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     if (perfilInicial.regimeAtual?.includes('Real')) regInicial = 'Lucro Real'
     else if (perfilInicial.regimeAtual?.includes('Simples')) regInicial = 'Simples Nacional'
 
+    const tipoAtividadeInicial = normalizarTipoAtividade(perfilInicial.tipoAtividade)
+
     return {
       ...CONFIGURACOES_PADRAO,
       regimeAtualEmpresa: regInicial,
       faturamentoMensal: perfilInicial.faturamentoMensal || CONFIGURACOES_PADRAO.faturamentoMensal,
       percentualComprasVendas:
         perfilInicial.percentualComprasVendas ?? CONFIGURACOES_PADRAO.percentualComprasVendas,
+      tipoAtividade: tipoAtividadeInicial,
+      subatividadeServico: perfilInicial.subatividadeServico || 'servico_comum',
+      subatividadeIndustria: perfilInicial.subatividadeIndustria || 'industria_comum',
+      subatividadeComercio: perfilInicial.subatividadeComercio || 'varejo_comum',
+      subatividadeAgro: 'producao_agricola_graos',
+      subatividadeConstrucao: 'obras_edificacoes_ret',
+      subatividadeLocacao: 'locacao_veiculos_maquinas',
+      subatividadeFoodService: 'restaurante_a_la_carte_buffet',
+      proporcaoServicoMisto: perfilInicial.proporcaoServicoMisto ?? 50,
+      aliquotaImpostoSeletivo: 10,
       etiquetasOrigem:
-        existeDadosEmpresaSalvos() && perfilInicial.regimeAtual
+        existeDadosEmpresaSalvos() && (perfilInicial.regimeAtual || perfilInicial.tipoAtividade)
           ? {
               ...CONFIGURACOES_PADRAO.etiquetasOrigem,
-              regimeAtualEmpresa: 'Preenchido a partir de Dados da Empresa (/dados-empresa)',
+              ...(perfilInicial.regimeAtual
+                ? { regimeAtualEmpresa: 'Preenchido a partir de Dados da Empresa (/dados-empresa)' }
+                : {}),
+              ...(perfilInicial.tipoAtividade
+                ? { tipoAtividade: 'Preenchido a partir de Dados da Empresa (/dados-empresa)' }
+                : {}),
             }
           : CONFIGURACOES_PADRAO.etiquetasOrigem,
     }
@@ -392,6 +413,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         'transporteAliquota',
         'cestaBasicaIsencao',
         'regimeAtualEmpresa',
+        'tipoAtividade',
       ]
       let etiquetasAtualizadas = prev.etiquetasOrigem ? { ...prev.etiquetasOrigem } : {}
       camposVerificados.forEach((campo) => {
@@ -466,6 +488,48 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         ...prev,
         modulo2RegimeOperacao: false,
       }))
+    }
+
+    // Se tipoAtividade (Ramo Principal) for alterado no Módulo 1, propaga para M3, M5 e Dashboard
+    if (novas.tipoAtividade !== undefined) {
+      const normTipo = normalizarTipoAtividade(novas.tipoAtividade)
+      setTipoAtividadeState(normTipo)
+      setSetorTransicaoState(normTipo)
+      setEditadoLocalmente((prev) => ({
+        ...prev,
+        modulo3TipoAtividade: false,
+        modulo5SetorTransicao: false,
+        dashboardSetor: false,
+      }))
+    }
+
+    // Propaga subatividades e detalhes do ramo se alterados no Módulo 1
+    if (novas.subatividadeServico !== undefined) {
+      setSubatividadeServico(novas.subatividadeServico)
+    }
+    if (novas.subatividadeIndustria !== undefined) {
+      setSubatividadeIndustria(novas.subatividadeIndustria)
+    }
+    if (novas.subatividadeComercio !== undefined) {
+      setSubatividadeComercio(novas.subatividadeComercio)
+    }
+    if (novas.subatividadeAgro !== undefined) {
+      setSubatividadeAgro(novas.subatividadeAgro)
+    }
+    if (novas.subatividadeConstrucao !== undefined) {
+      setSubatividadeConstrucao(novas.subatividadeConstrucao)
+    }
+    if (novas.subatividadeLocacao !== undefined) {
+      setSubatividadeLocacao(novas.subatividadeLocacao)
+    }
+    if (novas.subatividadeFoodService !== undefined) {
+      setSubatividadeFoodService(novas.subatividadeFoodService)
+    }
+    if (novas.proporcaoServicoMisto !== undefined) {
+      setProporcaoServicoMisto(novas.proporcaoServicoMisto)
+    }
+    if (novas.aliquotaImpostoSeletivo !== undefined) {
+      setAliquotaImpostoSeletivo(novas.aliquotaImpostoSeletivo)
     }
   }
 

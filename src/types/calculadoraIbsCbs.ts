@@ -1186,6 +1186,7 @@ export interface OrigemCamposAliquota {
   transporteAliquota?: string
   cestaBasicaIsencao?: string
   regimeAtualEmpresa?: string
+  tipoAtividade?: string
 }
 
 export interface ConfiguracoesGerais {
@@ -1207,6 +1208,16 @@ export interface ConfiguracoesGerais {
   regimeAtualEmpresa?: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
   faturamentoMensal?: number
   percentualComprasVendas?: number
+  tipoAtividade?: TipoAtividade
+  subatividadeServico?: SubatividadeServico
+  subatividadeIndustria?: SubatividadeIndustria
+  subatividadeComercio?: SubatividadeComercio
+  subatividadeAgro?: SubatividadeAgronegocio
+  subatividadeConstrucao?: SubatividadeConstrucao
+  subatividadeLocacao?: SubatividadeLocacao
+  subatividadeFoodService?: SubatividadeFoodService
+  proporcaoServicoMisto?: number
+  aliquotaImpostoSeletivo?: number
   etiquetasOrigem?: OrigemCamposAliquota
 
   // Sistema Antigo Lucro Real
@@ -1240,6 +1251,16 @@ export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {
   regimeAtualEmpresa: 'Lucro Presumido',
   faturamentoMensal: 200000,
   percentualComprasVendas: 40,
+  tipoAtividade: 'servico',
+  subatividadeServico: 'servico_comum',
+  subatividadeIndustria: 'industria_comum',
+  subatividadeComercio: 'varejo_comum',
+  subatividadeAgro: 'producao_agricola_graos',
+  subatividadeConstrucao: 'obras_edificacoes_ret',
+  subatividadeLocacao: 'locacao_veiculos_maquinas',
+  subatividadeFoodService: 'restaurante_a_la_carte_buffet',
+  proporcaoServicoMisto: 50,
+  aliquotaImpostoSeletivo: 10,
 
   lucroRealPis: 1.65,
   lucroRealCofins: 7.6,
