@@ -59,6 +59,16 @@ import {
 import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
 import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import { construirConclusaoAnalitica } from '@/lib/conclusaoAnalitica'
+import {
+  SUBATIVIDADES_SERVICO,
+  SUBATIVIDADES_COMERCIO,
+  SUBATIVIDADES_INDUSTRIA,
+  SUBATIVIDADES_AGRO,
+  SUBATIVIDADES_CONSTRUCAO,
+  SUBATIVIDADES_LOCACAO,
+  SUBATIVIDADES_FOOD_SERVICE,
+} from '@/types/calculadoraIbsCbs'
 
 const CORES_PIZZA = ['#07132B', '#D4AF37', '#10B981', '#3B82F6', '#6366F1', '#EC4899', '#8B5CF6']
 
@@ -97,6 +107,15 @@ export default function Modulo6Dashboard({
     diasAntecipacaoSplit,
     setDiasAntecipacaoSplit,
     despesasCreditos,
+    margemLucroEstimada,
+    percentualExportacao,
+    subatividadeServico,
+    subatividadeComercio,
+    subatividadeIndustria,
+    subatividadeAgro,
+    subatividadeConstrucao,
+    subatividadeLocacao,
+    subatividadeFoodService,
     obterSnapshotParametros,
     obterSnapshotResultados,
   } = useCalculadoraIbsCbs()
@@ -311,6 +330,43 @@ export default function Modulo6Dashboard({
     config.totalIvaDual,
   ])
 
+  // Presunção legal do segmento para alimentar a análise comparativa de lucro
+  const presuncaoSegmentoCalculada = React.useMemo(() => {
+    let pres = 32
+    if (tipoAtividade === 'comercio') {
+      const sub = SUBATIVIDADES_COMERCIO.find((s) => s.id === subatividadeComercio)
+      pres = sub?.presuncaoIrpj ?? 8
+    } else if (tipoAtividade === 'industria') {
+      const sub = SUBATIVIDADES_INDUSTRIA.find((s) => s.id === subatividadeIndustria)
+      pres = sub?.presuncaoIrpj ?? 8
+    } else if (tipoAtividade === 'agronegocio') {
+      const sub = SUBATIVIDADES_AGRO.find((s) => s.id === subatividadeAgro)
+      pres = sub?.presuncaoIrpj ?? 8
+    } else if (tipoAtividade === 'construcao_civil') {
+      const sub = SUBATIVIDADES_CONSTRUCAO.find((s) => s.id === subatividadeConstrucao)
+      pres = sub?.presuncaoIrpj ?? 32
+    } else if (tipoAtividade === 'locacao_bens') {
+      const sub = SUBATIVIDADES_LOCACAO.find((s) => s.id === subatividadeLocacao)
+      pres = sub?.presuncaoIrpj ?? 32
+    } else if (tipoAtividade === 'food_service') {
+      const sub = SUBATIVIDADES_FOOD_SERVICE.find((s) => s.id === subatividadeFoodService)
+      pres = sub?.presuncaoIrpj ?? 8
+    } else if (tipoAtividade === 'servico') {
+      const sub = SUBATIVIDADES_SERVICO.find((s) => s.id === subatividadeServico)
+      pres = sub?.presuncaoIrpj ?? 32
+    }
+    return pres
+  }, [
+    tipoAtividade,
+    subatividadeServico,
+    subatividadeComercio,
+    subatividadeIndustria,
+    subatividadeAgro,
+    subatividadeConstrucao,
+    subatividadeLocacao,
+    subatividadeFoodService,
+  ])
+
   // KPIs dinâmicos refletindo o ano selecionado no Dashboard
   const {
     aliquotaEfetivaAtual,
@@ -359,6 +415,41 @@ export default function Modulo6Dashboard({
       regimeRecomendado: cenarios[0]?.nome || resultadoComparativo.regimeMaisVantajoso,
     }
   }, [regimeAtualFiltro, resultadoComparativo, ibsCbsAnoDashboard, anoSimulacaoSelecionado])
+
+  // Dados consolidados da Conclusão Analítica do cenário selecionado
+  const conclusaoAnalitica = React.useMemo(() => {
+    return construirConclusaoAnalitica({
+      anoSelecionado: anoSimulacaoSelecionado,
+      regimeAtualFiltro,
+      regimeRecomendado,
+      economiaMensalProjetada,
+      economiaAnualProjetada,
+      aliquotaEfetivaAtual,
+      aliquotaEfetivaNova,
+      faturamentoMensal,
+      percentualComprasVendas: percentualComprasVendasComparativo,
+      percentualExportacao,
+      margemLucroEstimada,
+      tipoAtividade,
+      presuncaoSegmento: presuncaoSegmentoCalculada,
+      alertaLimitesSimples,
+    })
+  }, [
+    anoSimulacaoSelecionado,
+    regimeAtualFiltro,
+    regimeRecomendado,
+    economiaMensalProjetada,
+    economiaAnualProjetada,
+    aliquotaEfetivaAtual,
+    aliquotaEfetivaNova,
+    faturamentoMensal,
+    percentualComprasVendasComparativo,
+    percentualExportacao,
+    margemLucroEstimada,
+    tipoAtividade,
+    presuncaoSegmentoCalculada,
+    alertaLimitesSimples,
+  ])
 
   // Split Payment dinâmico baseado no ano selecionado no Dashboard
   const resultadoSplitPaymentDinamico = React.useMemo(() => {
@@ -964,6 +1055,124 @@ export default function Modulo6Dashboard({
           )
         })()}
       </div>
+
+      {/* BLOCO: CONCLUSÃO ANALÍTICA (ENTRE OS KPIS E O QUADRO/GRÁFICOS) */}
+      {/* Padrão Visual Diamond Group: verde escuro/dourado, cards escuros, SEM ícones */}
+      <Card className="bg-[#07132B] text-white border-2 border-[#D4AF37]/60 shadow-2xl overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
+        <CardContent className="p-6 sm:p-7 space-y-5 relative">
+          {/* Cabeçalho do Bloco Analítico */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#D4AF37]/30">
+            <div>
+              <div className="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 mb-1.5">
+                Parecer Técnico Integrado • Diamond Group
+              </div>
+              <h3 className="text-lg sm:text-xl font-heading font-extrabold text-white tracking-tight">
+                Conclusão Analítica do Cenário
+              </h3>
+            </div>
+            <div className="flex items-center gap-2 self-start sm:self-auto font-mono text-xs">
+              <span className="text-slate-300">Ano da Transição:</span>
+              <span className="bg-white/10 text-[#D4AF37] font-bold px-3 py-1 rounded border border-[#D4AF37]/40">
+                {conclusaoAnalitica.isAtual ? 'Ano Atual' : conclusaoAnalitica.anoSelecionado}
+              </span>
+            </div>
+          </div>
+
+          {/* Veredito em Texto do Cenário */}
+          <div className="p-4 sm:p-5 rounded-xl bg-slate-900/90 border border-[#D4AF37]/40 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs uppercase tracking-wider font-bold text-[#D4AF37]">
+                Veredito Técnico do Ano Selecionado
+              </span>
+              <span className="text-xs font-mono px-2.5 py-0.5 rounded font-bold bg-[#D4AF37] text-[#07132B]">
+                Recomendado: {conclusaoAnalitica.regimeRecomendado}
+              </span>
+            </div>
+            <p className="text-sm sm:text-base text-slate-100 leading-relaxed font-medium">
+              {conclusaoAnalitica.vereditoTexto}
+            </p>
+
+            {/* Resumo Numérico em Pílulas Textuais (Sem Ícones) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-white/10 text-xs font-mono">
+              <div className="p-2.5 rounded bg-white/5 border border-white/10 flex flex-col justify-between">
+                <span className="text-slate-400 text-[11px] font-sans">Regime Atual Base</span>
+                <span className="font-bold text-white text-sm mt-0.5">
+                  {conclusaoAnalitica.regimeAtualReferencia}
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  {formatarPorcentagem(conclusaoAnalitica.aliquotaAtual)} de carga
+                </span>
+              </div>
+              <div className="p-2.5 rounded bg-white/5 border border-white/10 flex flex-col justify-between">
+                <span className="text-slate-400 text-[11px] font-sans">
+                  Economia Mensal Projetada
+                </span>
+                <span
+                  className={`font-bold text-sm mt-0.5 ${
+                    conclusaoAnalitica.temEconomia ? 'text-emerald-400' : 'text-amber-300'
+                  }`}
+                >
+                  {conclusaoAnalitica.economiaMensalStr}
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  {conclusaoAnalitica.temEconomia
+                    ? 'Redução por competência'
+                    : 'Regra de corte aplicada'}
+                </span>
+              </div>
+              <div className="p-2.5 rounded bg-white/5 border border-white/10 flex flex-col justify-between">
+                <span className="text-slate-400 text-[11px] font-sans">
+                  Economia Anual Projetada
+                </span>
+                <span
+                  className={`font-bold text-sm mt-0.5 ${
+                    conclusaoAnalitica.temEconomia ? 'text-emerald-400' : 'text-amber-300'
+                  }`}
+                >
+                  {conclusaoAnalitica.economiaAnualStr}
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  {conclusaoAnalitica.temEconomia
+                    ? 'Impacto no fluxo de caixa anual'
+                    : 'Regra de corte aplicada'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Fatores Explicativos do Resultado */}
+          <div className="space-y-3 pt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wider font-bold text-[#D4AF37]">
+                Fatores Determinantes do Resultado ({conclusaoAnalitica.fatores.length} Fatores)
+              </span>
+              <span className="text-[11px] text-slate-400">
+                Derivados dos parâmetros da sua empresa
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {conclusaoAnalitica.fatores.map((fator, idx) => (
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-lg bg-white/5 border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 transition-colors flex flex-col justify-between"
+                >
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-mono text-[#D4AF37] font-bold block">
+                      FATOR 0{idx + 1}
+                    </span>
+                    <h4 className="text-xs font-bold text-white leading-snug">{fator.titulo}</h4>
+                    <p className="text-[11px] text-slate-300 leading-relaxed pt-1">
+                      {fator.descricao}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* MUDANÇA 1: QUADRO COMPARATIVO DA TRANSIÇÃO COMPLETA (ATUAL + 2026 A 2033) */}
       <Card className="border-slate-200 shadow-lg overflow-hidden bg-white">
