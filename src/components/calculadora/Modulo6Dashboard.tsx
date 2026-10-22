@@ -51,7 +51,6 @@ import {
   Percent,
   Wallet,
   TrendingUp,
-  Filter,
   ArrowRight,
   ShieldAlert,
   BookmarkPlus,
@@ -682,8 +681,8 @@ export default function Modulo6Dashboard({
 
   return (
     <div id="modulo6-dashboard-painel" className="space-y-8 animate-fade-in">
-      {/* Cabeçalho do Módulo - FIXO (sticky) com hierarquia visual destacada para os 3 botões */}
-      <div className="sticky top-16 z-30 bg-[#07132B]/95 backdrop-blur-md border-2 border-[#D4AF37]/50 rounded-2xl p-5 sm:p-6 text-white relative shadow-2xl transition-all">
+      {/* Cabeçalho do Módulo com hierarquia visual destacada para os 3 botões */}
+      <div className="bg-[#07132B]/95 backdrop-blur-md border-2 border-[#D4AF37]/50 rounded-2xl p-5 sm:p-6 text-white relative shadow-2xl transition-all">
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/15 rounded-full blur-3xl pointer-events-none" />
         <div className="relative space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/15 border border-[#D4AF37]/40 tracking-wider uppercase">
@@ -742,10 +741,9 @@ export default function Modulo6Dashboard({
         </div>
       </div>
 
-      {/* Barra de Filtros Globais Conforme Especificação - Fixo (sticky) em telas médias/grandes abaixo do cabeçalho */}
-      <Card className="border-slate-200/80 bg-slate-50/95 backdrop-blur-md shadow-md md:sticky md:top-48 lg:top-44 z-20 transition-all">
+      {/* Barra de Filtros Globais Conforme Especificação - Fixo (sticky) logo abaixo da navbar */}
+      <Card className="border-slate-200/80 bg-slate-50/95 backdrop-blur-md shadow-md sticky top-16 sm:top-[68px] z-20 transition-all">
         <CardHeader className="py-3 px-5 sm:px-6 border-b border-slate-200/60 flex flex-row items-center gap-2">
-          <Filter className="w-4 h-4 text-[#D4AF37]" />
           <CardTitle className="text-sm font-bold text-[#07132B]">
             Filtros do Dashboard (Sincronização em Tempo Real)
           </CardTitle>
