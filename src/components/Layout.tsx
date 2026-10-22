@@ -176,8 +176,8 @@ export default function Layout() {
             </div>
           </Link>
 
-          {/* DESKTOP NAV: Início, Serviços, Sobre Nós, Depoimentos, Blog, Contato */}
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-7">
+          {/* DESKTOP NAV: Início, Serviços, Sobre Nós, Calculadora IBS/CBS, Diagnóstico, Reforma Tributária */}
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-6">
             <Link
               to="/"
               className={`nav-link-hover text-sm font-medium transition-colors ${
@@ -191,7 +191,7 @@ export default function Layout() {
             <Link
               to="/servicos"
               className={`nav-link-hover text-sm font-medium transition-colors ${
-                location.pathname === '/servicos'
+                location.pathname.startsWith('/servicos')
                   ? 'text-[#2ECC71] font-semibold active'
                   : 'text-slate-200 hover:text-white'
               }`}
@@ -210,37 +210,37 @@ export default function Layout() {
               Sobre Nós
             </a>
             <a
-              href="/#depoimentos"
-              onClick={(e) => handleNavClick(e, 'depoimentos')}
+              href="/calculadora-ibs-cbs"
+              onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
               className={`nav-link-hover text-sm font-medium transition-colors ${
-                location.hash === '#depoimentos'
+                location.pathname === '/calculadora-ibs-cbs'
                   ? 'text-[#2ECC71] font-semibold active'
                   : 'text-slate-200 hover:text-white'
               }`}
             >
-              Depoimentos
+              Calculadora IBS/CBS
+            </a>
+            <a
+              href="/diagnosticos"
+              onClick={(e) => handleToolNav(e, '/diagnosticos')}
+              className={`nav-link-hover text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/diagnostico')
+                  ? 'text-[#2ECC71] font-semibold active'
+                  : 'text-slate-200 hover:text-white'
+              }`}
+            >
+              Diagnóstico
             </a>
             <Link
-              to="/blog"
+              to="/reforma-tributaria"
               className={`nav-link-hover text-sm font-medium transition-colors ${
-                location.pathname.startsWith('/blog')
+                location.pathname.startsWith('/reforma-tributaria')
                   ? 'text-[#2ECC71] font-semibold active'
                   : 'text-slate-200 hover:text-white'
               }`}
             >
-              Blog
+              Reforma Tributária
             </Link>
-            <a
-              href="/#contato"
-              onClick={(e) => handleNavClick(e, 'contato')}
-              className={`nav-link-hover text-sm font-medium transition-colors ${
-                location.hash === '#contato'
-                  ? 'text-[#2ECC71] font-semibold active'
-                  : 'text-slate-200 hover:text-white'
-              }`}
-            >
-              Contato
-            </a>
           </nav>
 
           {/* CTA BUTTON & AUTH / USER DROPDOWN (DESKTOP) */}
@@ -543,7 +543,7 @@ export default function Layout() {
                 </div>
               )}
 
-              {/* Links Principais Mobile: Início, Serviços, Sobre Nós, Depoimentos, Blog, Contato */}
+              {/* Links Principais Mobile: Início, Serviços, Sobre Nós, Calculadora IBS/CBS, Diagnóstico, Reforma Tributária */}
               <div className="flex flex-col gap-3 mt-6">
                 <Link
                   to="/"
@@ -560,7 +560,7 @@ export default function Layout() {
                   to="/servicos"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`text-base font-medium py-2 border-b border-white/5 ${
-                    location.pathname === '/servicos'
+                    location.pathname.startsWith('/servicos')
                       ? 'text-[#2ECC71] font-bold'
                       : 'text-slate-200 hover:text-[#2ECC71]'
                   }`}
@@ -575,30 +575,38 @@ export default function Layout() {
                   Sobre Nós
                 </a>
                 <a
-                  href="/#depoimentos"
-                  onClick={(e) => handleNavClick(e, 'depoimentos')}
-                  className="text-base font-medium py-2 border-b border-white/5 text-slate-200 hover:text-[#2ECC71]"
-                >
-                  Depoimentos
-                </a>
-                <Link
-                  to="/blog"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  href="/calculadora-ibs-cbs"
+                  onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
                   className={`text-base font-medium py-2 border-b border-white/5 ${
-                    location.pathname.startsWith('/blog')
+                    location.pathname === '/calculadora-ibs-cbs'
                       ? 'text-[#2ECC71] font-bold'
                       : 'text-slate-200 hover:text-[#2ECC71]'
                   }`}
                 >
-                  Blog
-                </Link>
-                <a
-                  href="/#contato"
-                  onClick={(e) => handleNavClick(e, 'contato')}
-                  className="text-base font-medium py-2 border-b border-white/5 text-slate-200 hover:text-[#2ECC71]"
-                >
-                  Contato
+                  Calculadora IBS/CBS
                 </a>
+                <a
+                  href="/diagnosticos"
+                  onClick={(e) => handleToolNav(e, '/diagnosticos')}
+                  className={`text-base font-medium py-2 border-b border-white/5 ${
+                    location.pathname.startsWith('/diagnostico')
+                      ? 'text-[#2ECC71] font-bold'
+                      : 'text-slate-200 hover:text-[#2ECC71]'
+                  }`}
+                >
+                  Diagnóstico
+                </a>
+                <Link
+                  to="/reforma-tributaria"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-base font-medium py-2 border-b border-white/5 ${
+                    location.pathname.startsWith('/reforma-tributaria')
+                      ? 'text-[#2ECC71] font-bold'
+                      : 'text-slate-200 hover:text-[#2ECC71]'
+                  }`}
+                >
+                  Reforma Tributária
+                </Link>
               </div>
             </div>
 
@@ -776,7 +784,27 @@ export default function Layout() {
                     <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
                     Diagnóstico Tributário (Hub)
                   </a>
-                </li>{' '}
+                </li>
+                <li>
+                  <a
+                    href="/#depoimentos"
+                    onClick={(e) => handleNavClick(e, 'depoimentos')}
+                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
+                    Depoimentos
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/#contato"
+                    onClick={(e) => handleNavClick(e, 'contato')}
+                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
+                    Contato
+                  </a>
+                </li>
                 <li>
                   <Link
                     to="/planos"

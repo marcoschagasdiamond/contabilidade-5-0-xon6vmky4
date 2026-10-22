@@ -612,8 +612,11 @@ export default function Index() {
                 </div>
               </div>
 
-              {/* Prova Social */}
-              <div className="pt-8 border-t border-white/15 flex items-center gap-4">
+              {/* Prova Social / Depoimentos e Avaliações */}
+              <div
+                id="depoimentos"
+                className="pt-8 border-t border-white/15 flex items-center gap-4 scroll-mt-24"
+              >
                 <div className="flex -space-x-3">
                   <img
                     src="https://img.usecurling.com/ppl/thumbnail?gender=female&seed=77"
