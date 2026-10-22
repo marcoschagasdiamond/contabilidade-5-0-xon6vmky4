@@ -212,6 +212,16 @@ export default function Layout() {
               Diagnóstico Tributário
             </a>{' '}
             <Link
+              to="/planos"
+              className={`nav-link-hover text-sm font-medium transition-colors ${
+                location.pathname === '/planos'
+                  ? 'text-[#D4AF37] font-semibold active'
+                  : 'text-slate-200 hover:text-white'
+              }`}
+            >
+              Planos
+            </Link>
+            <Link
               to="/blog"
               className={`nav-link-hover text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/blog')
@@ -412,6 +422,17 @@ export default function Layout() {
                   <span className="w-2 h-2 rounded-full bg-[#2ECC71]" />
                   Diagnóstico Tributário
                 </a>{' '}
+                <Link
+                  to="/planos"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-base font-medium py-2 border-b border-white/5 ${
+                    location.pathname === '/planos'
+                      ? 'text-[#D4AF37] font-bold'
+                      : 'text-slate-200 hover:text-[#D4AF37]'
+                  }`}
+                >
+                  Planos (Valores & Recursos)
+                </Link>
                 <Link
                   to="/blog"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -624,6 +645,15 @@ export default function Layout() {
                     Diagnóstico Tributário (Hub)
                   </a>
                 </li>{' '}
+                <li>
+                  <Link
+                    to="/planos"
+                    className="text-slate-400 hover:text-[#D4AF37] transition-colors flex items-center gap-1.5 font-medium"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    Planos & Preços (Modo Teste)
+                  </Link>
+                </li>
                 <li>
                   <Link
                     to="/blog"

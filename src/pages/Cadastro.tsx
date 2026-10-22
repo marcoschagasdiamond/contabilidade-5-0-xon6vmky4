@@ -13,6 +13,7 @@ import {
   Building2,
 } from 'lucide-react'
 import { useAuth, type PerfilUsuario } from '@/context/AuthContext'
+import { validarTokenConvite, aceitarConviteCliente } from '@/services/planos'
 
 export default function Cadastro() {
   const [nome, setNome] = useState('')
@@ -23,10 +24,47 @@ export default function Cadastro() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
+  // Estado do convite recebido via URL (?convite=TOKEN)
+  const [dadosConvite, setDadosConvite] = useState<{
+    id: string
+    email: string
+    cliente_id?: string
+    cliente_nome?: string
+    status: string
+    analista_id: string
+    analista_nome: string
+  } | null>(null)
+  const [validandoConvite, setValidandoConvite] = useState(false)
+
   const { signup, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
+
+  const tokenConvite = searchParams.get('convite')
+  const emailParam = searchParams.get('email')
+
+  // Se houver token de convite na URL, valida no backend e pré-configura para Empresário
+  React.useEffect(() => {
+    if (tokenConvite) {
+      setValidandoConvite(true)
+      validarTokenConvite(tokenConvite)
+        .then((dados) => {
+          if (dados) {
+            setDadosConvite(dados)
+            setPerfil('empresario') // Conta criada com perfil Empresário
+            if (dados.email) {
+              setEmail(dados.email)
+            }
+          }
+        })
+        .finally(() => {
+          setValidandoConvite(false)
+        })
+    } else if (emailParam) {
+      setEmail(emailParam)
+    }
+  }, [tokenConvite, emailParam])
 
   // Helper para obter o destino de retorno (state ou query param ?redirect=...)
   const getDestination = (): string | null => {
@@ -68,11 +106,25 @@ export default function Cadastro() {
     setIsLoading(true)
 
     try {
-      await signup(nome, email, password, passwordConfirm, perfil)
+      // Se tiver token de convite, força perfil 'empresario'
+      const perfilFinal: PerfilUsuario = tokenConvite ? 'empresario' : perfil
+
+      await signup(nome, email, password, passwordConfirm, perfilFinal)
+
+      // Se cadastrou via convite, chama aceitarConviteCliente para atualizar status e vínculos
+      if (tokenConvite) {
+        try {
+          await aceitarConviteCliente(tokenConvite)
+        } catch (conviteErr) {
+          console.warn('Erro ao atualizar status do convite:', conviteErr)
+        }
+      }
+
       // Após cadastrar, direciona para o destino solicitado ou conforme perfil
       // Para contador: dados-empresa ou destino
-      // Para empresário: minha-conta (ou destino se especificado)
-      const target = destination || (perfil === 'empresario' ? '/minha-conta' : '/dados-empresa')
+      // Para empresário: minha-conta
+      const target =
+        destination || (perfilFinal === 'empresario' ? '/minha-conta' : '/dados-empresa')
       navigate(target, { replace: true })
     } catch (err: any) {
       console.error('Falha no cadastro:', err)
@@ -107,21 +159,48 @@ export default function Cadastro() {
             </p>
           </div>
 
+          {/* Alerta de Convite Válido (quando acessado via ?convite=...) */}
+          {dadosConvite && (
+            <div className="mb-6 p-4 bg-gradient-to-br from-[#07132B] to-[#0d2249] text-white rounded-2xl border border-[#D4AF37] shadow-md space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider">
+                  Convite de Analista Reconhecido
+                </span>
+                <span className="text-[10px] font-bold bg-[#D4AF37] text-[#07132B] px-2 py-0.5 rounded">
+                  Modo Teste Grátis
+                </span>
+              </div>
+              <p className="leading-relaxed text-slate-200">
+                Você foi convidado por <strong>{dadosConvite.analista_nome}</strong>
+                {dadosConvite.cliente_nome
+                  ? ` para acessar os dados da empresa ${dadosConvite.cliente_nome}`
+                  : ''}
+                .
+              </p>
+              <div className="p-2.5 rounded-xl bg-white/10 border border-white/10 text-[11px] text-slate-300">
+                Sua conta será criada com o <strong>Plano Empresário</strong>, vinculado diretamente
+                à carteira do seu analista contábil.
+              </div>
+            </div>
+          )}
+
           {/* Benefícios rápidos */}
-          <div className="mb-6 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1.5">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71] shrink-0" />
-              <span>Dados salvos em nuvem vinculados à sua conta</span>
+          {!dadosConvite && (
+            <div className="mb-6 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71] shrink-0" />
+                <span>Dados salvos em nuvem vinculados à sua conta</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71] shrink-0" />
+                <span>Acesso a diagnósticos e simulações da Reforma Tributária</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71] shrink-0" />
+                <span>Atendimento consultivo personalizado pela equipe Diamond</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71] shrink-0" />
-              <span>Acesso a diagnósticos e simulações da Reforma Tributária</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71] shrink-0" />
-              <span>Atendimento consultivo personalizado pela equipe Diamond</span>
-            </div>
-          </div>
+          )}
 
           {error && (
             <div className="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-[#E74C3C] flex items-center gap-2">
@@ -133,20 +212,32 @@ export default function Cadastro() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Pergunta: Você é analista ou empresário? (SEM ÍCONES) */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
-                Você é analista ou empresário? *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Perfil de Acesso *
+                </label>
+                {dadosConvite && (
+                  <span className="text-[10px] font-bold text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded">
+                    Fixo pelo Convite
+                  </span>
+                )}
+              </div>
+
               <p className="text-xs text-slate-500 mb-3">
-                Personalizamos sua área de trabalho e ferramentas de acordo com a sua atuação.
+                {dadosConvite
+                  ? 'Como você foi convidado por um analista, seu perfil de acesso é Empresário.'
+                  : 'Personalizamos sua área de trabalho e ferramentas de acordo com a sua atuação.'}
               </p>
+
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
+                  disabled={!!dadosConvite}
                   onClick={() => setPerfil('contador')}
                   className={`py-3 px-3 rounded-xl text-left border transition-all text-xs font-heading ${
                     perfil === 'contador'
                       ? 'bg-[#07132B] text-white border-[#D4AF37] shadow-sm ring-1 ring-[#D4AF37]'
-                      : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed'
                   }`}
                 >
                   <span className="block font-bold text-sm">Analista</span>
@@ -155,12 +246,13 @@ export default function Cadastro() {
                       perfil === 'contador' ? 'text-slate-300' : 'text-slate-500'
                     }`}
                   >
-                    Gestão de carteira, clientes e ferramentas avançadas
+                    Carteira, clientes e ferramentas completas
                   </span>
                 </button>
 
                 <button
                   type="button"
+                  disabled={!!dadosConvite}
                   onClick={() => setPerfil('empresario')}
                   className={`py-3 px-3 rounded-xl text-left border transition-all text-xs font-heading ${
                     perfil === 'empresario'
@@ -174,7 +266,7 @@ export default function Cadastro() {
                       perfil === 'empresario' ? 'text-slate-300' : 'text-slate-500'
                     }`}
                   >
-                    Acompanhamento do seu negócio e seus diagnósticos
+                    Espaço do tomador de decisão (restrito à empresa)
                   </span>
                 </button>
               </div>

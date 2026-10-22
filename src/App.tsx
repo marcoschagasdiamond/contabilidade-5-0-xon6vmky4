@@ -41,6 +41,7 @@ import DiagnosticoTransicao from './pages/DiagnosticoTransicao'
 import DiagnosticoRegimes from './pages/DiagnosticoRegimes'
 import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
 import DadosEmpresa from './pages/DadosEmpresa'
+import Planos from './pages/Planos'
 import NotFound from './pages/NotFound'
 
 // Reforma Tributária (Diamond Group)
@@ -192,6 +193,7 @@ const App = () => (
                 <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
                 <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
                 <Route path="/dados-empresa" element={<DadosEmpresa />} />
+                <Route path="/planos" element={<Planos />} />
                 <Route path="/reforma-tributaria/visao-geral" element={<SubpageVisaoGeral />} />
                 <Route path="/reforma-tributaria/calendario" element={<SubpageCalendario />} />
                 <Route path="/reforma-tributaria/dicionario" element={<SubpageDicionario />} />

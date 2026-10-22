@@ -19,6 +19,11 @@ import {
 } from '@/services/conversasAssistente'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { ModalCliente } from '@/components/clientes/ModalCliente'
+import {
+  ModalConvidarCliente,
+  ListaConvitesPendentes,
+} from '@/components/clientes/ModalConvidarCliente'
+import { listarConvitesAnalista, ConviteCliente } from '@/services/planos'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
@@ -65,6 +70,19 @@ export default function DetalheCliente() {
   // Modal de leitura detalhada de conversa arquivada
   const [conversaVisualizando, setConversaVisualizando] = useState<ConversaAssistente | null>(null)
 
+  const [modalConviteAberto, setModalConviteAberto] = useState(false)
+  const [convitesDoCliente, setConvitesDoCliente] = useState<ConviteCliente[]>([])
+
+  const carregarConvitesDoCliente = React.useCallback(async () => {
+    if (!id) return
+    try {
+      const records = await listarConvitesAnalista(id)
+      setConvitesDoCliente(records)
+    } catch (e) {
+      console.warn('Erro ao carregar convites do cliente:', e)
+    }
+  }, [id])
+
   const isAtivo = clienteAtivoId === id
 
   const carregarDados = async () => {
@@ -98,7 +116,8 @@ export default function DetalheCliente() {
 
   useEffect(() => {
     carregarDados()
-  }, [id])
+    carregarConvitesDoCliente()
+  }, [id, carregarConvitesDoCliente])
 
   const abrirModalVincular = async () => {
     try {
@@ -341,6 +360,14 @@ export default function DetalheCliente() {
 
               <Button
                 type="button"
+                onClick={() => setModalConviteAberto(true)}
+                className="bg-transparent border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 font-bold text-xs"
+              >
+                Convidar Cliente
+              </Button>
+
+              <Button
+                type="button"
                 onClick={() => setModalEditarAberto(true)}
                 variant="outline"
                 className="border-white/20 text-white hover:bg-white/10 text-xs"
@@ -363,6 +390,14 @@ export default function DetalheCliente() {
 
       {/* CONTEÚDO PRINCIPAL */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        {/* CONVITES DO CLIENTE (SE HOUVER) */}
+        {convitesDoCliente.length > 0 && (
+          <ListaConvitesPendentes
+            convites={convitesDoCliente}
+            aoReenviarSucesso={() => carregarConvitesDoCliente()}
+          />
+        )}
+
         {/* CARD DE INFORMAÇÕES DE CADASTRO */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
@@ -905,6 +940,14 @@ export default function DetalheCliente() {
           </div>
         </div>
       )}
+
+      {/* MODAL DE CONVITE */}
+      <ModalConvidarCliente
+        aberto={modalConviteAberto}
+        aoFechar={() => setModalConviteAberto(false)}
+        cliente={cliente}
+        aoConviteEnviado={() => carregarConvitesDoCliente()}
+      />
 
       {/* MODAL EDITAR CLIENTE */}
       <ModalCliente

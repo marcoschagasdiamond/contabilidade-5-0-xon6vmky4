@@ -19,6 +19,16 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
+import { migrarParaAnalistaModoTeste, PLANOS_CONFIG } from '@/services/planos'
+import { useToast } from '@/hooks/use-toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { getDiagnosticos, type DiagnosticoRecord } from '@/services/diagnosticos'
 import { listarSimulacoes } from '@/services/simulacoesCalculadora'
@@ -28,8 +38,9 @@ import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
 import type { Cliente } from '@/types/cliente'
 
 export default function MinhaConta() {
-  const { user, logout, isAdmin, isContador, isEmpresario } = useAuth()
+  const { user, logout, isAdmin, isContador, isEmpresario, recarregarUsuario } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
   const { dadosEmpresa, salvoNoBanco } = useDadosEmpresa()
 
   const [meusDiagnosticos, setMeusDiagnosticos] = useState<DiagnosticoRecord[]>([])
@@ -37,6 +48,8 @@ export default function MinhaConta() {
   const [minhasConversas, setMinhasConversas] = useState<ConversaAssistente[]>([])
   const [clienteAssociado, setClienteAssociado] = useState<Cliente | null>(null)
   const [carregando, setCarregando] = useState(true)
+  const [modalMigrarAberto, setModalMigrarAberto] = useState(false)
+  const [migrando, setMigrando] = useState(false)
   const [abaEmpresario, setAbaEmpresario] = useState<'diagnosticos' | 'simulacoes' | 'conversas'>(
     'diagnosticos',
   )
@@ -150,6 +163,15 @@ export default function MinhaConta() {
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-slate-200 border border-white/20">
                     {isEmpresario ? 'Perfil: Empresário (Cliente)' : 'Perfil: Analista'}
                   </span>
+                  {isEmpresario && (
+                    <button
+                      type="button"
+                      onClick={() => setModalMigrarAberto(true)}
+                      className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#D4AF37] text-[#07132B] hover:bg-[#c49f2e] transition-colors shadow-sm"
+                    >
+                      Migrar para Analista
+                    </button>
+                  )}
                   {isAdmin && (
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#D4AF37] text-[#07132B]">
                       Administrador
@@ -365,7 +387,14 @@ export default function MinhaConta() {
             {/* Informações da Conta Empresário */}
             {isEmpresario && (
               <div className="bg-white rounded-2xl p-5 border border-slate-200 text-xs space-y-3">
-                <span className="font-bold text-[#07132B] block text-sm">Espaço do Empresário</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[#07132B] block text-sm">
+                    Espaço do Empresário
+                  </span>
+                  <span className="text-[10px] font-bold uppercase text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
+                    Plano R$ 127/mês
+                  </span>
+                </div>
                 <p className="text-slate-600 leading-relaxed text-xs">
                   Aqui você tem total visibilidade das análises e cálculos tributários da sua
                   empresa, mantendo você bem informado e seguro sobre o impacto da Reforma
@@ -384,6 +413,32 @@ export default function MinhaConta() {
                     </span>
                   </div>
                 )}
+
+                {/* Box de Upgrade / Migração para Analista */}
+                <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#07132B] to-[#0d2249] text-white space-y-2 border border-[#D4AF37]/40 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider">
+                      Upgrade Disponível
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-bold">
+                      Modo Teste Grátis
+                    </span>
+                  </div>
+                  <strong className="block text-xs font-bold text-white">
+                    Deseja atender outros clientes e gerenciar carteira?
+                  </strong>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Migre para o Plano Analista ({PLANOS_CONFIG.analista.precoMensalTexto}/mês) e
+                    libere Carteira completa, fichas de clientes e envio de convites.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() => setModalMigrarAberto(true)}
+                    className="w-full text-xs font-bold py-2 bg-[#D4AF37] text-[#07132B] hover:bg-[#c49f2e] rounded-lg mt-1"
+                  >
+                    Migrar para Analista
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -771,6 +826,106 @@ export default function MinhaConta() {
           </div>
         </div>
       </div>
+
+      {/* MODAL EXPLICATIVO DE MIGRAÇÃO PARA ANALISTA (MODO TESTE) */}
+      <Dialog open={modalMigrarAberto} onOpenChange={setModalMigrarAberto}>
+        <DialogContent className="sm:max-w-md bg-[#07132B] text-white border-2 border-[#D4AF37] rounded-2xl p-6 sm:p-8 shadow-2xl">
+          <DialogHeader className="space-y-3 text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#D4AF37] text-xs font-bold uppercase tracking-wider">
+              <span>Modo Teste Ativo</span>
+            </div>
+            <DialogTitle className="font-heading font-extrabold text-xl text-white">
+              Migrar para Perfil Analista
+            </DialogTitle>
+            <DialogDescription className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+              Você está prestes a atualizar sua conta de <strong>Empresário</strong> (R$ 127/mês)
+              para <strong>Analista</strong> (R$ 347/mês). No modo de testes atual, a migração
+              ocorre na hora, de forma gratuita e sem cobrança.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-3 text-xs">
+            <span className="font-bold text-[#D4AF37] uppercase tracking-wider block">
+              Recursos que serão liberados na sua conta:
+            </span>
+            <div className="space-y-2 text-slate-200">
+              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#2ECC71] shrink-0" />
+                <span>
+                  <strong>Carteira de Clientes:</strong> Painel analítico consolidado e gráficos
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#2ECC71] shrink-0" />
+                <span>
+                  <strong>Gestão de Clientes:</strong> Cadastro e histórico completo de empresas
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#2ECC71] shrink-0" />
+                <span>
+                  <strong>Envio de Convites:</strong> Disparo de convites para seus clientes
+                  acessarem
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-amber-500/15 border border-[#D4AF37]/40 text-amber-200 text-[11px] leading-relaxed">
+              <strong>Modo de Avaliação:</strong> Sem cartão de crédito nem cobrança nesta fase. A
+              cobrança do plano ({PLANOS_CONFIG.analista.precoMensalTexto}/mês) será ativada
+              posteriormente.
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalMigrarAberto(false)}
+              className="text-xs border-white/20 text-slate-300 hover:bg-white/10"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={migrando}
+              onClick={async () => {
+                setMigrando(true)
+                try {
+                  const res = await migrarParaAnalistaModoTeste()
+                  if (res.success) {
+                    await recarregarUsuario()
+                    toast({
+                      title: 'Perfil Migrado para Analista!',
+                      description:
+                        'Recursos liberados: Carteira, Clientes e Convites agora estão disponíveis.',
+                    })
+                    setModalMigrarAberto(false)
+                    navigate('/carteira')
+                  } else {
+                    toast({
+                      title: 'Erro',
+                      description: res.error || 'Não foi possível migrar seu perfil.',
+                      variant: 'destructive',
+                    })
+                  }
+                } catch (_) {
+                  toast({
+                    title: 'Erro',
+                    description: 'Falha na comunicação com o servidor.',
+                    variant: 'destructive',
+                  })
+                } finally {
+                  setMigrando(false)
+                }
+              }}
+              className="flex-1 bg-[#D4AF37] text-[#07132B] hover:bg-[#c49f2e] font-bold text-xs"
+            >
+              {migrando ? 'Migrando Perfil...' : 'Confirmar Migração (Sem Cobrança)'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

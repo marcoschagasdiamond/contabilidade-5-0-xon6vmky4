@@ -2,6 +2,11 @@ import React, { useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { ModalCliente } from '@/components/clientes/ModalCliente'
+import {
+  ModalConvidarCliente,
+  ListaConvitesPendentes,
+} from '@/components/clientes/ModalConvidarCliente'
+import { listarConvitesAnalista, ConviteCliente } from '@/services/planos'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,7 +37,23 @@ export default function Clientes() {
   const [busca, setBusca] = useState('')
   const [filtroRegime, setFiltroRegime] = useState<string>('todos')
   const [modalAberto, setModalAberto] = useState(false)
+  const [modalConviteAberto, setModalConviteAberto] = useState(false)
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null)
+  const [clienteParaConvidar, setClienteParaConvidar] = useState<Cliente | null>(null)
+  const [convites, setConvites] = useState<ConviteCliente[]>([])
+
+  const carregarConvites = React.useCallback(async () => {
+    try {
+      const records = await listarConvitesAnalista()
+      setConvites(records)
+    } catch (e) {
+      console.warn('Erro ao carregar convites:', e)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    carregarConvites()
+  }, [carregarConvites])
 
   const clientesFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase()
@@ -88,6 +109,16 @@ export default function Clientes() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                onClick={() => {
+                  setClienteParaConvidar(null)
+                  setModalConviteAberto(true)
+                }}
+                className="bg-transparent border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 font-bold text-xs px-4 py-2.5 rounded-xl transition-colors"
+              >
+                Convidar Cliente
+              </Button>
               <Button
                 type="button"
                 onClick={handleNovoCliente}
@@ -280,14 +311,26 @@ export default function Clientes() {
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setClienteParaConvidar(cliente)
+                          setModalConviteAberto(true)
+                        }}
+                        className="text-xs font-bold text-[#07132B] hover:text-[#D4AF37] bg-amber-50 hover:bg-amber-100 border border-[#D4AF37]/40 px-2.5 py-1.5 rounded-lg transition-colors"
+                        title="Convidar empresário por e-mail"
+                      >
+                        Convidar
+                      </button>
+                      <button
+                        type="button"
                         onClick={(e) => handleEditarCliente(cliente, e)}
-                        className="text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg font-medium transition-colors"
+                        className="text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded-lg font-medium transition-colors"
                       >
                         Editar
                       </button>
                       <Link
                         to={`/clientes/${cliente.id}`}
-                        className="text-xs font-semibold text-[#07132B] hover:text-[#D4AF37] bg-white border border-slate-200 hover:border-[#07132B] px-3 py-1.5 rounded-lg transition-colors"
+                        className="text-xs font-semibold text-[#07132B] hover:text-[#D4AF37] bg-white border border-slate-200 hover:border-[#07132B] px-2.5 py-1.5 rounded-lg transition-colors"
                       >
                         Histórico →
                       </Link>
@@ -298,7 +341,19 @@ export default function Clientes() {
             })}
           </div>
         )}
+
+        {/* LISTA DE CONVITES PENDENTES & REENVIO */}
+        <ListaConvitesPendentes convites={convites} aoReenviarSucesso={() => carregarConvites()} />
       </div>
+
+      {/* MODAL DE CONVIDAR CLIENTE */}
+      <ModalConvidarCliente
+        aberto={modalConviteAberto}
+        aoFechar={() => setModalConviteAberto(false)}
+        cliente={clienteParaConvidar}
+        clientesDisponiveis={clientes}
+        aoConviteEnviado={() => carregarConvites()}
+      />
 
       {/* MODAL DE CADASTRO / EDIÇÃO */}
       <ModalCliente
