@@ -20,10 +20,22 @@ import {
   LISTA_ANOS_TRANSICAO,
   PRESETS_SETORES_LC214,
 } from '@/types/calculadoraIbsCbs'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import { ModalCliente } from '@/components/clientes/ModalCliente'
+import { Badge } from '@/components/ui/badge'
 
 export default function Modulo1Configuracoes() {
   const { config, updateConfig, resetConfig, aplicarAnoTransicao, aplicarPresetSetor } =
     useCalculadoraIbsCbs()
+  const {
+    clienteAtivo,
+    clienteAtivoId,
+    clientes,
+    carregando: carregandoClientes,
+    selecionarClienteAtivo,
+    recarregarClientes,
+  } = useClienteAtivo()
+  const [modalNovoClienteAberto, setModalNovoClienteAberto] = React.useState(false)
 
   const handleInputChange = (field: keyof typeof config, value: string) => {
     const limpo = value.replace(',', '.')
@@ -105,6 +117,89 @@ export default function Modulo1Configuracoes() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-5 sm:p-6 space-y-4">
+          {/* CAMPO NOVO: Cliente desta Simulação sincronizado com o topo + Botão de texto Cadastrar Novo Cliente */}
+          <div className="p-4 rounded-xl bg-[#07132B] text-white border border-[#D4AF37]/35 shadow-sm space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                    clienteAtivo ? 'bg-[#D4AF37] animate-pulse' : 'bg-slate-500'
+                  }`}
+                />
+                <Label
+                  htmlFor="seletorClienteSimulacaoM1"
+                  className="text-xs font-bold text-slate-200 uppercase tracking-wider cursor-pointer"
+                >
+                  Cliente desta Simulação
+                </Label>
+                <span className="text-[10px] text-slate-400 font-normal">
+                  (sincronizado com o seletor do topo)
+                </span>
+              </div>
+
+              {/* Botão de texto Cadastrar Novo Cliente — Padrão Diamond Group, sem ícones */}
+              <button
+                type="button"
+                onClick={() => setModalNovoClienteAberto(true)}
+                className="self-start sm:self-auto text-xs font-bold text-[#D4AF37] hover:text-[#E5C158] hover:underline bg-white/5 hover:bg-white/10 border border-[#D4AF37]/40 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              >
+                Cadastrar Novo Cliente
+              </button>
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
+              {/* Dropdown nativo estilizado idêntico ao topo */}
+              <select
+                id="seletorClienteSimulacaoM1"
+                value={clienteAtivoId || ''}
+                onChange={(e) => selecionarClienteAtivo(e.target.value || null)}
+                disabled={carregandoClientes}
+                className="w-full md:max-w-md bg-[#0D1D3A] text-white text-xs font-semibold rounded-lg px-3 py-2 border border-[#D4AF37]/40 focus:outline-none focus:ring-1 focus:ring-[#D4AF37] truncate cursor-pointer"
+                aria-label="Selecionar cliente desta simulação"
+              >
+                <option value="">Sem cliente (Modo Teste / Geral)</option>
+                {clientes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome} {c.cnpj_cpf ? `• ${c.cnpj_cpf}` : ''} ({c.uf})
+                  </option>
+                ))}
+              </select>
+
+              {/* Badges do cliente ativo selecionado */}
+              {clienteAtivo ? (
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <Badge className="bg-[#D4AF37] text-[#07132B] hover:bg-[#D4AF37] font-bold text-[10px] px-2 py-0.5">
+                    {clienteAtivo.regime_atual}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-white/20 text-slate-300 text-[10px] px-2 py-0.5"
+                  >
+                    {clienteAtivo.segmento}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-[#D4AF37]/40 text-[#D4AF37] text-[10px] px-1.5 py-0.5"
+                  >
+                    UF: {clienteAtivo.uf}
+                  </Badge>
+                  {clienteAtivo.cnpj_cpf && (
+                    <span className="text-[11px] font-mono text-slate-300 hidden sm:inline">
+                      CNPJ: {clienteAtivo.cnpj_cpf}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="border-slate-600 text-slate-400 text-[10px] px-2 py-0.5 self-start md:self-auto"
+                >
+                  Simulação em Modo Teste / Geral (sem vínculo a cliente)
+                </Badge>
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Seletor 1: Ano da Transição (Ano atual + 2026–2033) — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
             <div className="space-y-2">
@@ -811,6 +906,16 @@ export default function Modulo1Configuracoes() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Cadastro de Novo Cliente */}
+      <ModalCliente
+        open={modalNovoClienteAberto}
+        onOpenChange={setModalNovoClienteAberto}
+        onSalvoComSucesso={async (novo) => {
+          await recarregarClientes()
+          selecionarClienteAtivo(novo.id)
+        }}
+      />
     </div>
   )
 }
