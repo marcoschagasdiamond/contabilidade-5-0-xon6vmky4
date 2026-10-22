@@ -3638,7 +3638,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   Próximo Passo Recomendado
                 </span>
                 <h3 className="font-heading font-bold text-2xl sm:text-3xl text-white tracking-tight">
-                  Valide este enquadramento com nossos contadores especialistas
+                  Valide este enquadramento com nossos analistas especialistas
                 </h3>
                 <p className="text-slate-300 text-sm mt-2 leading-relaxed">
                   Nosso time realiza uma auditoria aprofundada das notas fiscais, despesas e folhas
@@ -3734,7 +3734,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                       partir dos tetos constitucionais e ainda dependem de resolução final pelo
                       Senado Federal e pelo Comitê Gestor do IBS (CGIBS). Esta simulação não
                       substitui a orientação contábil individualizada nem dispensa o parecer formal
-                      de um contador habilitado no CRC.
+                      de um analista ou contabilista habilitado no CRC.
                     </strong>
                   </p>
                   <ul className="list-disc pl-5 space-y-1 text-amber-900/90">

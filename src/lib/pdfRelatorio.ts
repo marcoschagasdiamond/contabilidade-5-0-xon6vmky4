@@ -644,7 +644,7 @@ export function gerarRelatorioDiagnosticoPDF({ dados, resultado }: GerarPdfOptio
   doc.setFontSize(6.5)
   doc.setTextColor(127, 29, 29)
   const avisoLinhas = doc.splitTextToSize(
-    'Este diagnóstico é uma simulação preliminar e estimativa fiscal elaborada com base nos dados prestados pelo usuário e nos marcos legais da Reforma Tributária (EC 132/2023, LC 214/2025 e ADCT). As alíquotas de referência da CBS (~8,8%) e do IBS (~17,7%) foram projetadas a partir dos limites constitucionais e ainda dependem de resolução final pelo Senado Federal e Comitê Gestor (CGIBS). Não substitui planejamento tributário formal nem parecer emitido por contador registrado perante o CRC.',
+    'Este diagnóstico é uma simulação preliminar e estimativa fiscal elaborada com base nos dados prestados pelo usuário e nos marcos legais da Reforma Tributária (EC 132/2023, LC 214/2025 e ADCT). As alíquotas de referência da CBS (~8,8%) e do IBS (~17,7%) foram projetadas a partir dos limites constitucionais e ainda dependem de resolução final pelo Senado Federal e Comitê Gestor (CGIBS). Não substitui planejamento tributário formal nem parecer emitido por analista ou contabilista registrado perante o CRC.',
     contentWidth - 8,
   )
   doc.text(avisoLinhas, margin + 4, currentY + 9.5)

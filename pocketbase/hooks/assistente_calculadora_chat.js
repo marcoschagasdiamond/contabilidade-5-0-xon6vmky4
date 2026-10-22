@@ -35,7 +35,7 @@ routerAdd(
         promptParaAgente = `[CONTEXTO DO CLIENTE ATIVO NA SESSÃO:
 Nome do Cliente: "${clienteNome}"
 ID do Cliente: "${clienteId}"
-INSTRUÇÃO OBRIGATÓRIA: Considere preferencialmente as simulações salvas na coleção "simulacoes_calculadora" cujo campo "cliente_id" seja igual a "${clienteId}" ou cujo campo "empresa"/"nome" faça referência a "${clienteNome}". Caso não haja simulações para este cliente, mencione isso explicitamente ao contador.]
+INSTRUÇÃO OBRIGATÓRIA: Considere preferencialmente as simulações salvas na coleção "simulacoes_calculadora" cujo campo "cliente_id" seja igual a "${clienteId}" ou cujo campo "empresa"/"nome" faça referência a "${clienteNome}". Caso não haja simulações para este cliente, mencione isso explicitamente ao analista.]
 
 Pergunta do Usuário:
 ${message}`

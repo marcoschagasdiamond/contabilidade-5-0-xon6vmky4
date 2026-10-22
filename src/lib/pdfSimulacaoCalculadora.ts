@@ -216,7 +216,7 @@ export function adicionarBlocoAssinatura(
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8.5)
   doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
-  const nomeAssina = dados?.nome ? dados.nome.toUpperCase() : 'CONTADOR RESPONSÁVEL'
+  const nomeAssina = dados?.nome ? dados.nome.toUpperCase() : 'ANALISTA RESPONSÁVEL'
   doc.text(nomeAssina, x + width / 2, linhaY + 4.5, { align: 'center' })
 
   doc.setFont('helvetica', 'normal')
@@ -1017,7 +1017,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
 
   currentY += 38
 
-  // Box Observações do Contador
+  // Box Observações do Analista
   doc.setFillColor(255, 255, 255)
   doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
   doc.roundedRect(margin, currentY, contentWidth, 36, 2, 2, 'D')
@@ -1025,7 +1025,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8.5)
   doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
-  doc.text('NOTAS & OBSERVAÇÕES ESPECÍFICAS DO CONTADOR', margin + 5, currentY + 6)
+  doc.text('NOTAS & OBSERVAÇÕES ESPECÍFICAS DO ANALISTA', margin + 5, currentY + 6)
 
   const textoObs =
     observacoesContador ||

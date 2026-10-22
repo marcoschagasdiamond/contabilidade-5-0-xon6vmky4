@@ -284,8 +284,8 @@ export default function BlogPost() {
                   Deseja avaliar o impacto dessa mudança na sua empresa?
                 </h3>
                 <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                  Nossos contadores e consultores tributários realizam um diagnóstico sem custos
-                  para identificar economias e adequar seu regime com total segurança jurídica.
+                  Nossos analistas e consultores tributários realizam um diagnóstico sem custos para
+                  identificar economias e adequar seu regime com total segurança jurídica.
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
                   <Link

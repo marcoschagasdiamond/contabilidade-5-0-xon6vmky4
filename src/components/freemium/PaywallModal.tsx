@@ -160,7 +160,7 @@ export function PaywallModal({
               <div>
                 <strong className="text-white block">Auditoria Tributária</strong>
                 <span className="text-slate-400 text-[11px]">
-                  Suporte direto de contadores sênior
+                  Suporte direto de analistas seniores
                 </span>
               </div>
             </div>

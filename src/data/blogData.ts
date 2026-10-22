@@ -165,7 +165,7 @@ export const blogPosts: BlogPost[] = [
       'Módulo 4 — Simulador de Créditos Antes × Depois: Permite listar suas despesas operacionais (aluguel comercial, compras de mercadorias, insumos industriais, serviços tomados de terceiros, energia elétrica e telecomunicações) e calcular o crédito tributário recuperável no novo modelo comparado ao modelo cumulativo antigo.',
       'Módulo 5 — Cronograma de Transição 2026–2033: Veja a evolução ano a ano do seu desembolso fiscal durante toda a década: o teste operacional de 2026 (CBS 0,9% e IBS 0,1%), a chegada da CBS plena em 2027, o desmonte gradual de ICMS/ISS entre 2029 e 2032 e a consolidação do IBS pleno em 2033.',
       'Módulo 6 — Dashboard Executivo Consolidado: Gráficos comparativos de faturamento versus tributos, percentuais de carga efetiva sobre a receita líquida e alertas estratégicos específicos para o perfil do seu CNAE.',
-      'Quem deve utilizar a calculadora hoje mesmo? Sócios e fundadores planejando investimentos de longo prazo; diretores comerciais que precisam precificar contratos plurianuais com clientes B2B; e contadores que querem oferecer orientações fundamentadas com dados reais.',
+      'Quem deve utilizar a calculadora hoje mesmo? Sócios e fundadores planejando investimentos de longo prazo; diretores comerciais que precisam precificar contratos plurianuais com clientes B2B; e analistas tributários que querem oferecer orientações fundamentadas com dados reais.',
       'Além da calculadora rápida, nosso site disponibiliza o Diagnóstico Tributário Aprofundado em /diagnostico, onde nossos especialistas analisam detalhadamente o balanço, a folha de pagamento e o histórico fiscal da sua empresa.',
     ],
   },
@@ -352,7 +352,7 @@ export const blogPosts: BlogPost[] = [
       buttonLink: '/servicos',
     },
     content: [
-      'Muitos empresários enxergam o Balanço Patrimonial apenas como uma obrigação entregue anualmente ao contador. No entanto, ele é a mais precisa radiografia patrimonial e de solidez do seu negócio.',
+      'Muitos empresários enxergam o Balanço Patrimonial apenas como uma obrigação entregue anualmente ao analista ou à contabilidade. No entanto, ele é a mais precisa radiografia patrimonial e de solidez do seu negócio.',
       'Em menos de 5 minutos, você pode extrair três respostas vitais:',
       '1. Minha empresa tem liquidez para honrar os compromissos imediatos? Divida o Ativo Circulante (dinheiro em caixa, contas a receber, estoques de curto prazo) pelo Passivo Circulante (dívidas com vencimento em até 12 meses). Se o resultado for maior que 1,2, sua empresa respira com segurança.',
       '2. Quanto do capital utilizado pertence de fato aos sócios? Analise o Patrimônio Líquido em relação ao Passivo Total. Uma empresa com alto índice de endividamento bancário pode sofrer com oscilações das taxas de juros (Selic).',

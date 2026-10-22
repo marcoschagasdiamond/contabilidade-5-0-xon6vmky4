@@ -1273,7 +1273,7 @@ export default function DadosEmpresa() {
       {/* FOOTER CTA DIAMOND */}
       <DiamondFooterCTA
         titulo="Dúvidas sobre o preenchimento ou parametrização tributária?"
-        subtitulo="Nossa equipe de contadores e tributaristas pode realizar um diagnóstico assistido para identificar créditos ocultos e o melhor regime para o seu negócio."
+        subtitulo="Nossa equipe de analistas e tributaristas pode realizar um diagnóstico assistido para identificar créditos ocultos e o melhor regime para o seu negócio."
       />
     </div>
   )

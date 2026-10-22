@@ -79,7 +79,7 @@ export default function ContabilidadeDigital() {
     {
       icon: ShieldCheck,
       title: 'Rigor Técnico & CRC',
-      desc: 'Equipe de contadores seniores com registro ativo no CRC/CFC, aplicando as normas contábeis brasileiras (NBC) e internacionais (IFRS) com total conformidade.',
+      desc: 'Equipe de analistas contábeis seniores com registro ativo no CRC/CFC, aplicando as normas contábeis brasileiras (NBC) e internacionais (IFRS) com total conformidade.',
     },
     {
       icon: TrendingUp,
@@ -89,7 +89,7 @@ export default function ContabilidadeDigital() {
     {
       icon: Clock,
       title: 'Atendimento Consultivo',
-      desc: 'Contador dedicado que conhece a fundo seu negócio, disponível por WhatsApp, videochamada e e-mail com resposta em até 24 horas úteis.',
+      desc: 'Analista dedicado que conhece a fundo seu negócio, disponível por WhatsApp, videochamada e e-mail com resposta em até 24 horas úteis.',
     },
   ]
 

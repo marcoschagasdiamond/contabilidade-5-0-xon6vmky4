@@ -88,7 +88,7 @@ export default function GestaoFiscalTributaria() {
     {
       icon: Clock,
       title: 'Consultoria Especializada',
-      desc: 'Tributaristas e contadores seniores dedicados ao seu negócio, com suporte ágil por WhatsApp, videochamadas e relatórios mensais sem juridiquês.',
+      desc: 'Tributaristas e analistas fiscais seniores dedicados ao seu negócio, com suporte ágil por WhatsApp, videochamadas e relatórios mensais sem juridiquês.',
     },
   ]
 

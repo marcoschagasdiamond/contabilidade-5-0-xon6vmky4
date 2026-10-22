@@ -214,7 +214,7 @@ export default function AssessoriaTributaria() {
             </h2>
             <p className="text-base text-slate-600 leading-relaxed">
               O sistema tributário brasileiro penaliza empresas que não auditam suas próprias
-              declarações. Nossa equipe combina juristas, auditores e contadores sênior para
+              declarações. Nossa equipe combina juristas, auditores e analistas seniores para
               resgatar valores pagos a maior, renegociar passivos paralisantes e construir defesas
               fiscais antes mesmo da intimação formal.
             </p>
@@ -629,7 +629,7 @@ export default function AssessoriaTributaria() {
                   <li className="flex items-start gap-2">
                     <span className="text-[#2ECC71] font-bold">•</span>
                     <span>
-                      Atuação multidisciplinar: tributaristas, contadores e advogados seniores
+                      Atuação multidisciplinar: tributaristas, analistas e advogados seniores
                     </span>
                   </li>
                 </ul>

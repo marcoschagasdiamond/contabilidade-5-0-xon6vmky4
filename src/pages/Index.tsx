@@ -334,7 +334,7 @@ export default function Index() {
                     Atendimento Consultivo
                   </h3>
                   <p className="text-xs text-slate-300 leading-relaxed">
-                    Sem robôs impessoais: contadores e tributaristas seniores dedicados ao dia a dia
+                    Sem robôs impessoais: analistas e tributaristas seniores dedicados ao dia a dia
                     da sua empresa.
                   </p>
                 </div>

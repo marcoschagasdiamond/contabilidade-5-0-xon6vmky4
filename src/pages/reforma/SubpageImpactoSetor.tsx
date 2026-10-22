@@ -174,7 +174,7 @@ export default function SubpageImpactoSetor() {
                   <CheckCircle2 className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
                   <div>
                     <strong className="text-[#D4AF37] font-semibold block mb-0.5">
-                      Resposta sugerida pelo contador:
+                      Resposta sugerida pelo analista:
                     </strong>
                     {item.respostaPronta}
                   </div>
