@@ -9,6 +9,7 @@ import {
   PRESETS_SETORES_LC214,
 } from '@/types/calculadoraIbsCbs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { QuadroAssistenteAnalise } from '@/components/calculadora/QuadroAssistenteAnalise'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -1055,6 +1056,9 @@ export default function Modulo6Dashboard({
           )
         })()}
       </div>
+
+      {/* QUADRO DO ASSISTENTE DE ANÁLISE — CALCULADORA IBS/CBS (AGENTE NATIVO SKIP CLOUD) */}
+      <QuadroAssistenteAnalise abertoInicial={false} />
 
       {/* BLOCO: CONCLUSÃO ANALÍTICA (ENTRE OS KPIS E O QUADRO/GRÁFICOS) */}
       {/* Padrão Visual Diamond Group: verde escuro/dourado, cards escuros, SEM ícones */}
