@@ -10,6 +10,7 @@ const LOCAL_STORAGE_SIMULACOES_KEY = 'contabilidade50_simulacoes_calculadora_v1'
 
 interface PocketBaseSimulacaoRecord extends RecordModel {
   user_id?: string
+  cliente_id?: string
   nome: string
   empresa?: string
   cnpj?: string
@@ -52,11 +53,13 @@ export function salvarSimulacaoLocal(
   resultados: ResultadosSimulacaoCalculadora,
   empresa?: string,
   cnpj?: string,
+  clienteId?: string | null,
 ): SimulacaoCalculadora {
   const lista = carregarSimulacoesLocais()
   const nova: SimulacaoCalculadora = {
     id: 'local_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
     nome,
+    cliente_id: clienteId || null,
     empresa: empresa || parametros.empresa || '',
     cnpj: cnpj || parametros.cnpj || '',
     parametros,
@@ -117,6 +120,7 @@ function recordToSimulacao(rec: PocketBaseSimulacaoRecord): SimulacaoCalculadora
   return {
     id: rec.id,
     user_id: rec.user_id,
+    cliente_id: rec.cliente_id || null,
     nome: rec.nome,
     empresa: rec.empresa || '',
     cnpj: rec.cnpj || '',
@@ -147,14 +151,16 @@ export async function salvarSimulacao(dados: {
   empresa?: string
   cnpj?: string
   userId?: string | null
+  clienteId?: string | null
 }): Promise<SimulacaoCalculadora> {
   const authUser = pb.authStore.record
   const effectiveUserId = dados.userId || authUser?.id
 
   if (effectiveUserId) {
     try {
-      const payload = {
+      const payload: Record<string, any> = {
         user_id: effectiveUserId,
+        cliente_id: dados.clienteId || '',
         nome: dados.nome.trim(),
         empresa: dados.empresa || dados.parametros.empresa || '',
         cnpj: dados.cnpj || dados.parametros.cnpj || '',
@@ -179,6 +185,7 @@ export async function salvarSimulacao(dados: {
         dados.resultados,
         dados.empresa,
         dados.cnpj,
+        dados.clienteId,
       )
     }
   }
@@ -190,6 +197,7 @@ export async function salvarSimulacao(dados: {
     dados.resultados,
     dados.empresa,
     dados.cnpj,
+    dados.clienteId,
   )
 }
 
@@ -271,4 +279,39 @@ export async function renomearSimulacao(
     renomearSimulacaoLocal(simulacao.id, nomeTrim)
     return true
   }
+}
+
+/**
+ * Vincula uma simulação a um cliente
+ */
+export async function vincularSimulacaoACliente(
+  simulacaoId: string,
+  clienteId: string | null,
+): Promise<boolean> {
+  try {
+    await pb.collection('simulacoes_calculadora').update(simulacaoId, {
+      cliente_id: clienteId || '',
+    })
+    return true
+  } catch (err) {
+    console.error('Erro ao vincular simulação ao cliente:', err)
+    // Tenta atualizar no local storage se for o caso
+    const locais = carregarSimulacoesLocais()
+    const atualizadas = locais.map((item) =>
+      item.id === simulacaoId ? { ...item, cliente_id: clienteId || null } : item,
+    )
+    salvarSimulacoesLocais(atualizadas)
+    return true
+  }
+}
+
+/**
+ * Lista simulações vinculadas a um cliente específico
+ */
+export async function listarSimulacoesPorCliente(
+  clienteId: string,
+): Promise<SimulacaoCalculadora[]> {
+  if (!clienteId) return []
+  const todas = await listarSimulacoes()
+  return todas.filter((s) => s.cliente_id === clienteId)
 }

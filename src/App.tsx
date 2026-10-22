@@ -6,6 +6,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { DadosEmpresaProvider } from '@/context/DadosEmpresaContext'
+import { ClienteAtivoProvider } from '@/context/ClienteAtivoContext'
 import Layout from './components/Layout'
 
 // Pages
@@ -30,6 +31,8 @@ import RecuperarSenha from './pages/RecuperarSenha'
 import RedefinirSenha from './pages/RedefinirSenha'
 import MinhaConta from './pages/MinhaConta'
 import Admin from './pages/Admin'
+import Clientes from './pages/Clientes'
+import DetalheCliente from './pages/DetalheCliente'
 import Diagnostico from './pages/Diagnostico'
 import DiagnosticosHub from './pages/DiagnosticosHub'
 import Diagnostico360 from './pages/Diagnostico360'
@@ -100,134 +103,142 @@ const App = () => (
     <AuthProvider>
       <TooltipProvider>
         <DadosEmpresaProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route element={<Layout />}>
-              {/* Landing page principal */}
-              <Route path="/" element={<Index />} />
-              {/* Redirecionamento da URL antiga /sobre para a seção na Home /#sobre */}
-              <Route path="/sobre" element={<Navigate to="/#sobre" replace />} />
-              {/* Páginas institucionais */}
-              <Route path="/servicos" element={<Servicos />} />
-              <Route path="/servicos/contabilidade-digital" element={<ContabilidadeDigital />} />
-              <Route
-                path="/contabilidade-digital"
-                element={<Navigate to="/servicos/contabilidade-digital" replace />}
-              />
-              <Route
-                path="/servicos/gestao-fiscal-tributaria"
-                element={<GestaoFiscalTributaria />}
-              />
-              <Route
-                path="/gestao-fiscal-tributaria"
-                element={<Navigate to="/servicos/gestao-fiscal-tributaria" replace />}
-              />
-              <Route path="/servicos/departamento-pessoal" element={<DepartamentoPessoal />} />
-              <Route
-                path="/departamento-pessoal"
-                element={<Navigate to="/servicos/departamento-pessoal" replace />}
-              />
-              <Route path="/servicos/consultoria-financeira" element={<ConsultoriaFinanceira />} />
-              <Route
-                path="/consultoria-financeira"
-                element={<Navigate to="/servicos/consultoria-financeira" replace />}
-              />
-              <Route
-                path="/servicos/planejamento-sucessorio"
-                element={<PlanejamentoSucessorio />}
-              />
-              <Route
-                path="/planejamento-sucessorio"
-                element={<Navigate to="/servicos/planejamento-sucessorio" replace />}
-              />
-              <Route path="/servicos/assessoria-tributaria" element={<AssessoriaTributaria />} />
-              <Route
-                path="/assessoria-tributaria"
-                element={<Navigate to="/servicos/assessoria-tributaria" replace />}
-              />
-              <Route path="/servicos/treinamento" element={<TreinamentoCapacitacao />} />
-              <Route
-                path="/treinamento"
-                element={<Navigate to="/servicos/treinamento" replace />}
-              />
-              <Route path="/servicos/bpo-contabil" element={<BpoContabil />} />
-              <Route
-                path="/bpo-contabil"
-                element={<Navigate to="/servicos/bpo-contabil" replace />}
-              />
-              <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
-              <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
-              <Route path="/dados-empresa" element={<DadosEmpresa />} />
-              <Route path="/reforma-tributaria/visao-geral" element={<SubpageVisaoGeral />} />
-              <Route path="/reforma-tributaria/calendario" element={<SubpageCalendario />} />
-              <Route path="/reforma-tributaria/dicionario" element={<SubpageDicionario />} />
-              <Route
-                path="/reforma-tributaria/impacto-por-setor"
-                element={<SubpageImpactoSetor />}
-              />
-              <Route path="/reforma-tributaria/excecoes" element={<SubpageExcecoes />} />
-              {/* Redirecionamentos: módulos 6 e 7 da reforma migrados para a trilha oficial de diagnósticos */}
-              <Route
-                path="/reforma-tributaria/comparador"
-                element={<Navigate to="/diagnostico-regimes" replace />}
-              />
-              <Route
-                path="/reforma-tributaria/diagnostico-reforma"
-                element={<Navigate to="/diagnostico-transicao" replace />}
-              />
-              <Route
-                path="/reforma-tributaria/painel-carteira"
-                element={<SubpagePainelCarteira />}
-              />
-              <Route path="/reforma-tributaria/split-payment" element={<SubpageSplitPayment />} />
-              <Route
-                path="/reforma-tributaria/reforma-na-pratica"
-                element={<SubpageReformaNaPratica />}
-              />
-              <Route
-                path="/reforma-tributaria/kit-precificacao"
-                element={<Navigate to="/reforma-tributaria" replace />}
-              />
-              <Route path="/reforma-tributaria/glossario" element={<SubpageGlossarioFontes />} />
-              {/* Hub e Trilha dos 4 Diagnósticos Tributários */}
-              <Route path="/diagnosticos" element={<DiagnosticosHub />} />
-              <Route path="/diagnostico-360" element={<Diagnostico360 />} />
-              <Route path="/diagnostico-transicao" element={<DiagnosticoTransicao />} />
-              <Route path="/diagnostico-regimes" element={<DiagnosticoRegimes />} />
-              <Route path="/diagnostico" element={<Diagnostico />} />
-              <Route path="/blog" element={<Blog />} />{' '}
-              <Route path="/blog/:slug" element={<BlogPost />} />
-              <Route path="/contato" element={<Contato />} />
-              <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
-              <Route path="/termos-de-uso" element={<TermosDeUso />} />
-              {/* Autenticação & Conta do Cliente */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/cadastro" element={<Cadastro />} />
-              <Route path="/recuperar-senha" element={<RecuperarSenha />} />
-              <Route path="/redefinir-senha" element={<RedefinirSenha />} />
-              <Route
-                path="/minha-conta"
-                element={
-                  <ProtectedRoute>
-                    <MinhaConta />
-                  </ProtectedRoute>
-                }
-              />
-              {/* Rota Protegida Admin */}
-              <Route
-                path="/admin"
-                element={
-                  <AdminRoute>
-                    <Admin />
-                  </AdminRoute>
-                }
-              />
-            </Route>
+          <ClienteAtivoProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route element={<Layout />}>
+                {/* Landing page principal */}
+                <Route path="/" element={<Index />} />
+                {/* Redirecionamento da URL antiga /sobre para a seção na Home /#sobre */}
+                <Route path="/sobre" element={<Navigate to="/#sobre" replace />} />
+                {/* Páginas institucionais */}
+                <Route path="/servicos" element={<Servicos />} />
+                <Route path="/servicos/contabilidade-digital" element={<ContabilidadeDigital />} />
+                <Route
+                  path="/contabilidade-digital"
+                  element={<Navigate to="/servicos/contabilidade-digital" replace />}
+                />
+                <Route
+                  path="/servicos/gestao-fiscal-tributaria"
+                  element={<GestaoFiscalTributaria />}
+                />
+                <Route
+                  path="/gestao-fiscal-tributaria"
+                  element={<Navigate to="/servicos/gestao-fiscal-tributaria" replace />}
+                />
+                <Route path="/servicos/departamento-pessoal" element={<DepartamentoPessoal />} />
+                <Route
+                  path="/departamento-pessoal"
+                  element={<Navigate to="/servicos/departamento-pessoal" replace />}
+                />
+                <Route
+                  path="/servicos/consultoria-financeira"
+                  element={<ConsultoriaFinanceira />}
+                />
+                <Route
+                  path="/consultoria-financeira"
+                  element={<Navigate to="/servicos/consultoria-financeira" replace />}
+                />
+                <Route
+                  path="/servicos/planejamento-sucessorio"
+                  element={<PlanejamentoSucessorio />}
+                />
+                <Route
+                  path="/planejamento-sucessorio"
+                  element={<Navigate to="/servicos/planejamento-sucessorio" replace />}
+                />
+                <Route path="/servicos/assessoria-tributaria" element={<AssessoriaTributaria />} />
+                <Route
+                  path="/assessoria-tributaria"
+                  element={<Navigate to="/servicos/assessoria-tributaria" replace />}
+                />
+                <Route path="/servicos/treinamento" element={<TreinamentoCapacitacao />} />
+                <Route
+                  path="/treinamento"
+                  element={<Navigate to="/servicos/treinamento" replace />}
+                />
+                <Route path="/servicos/bpo-contabil" element={<BpoContabil />} />
+                <Route
+                  path="/bpo-contabil"
+                  element={<Navigate to="/servicos/bpo-contabil" replace />}
+                />
+                <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
+                <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
+                <Route path="/dados-empresa" element={<DadosEmpresa />} />
+                <Route path="/reforma-tributaria/visao-geral" element={<SubpageVisaoGeral />} />
+                <Route path="/reforma-tributaria/calendario" element={<SubpageCalendario />} />
+                <Route path="/reforma-tributaria/dicionario" element={<SubpageDicionario />} />
+                <Route
+                  path="/reforma-tributaria/impacto-por-setor"
+                  element={<SubpageImpactoSetor />}
+                />
+                <Route path="/reforma-tributaria/excecoes" element={<SubpageExcecoes />} />
+                {/* Redirecionamentos: módulos 6 e 7 da reforma migrados para a trilha oficial de diagnósticos */}
+                <Route
+                  path="/reforma-tributaria/comparador"
+                  element={<Navigate to="/diagnostico-regimes" replace />}
+                />
+                <Route
+                  path="/reforma-tributaria/diagnostico-reforma"
+                  element={<Navigate to="/diagnostico-transicao" replace />}
+                />
+                <Route
+                  path="/reforma-tributaria/painel-carteira"
+                  element={<SubpagePainelCarteira />}
+                />
+                <Route path="/reforma-tributaria/split-payment" element={<SubpageSplitPayment />} />
+                <Route
+                  path="/reforma-tributaria/reforma-na-pratica"
+                  element={<SubpageReformaNaPratica />}
+                />
+                <Route
+                  path="/reforma-tributaria/kit-precificacao"
+                  element={<Navigate to="/reforma-tributaria" replace />}
+                />
+                <Route path="/reforma-tributaria/glossario" element={<SubpageGlossarioFontes />} />
+                {/* Carteira de Clientes do Contador */}
+                <Route path="/clientes" element={<Clientes />} />
+                <Route path="/clientes/:id" element={<DetalheCliente />} />
+                {/* Hub e Trilha dos 4 Diagnósticos Tributários */}
+                <Route path="/diagnosticos" element={<DiagnosticosHub />} />
+                <Route path="/diagnostico-360" element={<Diagnostico360 />} />
+                <Route path="/diagnostico-transicao" element={<DiagnosticoTransicao />} />
+                <Route path="/diagnostico-regimes" element={<DiagnosticoRegimes />} />
+                <Route path="/diagnostico" element={<Diagnostico />} />
+                <Route path="/blog" element={<Blog />} />{' '}
+                <Route path="/blog/:slug" element={<BlogPost />} />
+                <Route path="/contato" element={<Contato />} />
+                <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+                <Route path="/termos-de-uso" element={<TermosDeUso />} />
+                {/* Autenticação & Conta do Cliente */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/cadastro" element={<Cadastro />} />
+                <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+                <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+                <Route
+                  path="/minha-conta"
+                  element={
+                    <ProtectedRoute>
+                      <MinhaConta />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Rota Protegida Admin */}
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminRoute>
+                      <Admin />
+                    </AdminRoute>
+                  }
+                />
+              </Route>
 
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ClienteAtivoProvider>
         </DadosEmpresaProvider>
       </TooltipProvider>
     </AuthProvider>

@@ -161,6 +161,17 @@ export default function Layout() {
               <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
               Reforma Tributária
             </Link>
+            <Link
+              to="/clientes"
+              className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                location.pathname.startsWith('/clientes')
+                  ? 'text-[#D4AF37] font-semibold active'
+                  : 'text-slate-200 hover:text-white'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+              Clientes
+            </Link>
             <a
               href="/calculadora-ibs-cbs"
               onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
@@ -334,6 +345,18 @@ export default function Layout() {
                   <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
                   Reforma Tributária
                 </Link>
+                <Link
+                  to="/clientes"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
+                    location.pathname.startsWith('/clientes')
+                      ? 'text-[#D4AF37] font-bold'
+                      : 'text-slate-200 hover:text-[#D4AF37]'
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+                  Clientes (Carteira)
+                </Link>
                 <a
                   href="/calculadora-ibs-cbs"
                   onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
@@ -345,7 +368,7 @@ export default function Layout() {
                 >
                   <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
                   Calculadora IBS/CBS
-                </a>
+                </a>{' '}
                 <a
                   href="/diagnosticos"
                   onClick={(e) => handleToolNav(e, '/diagnosticos')}
@@ -630,6 +653,13 @@ export default function Layout() {
               <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
                 <span>Horário: Seg a Sex, 8h às 18h</span>
                 <div className="flex items-center gap-3">
+                  <Link
+                    to="/clientes"
+                    className="text-slate-400 hover:text-[#D4AF37] transition-colors underline"
+                  >
+                    Carteira de Clientes
+                  </Link>
+                  <span>•</span>
                   <Link
                     to="/dados-empresa"
                     className="text-slate-400 hover:text-[#D4AF37] transition-colors underline"

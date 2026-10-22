@@ -6,6 +6,7 @@ export type TipoDiagnostico = '360' | 'transicao' | 'regimes' | 'enquadramento'
 export interface Diagnostico {
   id?: string
   user_id?: string
+  cliente_id?: string | null
   tipo_diagnostico?: TipoDiagnostico | string
   nome: string
   email: string
@@ -76,9 +77,27 @@ export async function createDiagnostico(
   return record
 }
 
-export async function getDiagnosticos(): Promise<DiagnosticoRecord[]> {
+export async function getDiagnosticos(filter?: string): Promise<DiagnosticoRecord[]> {
   return await pb.collection('diagnosticos').getFullList<DiagnosticoRecord>({
+    filter: filter || undefined,
     sort: '-created',
+  })
+}
+
+export async function getDiagnosticosPorCliente(clienteId: string): Promise<DiagnosticoRecord[]> {
+  if (!clienteId) return []
+  return await pb.collection('diagnosticos').getFullList<DiagnosticoRecord>({
+    filter: `cliente_id = "${clienteId}"`,
+    sort: '-created',
+  })
+}
+
+export async function vincularDiagnosticoACliente(
+  diagnosticoId: string,
+  clienteId: string | null,
+): Promise<DiagnosticoRecord> {
+  return await pb.collection('diagnosticos').update<DiagnosticoRecord>(diagnosticoId, {
+    cliente_id: clienteId || '',
   })
 }
 

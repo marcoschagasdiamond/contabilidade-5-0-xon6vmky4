@@ -174,6 +174,7 @@ export interface ResultadosSimulacaoCalculadora {
 export interface SimulacaoCalculadora {
   id: string
   user_id?: string
+  cliente_id?: string | null
   nome: string
   empresa?: string
   cnpj?: string

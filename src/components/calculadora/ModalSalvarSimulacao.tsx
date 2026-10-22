@@ -12,10 +12,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/context/AuthContext'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { useToast } from '@/hooks/use-toast'
 import { salvarSimulacao } from '@/services/simulacoesCalculadora'
 import { registrarSimulacaoUsada, LIMITE_SIMULACOES_GRATUITO } from '@/services/freemium'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
+import { Badge } from '@/components/ui/badge'
 import type {
   ParametrosSimulacaoCalculadora,
   ResultadosSimulacaoCalculadora,
@@ -48,6 +50,7 @@ export function ModalSalvarSimulacao({
 }: ModalSalvarSimulacaoProps) {
   const { user, isAuthenticated, isPremium, podeSimular, simulacoesUsadas, recarregarUsuario } =
     useAuth()
+  const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
   const { toast } = useToast()
 
   const [nome, setNome] = useState('')
@@ -59,9 +62,12 @@ export function ModalSalvarSimulacao({
   React.useEffect(() => {
     if (open && !nome) {
       const dataStr = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-      const sugestao = `Cenário ${parametros.tipoAtividade} (${dataStr})`
+      const prefixo = clienteAtivo ? `${clienteAtivo.nome} • ` : ''
+      const sugestao = `${prefixo}Cenário ${parametros.tipoAtividade} (${dataStr})`
       setNome(sugestao)
-      if (parametros.empresa && !empresa) {
+      if (clienteAtivo) {
+        setEmpresa(clienteAtivo.nome)
+      } else if (parametros.empresa && !empresa) {
         setEmpresa(parametros.empresa)
       }
     }
@@ -90,12 +96,13 @@ export function ModalSalvarSimulacao({
         nome: nome.trim(),
         parametros: {
           ...parametros,
-          empresa: empresa.trim() || parametros.empresa,
+          empresa: empresa.trim() || clienteAtivo?.nome || parametros.empresa,
         },
         resultados,
-        empresa: empresa.trim() || parametros.empresa,
-        cnpj: parametros.cnpj,
+        empresa: empresa.trim() || clienteAtivo?.nome || parametros.empresa,
+        cnpj: clienteAtivo?.cnpj_cpf || parametros.cnpj,
         userId: preferirLocal ? null : user?.id,
+        clienteId: clienteAtivoId || null,
       })
 
       // Registra o uso no backend/localStorage e atualiza contexto
@@ -243,6 +250,25 @@ export function ModalSalvarSimulacao({
                 className="text-xs pl-8"
               />
             </div>
+          </div>
+
+          {/* Vínculo de Cliente Ativo */}
+          <div className="p-3 rounded-xl bg-[#07132B]/5 border border-[#D4AF37]/30 text-xs flex items-center justify-between gap-2">
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                Vínculo com a Carteira:
+              </span>
+              <strong className="text-[#07132B] font-semibold">
+                {clienteAtivo ? clienteAtivo.nome : 'Sem cliente (Cenário Avulso)'}
+              </strong>
+            </div>
+            {clienteAtivo ? (
+              <Badge className="bg-[#D4AF37] text-[#07132B] text-[10px] font-bold">Vinculado</Badge>
+            ) : (
+              <Badge variant="outline" className="border-slate-300 text-slate-500 text-[10px]">
+                Avulso
+              </Badge>
+            )}
           </div>
 
           {/* Resumo do que será arquivado */}

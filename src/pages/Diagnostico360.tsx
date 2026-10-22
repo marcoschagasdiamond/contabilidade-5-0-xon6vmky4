@@ -23,6 +23,8 @@ import {
 } from 'lucide-react'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
@@ -200,6 +202,7 @@ export default function Diagnostico360() {
   })
 
   const { isPremium, podeDiagnosticar, recarregarUsuario } = useAuth()
+  const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
   const [salvandoDiagnostico, setSalvandoDiagnostico] = useState(false)
   const [salvoFeedback, setSalvoFeedback] = useState(false)
   const [paywallAberto, setPaywallAberto] = useState(false)
@@ -251,8 +254,9 @@ export default function Diagnostico360() {
 
       await createDiagnostico({
         user_id: authUserId,
+        cliente_id: clienteAtivoId || undefined,
         tipo_diagnostico: '360',
-        nome: dadosEmpresa.nomeContato || 'Contato',
+        nome: clienteAtivo?.nome || dadosEmpresa.nomeContato || 'Contato',
         email: dadosEmpresa.email || 'contato@empresa.com.br',
         telefone: dadosEmpresa.telefone || '',
         empresa: dadosEmpresa.nomeEmpresa || 'Empresa',
@@ -302,6 +306,13 @@ export default function Diagnostico360() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-20 sm:pt-24 pb-20">
+      {/* SELETOR CLIENTE ATIVO NO TOPO */}
+      <div className="bg-[#07132B] border-b border-[#D4AF37]/20 py-2.5 px-4 sm:px-6">
+        <div className="max-w-[1200px] mx-auto">
+          <SeletorClienteAtivo labelCustomizado="Carteira • Cliente Ativo no Diagnóstico 360°:" />
+        </div>
+      </div>
+
       {/* TRILHA DE NAVEGAÇÃO SUPERIOR */}
       <TrilhaDiagnosticoNav
         paginaAtual="360"

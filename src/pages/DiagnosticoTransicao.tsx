@@ -11,6 +11,8 @@ import pb from '@/lib/pocketbase/client'
 import { registrarDiagnosticoUsado } from '@/services/freemium'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 
 export default function DiagnosticoTransicao() {
   const navigate = useNavigate()
@@ -22,6 +24,7 @@ export default function DiagnosticoTransicao() {
     podeDiagnosticar,
     recarregarUsuario,
   } = useAuth()
+  const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
   const [paywallAberto, setPaywallAberto] = useState(false)
 
   // Gate de Dados da Empresa
@@ -65,8 +68,9 @@ export default function DiagnosticoTransicao() {
 
       await createDiagnostico({
         user_id: authUserId,
+        cliente_id: clienteAtivoId || undefined,
         tipo_diagnostico: 'transicao',
-        nome: dadosEmpresa.nomeContato || 'Contato',
+        nome: clienteAtivo?.nome || dadosEmpresa.nomeContato || 'Contato',
         email: dadosEmpresa.email || 'contato@empresa.com.br',
         telefone: dadosEmpresa.telefone || '',
         empresa: dadosEmpresa.nomeEmpresa || 'Empresa',
@@ -111,6 +115,13 @@ export default function DiagnosticoTransicao() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-20 sm:pt-24 pb-20">
+      {/* SELETOR CLIENTE ATIVO NO TOPO */}
+      <div className="bg-[#07132B] border-b border-[#D4AF37]/20 py-2.5 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto">
+          <SeletorClienteAtivo labelCustomizado="Carteira • Cliente Ativo na Transição Fiscal:" />
+        </div>
+      </div>
+
       {/* TRILHA DE NAVEGAÇÃO SUPERIOR */}
       <TrilhaDiagnosticoNav
         paginaAtual="transicao"

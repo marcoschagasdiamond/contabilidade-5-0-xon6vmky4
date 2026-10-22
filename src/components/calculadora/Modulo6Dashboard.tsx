@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import {
   TipoAtividade,
@@ -121,6 +122,7 @@ export default function Modulo6Dashboard({
     obterSnapshotResultados,
   } = useCalculadoraIbsCbs()
 
+  const { clienteAtivo } = useClienteAtivo()
   const { toast } = useToast()
   const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
   const [modalCompartilharAberto, setModalCompartilharAberto] = useState(false)
@@ -143,6 +145,7 @@ export default function Modulo6Dashboard({
       if (escolha === 'comparativo' && temComparativoDisponivel) {
         gerarRelatorioComparativoPDF({
           simulacoes: simulacoesComparar,
+          clienteNome: clienteAtivo ? clienteAtivo.nome : undefined,
           responsavelTecnico: dadosTecnico,
           observacoesContador: dadosTecnico.observacoes,
         })
@@ -157,8 +160,9 @@ export default function Modulo6Dashboard({
           nomeSimulacao: 'Simulação Executiva - Dashboard',
           parametros: params,
           resultados: res,
-          empresa: params.empresa,
-          cnpj: params.cnpj,
+          empresa: clienteAtivo ? clienteAtivo.nome : params.empresa,
+          cnpj: clienteAtivo ? clienteAtivo.cnpj_cpf : params.cnpj,
+          clienteNome: clienteAtivo ? clienteAtivo.nome : undefined,
           responsavelTecnico: dadosTecnico,
           observacoesContador: dadosTecnico.observacoes,
         })

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T00:44:59.528Z",
+  "generatedAt": "2026-10-22T00:56:47.559Z",
   "collections": [
     {
       "name": "users",
@@ -428,11 +428,18 @@
           "type": "json",
           "required": false,
           "system": false
+        },
+        {
+          "name": "cliente_id",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_diagnosticos_created ON diagnosticos (created DESC)",
-        "CREATE INDEX idx_diagnosticos_email ON diagnosticos (email)"
+        "CREATE INDEX idx_diagnosticos_email ON diagnosticos (email)",
+        "CREATE INDEX `idx_diagnosticos_cliente_id` ON `diagnosticos` (cliente_id)"
       ]
     },
     {
@@ -722,11 +729,113 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "cliente_id",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_simulacoes_user ON simulacoes_calculadora (user_id)",
-        "CREATE INDEX idx_simulacoes_created ON simulacoes_calculadora (created DESC)"
+        "CREATE INDEX idx_simulacoes_created ON simulacoes_calculadora (created DESC)",
+        "CREATE INDEX `idx_simulacoes_cliente_id` ON `simulacoes_calculadora` (cliente_id)"
+      ]
+    },
+    {
+      "name": "clientes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "cnpj_cpf",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "uf",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "segmento",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "Comércio",
+            "Serviços",
+            "Indústria",
+            "Saúde",
+            "Educação",
+            "Agro",
+            "Transporte",
+            "Tecnologia",
+            "Construção Civil",
+            "Bares e Restaurantes",
+            "Outro"
+          ]
+        },
+        {
+          "name": "regime_atual",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "telefone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_clientes_user ON clientes (user_id)",
+        "CREATE INDEX idx_clientes_nome ON clientes (nome)",
+        "CREATE INDEX idx_clientes_cnpj_cpf ON clientes (cnpj_cpf)",
+        "CREATE INDEX idx_clientes_created ON clientes (created DESC)"
       ]
     }
   ]

@@ -27,6 +27,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { ModalGerarPdf, type ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
 import { gerarRelatorioSimulacaoPDF } from '@/lib/pdfSimulacaoCalculadora'
@@ -67,6 +68,7 @@ export function ListaSimulacoes({
   onAbrirPdfComparativo,
 }: ListaSimulacoesProps) {
   const { toast } = useToast()
+  const { clienteAtivo, clientes } = useClienteAtivo()
 
   // Estado para exclusão
   const [simulacaoExcluir, setSimulacaoExcluir] = useState<SimulacaoCalculadora | null>(null)
@@ -138,12 +140,19 @@ export function ListaSimulacoes({
     if (!simulacaoParaPdf) return
     try {
       setGerandoPdf(true)
+      // Se a simulação tem cliente_id, buscar nome do cliente
+      const clienteDaSimulacao = simulacaoParaPdf.cliente_id
+        ? clientes.find((c) => c.id === simulacaoParaPdf.cliente_id)
+        : clienteAtivo
+      const nomeClienteFinal = clienteDaSimulacao?.nome
+
       gerarRelatorioSimulacaoPDF({
         nomeSimulacao: simulacaoParaPdf.nome,
         parametros: simulacaoParaPdf.parametros,
         resultados: simulacaoParaPdf.resultados,
-        empresa: simulacaoParaPdf.empresa,
-        cnpj: simulacaoParaPdf.cnpj,
+        empresa: nomeClienteFinal || simulacaoParaPdf.empresa,
+        clienteNome: nomeClienteFinal,
+        cnpj: clienteDaSimulacao?.cnpj_cpf || simulacaoParaPdf.cnpj,
         dataGeracao: new Date(simulacaoParaPdf.created).toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: '2-digit',

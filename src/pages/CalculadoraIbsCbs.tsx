@@ -42,6 +42,8 @@ import {
 } from '@/types/calculadoraIbsCbs'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
+import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { Share2, X } from 'lucide-react'
 import Modulo1Configuracoes from '@/components/calculadora/Modulo1Configuracoes'
 import Modulo2CalculadoraSimples from '@/components/calculadora/Modulo2CalculadoraSimples'
@@ -114,6 +116,7 @@ function CalculadoraConteudo() {
     restaurarSimulacao,
   } = useCalculadoraIbsCbs()
   const { user, isPremium, podeSimular, simulacoesUsadas, simulacoesRestantes } = useAuth()
+  const { clienteAtivo } = useClienteAtivo()
   const { toast } = useToast()
 
   // Estados de simulações
@@ -248,8 +251,9 @@ function CalculadoraConteudo() {
         nomeSimulacao: 'Simulação Vigente na Tela',
         parametros: params,
         resultados: res,
-        empresa: params.empresa,
-        cnpj: params.cnpj,
+        empresa: clienteAtivo ? clienteAtivo.nome : params.empresa,
+        cnpj: clienteAtivo ? clienteAtivo.cnpj_cpf : params.cnpj,
+        clienteNome: clienteAtivo ? clienteAtivo.nome : undefined,
         responsavelTecnico: dadosTecnico,
         observacoesContador: dadosTecnico.observacoes,
       })
@@ -277,6 +281,7 @@ function CalculadoraConteudo() {
       setGerandoPdfComparativo(true)
       gerarRelatorioComparativoPDF({
         simulacoes: simulacoesParaComparar,
+        clienteNome: clienteAtivo ? clienteAtivo.nome : undefined,
         responsavelTecnico: dadosTecnico,
         observacoesContador: dadosTecnico.observacoes,
       })
@@ -306,6 +311,13 @@ function CalculadoraConteudo() {
         mostrarVoltar={true}
         mostrarDiagnosticoBtn={true}
       />
+
+      {/* SELETOR CLIENTE ATIVO NO TOPO DA CALCULADORA */}
+      <div className="bg-[#07132B] border-b border-[#D4AF37]/20 py-2.5 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto">
+          <SeletorClienteAtivo labelCustomizado="Carteira • Cliente Ativo na Calculadora:" />
+        </div>
+      </div>
 
       {/* BARRA SUPERIOR DE KPI RÁPIDO */}
       <div className="bg-[#0A140F] text-white border-b border-[#D4AF37]/30 py-3 px-4 sm:px-6">

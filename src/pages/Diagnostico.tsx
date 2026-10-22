@@ -60,6 +60,8 @@ import {
 } from '@/lib/reformaTributaria'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/context/AuthContext'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { createDiagnostico } from '@/services/diagnosticos'
 import { registrarDiagnosticoUsado } from '@/services/freemium'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
@@ -103,6 +105,7 @@ export default function Diagnostico() {
     diagnosticosUsados,
     recarregarUsuario,
   } = useAuth()
+  const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
   const [paywallModalOpen, setPaywallModalOpen] = useState(false)
   const [paywallMotivo, setPaywallMotivo] = useState<'diagnostico' | 'pdf'>('diagnostico')
 
@@ -557,11 +560,12 @@ export default function Diagnostico() {
           anoBase: formData.anoBase,
         })
 
-        // Persistir na coleção 'diagnosticos' incluindo novos campos da Reforma Tributária e vinculação de user_id
+        // Persistir na coleção 'diagnosticos' incluindo novos campos da Reforma Tributária e vinculação de user_id e cliente_id
         try {
           const authUserId = pb.authStore.record?.id || undefined
           await createDiagnostico({
             user_id: authUserId,
+            cliente_id: clienteAtivoId || undefined,
             tipo_diagnostico: 'enquadramento',
             nome: formData.nome.trim(),
             email: formData.email.trim().toLowerCase(),
@@ -732,6 +736,13 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-20 sm:pt-24 pb-20">
+      {/* SELETOR CLIENTE ATIVO NO TOPO DO DIAGNÓSTICO */}
+      <div className="bg-[#07132B] border-b border-[#D4AF37]/20 py-2.5 px-4 sm:px-6">
+        <div className="max-w-[1000px] mx-auto">
+          <SeletorClienteAtivo labelCustomizado="Carteira • Cliente Ativo no Diagnóstico:" />
+        </div>
+      </div>
+
       {/* TRILHA DE NAVEGAÇÃO DOS 4 DIAGNÓSTICOS */}
       <TrilhaDiagnosticoNav
         paginaAtual="enquadramento"

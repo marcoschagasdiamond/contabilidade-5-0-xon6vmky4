@@ -22,6 +22,7 @@ export interface GerarPdfSimulacaoOptions {
   resultados: ResultadosSimulacaoCalculadora
   empresa?: string
   cnpj?: string
+  clienteNome?: string
   dataGeracao?: string
   responsavelTecnico?: ResponsavelTecnicoDados
   observacoesContador?: string
@@ -29,6 +30,7 @@ export interface GerarPdfSimulacaoOptions {
 
 export interface GerarPdfComparativoOptions {
   simulacoes: SimulacaoCalculadora[]
+  clienteNome?: string
   dataGeracao?: string
   responsavelTecnico?: ResponsavelTecnicoDados
   observacoesContador?: string
@@ -334,6 +336,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     resultados,
     empresa,
     cnpj,
+    clienteNome,
     dataGeracao,
     responsavelTecnico,
     observacoesContador,
@@ -407,8 +410,9 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.5)
   doc.setTextColor(203, 213, 225)
+  const infoCliente = clienteNome ? `Cliente: ${clienteNome} | ` : ''
   doc.text(
-    `Cenário: "${nomeSimulacao}" | Emissão: ${dataString} | Dossiê Técnico Individual`,
+    `${infoCliente}Cenário: "${nomeSimulacao}" | Emissão: ${dataString} | Dossiê Técnico Individual`,
     brandX,
     33,
   )
@@ -429,7 +433,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   // ==========================================
   // BLOCO 1: IDENTIFICAÇÃO DA EMPRESA & METADADOS DA SIMULAÇÃO
   // ==========================================
-  const nomeEmpresaExibir = empresa || parametros.empresa || 'Empresa em Simulação'
+  const nomeEmpresaExibir = clienteNome || empresa || parametros.empresa || 'Empresa em Simulação'
   const cnpjExibir = cnpj || parametros.cnpj || 'Não informado'
   const periodoExibir = (parametros.periodoDashboard || 'mensal').toUpperCase()
   const regimeAtualExibir =
@@ -1057,7 +1061,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
 // 3) CRIAR O PDF COMPARATIVO (2 OU 3 SIMULAÇÕES SALVAS)
 // ============================================================================
 export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions): void {
-  const { simulacoes, dataGeracao, responsavelTecnico, observacoesContador } = options
+  const { simulacoes, clienteNome, dataGeracao, responsavelTecnico, observacoesContador } = options
 
   if (!simulacoes || simulacoes.length < 2) {
     throw new Error('O relatório comparativo requer ao menos 2 simulações selecionadas.')
@@ -1129,8 +1133,9 @@ export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.5)
   doc.setTextColor(203, 213, 225)
+  const infoCliComp = clienteNome ? `Cliente: ${clienteNome} | ` : ''
   doc.text(
-    `Comparação técnica entre ${simulacoes.length} cenários selecionados | Emissão: ${dataStr}`,
+    `${infoCliComp}Comparação técnica entre ${simulacoes.length} cenários selecionados | Emissão: ${dataStr}`,
     brandX,
     34,
   )
