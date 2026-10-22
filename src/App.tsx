@@ -40,6 +40,7 @@ import Diagnostico360 from './pages/Diagnostico360'
 import DiagnosticoTransicao from './pages/DiagnosticoTransicao'
 import DiagnosticoRegimes from './pages/DiagnosticoRegimes'
 import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
+import RecuperadorCreditos from './pages/RecuperadorCreditos'
 import DadosEmpresa from './pages/DadosEmpresa'
 import Planos from './pages/Planos'
 import NotFound from './pages/NotFound'
@@ -192,6 +193,7 @@ const App = () => (
                 />
                 <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
                 <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
+                <Route path="/recuperador-creditos" element={<RecuperadorCreditos />} />
                 <Route path="/dados-empresa" element={<DadosEmpresa />} />
                 <Route path="/planos" element={<Planos />} />
                 <Route path="/reforma-tributaria/visao-geral" element={<SubpageVisaoGeral />} />

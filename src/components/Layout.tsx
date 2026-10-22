@@ -221,6 +221,17 @@ export default function Layout() {
               Calculadora IBS/CBS
             </a>
             <a
+              href="/recuperador-creditos"
+              onClick={(e) => handleToolNav(e, '/recuperador-creditos')}
+              className={`nav-link-hover text-sm font-medium transition-colors ${
+                location.pathname === '/recuperador-creditos'
+                  ? 'text-[#2ECC71] font-semibold active'
+                  : 'text-slate-200 hover:text-white'
+              }`}
+            >
+              Recuperador de Créditos
+            </a>
+            <a
               href="/diagnosticos"
               onClick={(e) => handleToolNav(e, '/diagnosticos')}
               className={`nav-link-hover text-sm font-medium transition-colors ${
@@ -586,6 +597,17 @@ export default function Layout() {
                   Calculadora IBS/CBS
                 </a>
                 <a
+                  href="/recuperador-creditos"
+                  onClick={(e) => handleToolNav(e, '/recuperador-creditos')}
+                  className={`text-base font-medium py-2 border-b border-white/5 ${
+                    location.pathname === '/recuperador-creditos'
+                      ? 'text-[#2ECC71] font-bold'
+                      : 'text-slate-200 hover:text-[#2ECC71]'
+                  }`}
+                >
+                  Recuperador de Créditos
+                </a>
+                <a
                   href="/diagnosticos"
                   onClick={(e) => handleToolNav(e, '/diagnosticos')}
                   className={`text-base font-medium py-2 border-b border-white/5 ${
@@ -773,6 +795,16 @@ export default function Layout() {
                   >
                     <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37]" />
                     Calculadora IBS/CBS
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/recuperador-creditos"
+                    onClick={(e) => handleToolNav(e, '/recuperador-creditos')}
+                    className="text-slate-400 hover:text-[#2ECC71] transition-colors flex items-center gap-1.5 font-medium cursor-pointer"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
+                    Recuperador de Créditos
                   </a>
                 </li>
                 <li>

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listarClientes } from '@/services/clientes'
 import { listarSimulacoes } from '@/services/simulacoesCalculadora'
+import { listarSimulacoesRecuperador } from '@/services/simulacoesRecuperador'
 import { getDiagnosticos } from '@/services/diagnosticos'
 import { listarConversasAssistente } from '@/services/conversasAssistente'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
@@ -10,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import type { Cliente } from '@/types/cliente'
 import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
+import type { SimulacaoRecuperador } from '@/types/recuperadorCreditos'
 import type { DiagnosticoRecord } from '@/services/diagnosticos'
 import type { ConversaAssistente } from '@/services/conversasAssistente'
 
@@ -19,6 +21,8 @@ import type { ConversaAssistente } from '@/services/conversasAssistente'
 interface ClienteCarteiraConsolidado {
   cliente: Cliente
   totalSimulacoes: number
+  totalRecuperador: number
+  totalRecuperavelCreditos: number
   totalDiagnosticos: number
   totalConversas: number
   ultimaEconomiaAnual: number | null
@@ -50,6 +54,7 @@ export default function Carteira() {
   const [carregando, setCarregando] = useState(true)
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [simulacoes, setSimulacoes] = useState<SimulacaoCalculadora[]>([])
+  const [recuperadorSims, setRecuperadorSims] = useState<SimulacaoRecuperador[]>([])
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoRecord[]>([])
   const [conversas, setConversas] = useState<ConversaAssistente[]>([])
 
@@ -66,15 +71,17 @@ export default function Carteira() {
   const carregarDadosCarteira = async () => {
     try {
       setCarregando(true)
-      const [listaClientes, listaSims, listaDiags, listaConvs] = await Promise.all([
+      const [listaClientes, listaSims, listaRecup, listaDiags, listaConvs] = await Promise.all([
         listarClientes(),
         listarSimulacoes(),
+        listarSimulacoesRecuperador(),
         getDiagnosticos(),
         listarConversasAssistente(),
       ])
 
       setClientes(listaClientes)
       setSimulacoes(listaSims)
+      setRecuperadorSims(listaRecup)
       setDiagnosticos(listaDiags)
       setConversas(listaConvs)
     } catch (err) {
@@ -100,6 +107,15 @@ export default function Carteira() {
       }
     })
 
+    const recupPorCliente = new Map<string, SimulacaoRecuperador[]>()
+    recuperadorSims.forEach((r) => {
+      if (r.cliente_id) {
+        const arr = recupPorCliente.get(r.cliente_id) || []
+        arr.push(r)
+        recupPorCliente.set(r.cliente_id, arr)
+      }
+    })
+
     const diagsPorCliente = new Map<string, DiagnosticoRecord[]>()
     diagnosticos.forEach((d) => {
       if (d.cliente_id) {
@@ -120,8 +136,14 @@ export default function Carteira() {
 
     return clientes.map((cliente) => {
       const cliSims = simsPorCliente.get(cliente.id) || []
+      const cliRecup = recupPorCliente.get(cliente.id) || []
       const cliDiags = diagsPorCliente.get(cliente.id) || []
       const cliConvs = convsPorCliente.get(cliente.id) || []
+
+      const totalRecuperavelCreditos = cliRecup.reduce(
+        (acc, curr) => acc + (curr.total_recuperavel_integral || 0),
+        0,
+      )
 
       // Ordenar simulações por data decrescente
       cliSims.sort((a, b) => {
@@ -225,6 +247,8 @@ export default function Carteira() {
       return {
         cliente,
         totalSimulacoes: cliSims.length,
+        totalRecuperador: cliRecup.length,
+        totalRecuperavelCreditos,
         totalDiagnosticos: cliDiags.length,
         totalConversas: cliConvs.length,
         ultimaEconomiaAnual: ultimaEco,
@@ -238,15 +262,21 @@ export default function Carteira() {
         conversaMaisRecente: convMaisRecente,
       }
     })
-  }, [clientes, simulacoes, diagnosticos, conversas])
+  }, [clientes, simulacoes, recuperadorSims, diagnosticos, conversas])
 
   // KPIs Consolidados do Topo
   const kpis = useMemo(() => {
     const totalClientes = consolidados.length
     const comDiagnostico = consolidados.filter((c) => c.totalDiagnosticos > 0).length
     const comSimulacoes = consolidados.filter((c) => c.totalSimulacoes > 0).length
+    const comRecuperador = consolidados.filter((c) => c.totalRecuperador > 0).length
     const comEconomiaPositiva = consolidados.filter((c) => c.temEconomiaPositiva).length
     const comAlertaSimples = consolidados.filter((c) => c.alertaSimples).length
+
+    const somaCreditosRecuperador = consolidados.reduce(
+      (acc, c) => acc + c.totalRecuperavelCreditos,
+      0,
+    )
 
     // Soma da economia potencial identificada na carteira
     const somaEconomiaPositiva = consolidados.reduce((acc, c) => {
@@ -260,9 +290,11 @@ export default function Carteira() {
       totalClientes,
       comDiagnostico,
       comSimulacoes,
+      comRecuperador,
       comEconomiaPositiva,
       comAlertaSimples,
       somaEconomiaPositiva,
+      somaCreditosRecuperador,
     }
   }, [consolidados])
 
@@ -401,10 +433,16 @@ export default function Carteira() {
                 Gerenciar Cadastros
               </Link>
               <Link
+                to="/recuperador-creditos"
+                className="inline-flex items-center justify-center bg-white/10 hover:bg-white/20 text-[#2ECC71] border border-[#2ECC71]/30 font-bold text-xs px-4 py-2.5 rounded-xl transition-colors"
+              >
+                Recuperador de Créditos
+              </Link>
+              <Link
                 to="/calculadora-ibs-cbs"
                 className="inline-flex items-center justify-center bg-[#D4AF37] text-[#07132B] hover:bg-[#c49f2e] font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition-colors"
               >
-                Abrir Calculadora IBS/CBS
+                Calculadora IBS/CBS
               </Link>
             </div>
           </div>
@@ -414,7 +452,7 @@ export default function Carteira() {
       {/* ÁREA PRINCIPAL */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* CARDS DE RESUMO DA CARTEIRA (TOP KPIs) */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {/* Card 1: Total de Clientes */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-1.5 transition-all hover:border-[#D4AF37]/50">
             <div className="flex items-center justify-between">
@@ -461,7 +499,25 @@ export default function Carteira() {
             <p className="text-[11px] text-slate-500 leading-tight">Calculadora IBS/CBS</p>
           </div>
 
-          {/* Card 4: Economia Positiva */}
+          {/* Card 4: Recuperador de Créditos */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-1.5 transition-all hover:border-[#D4AF37]/50">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Créditos (60m)
+              </span>
+              <span className="w-2 h-2 rounded-full bg-[#2ECC71]" />
+            </div>
+            <div className="font-heading font-black text-2xl sm:text-3xl text-emerald-700">
+              {kpis.comRecuperador}
+            </div>
+            <p className="text-[11px] text-slate-500 leading-tight font-mono">
+              {kpis.somaCreditosRecuperador > 0
+                ? formatarMoeda(kpis.somaCreditosRecuperador)
+                : 'Potencial recuperável'}
+            </p>
+          </div>
+
+          {/* Card 5: Economia Positiva */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-1.5 transition-all hover:border-[#D4AF37]/50">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -474,7 +530,7 @@ export default function Carteira() {
             </div>
             <p className="text-[11px] text-slate-500 leading-tight">
               {kpis.somaEconomiaPositiva > 0
-                ? `${formatarMoeda(kpis.somaEconomiaPositiva)}/ano total`
+                ? `${formatarMoeda(kpis.somaEconomiaPositiva)}/ano`
                 : 'Projetada > R$ 0'}
             </p>
           </div>
@@ -670,6 +726,7 @@ export default function Carteira() {
                         <span className="text-[#D4AF37] ml-1">{ordemDesc ? '↓' : '↑'}</span>
                       )}
                     </th>
+                    <th className="py-3.5 px-3 text-center">Créditos (60m)</th>
                     <th
                       className="py-3.5 px-3 text-center cursor-pointer hover:text-[#D4AF37] transition-colors"
                       onClick={() => alternarOrdem('diagnosticos')}
@@ -772,6 +829,21 @@ export default function Carteira() {
                           >
                             {item.totalSimulacoes}
                           </span>
+                        </td>
+
+                        {/* COLUNA 3.5: RECUPERADOR DE CRÉDITOS */}
+                        <td className="py-3.5 px-3 text-center">
+                          {item.totalRecuperador > 0 ? (
+                            <span
+                              title={`Total apurado em 60 meses: ${formatarMoeda(item.totalRecuperavelCreditos)}`}
+                              className="inline-block px-2 py-0.5 rounded-full font-mono font-bold text-[11px] bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            >
+                              {item.totalRecuperador} (
+                              {formatarMoeda(item.totalRecuperavelCreditos)})
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-mono text-[11px]">—</span>
+                          )}
                         </td>
 
                         {/* COLUNA 4: DIAGNÓSTICOS */}

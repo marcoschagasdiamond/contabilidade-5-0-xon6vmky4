@@ -1,0 +1,125 @@
+export type FarolRisco = 'verde' | 'amarelo' | 'vermelho'
+
+export type ModuloTributo = 'pis_cofins' | 'folha'
+
+export interface TeseRecuperacaoDefinicao {
+  id: string
+  modulo: ModuloTributo
+  codigo: string
+  titulo: string
+  fundamento: string
+  descricao: string
+  riscoPadrao: FarolRisco
+  justificativaRisco: string
+  percentualEstimadoPadrao: number // % sobre a base (faturamento ou folha)
+  regimesElegiveis: ('Lucro Real' | 'Lucro Presumido' | 'Simples Nacional')[]
+}
+
+export interface FaturamentoAno {
+  ano: number
+  faturamento: number
+  fatorSelicAcumulado: number // Ex: 1.45 (145% de correção até a presente data)
+}
+
+export interface ConfiguracoesRecuperador {
+  clienteId: string | null
+  empresa: string
+  cnpj: string
+  regimeAtual: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
+  segmento: string
+  uf: string
+  // Dados comuns de 60 meses
+  anosFaturamento: FaturamentoAno[]
+  // Massa salarial e colaboradores
+  numeroMedioEmpregados: number
+  percentualRotatividadeAnual: number
+  massaSalarialMensal: number
+  aliquotaPatronalComposta: number // ~26.8% (20% patronal + 5.8% terceiros + RAT)
+  aliquotaPisCofinsPadrao: number // 9.25% no Real, 3.65% no Presumido
+}
+
+export interface TeseSelecaoUsuario {
+  teseId: string
+  ativa: boolean
+  farol: FarolRisco
+  percentualBaseCustomizado?: number
+  observacaoAnalista?: string
+}
+
+export interface ParametrosRecuperador {
+  configuracoes: ConfiguracoesRecuperador
+  teses: Record<string, TeseSelecaoUsuario>
+  cenarioSelecionado?: 'integral' | 'conservador'
+}
+
+export interface ApuracaoAnoTese {
+  ano: number
+  baseCalculo: number
+  aliquotaOuPercentual: number
+  valorOriginal: number
+  fatorSelic: number
+  correcaoSelic: number
+  valorTotalCorrigido: number
+}
+
+export interface ResultadoTese {
+  teseId: string
+  modulo: ModuloTributo
+  titulo: string
+  fundamento: string
+  farol: FarolRisco
+  ativa: boolean
+  valorOriginalTotal: number
+  correcaoSelicTotal: number
+  totalCorrigido: number
+  apuracaoPorAno: ApuracaoAnoTese[]
+}
+
+export interface ResultadosRecuperador {
+  totalIntegralOriginal: number
+  totalIntegralSelic: number
+  totalIntegralCorrigido: number
+
+  // Cenário Conservador considera apenas teses com farol VERDE (jurisprudência pacificada)
+  totalConservadorOriginal: number
+  totalConservadorSelic: number
+  totalConservadorCorrigido: number
+
+  // Distribuição por Tributo
+  totalPisCofinsCorrigido: number
+  totalFolhaCorrigido: number
+
+  // Distribuição por Farol
+  totalVerdeCorrigido: number
+  totalAmareloCorrigido: number
+  totalVermelhoCorrigido: number
+
+  // Distribuição por Ano
+  totaisPorAno: {
+    ano: number
+    valorOriginal: number
+    correcaoSelic: number
+    totalCorrigido: number
+  }[]
+
+  resultadosTeses: ResultadoTese[]
+}
+
+export interface SimulacaoRecuperador {
+  id: string
+  user_id?: string
+  cliente_id?: string | null
+  nome: string
+  empresa?: string
+  cnpj?: string
+  regime_atual?: string
+  parametros: ParametrosRecuperador
+  resultados: ResultadosRecuperador
+  total_recuperavel_integral: number
+  total_recuperavel_conservador: number
+  total_pis_cofins: number
+  total_folha: number
+  created: string
+  updated?: string
+  origem: 'nuvem' | 'local'
+}

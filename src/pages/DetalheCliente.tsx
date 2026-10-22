@@ -7,6 +7,12 @@ import {
   vincularSimulacaoACliente,
 } from '@/services/simulacoesCalculadora'
 import {
+  listarSimulacoesRecuperadorPorCliente,
+  listarSimulacoesRecuperador,
+  vincularSimulacaoRecuperadorACliente,
+} from '@/services/simulacoesRecuperador'
+import type { SimulacaoRecuperador } from '@/types/recuperadorCreditos'
+import {
   getDiagnosticosPorCliente,
   getDiagnosticos,
   vincularDiagnosticoACliente,
@@ -56,16 +62,18 @@ export default function DetalheCliente() {
 
   // Histórico
   const [simulacoes, setSimulacoes] = useState<SimulacaoCalculadora[]>([])
+  const [recuperadorSims, setRecuperadorSims] = useState<SimulacaoRecuperador[]>([])
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoRecord[]>([])
   const [conversas, setConversas] = useState<ConversaAssistente[]>([])
 
   // Modal para vincular simulações/diagnósticos existentes
   const [modalVincularAberto, setModalVincularAberto] = useState(false)
   const [todasSimulacoes, setTodasSimulacoes] = useState<SimulacaoCalculadora[]>([])
+  const [todosRecuperador, setTodosRecuperador] = useState<SimulacaoRecuperador[]>([])
   const [todosDiagnosticos, setTodosDiagnosticos] = useState<DiagnosticoRecord[]>([])
-  const [abaHistorico, setAbaHistorico] = useState<'simulacoes' | 'diagnosticos' | 'conversas'>(
-    'simulacoes',
-  )
+  const [abaHistorico, setAbaHistorico] = useState<
+    'simulacoes' | 'recuperador' | 'diagnosticos' | 'conversas'
+  >('simulacoes')
 
   // Modal de leitura detalhada de conversa arquivada
   const [conversaVisualizando, setConversaVisualizando] = useState<ConversaAssistente | null>(null)
@@ -93,12 +101,14 @@ export default function DetalheCliente() {
       setCliente(cli)
 
       if (cli) {
-        const [sims, diags, convs] = await Promise.all([
+        const [sims, recups, diags, convs] = await Promise.all([
           listarSimulacoesPorCliente(id),
+          listarSimulacoesRecuperadorPorCliente(id),
           getDiagnosticosPorCliente(id),
           listarConversasPorCliente(id),
         ])
         setSimulacoes(sims)
+        setRecuperadorSims(recups)
         setDiagnosticos(diags)
         setConversas(convs)
       }
@@ -121,13 +131,42 @@ export default function DetalheCliente() {
 
   const abrirModalVincular = async () => {
     try {
-      const [todasS, todosD] = await Promise.all([listarSimulacoes(), getDiagnosticos()])
+      const [todasS, todosR, todosD] = await Promise.all([
+        listarSimulacoes(),
+        listarSimulacoesRecuperador(),
+        getDiagnosticos(),
+      ])
       // Filtra apenas as que não pertencem a este cliente (especialmente as sem cliente)
       setTodasSimulacoes(todasS.filter((s) => s.cliente_id !== id))
+      setTodosRecuperador(todosR.filter((r) => r.cliente_id !== id))
       setTodosDiagnosticos(todosD.filter((d) => d.cliente_id !== id))
       setModalVincularAberto(true)
     } catch (err) {
       console.error('Erro ao abrir lista para vinculação:', err)
+    }
+  }
+
+  const handleVincularRecuperador = async (recupId: string) => {
+    if (!id) return
+    const ok = await vincularSimulacaoRecuperadorACliente(recupId, id)
+    if (ok) {
+      toast({
+        title: 'Análise de Créditos vinculada',
+        description: 'O levantamento foi associado a este cliente.',
+      })
+      carregarDados()
+      setTodosRecuperador((prev) => prev.filter((r) => r.id !== recupId))
+    }
+  }
+
+  const handleDesvincularRecuperador = async (recupId: string) => {
+    const ok = await vincularSimulacaoRecuperadorACliente(recupId, null)
+    if (ok) {
+      toast({
+        title: 'Análise desvinculada',
+        description: 'O levantamento foi desvinculado deste cliente.',
+      })
+      carregarDados()
     }
   }
 
@@ -477,6 +516,16 @@ export default function DetalheCliente() {
               type="button"
               onClick={() => {
                 selecionarClienteAtivo(cliente.id)
+                navigate('/recuperador-creditos')
+              }}
+              className="bg-[#2ECC71] text-[#07132B] hover:bg-[#27ae60] font-bold text-xs"
+            >
+              Recuperador de Créditos (60m)
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                selecionarClienteAtivo(cliente.id)
                 navigate('/calculadora-ibs-cbs')
               }}
               className="bg-[#D4AF37] text-[#07132B] hover:bg-[#c49f2e] font-bold text-xs"
@@ -520,6 +569,18 @@ export default function DetalheCliente() {
                 }`}
               >
                 Simulações Calculadora ({simulacoes.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAbaHistorico('recuperador')}
+                className={`text-xs px-4 py-2 rounded-xl font-bold transition-all ${
+                  abaHistorico === 'recuperador'
+                    ? 'bg-[#07132B] text-[#2ECC71] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 bg-transparent'
+                }`}
+              >
+                Recuperador de Créditos ({recuperadorSims.length})
               </button>
 
               <button
@@ -657,6 +718,99 @@ export default function DetalheCliente() {
                         <button
                           type="button"
                           onClick={() => handleDesvincularSimulacao(sim.id)}
+                          className="text-xs text-slate-500 hover:text-red-600 px-2.5 py-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Desvincular do cliente"
+                        >
+                          Desvincular
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ABA RECUPERADOR DE CRÉDITOS */}
+          {abaHistorico === 'recuperador' && (
+            <div className="p-6">
+              {recuperadorSims.length === 0 ? (
+                <div className="text-center py-12 space-y-3">
+                  <span className="text-sm font-semibold text-slate-700 block">
+                    Nenhum levantamento de créditos salvo para este cliente
+                  </span>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    Acesse o Recuperador de Créditos com este cliente ativo para apurar os 60 meses
+                    com correção SELIC das teses de PIS/COFINS e Folha/Previdenciário.
+                  </p>
+                  <div className="pt-2 flex justify-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        selecionarClienteAtivo(cliente.id)
+                        navigate('/recuperador-creditos')
+                      }}
+                      className="bg-[#07132B] text-[#2ECC71] hover:bg-[#0B1E3F] text-xs font-bold"
+                    >
+                      Apurar Créditos Agora
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={abrirModalVincular}
+                      className="text-xs"
+                    >
+                      Vincular Existente
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recuperadorSims.map((sim) => (
+                    <div
+                      key={sim.id}
+                      className="bg-slate-50/70 hover:bg-slate-50 border border-slate-200 rounded-xl p-4.5 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#2ECC71]" />
+                          <h4 className="text-sm font-bold text-[#07132B] truncate">{sim.nome}</h4>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] border-slate-300 text-slate-600 uppercase"
+                          >
+                            {sim.origem}
+                          </Badge>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                          <span>
+                            Data: <strong>{formatarData(sim.created)}</strong>
+                          </span>
+                          <span className="text-emerald-700 font-bold font-mono">
+                            Total Integral c/ SELIC: {formatarMoeda(sim.total_recuperavel_integral)}
+                          </span>
+                          <span className="text-[#07132B]">
+                            Conservador: {formatarMoeda(sim.total_recuperavel_conservador)}
+                          </span>
+                          <span>PIS/COFINS: {formatarMoeda(sim.total_pis_cofins)}</span>
+                          <span>Folha/INSS: {formatarMoeda(sim.total_folha)}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Link
+                          to="/recuperador-creditos"
+                          onClick={() => selecionarClienteAtivo(cliente.id)}
+                          className="text-xs font-bold bg-[#07132B] text-[#2ECC71] hover:bg-[#0B1E3F] px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          Abrir no Recuperador →
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDesvincularRecuperador(sim.id)}
                           className="text-xs text-slate-500 hover:text-red-600 px-2.5 py-1.5 hover:bg-red-50 rounded-lg transition-colors"
                           title="Desvincular do cliente"
                         >
@@ -1015,6 +1169,43 @@ export default function DetalheCliente() {
                           size="sm"
                           onClick={() => handleVincularSimulacao(sim.id)}
                           className="bg-[#07132B] hover:bg-[#0B1E3F] text-[#D4AF37] text-xs h-7 px-3"
+                        >
+                          Vincular a este cliente
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Seção 1.5: Recuperador de Créditos */}
+              <div className="space-y-3 pt-4 border-t border-slate-100">
+                <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px] block">
+                  Análises do Recuperador de Créditos ({todosRecuperador.length} disponíveis)
+                </span>
+                {todosRecuperador.length === 0 ? (
+                  <p className="text-slate-400 italic">
+                    Nenhuma análise de recuperação avulsa para vincular no momento.
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {todosRecuperador.map((rec) => (
+                      <div
+                        key={rec.id}
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between gap-3"
+                      >
+                        <div>
+                          <strong className="text-slate-800 block">{rec.nome}</strong>
+                          <span className="text-[11px] text-slate-500">
+                            {formatarData(rec.created)} • Total:{' '}
+                            {formatarMoeda(rec.total_recuperavel_integral)}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => handleVincularRecuperador(rec.id)}
+                          className="bg-[#07132B] hover:bg-[#0B1E3F] text-[#2ECC71] text-xs h-7 px-3 font-bold"
                         >
                           Vincular a este cliente
                         </Button>
