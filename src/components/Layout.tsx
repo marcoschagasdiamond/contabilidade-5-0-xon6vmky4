@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import {
   Menu,
@@ -14,31 +14,57 @@ import {
   ArrowRight,
   Shield,
   FileCheck,
-  User,
-  LogIn,
-  UserPlus,
-  LogOut,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
+import { ModalMigrarParaAnalista } from '@/components/ModalMigrarParaAnalista'
 
 export default function Layout() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [modalMigrarAberto, setModalMigrarAberto] = useState(false)
+  const [isMobileUserSectionOpen, setIsMobileUserSectionOpen] = useState(true)
+
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  const userMenuTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const location = useLocation()
   const navigate = useNavigate()
   const { isAuthenticated, user, isAdmin, isEmpresario, logout } = useAuth()
   const { temDadosSalvos } = useDadosEmpresa()
 
+  const nomeExibicao = (user as any)?.name || user?.email?.split('@')[0] || 'Usuário'
+  const badgePerfilTexto = isEmpresario ? 'Empresário' : 'Analista'
+
   const handleLogout = () => {
     setIsMobileMenuOpen(false)
+    setIsUserMenuOpen(false)
     logout()
     navigate('/')
+  }
+
+  const handleMouseEnterUserMenu = () => {
+    if (userMenuTimeoutRef.current) {
+      clearTimeout(userMenuTimeoutRef.current)
+      userMenuTimeoutRef.current = null
+    }
+    setIsUserMenuOpen(true)
+  }
+
+  const handleMouseLeaveUserMenu = () => {
+    if (userMenuTimeoutRef.current) {
+      clearTimeout(userMenuTimeoutRef.current)
+    }
+    userMenuTimeoutRef.current = setTimeout(() => {
+      setIsUserMenuOpen(false)
+    }, 180)
   }
 
   const handleToolNav = (e: React.MouseEvent<HTMLAnchorElement>, destino: string) => {
     e.preventDefault()
     setIsMobileMenuOpen(false)
+    setIsUserMenuOpen(false)
     if (!temDadosSalvos) {
       // Leva ao formulário de dados da empresa com retorno configurado
       navigate(`/dados-empresa?destino=${encodeURIComponent(destino)}`)
@@ -59,14 +85,36 @@ export default function Layout() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Close mobile menu on route change
+  // Close menus on route change
   useEffect(() => {
     setIsMobileMenuOpen(false)
+    setIsUserMenuOpen(false)
   }, [location.pathname])
+
+  // Close desktop dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false)
+      }
+    }
+
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      if (userMenuTimeoutRef.current) {
+        clearTimeout(userMenuTimeoutRef.current)
+      }
+    }
+  }, [isUserMenuOpen])
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault()
     setIsMobileMenuOpen(false)
+    setIsUserMenuOpen(false)
 
     if (location.pathname === '/') {
       const element = document.getElementById(targetId)
@@ -101,11 +149,11 @@ export default function Layout() {
             : 'bg-[#0A140F]/85 backdrop-blur-sm py-4 border-b border-white/5'
         }`}
       >
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 flex items-center justify-between">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
           {/* LOGO */}
           <Link
             to="/"
-            className="flex items-center gap-3 group text-white focus:outline-none"
+            className="flex items-center gap-3 group text-white focus:outline-none shrink-0"
             aria-label="Contabilidade 5.0 - Página Inicial"
           >
             <div className="relative w-10 h-10 flex items-center justify-center transition-transform duration-300 group-hover:rotate-12">
@@ -128,8 +176,8 @@ export default function Layout() {
             </div>
           </Link>
 
-          {/* DESKTOP NAV */}
-          <nav className="hidden md:flex items-center gap-7">
+          {/* DESKTOP NAV: Início, Serviços, Sobre Nós, Depoimentos, Blog, Contato */}
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-7">
             <Link
               to="/"
               className={`nav-link-hover text-sm font-medium transition-colors ${
@@ -138,7 +186,7 @@ export default function Layout() {
                   : 'text-slate-200 hover:text-white'
               }`}
             >
-              Home
+              Início
             </Link>
             <Link
               to="/servicos"
@@ -150,77 +198,28 @@ export default function Layout() {
             >
               Serviços
             </Link>
-            <Link
-              to="/reforma-tributaria"
-              className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                location.pathname.startsWith('/reforma-tributaria')
-                  ? 'text-[#F59E0B] font-semibold active'
-                  : 'text-slate-200 hover:text-white'
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
-              Reforma Tributária
-            </Link>
-            {!isEmpresario && (
-              <>
-                <Link
-                  to="/carteira"
-                  className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                    location.pathname === '/carteira'
-                      ? 'text-[#D4AF37] font-semibold active'
-                      : 'text-slate-200 hover:text-white'
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                  Carteira
-                </Link>
-                <Link
-                  to="/clientes"
-                  className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                    location.pathname.startsWith('/clientes')
-                      ? 'text-[#D4AF37] font-semibold active'
-                      : 'text-slate-200 hover:text-white'
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                  Clientes
-                </Link>
-              </>
-            )}
             <a
-              href="/calculadora-ibs-cbs"
-              onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
-              className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                location.pathname === '/calculadora-ibs-cbs'
-                  ? 'text-[#D4AF37] font-semibold active'
-                  : 'text-slate-200 hover:text-white'
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-              Calculadora IBS/CBS
-            </a>
-            <a
-              href="/diagnosticos"
-              onClick={(e) => handleToolNav(e, '/diagnosticos')}
-              className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                location.pathname.startsWith('/diagnostico')
+              href="/#sobre"
+              onClick={(e) => handleNavClick(e, 'sobre')}
+              className={`nav-link-hover text-sm font-medium transition-colors ${
+                location.hash === '#sobre'
                   ? 'text-[#2ECC71] font-semibold active'
                   : 'text-slate-200 hover:text-white'
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2ECC71] animate-pulse" />
-              Diagnóstico Tributário
-            </a>{' '}
-            <Link
-              to="/planos"
+              Sobre Nós
+            </a>
+            <a
+              href="/#depoimentos"
+              onClick={(e) => handleNavClick(e, 'depoimentos')}
               className={`nav-link-hover text-sm font-medium transition-colors ${
-                location.pathname === '/planos'
-                  ? 'text-[#D4AF37] font-semibold active'
+                location.hash === '#depoimentos'
+                  ? 'text-[#2ECC71] font-semibold active'
                   : 'text-slate-200 hover:text-white'
               }`}
             >
-              Planos
-            </Link>
+              Depoimentos
+            </a>
             <Link
               to="/blog"
               className={`nav-link-hover text-sm font-medium transition-colors ${
@@ -231,72 +230,185 @@ export default function Layout() {
             >
               Blog
             </Link>
+            <a
+              href="/#contato"
+              onClick={(e) => handleNavClick(e, 'contato')}
+              className={`nav-link-hover text-sm font-medium transition-colors ${
+                location.hash === '#contato'
+                  ? 'text-[#2ECC71] font-semibold active'
+                  : 'text-slate-200 hover:text-white'
+              }`}
+            >
+              Contato
+            </a>
           </nav>
 
-          {/* CTA BUTTON & AUTH LINKS */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* CTA BUTTON & AUTH / USER DROPDOWN (DESKTOP) */}
+          <div className="hidden md:flex items-center gap-3 shrink-0">
+            {/* BOTÃO FALE COM UM ESPECIALISTA */}
+            <a
+              href="/#contato"
+              onClick={(e) => handleNavClick(e, 'contato')}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_4px_14px_rgba(46,204,113,0.35)] transition-all duration-200 hover:-translate-y-0.5 btn-press whitespace-nowrap"
+            >
+              Fale com um Especialista
+            </a>
+
             {isAuthenticated ? (
-              <div className="flex items-center gap-2">
-                <Link
-                  to="/minha-conta"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all"
-                >
-                  <User className="w-3.5 h-3.5 text-[#2ECC71]" />
-                  <span className="max-w-[120px] truncate">
-                    {(user as any)?.name || user?.email?.split('@')[0] || 'Minha Conta'}
-                  </span>
-                </Link>
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    className="inline-flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] transition-colors"
-                  >
-                    Admin
-                  </Link>
-                )}
+              /* MENU DO USUÁRIO SUSPENSO (DROPDOWN) - PADRÃO VISUAL DIAMOND GROUP, SEM ÍCONES */
+              <div
+                ref={userMenuRef}
+                className="relative"
+                onMouseEnter={handleMouseEnterUserMenu}
+                onMouseLeave={handleMouseLeaveUserMenu}
+              >
+                {/* GATILHO: NOME DO USUÁRIO */}
                 <button
                   type="button"
-                  onClick={handleLogout}
-                  title="Sair da conta"
-                  aria-label="Sair da conta"
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-red-500/15 border border-white/10 hover:border-red-400/30 transition-all duration-200 group"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  aria-expanded={isUserMenuOpen}
+                  aria-haspopup="true"
+                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-white border transition-all ${
+                    isUserMenuOpen
+                      ? 'bg-[#07132B] border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.25)]'
+                      : 'bg-white/10 hover:bg-white/15 border-white/10'
+                  }`}
                 >
-                  <LogOut className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-300 transition-colors" />
-                  <span>Sair</span>
+                  <span className="max-w-[140px] truncate">{nomeExibicao}</span>
+                  <span
+                    className={`text-[10px] text-[#D4AF37] transition-transform duration-200 ${
+                      isUserMenuOpen ? 'rotate-180' : ''
+                    }`}
+                  >
+                    ▼
+                  </span>
                 </button>
+
+                {/* PAINEL SUSPENSO (DROPDOWN) */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 top-full pt-2 w-64 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="rounded-2xl bg-[#07132B] border border-[#D4AF37]/40 shadow-[0_12px_36px_rgba(0,0,0,0.65)] p-4 text-white">
+                      {/* CABEÇALHO DO PAINEL: NOME + BADGE DO PERFIL */}
+                      <div className="pb-3 border-b border-white/10 space-y-1.5">
+                        <span className="text-[11px] uppercase tracking-wider text-slate-400 font-medium block">
+                          Conta Conectada
+                        </span>
+                        <div className="font-heading font-bold text-sm text-white truncate">
+                          {nomeExibicao}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              isEmpresario
+                                ? 'bg-amber-500/20 text-[#D4AF37] border border-[#D4AF37]/40'
+                                : 'bg-[#2ECC71]/20 text-[#2ECC71] border border-[#2ECC71]/40'
+                            }`}
+                          >
+                            Perfil: {badgePerfilTexto}
+                          </span>
+                          {isAdmin && (
+                            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D4AF37] text-[#07132B]">
+                              Admin
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* LINKS DO MENU DO USUÁRIO */}
+                      <div className="py-2.5 space-y-1 text-xs">
+                        {/* Se perfil Empresário, incluir também botão de texto 'Migrar para Analista' */}
+                        {isEmpresario && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsUserMenuOpen(false)
+                              setModalMigrarAberto(true)
+                            }}
+                            className="w-full text-left py-2 px-3 rounded-xl font-bold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] transition-colors shadow-sm mb-1"
+                          >
+                            Migrar para Analista (Modo Teste)
+                          </button>
+                        )}
+
+                        <Link
+                          to="/carteira"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
+                        >
+                          Carteira de Clientes
+                        </Link>
+                        <Link
+                          to="/clientes"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
+                        >
+                          Meus Clientes
+                        </Link>
+                        <Link
+                          to="/planos"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
+                        >
+                          Planos
+                        </Link>
+                        <Link
+                          to="/minha-conta"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
+                        >
+                          Minha Conta
+                        </Link>
+                        {isAdmin && (
+                          <Link
+                            to="/admin"
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:bg-white/10 transition-colors font-semibold"
+                          >
+                            Painel Administrativo
+                          </Link>
+                        )}
+                      </div>
+
+                      {/* SEPARADOR FINO */}
+                      <div className="border-t border-white/10 my-1" />
+
+                      {/* SAIR */}
+                      <div className="pt-1.5">
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="w-full text-left py-2 px-3 rounded-lg text-xs font-semibold text-red-300 hover:text-red-200 hover:bg-red-500/15 transition-colors"
+                        >
+                          Sair
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white transition-colors"
+                  className="inline-flex items-center px-3 py-2 text-xs font-medium text-slate-200 hover:text-white transition-colors"
                 >
-                  <LogIn className="w-3.5 h-3.5 text-[#2ECC71]" />
-                  <span>Entrar</span>
+                  Entrar
                 </Link>
                 <Link
                   to="/cadastro"
-                  className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-semibold text-[#07132B] bg-white/90 hover:bg-white transition-all shadow-sm"
+                  className="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-semibold text-[#07132B] bg-white/90 hover:bg-white transition-all shadow-sm"
                 >
-                  <UserPlus className="w-3.5 h-3.5 text-[#145A32]" />
-                  <span>Criar conta</span>
+                  Criar conta
                 </Link>
               </div>
             )}
-            <a
-              href="/#contato"
-              onClick={(e) => handleNavClick(e, 'contato')}
-              className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_4px_14px_rgba(46,204,113,0.35)] transition-all duration-200 hover:-translate-y-0.5 btn-press"
-            >
-              Fale Conosco
-            </a>
           </div>
 
           {/* MOBILE MENU TOGGLE */}
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
             aria-label="Abrir menu de navegação"
           >
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -306,7 +418,7 @@ export default function Layout() {
 
       {/* MOBILE SLIDE-OVER MENU */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex justify-end">
+        <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
@@ -315,7 +427,7 @@ export default function Layout() {
           />
 
           {/* Drawer */}
-          <div className="relative w-4/5 max-w-sm h-full bg-[#0A1A13] border-l border-white/10 p-6 flex flex-col justify-between shadow-2xl z-10 animate-slide-down">
+          <div className="relative w-4/5 max-w-sm h-full bg-[#0A1A13] border-l border-white/10 p-6 flex flex-col justify-between shadow-2xl z-10 animate-slide-down overflow-y-auto">
             <div>
               {/* Header inside drawer */}
               <div className="flex items-center justify-between pb-6 border-b border-white/10">
@@ -334,8 +446,105 @@ export default function Layout() {
                 </button>
               </div>
 
-              {/* Links */}
-              <div className="flex flex-col gap-4 mt-6">
+              {/* MENU DO USUÁRIO MOBILE (QUANDO LOGADO) - PARTE DO PAINEL LATERAL, ACIONADO POR TOQUE */}
+              {isAuthenticated && (
+                <div className="mt-4 p-4 rounded-2xl bg-[#07132B] border border-[#D4AF37]/40 shadow-lg text-white">
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileUserSectionOpen(!isMobileUserSectionOpen)}
+                    className="w-full flex items-center justify-between text-left"
+                  >
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] uppercase tracking-wider text-slate-400 font-medium block">
+                        Usuário Conectado
+                      </span>
+                      <span className="font-heading font-bold text-sm text-white block truncate max-w-[190px]">
+                        {nomeExibicao}
+                      </span>
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          isEmpresario
+                            ? 'bg-amber-500/20 text-[#D4AF37] border border-[#D4AF37]/40'
+                            : 'bg-[#2ECC71]/20 text-[#2ECC71] border border-[#2ECC71]/40'
+                        }`}
+                      >
+                        Perfil: {badgePerfilTexto}
+                      </span>
+                    </div>
+                    <span className="text-xs text-[#D4AF37] font-bold">
+                      {isMobileUserSectionOpen ? '▲' : '▼'}
+                    </span>
+                  </button>
+
+                  {isMobileUserSectionOpen && (
+                    <div className="mt-3 pt-3 border-t border-white/10 space-y-1 text-xs">
+                      {isEmpresario && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsMobileMenuOpen(false)
+                            setModalMigrarAberto(true)
+                          }}
+                          className="w-full text-center py-2 px-3 rounded-xl font-bold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] transition-colors shadow-sm mb-2"
+                        >
+                          Migrar para Analista (Modo Teste)
+                        </button>
+                      )}
+
+                      <Link
+                        to="/carteira"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
+                      >
+                        Carteira de Clientes
+                      </Link>
+                      <Link
+                        to="/clientes"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
+                      >
+                        Meus Clientes
+                      </Link>
+                      <Link
+                        to="/planos"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
+                      >
+                        Planos
+                      </Link>
+                      <Link
+                        to="/minha-conta"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
+                      >
+                        Minha Conta
+                      </Link>
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:bg-white/10 transition-colors font-semibold"
+                        >
+                          Painel Administrativo
+                        </Link>
+                      )}
+
+                      <div className="border-t border-white/10 my-1" />
+
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full text-left py-2 px-3 rounded-lg text-xs font-semibold text-red-300 hover:text-red-200 hover:bg-red-500/15 transition-colors"
+                      >
+                        Sair
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Links Principais Mobile: Início, Serviços, Sobre Nós, Depoimentos, Blog, Contato */}
+              <div className="flex flex-col gap-3 mt-6">
                 <Link
                   to="/"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -345,7 +554,7 @@ export default function Layout() {
                       : 'text-slate-200 hover:text-[#2ECC71]'
                   }`}
                 >
-                  Home
+                  Início
                 </Link>
                 <Link
                   to="/servicos"
@@ -358,81 +567,20 @@ export default function Layout() {
                 >
                   Serviços
                 </Link>
-                <Link
-                  to="/reforma-tributaria"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
-                    location.pathname.startsWith('/reforma-tributaria')
-                      ? 'text-[#F59E0B] font-bold'
-                      : 'text-slate-200 hover:text-[#F59E0B]'
-                  }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
-                  Reforma Tributária
-                </Link>
-                {!isEmpresario && (
-                  <>
-                    <Link
-                      to="/carteira"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
-                        location.pathname === '/carteira'
-                          ? 'text-[#D4AF37] font-bold'
-                          : 'text-slate-200 hover:text-[#D4AF37]'
-                      }`}
-                    >
-                      <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
-                      Carteira (Consolidado)
-                    </Link>
-                    <Link
-                      to="/clientes"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
-                        location.pathname.startsWith('/clientes')
-                          ? 'text-[#D4AF37] font-bold'
-                          : 'text-slate-200 hover:text-[#D4AF37]'
-                      }`}
-                    >
-                      <span className="w-2 h-2 rounded-full bg-slate-400" />
-                      Clientes (Cadastros)
-                    </Link>
-                  </>
-                )}
                 <a
-                  href="/calculadora-ibs-cbs"
-                  onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
-                  className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
-                    location.pathname === '/calculadora-ibs-cbs'
-                      ? 'text-[#D4AF37] font-bold'
-                      : 'text-slate-200 hover:text-[#D4AF37]'
-                  }`}
+                  href="/#sobre"
+                  onClick={(e) => handleNavClick(e, 'sobre')}
+                  className="text-base font-medium py-2 border-b border-white/5 text-slate-200 hover:text-[#2ECC71]"
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
-                  Calculadora IBS/CBS
-                </a>{' '}
+                  Sobre Nós
+                </a>
                 <a
-                  href="/diagnosticos"
-                  onClick={(e) => handleToolNav(e, '/diagnosticos')}
-                  className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
-                    location.pathname.startsWith('/diagnostico')
-                      ? 'text-[#2ECC71] font-bold'
-                      : 'text-slate-200 hover:text-[#2ECC71]'
-                  }`}
+                  href="/#depoimentos"
+                  onClick={(e) => handleNavClick(e, 'depoimentos')}
+                  className="text-base font-medium py-2 border-b border-white/5 text-slate-200 hover:text-[#2ECC71]"
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#2ECC71]" />
-                  Diagnóstico Tributário
-                </a>{' '}
-                <Link
-                  to="/planos"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`text-base font-medium py-2 border-b border-white/5 ${
-                    location.pathname === '/planos'
-                      ? 'text-[#D4AF37] font-bold'
-                      : 'text-slate-200 hover:text-[#D4AF37]'
-                  }`}
-                >
-                  Planos (Valores & Recursos)
-                </Link>
+                  Depoimentos
+                </a>
                 <Link
                   to="/blog"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -444,41 +592,19 @@ export default function Layout() {
                 >
                   Blog
                 </Link>
+                <a
+                  href="/#contato"
+                  onClick={(e) => handleNavClick(e, 'contato')}
+                  className="text-base font-medium py-2 border-b border-white/5 text-slate-200 hover:text-[#2ECC71]"
+                >
+                  Contato
+                </a>
               </div>
             </div>
+
             {/* Bottom action inside mobile drawer */}
-            <div className="pt-6 border-t border-white/10 flex flex-col gap-3">
-              {isAuthenticated ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/minha-conta"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex-1 py-2.5 px-3 rounded-xl font-semibold text-xs text-white bg-white/10 border border-white/20 flex items-center justify-center gap-2 truncate"
-                    >
-                      <User className="w-4 h-4 text-[#2ECC71] shrink-0" />
-                      <span className="truncate">Minha Conta</span>
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="py-2.5 px-3.5 rounded-xl font-semibold text-xs text-slate-300 hover:text-white bg-white/5 hover:bg-red-500/15 border border-white/10 hover:border-red-400/30 flex items-center justify-center gap-1.5 transition-colors shrink-0 group"
-                    >
-                      <LogOut className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-300 transition-colors" />
-                      <span>Sair</span>
-                    </button>
-                  </div>
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="w-full py-2 px-4 rounded-xl text-center font-semibold text-xs text-[#07132B] bg-[#D4AF37] block"
-                    >
-                      Acessar Painel Admin
-                    </Link>
-                  )}
-                </div>
-              ) : (
+            <div className="pt-6 border-t border-white/10 flex flex-col gap-3 mt-6">
+              {!isAuthenticated && (
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     to="/login"
@@ -506,10 +632,16 @@ export default function Layout() {
               <p className="text-center text-xs text-slate-400">
                 Atendimento consultivo em até 24h
               </p>
-            </div>{' '}
+            </div>
           </div>
         </div>
       )}
+
+      {/* MODAL DE MIGRAÇÃO PARA ANALISTA (MODO TESTE) */}
+      <ModalMigrarParaAnalista
+        aberto={modalMigrarAberto}
+        aoFechar={() => setModalMigrarAberto(false)}
+      />
 
       {/* MAIN CONTENT */}
       <main className="flex-1 min-h-screen">

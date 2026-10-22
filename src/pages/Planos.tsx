@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { PLANOS_CONFIG, MODO_TESTE_COBRANCA, migrarParaAnalistaModoTeste } from '@/services/planos'
+import { PLANOS_CONFIG, MODO_TESTE_COBRANCA } from '@/services/planos'
+import { ModalMigrarParaAnalista } from '@/components/ModalMigrarParaAnalista'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,41 +28,9 @@ export default function Planos() {
   const { toast } = useToast()
 
   const [modalMigracaoAberto, setModalMigracaoAberto] = useState(false)
-  const [migrando, setMigrando] = useState(false)
 
   const planoEmpresario = PLANOS_CONFIG.empresario
   const planoAnalista = PLANOS_CONFIG.analista
-
-  const handleMigrar = async () => {
-    setMigrando(true)
-    try {
-      const res = await migrarParaAnalistaModoTeste()
-      if (res.success) {
-        await recarregarUsuario()
-        toast({
-          title: 'Perfil Migrado com Sucesso!',
-          description:
-            'Sua conta agora é de Analista. A Carteira, Gestão de Clientes e Convites estão liberados.',
-        })
-        setModalMigracaoAberto(false)
-        navigate('/carteira')
-      } else {
-        toast({
-          title: 'Erro na Migração',
-          description: res.error || 'Não foi possível migrar seu perfil.',
-          variant: 'destructive',
-        })
-      }
-    } catch (err) {
-      toast({
-        title: 'Erro',
-        description: 'Falha na conexão com o servidor.',
-        variant: 'destructive',
-      })
-    } finally {
-      setMigrando(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-20 sm:pt-24 pb-20">
@@ -349,73 +318,10 @@ export default function Planos() {
       </div>
 
       {/* MODAL DE MIGRAÇÃO PARA ANALISTA (MODO TESTE) */}
-      <Dialog open={modalMigracaoAberto} onOpenChange={setModalMigracaoAberto}>
-        <DialogContent className="sm:max-w-md bg-[#07132B] text-white border-2 border-[#D4AF37] rounded-2xl p-6 sm:p-8 shadow-2xl">
-          <DialogHeader className="space-y-3 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#D4AF37] text-xs font-bold uppercase tracking-wider">
-              <span>Modo Teste Ativo</span>
-            </div>
-            <DialogTitle className="font-heading font-extrabold text-xl text-white">
-              Migrar Conta para Perfil Analista
-            </DialogTitle>
-            <DialogDescription className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-              Você está prestes a atualizar sua conta de <strong>Empresário</strong> para o perfil{' '}
-              <strong>Analista</strong>. No modo teste atual, a migração é realizada
-              instantaneamente, sem cobrança e sem exigência de pagamento.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-3 text-xs">
-            <span className="font-bold text-[#D4AF37] uppercase tracking-wider block">
-              Recursos que serão liberados imediatamente:
-            </span>
-            <div className="space-y-2 text-slate-200">
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#2ECC71] shrink-0" />
-                <span>
-                  <strong>Carteira de Clientes:</strong> Painel analítico consolidado e KPIs
-                </span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#2ECC71] shrink-0" />
-                <span>
-                  <strong>Gestão de Clientes:</strong> Cadastro e fichas individuais de empresas
-                </span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#2ECC71] shrink-0" />
-                <span>
-                  <strong>Envio de Convites:</strong> Disparo de convites para clientes da carteira
-                </span>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-xl bg-amber-500/15 border border-[#D4AF37]/40 text-amber-200 text-[11px] leading-relaxed">
-              <strong>Preço oficial do plano:</strong> R$ 347/mês (sem cobrança nesta fase de testes
-              gratuitos).
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setModalMigracaoAberto(false)}
-              className="text-xs border-white/20 text-slate-300 hover:bg-white/10"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              disabled={migrando}
-              onClick={handleMigrar}
-              className="flex-1 bg-[#D4AF37] text-[#07132B] hover:bg-[#c49f2e] font-bold text-xs"
-            >
-              {migrando ? 'Migrando Perfil...' : 'Confirmar Migração Gratuita'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ModalMigrarParaAnalista
+        aberto={modalMigracaoAberto}
+        aoFechar={() => setModalMigracaoAberto(false)}
+      />
     </div>
   )
 }
