@@ -162,6 +162,17 @@ export default function Layout() {
               Reforma Tributária
             </Link>
             <Link
+              to="/carteira"
+              className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                location.pathname === '/carteira'
+                  ? 'text-[#D4AF37] font-semibold active'
+                  : 'text-slate-200 hover:text-white'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+              Carteira
+            </Link>
+            <Link
               to="/clientes"
               className={`nav-link-hover text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 location.pathname.startsWith('/clientes')
@@ -169,7 +180,7 @@ export default function Layout() {
                   : 'text-slate-200 hover:text-white'
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
               Clientes
             </Link>
             <a
@@ -346,6 +357,18 @@ export default function Layout() {
                   Reforma Tributária
                 </Link>
                 <Link
+                  to="/carteira"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
+                    location.pathname === '/carteira'
+                      ? 'text-[#D4AF37] font-bold'
+                      : 'text-slate-200 hover:text-[#D4AF37]'
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+                  Carteira (Consolidado)
+                </Link>
+                <Link
                   to="/clientes"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`text-base font-medium py-2 border-b border-white/5 flex items-center gap-2 ${
@@ -354,8 +377,8 @@ export default function Layout() {
                       : 'text-slate-200 hover:text-[#D4AF37]'
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
-                  Clientes (Carteira)
+                  <span className="w-2 h-2 rounded-full bg-slate-400" />
+                  Clientes (Cadastros)
                 </Link>
                 <a
                   href="/calculadora-ibs-cbs"
@@ -654,10 +677,17 @@ export default function Layout() {
                 <span>Horário: Seg a Sex, 8h às 18h</span>
                 <div className="flex items-center gap-3">
                   <Link
+                    to="/carteira"
+                    className="text-slate-400 hover:text-[#D4AF37] transition-colors underline"
+                  >
+                    Carteira Consolidada
+                  </Link>
+                  <span>•</span>
+                  <Link
                     to="/clientes"
                     className="text-slate-400 hover:text-[#D4AF37] transition-colors underline"
                   >
-                    Carteira de Clientes
+                    Clientes
                   </Link>
                   <span>•</span>
                   <Link

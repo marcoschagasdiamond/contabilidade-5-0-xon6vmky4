@@ -33,6 +33,7 @@ import MinhaConta from './pages/MinhaConta'
 import Admin from './pages/Admin'
 import Clientes from './pages/Clientes'
 import DetalheCliente from './pages/DetalheCliente'
+import Carteira from './pages/Carteira'
 import Diagnostico from './pages/Diagnostico'
 import DiagnosticosHub from './pages/DiagnosticosHub'
 import Diagnostico360 from './pages/Diagnostico360'
@@ -198,6 +199,7 @@ const App = () => (
                 />
                 <Route path="/reforma-tributaria/glossario" element={<SubpageGlossarioFontes />} />
                 {/* Carteira de Clientes do Contador */}
+                <Route path="/carteira" element={<Carteira />} />
                 <Route path="/clientes" element={<Clientes />} />
                 <Route path="/clientes/:id" element={<DetalheCliente />} />
                 {/* Hub e Trilha dos 4 Diagnósticos Tributários */}
