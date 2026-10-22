@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import pb from '@/lib/pocketbase/client'
 import type { RecordModel } from 'pocketbase'
 
+export type PerfilUsuario = 'contador' | 'empresario'
+
 interface AuthContextType {
   user: RecordModel | null
   token: string | null
@@ -9,6 +11,9 @@ interface AuthContextType {
   isAuthenticated: boolean
   isAdmin: boolean
   isPremium: boolean
+  perfil: PerfilUsuario
+  isContador: boolean
+  isEmpresario: boolean
   plano: 'gratuito' | 'premium'
   simulacoesUsadas: number
   diagnosticosUsados: number
@@ -19,7 +24,13 @@ interface AuthContextType {
   podeBaixarPdfDiagnostico: boolean
   recarregarUsuario: () => Promise<void>
   login: (email: string, pass: string) => Promise<void>
-  signup: (nome: string, email: string, pass: string, passConfirm: string) => Promise<void>
+  signup: (
+    nome: string,
+    email: string,
+    pass: string,
+    passConfirm: string,
+    perfil?: PerfilUsuario,
+  ) => Promise<void>
   logout: () => void
 }
 
@@ -53,12 +64,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(pb.authStore.token)
   }
 
-  const signup = async (nome: string, email: string, pass: string, passConfirm: string) => {
+  const signup = async (
+    nome: string,
+    email: string,
+    pass: string,
+    passConfirm: string,
+    perfilEscolhido: PerfilUsuario = 'contador',
+  ) => {
     await pb.collection('users').create({
       name: nome.trim(),
       email: email.trim().toLowerCase(),
       password: pass,
       passwordConfirm: passConfirm,
+      perfil: perfilEscolhido,
     })
     // Auto-login após o cadastro
     await pb.collection('users').authWithPassword(email.trim().toLowerCase(), pass)
@@ -85,6 +103,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin =
     (user as any)?.role === 'admin' || user?.email === 'marcoschagasdiamond@icloud.com'
+
+  // Perfil: 'contador' ou 'empresario'. Se não preenchido ou vazio, padrão seguro é 'contador'
+  const rawPerfil = (user as any)?.perfil
+  const perfil: PerfilUsuario = rawPerfil === 'empresario' ? 'empresario' : 'contador'
+
+  const isContador = perfil === 'contador'
+  const isEmpresario = perfil === 'empresario'
 
   const isPremium =
     isAdmin || (user as any)?.is_premium === true || (user as any)?.plano === 'premium'
@@ -119,6 +144,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!token && !!user,
         isAdmin,
         isPremium,
+        perfil,
+        isContador,
+        isEmpresario,
         plano,
         simulacoesUsadas,
         diagnosticosUsados,

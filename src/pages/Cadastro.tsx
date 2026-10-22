@@ -12,13 +12,14 @@ import {
   ShieldCheck,
   Building2,
 } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth, type PerfilUsuario } from '@/context/AuthContext'
 
 export default function Cadastro() {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [perfil, setPerfil] = useState<PerfilUsuario>('contador')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -67,9 +68,11 @@ export default function Cadastro() {
     setIsLoading(true)
 
     try {
-      await signup(nome, email, password, passwordConfirm)
-      // Após cadastrar, direciona para o destino solicitado ou padrão Dados da Empresa
-      const target = destination || '/dados-empresa'
+      await signup(nome, email, password, passwordConfirm, perfil)
+      // Após cadastrar, direciona para o destino solicitado ou conforme perfil
+      // Para contador: dados-empresa ou destino
+      // Para empresário: minha-conta (ou destino se especificado)
+      const target = destination || (perfil === 'empresario' ? '/minha-conta' : '/dados-empresa')
       navigate(target, { replace: true })
     } catch (err: any) {
       console.error('Falha no cadastro:', err)
@@ -97,10 +100,10 @@ export default function Cadastro() {
               <TrendingUp className="w-6 h-6 stroke-[2.5]" />
             </div>
             <h1 className="font-heading font-bold text-2xl text-slate-900 tracking-tight">
-              Criar Conta de Cliente
+              Criar Conta na Plataforma
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Acesso aberto: salve os dados da sua empresa e acerte o seu regime tributário
+              Acesso completo a diagnósticos, simulações e inteligência tributária IBS/CBS
             </p>
           </div>
 
@@ -128,6 +131,55 @@ export default function Cadastro() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Pergunta: Você é contador ou empresário? (SEM ÍCONES) */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+                Você é contador ou empresário? *
+              </label>
+              <p className="text-xs text-slate-500 mb-3">
+                Personalizamos sua área de trabalho e ferramentas de acordo com a sua atuação.
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setPerfil('contador')}
+                  className={`py-3 px-3 rounded-xl text-left border transition-all text-xs font-heading ${
+                    perfil === 'contador'
+                      ? 'bg-[#07132B] text-white border-[#D4AF37] shadow-sm ring-1 ring-[#D4AF37]'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <span className="block font-bold text-sm">Contador</span>
+                  <span
+                    className={`block text-[11px] mt-0.5 ${
+                      perfil === 'contador' ? 'text-slate-300' : 'text-slate-500'
+                    }`}
+                  >
+                    Gestão de carteira, clientes e ferramentas avançadas
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPerfil('empresario')}
+                  className={`py-3 px-3 rounded-xl text-left border transition-all text-xs font-heading ${
+                    perfil === 'empresario'
+                      ? 'bg-[#07132B] text-white border-[#D4AF37] shadow-sm ring-1 ring-[#D4AF37]'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <span className="block font-bold text-sm">Empresário (Cliente)</span>
+                  <span
+                    className={`block text-[11px] mt-0.5 ${
+                      perfil === 'empresario' ? 'text-slate-300' : 'text-slate-500'
+                    }`}
+                  >
+                    Acompanhamento do seu negócio e seus diagnósticos
+                  </span>
+                </button>
+              </div>
+            </div>
+
             <div>
               <label
                 htmlFor="nome"

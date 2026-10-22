@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T01:33:29.852Z",
+  "generatedAt": "2026-10-22T01:55:48.051Z",
   "collections": [
     {
       "name": "users",
@@ -67,6 +67,19 @@
         {
           "name": "diagnosticos_usados",
           "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "perfil",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["contador", "empresario"]
+        },
+        {
+          "name": "cliente_id",
+          "type": "text",
           "required": false,
           "system": false
         }

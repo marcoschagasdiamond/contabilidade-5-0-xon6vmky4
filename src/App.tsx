@@ -75,6 +75,31 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+// Rota protegida exclusiva para Contador / Admin (bloqueia perfil Empresário)
+function ContadorRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, isEmpresario } = useAuth()
+  const location = useLocation()
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-8 h-8 border-4 border-[#2ECC71] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  // Se for empresário, redireciona para a sua área restrita Minha Conta
+  if (isEmpresario) {
+    return <Navigate to="/minha-conta" replace />
+  }
+
+  return <>{children}</>
+}
+
 // Rota protegida exclusiva para Admin
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, isAdmin } = useAuth()
@@ -198,10 +223,31 @@ const App = () => (
                   element={<Navigate to="/reforma-tributaria" replace />}
                 />
                 <Route path="/reforma-tributaria/glossario" element={<SubpageGlossarioFontes />} />
-                {/* Carteira de Clientes do Contador */}
-                <Route path="/carteira" element={<Carteira />} />
-                <Route path="/clientes" element={<Clientes />} />
-                <Route path="/clientes/:id" element={<DetalheCliente />} />
+                {/* Carteira de Clientes do Contador (Restrita a Contadores) */}
+                <Route
+                  path="/carteira"
+                  element={
+                    <ContadorRoute>
+                      <Carteira />
+                    </ContadorRoute>
+                  }
+                />
+                <Route
+                  path="/clientes"
+                  element={
+                    <ContadorRoute>
+                      <Clientes />
+                    </ContadorRoute>
+                  }
+                />
+                <Route
+                  path="/clientes/:id"
+                  element={
+                    <ContadorRoute>
+                      <DetalheCliente />
+                    </ContadorRoute>
+                  }
+                />
                 {/* Hub e Trilha dos 4 Diagnósticos Tributários */}
                 <Route path="/diagnosticos" element={<DiagnosticosHub />} />
                 <Route path="/diagnostico-360" element={<Diagnostico360 />} />
