@@ -600,20 +600,29 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setTextColor(203, 213, 225)
   doc.text('ECONOMIA ANUAL PROJETADA', ecoX + 4, currentY + 9)
 
+  const ecoAnualValor = resultados.resultadoDashboard.economiaAnualProjetada
+  const ecoMensalValor = resultados.resultadoDashboard.economiaMensalProjetada
+  const temEconomiaAnual = ecoAnualValor >= 0
+  const temEconomiaMensal = ecoMensalValor >= 0
+
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
-  doc.text(
-    formatarMoeda(resultados.resultadoDashboard.economiaAnualProjetada),
-    ecoX + 4,
-    currentY + 16,
-  )
+  if (temEconomiaAnual) {
+    doc.setFontSize(11)
+    doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
+    doc.text(formatarMoeda(ecoAnualValor), ecoX + 4, currentY + 16)
+  } else {
+    doc.setFontSize(7)
+    doc.setTextColor(226, 232, 240)
+    doc.text('Sem economia neste cenário', ecoX + 4, currentY + 16)
+  }
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(6.5)
   doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
   doc.text(
-    `Economia: ${formatarMoeda(resultados.resultadoDashboard.economiaMensalProjetada)}/mês`,
+    temEconomiaMensal
+      ? `Economia: ${formatarMoeda(ecoMensalValor)}/mês`
+      : 'Sem economia neste cenário',
     ecoX + 4,
     currentY + 22,
   )
@@ -957,8 +966,12 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
       ? 'atual'
       : parametros.anoTransicaoDashboard || 2033
   const regimeRec = resultados.resultadoDashboard.regimeRecomendado
-  const ecoAnualStr = formatarMoeda(resultados.resultadoDashboard.economiaAnualProjetada)
-  const ecoMensalStr = formatarMoeda(resultados.resultadoDashboard.economiaMensalProjetada)
+  const ecoAnualValorRec = resultados.resultadoDashboard.economiaAnualProjetada
+  const ecoMensalValorRec = resultados.resultadoDashboard.economiaMensalProjetada
+  const ecoAnualStr =
+    ecoAnualValorRec >= 0 ? formatarMoeda(ecoAnualValorRec) : 'Sem economia neste cenário'
+  const ecoMensalStr =
+    ecoMensalValorRec >= 0 ? formatarMoeda(ecoMensalValorRec) : 'Sem economia neste cenário'
 
   const eh2026Dashboard = isAno2026(anoDashboardNum)
   const textoRecomendacao =
@@ -966,7 +979,9 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
       ? `Para o cenário atual pré-reforma, o regime mais econômico apurado é o ${regimeRec}. Com a vigência da EC 132/2023 e LC 214/2025 a partir de 2026, a empresa deve acompanhar a esteira de desonerações da CBS e do IBS para reprogramar sua opção anual em janeiro.`
       : eh2026Dashboard
         ? `Para o ano 2026, o regime recomendado apurado é o ${regimeRec}. Conforme o art. 348 da LC 214/2025, o ano de 2026 opera sob a regra "${TEXTO_FASE_TESTE_2026}", de modo que a apuração do IBS e da CBS não concorre na opção tributária e a carga efetiva líquida é tratada como zero/compensável, mantendo a disputa entre os regimes vigentes.`
-        : `Para o ano ${anoDashboardNum}, o regime fiscal ${regimeRec} economiza ${ecoAnualStr} ao ano (${ecoMensalStr}/mês) em relação ao sistema atual suportado (${regimeAtualExibir}), correspondendo a uma alíquota efetiva projetada de ${resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%.`
+        : ecoAnualValorRec >= 0
+          ? `Para o ano ${anoDashboardNum}, o regime fiscal ${regimeRec} economiza ${ecoAnualStr} ao ano (${ecoMensalStr}/mês) em relação ao sistema atual suportado (${regimeAtualExibir}), correspondendo a uma alíquota efetiva projetada de ${resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%.`
+          : `Para o ano ${anoDashboardNum}, o regime fiscal ${regimeRec} apresenta alíquota efetiva projetada de ${resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}% em relação ao sistema atual suportado (${regimeAtualExibir}), com economia anual projetada: Sem economia neste cenário.`
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
@@ -1179,11 +1194,14 @@ export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
   doc.setTextColor(226, 232, 240)
-  doc.text(
-    `Economia Anual de ${formatarMoeda(simVencedora.resultados.resultadoDashboard.economiaAnualProjetada)} (${formatarMoeda(simVencedora.resultados.resultadoDashboard.economiaMensalProjetada)}/mês) | Nova Alíquota: ${simVencedora.resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%`,
-    margin + 7,
-    currentY + 22,
-  )
+  const ecoAnualVencedora = simVencedora.resultados.resultadoDashboard.economiaAnualProjetada
+  const ecoMensalVencedora = simVencedora.resultados.resultadoDashboard.economiaMensalProjetada
+  const textoDestaqueEco =
+    ecoAnualVencedora >= 0
+      ? `Economia Anual de ${formatarMoeda(ecoAnualVencedora)} (${formatarMoeda(ecoMensalVencedora)}/mês) | Nova Alíquota: ${simVencedora.resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%`
+      : `Economia Anual: Sem economia neste cenário | Nova Alíquota: ${simVencedora.resultados.resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%`
+
+  doc.text(textoDestaqueEco, margin + 7, currentY + 22)
 
   currentY += 34
 
@@ -1246,12 +1264,18 @@ export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions
     {
       titulo: 'Economia Mensal Projetada',
       isDestaque: true,
-      getValores: (s) => formatarMoeda(s.resultados.resultadoDashboard.economiaMensalProjetada),
+      getValores: (s) =>
+        s.resultados.resultadoDashboard.economiaMensalProjetada >= 0
+          ? formatarMoeda(s.resultados.resultadoDashboard.economiaMensalProjetada)
+          : 'Sem economia neste cenário',
     },
     {
       titulo: 'Economia Anual Projetada',
       isDestaque: true,
-      getValores: (s) => formatarMoeda(s.resultados.resultadoDashboard.economiaAnualProjetada),
+      getValores: (s) =>
+        s.resultados.resultadoDashboard.economiaAnualProjetada >= 0
+          ? formatarMoeda(s.resultados.resultadoDashboard.economiaAnualProjetada)
+          : 'Sem economia neste cenário',
     },
 
     // Seção Carga dos 4 Regimes

@@ -873,10 +873,15 @@ export default function Modulo6Dashboard({
 
         {/* KPI 3: Economia Mensal Projetada */}
         {(() => {
-          const strValorMensal = formatarMoeda(Math.abs(economiaMensalProjetada))
-          // Fonte adaptativa baseada no comprimento do valor formatado
-          const tamanhoFonteMensal =
-            strValorMensal.length > 18
+          const temEconomiaMensal = economiaMensalProjetada >= 0
+          const strValorMensal = temEconomiaMensal
+            ? formatarMoeda(economiaMensalProjetada)
+            : 'Sem economia neste cenário'
+
+          // Fonte adaptativa baseada no comprimento do valor formatado ou texto
+          const tamanhoFonteMensal = !temEconomiaMensal
+            ? 'text-lg sm:text-xl font-sans'
+            : strValorMensal.length > 18
               ? 'text-base sm:text-lg'
               : strValorMensal.length > 15
                 ? 'text-lg sm:text-xl'
@@ -892,19 +897,19 @@ export default function Modulo6Dashboard({
                     Economia Mensal Projetada
                   </span>
                   <span className="font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px] shrink-0">
-                    {economiaMensalProjetada >= 0 ? 'Redução' : 'Acréscimo'}
+                    {temEconomiaMensal ? 'Redução' : 'Acréscimo'}
                   </span>
                 </div>
                 <div className="py-0.5 min-w-0 overflow-hidden">
                   <p
-                    className={`${tamanhoFonteMensal} font-mono font-extrabold text-emerald-700 truncate tracking-tight`}
+                    className={`${tamanhoFonteMensal} ${temEconomiaMensal ? 'font-mono' : 'font-semibold'} font-extrabold text-emerald-700 truncate tracking-tight`}
                     title={strValorMensal}
                   >
                     {strValorMensal}
                   </p>
                 </div>
                 <p className="text-[11px] text-slate-500 line-clamp-2">
-                  {economiaMensalProjetada >= 0
+                  {temEconomiaMensal
                     ? 'Economia líquida estimada por competência mensal'
                     : 'Necessidade de ajuste via tomada de créditos adicionais'}
                 </p>
@@ -915,10 +920,15 @@ export default function Modulo6Dashboard({
 
         {/* KPI 4: Economia Anual Projetada */}
         {(() => {
-          const strValorAnual = formatarMoeda(Math.abs(economiaAnualProjetada))
-          // Fonte adaptativa baseada no comprimento do valor formatado
-          const tamanhoFonteAnual =
-            strValorAnual.length > 18
+          const temEconomiaAnual = economiaAnualProjetada >= 0
+          const strValorAnual = temEconomiaAnual
+            ? formatarMoeda(economiaAnualProjetada)
+            : 'Sem economia neste cenário'
+
+          // Fonte adaptativa baseada no comprimento do valor formatado ou texto
+          const tamanhoFonteAnual = !temEconomiaAnual
+            ? 'text-lg sm:text-xl font-sans'
+            : strValorAnual.length > 18
               ? 'text-base sm:text-lg'
               : strValorAnual.length > 15
                 ? 'text-lg sm:text-xl'
@@ -940,7 +950,7 @@ export default function Modulo6Dashboard({
                 </div>
                 <div className="py-0.5 min-w-0 overflow-hidden">
                   <p
-                    className={`${tamanhoFonteAnual} font-mono font-extrabold text-white truncate tracking-tight`}
+                    className={`${tamanhoFonteAnual} ${temEconomiaAnual ? 'font-mono' : 'font-semibold'} font-extrabold text-white truncate tracking-tight`}
                     title={strValorAnual}
                   >
                     {strValorAnual}
