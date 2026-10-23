@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-23T00:56:34.557Z",
+  "generatedAt": "2026-10-23T01:18:01.881Z",
   "collections": [
     {
       "name": "users",
@@ -445,6 +445,12 @@
         {
           "name": "cliente_id",
           "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "configuracoes_diagnostico_json",
+          "type": "json",
           "required": false,
           "system": false
         }

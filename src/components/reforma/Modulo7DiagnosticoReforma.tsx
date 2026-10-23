@@ -384,152 +384,152 @@ export function ConteudoModulo7Diagnostico({
             {perguntasBlocoA.map((p, idx) => {
               const temValorPropagado = respostasPreenchidas[p.id] !== undefined
               return (
-              <div key={p.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                  <h4 className="font-heading font-bold text-sm text-[#07132B]">
-                    {idx + 1}. {p.titulo}
-                  </h4>
-                  {temValorPropagado && (
-                    <BadgeOrigemPropagada origem="configuracoes" />
-                  )}
-                </div>
-                <p className="text-xs text-slate-500 mb-3">{p.descricao}</p>
+                <div key={p.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <h4 className="font-heading font-bold text-sm text-[#07132B]">
+                      {idx + 1}. {p.titulo}
+                    </h4>
+                    {temValorPropagado && <BadgeOrigemPropagada origem="configuracoes" />}
+                  </div>
+                  <p className="text-xs text-slate-500 mb-3">{p.descricao}</p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {p.opcoes?.map((op) => {
-                    const isSel = respostas[p.id] === op.valor
-                    return (
-                      <button
-                        key={op.valor}
-                        type="button"
-                        onClick={() => handleSelect(p.id, op.valor)}
-                        className={`p-2.5 rounded-xl text-left text-xs transition-all border ${
-                          isSel
-                            ? 'bg-[#07132B] text-white border-[#07132B] font-semibold shadow-sm ring-1 ring-[#D4AF37]/50'
-                            : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'
-                        }`}
-                      >
-                        <div className="font-semibold">{op.label}</div>
-                        {op.descricaoDetalhada && (
-                          <div
-                            className={`text-[11px] mt-1 leading-snug ${
-                              isSel ? 'text-[#F3E5AB]' : 'text-slate-500'
-                            }`}
-                          >
-                            {op.descricaoDetalhada}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {p.opcoes?.map((op) => {
+                      const isSel = respostas[p.id] === op.valor
+                      return (
+                        <button
+                          key={op.valor}
+                          type="button"
+                          onClick={() => handleSelect(p.id, op.valor)}
+                          className={`p-2.5 rounded-xl text-left text-xs transition-all border ${
+                            isSel
+                              ? 'bg-[#07132B] text-white border-[#07132B] font-semibold shadow-sm ring-1 ring-[#D4AF37]/50'
+                              : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'
+                          }`}
+                        >
+                          <div className="font-semibold">{op.label}</div>
+                          {op.descricaoDetalhada && (
+                            <div
+                              className={`text-[11px] mt-1 leading-snug ${
+                                isSel ? 'text-[#F3E5AB]' : 'text-slate-500'
+                              }`}
+                            >
+                              {op.descricaoDetalhada}
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* PAINEL COMPLEMENTAR QUANDO FOR ATIVIDADE MISTA NA PERGUNTA A1 */}
+                  {p.id === 'a1_atividade' && isAtividadeMista && (
+                    <div className="mt-4 bg-[#07132B] text-white border border-[#D4AF37]/40 p-4 sm:p-5 rounded-xl space-y-4 shadow-md animate-fade-in">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#D4AF37]/20">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-xs sm:text-sm font-bold text-white block">
+                              Calibração Proporcional da Atividade Mista
+                            </Label>
+                            <BadgeOrigemPropagada origem="configuracoes" />
                           </div>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-
-                {/* PAINEL COMPLEMENTAR QUANDO FOR ATIVIDADE MISTA NA PERGUNTA A1 */}
-                {p.id === 'a1_atividade' && isAtividadeMista && (
-                  <div className="mt-4 bg-[#07132B] text-white border border-[#D4AF37]/40 p-4 sm:p-5 rounded-xl space-y-4 shadow-md animate-fade-in">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#D4AF37]/20">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Label className="text-xs sm:text-sm font-bold text-white block">
-                            Calibração Proporcional da Atividade Mista
-                          </Label>
-                          <BadgeOrigemPropagada origem="configuracoes" />
+                          <span className="text-[11px] text-slate-300 block">
+                            Ajuste o slider para calibrar a ponderação de risco e as regras
+                            setoriais.
+                          </span>
                         </div>
-                        <span className="text-[11px] text-slate-300 block">
-                          Ajuste o slider para calibrar a ponderação de risco e as regras setoriais.
+                        <span className="inline-flex items-center self-start sm:self-auto text-xs font-mono font-bold text-[#07132B] bg-[#D4AF37] px-3 py-1 rounded-md shadow-sm">
+                          {proporcaoServicoMisto}% Serviço | {100 - proporcaoServicoMisto}% Comércio
                         </span>
                       </div>
-                      <span className="inline-flex items-center self-start sm:self-auto text-xs font-mono font-bold text-[#07132B] bg-[#D4AF37] px-3 py-1 rounded-md shadow-sm">
-                        {proporcaoServicoMisto}% Serviço | {100 - proporcaoServicoMisto}% Comércio
-                      </span>
-                    </div>
 
-                    <div className="space-y-2 pt-1">
-                      <div className="flex justify-between text-[11px] text-[#D4AF37] font-medium">
-                        <span>Serviço ({proporcaoServicoMisto}%)</span>
-                        <span>Comércio ({100 - proporcaoServicoMisto}%)</span>
-                      </div>
-                      <Slider
-                        value={[proporcaoServicoMisto]}
-                        min={0}
-                        max={100}
-                        step={5}
-                        onValueChange={(val) => setProporcaoServicoMisto(val[0])}
-                        className="py-1 cursor-pointer"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                      <div className="space-y-1.5 bg-[#0A1A2F] p-3 rounded-lg border border-[#D4AF37]/30">
-                        <Label className="text-xs font-bold text-[#D4AF37]">
-                          Ramo de Serviço ({proporcaoServicoMisto}%):
-                        </Label>
-                        <Select
-                          value={subatividadeServicoMisto}
-                          onValueChange={(val) =>
-                            setSubatividadeServicoMisto(val as SubatividadeServico)
-                          }
-                        >
-                          <SelectTrigger className="h-9 bg-[#07132B] border-slate-700 text-white text-xs font-medium">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-[#07132B] border-slate-700 text-white">
-                            {SUBATIVIDADES_SERVICO.map((item) => (
-                              <SelectItem
-                                key={item.id}
-                                value={item.id}
-                                className="text-xs text-white hover:bg-slate-800 focus:bg-slate-800"
-                              >
-                                {item.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="space-y-2 pt-1">
+                        <div className="flex justify-between text-[11px] text-[#D4AF37] font-medium">
+                          <span>Serviço ({proporcaoServicoMisto}%)</span>
+                          <span>Comércio ({100 - proporcaoServicoMisto}%)</span>
+                        </div>
+                        <Slider
+                          value={[proporcaoServicoMisto]}
+                          min={0}
+                          max={100}
+                          step={5}
+                          onValueChange={(val) => setProporcaoServicoMisto(val[0])}
+                          className="py-1 cursor-pointer"
+                        />
                       </div>
 
-                      <div className="space-y-1.5 bg-[#0A1A2F] p-3 rounded-lg border border-[#D4AF37]/30">
-                        <Label className="text-xs font-bold text-[#D4AF37]">
-                          Ramo de Comércio ({100 - proporcaoServicoMisto}%):
-                        </Label>
-                        <Select
-                          value={subatividadeComercioMisto}
-                          onValueChange={(val) =>
-                            setSubatividadeComercioMisto(val as SubatividadeComercio)
-                          }
-                        >
-                          <SelectTrigger className="h-9 bg-[#07132B] border-slate-700 text-white text-xs font-medium">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-[#07132B] border-slate-700 text-white">
-                            {SUBATIVIDADES_COMERCIO.map((item) => (
-                              <SelectItem
-                                key={item.id}
-                                value={item.id}
-                                className="text-xs text-white hover:bg-slate-800 focus:bg-slate-800"
-                              >
-                                {item.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                        <div className="space-y-1.5 bg-[#0A1A2F] p-3 rounded-lg border border-[#D4AF37]/30">
+                          <Label className="text-xs font-bold text-[#D4AF37]">
+                            Ramo de Serviço ({proporcaoServicoMisto}%):
+                          </Label>
+                          <Select
+                            value={subatividadeServicoMisto}
+                            onValueChange={(val) =>
+                              setSubatividadeServicoMisto(val as SubatividadeServico)
+                            }
+                          >
+                            <SelectTrigger className="h-9 bg-[#07132B] border-slate-700 text-white text-xs font-medium">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#07132B] border-slate-700 text-white">
+                              {SUBATIVIDADES_SERVICO.map((item) => (
+                                <SelectItem
+                                  key={item.id}
+                                  value={item.id}
+                                  className="text-xs text-white hover:bg-slate-800 focus:bg-slate-800"
+                                >
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1.5 bg-[#0A1A2F] p-3 rounded-lg border border-[#D4AF37]/30">
+                          <Label className="text-xs font-bold text-[#D4AF37]">
+                            Ramo de Comércio ({100 - proporcaoServicoMisto}%):
+                          </Label>
+                          <Select
+                            value={subatividadeComercioMisto}
+                            onValueChange={(val) =>
+                              setSubatividadeComercioMisto(val as SubatividadeComercio)
+                            }
+                          >
+                            <SelectTrigger className="h-9 bg-[#07132B] border-slate-700 text-white text-xs font-medium">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#07132B] border-slate-700 text-white">
+                              {SUBATIVIDADES_COMERCIO.map((item) => (
+                                <SelectItem
+                                  key={item.id}
+                                  value={item.id}
+                                  className="text-xs text-white hover:bg-slate-800 focus:bg-slate-800"
+                                >
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-[#07132B]/70 border border-[#2ECC71]/30 text-[11px] text-slate-200 flex items-center justify-between">
+                        <span>
+                          Ponderação do risco setorial aplicada:{' '}
+                          <strong className="text-[#2ECC71] font-mono">
+                            {pontuacaoPonderadaA1} pts
+                          </strong>
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {proporcaoServicoMisto}% Serviço + {100 - proporcaoServicoMisto}% Comércio
+                        </span>
                       </div>
                     </div>
-
-                    <div className="p-2.5 rounded-lg bg-[#07132B]/70 border border-[#2ECC71]/30 text-[11px] text-slate-200 flex items-center justify-between">
-                      <span>
-                        Ponderação do risco setorial aplicada:{' '}
-                        <strong className="text-[#2ECC71] font-mono">
-                          {pontuacaoPonderadaA1} pts
-                        </strong>
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        {proporcaoServicoMisto}% Serviço + {100 - proporcaoServicoMisto}% Comércio
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
 
