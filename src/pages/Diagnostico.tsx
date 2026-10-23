@@ -79,6 +79,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { carregarDadosEmpresa, existeDadosEmpresaSalvos } from '@/types/dadosEmpresa'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
 interface FormErrors {
   nome?: string
@@ -615,6 +616,19 @@ export default function Diagnostico() {
               diferencaValor: item.diferencaValor,
               diferencaPercent: item.diferencaPercent,
             })),
+            configuracoes_diagnostico_json: {
+              regime_atual: formData.regimeAtual,
+              segmento: formData.segmento,
+              atividade_mista: formData.atividadeMista,
+              ano_base_transicao: formData.anoBase,
+              uf_origem: formData.ufOrigem,
+              cidade: formData.cidade,
+              funcionarios: formData.funcionarios,
+              emissao_nf: formData.emissaoNf,
+              cnpj: formData.cnpj,
+              razao_social: formData.empresa,
+              nome_contato: formData.nome,
+            },
           })
 
           // Registra o uso no backend/localStorage e atualiza contexto
@@ -913,15 +927,18 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
         {etapa === 1 && (
           <div className="bg-white rounded-[24px] p-6 sm:p-10 shadow-xl border border-slate-200">
             <div className="mb-8">
-              <span className="text-xs font-semibold text-[#145A32] uppercase tracking-wider block mb-1">
-                Passo 1 • Identificação
-              </span>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold text-[#145A32] uppercase tracking-wider block">
+                  Passo 1 • Identificação
+                </span>
+                <BadgeOrigemPropagada origem="configuracoes" />
+              </div>
               <h2 className="font-heading font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight">
                 Conte-nos sobre a sua empresa
               </h2>
               <p className="text-slate-600 text-sm mt-1">
-                Os dados de contato serão utilizados para enviar o relatório detalhado do seu
-                diagnóstico.
+                Os dados de contato e localização são sincronizados a partir das Configurações do
+                Diagnóstico e da Calculadora IBS/CBS.
               </p>
             </div>
 

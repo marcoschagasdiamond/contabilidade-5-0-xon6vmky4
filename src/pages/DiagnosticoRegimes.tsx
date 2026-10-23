@@ -13,6 +13,7 @@ import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
 export default function DiagnosticoRegimes() {
   const navigate = useNavigate()
@@ -193,6 +194,7 @@ export default function DiagnosticoRegimes() {
                 <Scale className="w-3.5 h-3.5" />
                 <span>DIAGNÓSTICO 3 DE 4 • COMPARADOR DE REGIME TRIBUTÁRIO</span>
               </div>
+              <BadgeOrigemPropagada origem="configuracoes" />
               <FreemiumBadge tipo="diagnostico" />
             </div>
 

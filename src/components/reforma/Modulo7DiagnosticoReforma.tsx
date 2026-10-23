@@ -29,6 +29,7 @@ import {
   SubatividadeServico,
   SubatividadeComercio,
 } from '@/types/calculadoraIbsCbs'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
 export interface Modulo7DiagnosticoReformaProps {
   // Modo de exibição: 'reforma' (página da Reforma Tributária) ou 'trilha' (página /diagnostico-transicao)
@@ -367,9 +368,12 @@ export function ConteudoModulo7Diagnostico({
               A
             </span>
             <div>
-              <h3 className="font-heading font-extrabold text-lg text-[#07132B]">
-                Bloco A: Negócio, Regime & Vendas (20 min)
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-heading font-extrabold text-lg text-[#07132B]">
+                  Bloco A: Negócio, Regime & Vendas (20 min)
+                </h3>
+                <BadgeOrigemPropagada origem="configuracoes" />
+              </div>
               <p className="text-xs text-slate-500">
                 Mapeia enquadramento, atividade, perfil dos compradores e operações com exterior.
               </p>
@@ -377,11 +381,18 @@ export function ConteudoModulo7Diagnostico({
           </div>
 
           <div className="space-y-6">
-            {perguntasBlocoA.map((p, idx) => (
+            {perguntasBlocoA.map((p, idx) => {
+              const temValorPropagado = respostasPreenchidas[p.id] !== undefined
+              return (
               <div key={p.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
-                <h4 className="font-heading font-bold text-sm text-[#07132B] mb-1">
-                  {idx + 1}. {p.titulo}
-                </h4>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                  <h4 className="font-heading font-bold text-sm text-[#07132B]">
+                    {idx + 1}. {p.titulo}
+                  </h4>
+                  {temValorPropagado && (
+                    <BadgeOrigemPropagada origem="configuracoes" />
+                  )}
+                </div>
                 <p className="text-xs text-slate-500 mb-3">{p.descricao}</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -417,11 +428,14 @@ export function ConteudoModulo7Diagnostico({
                 {p.id === 'a1_atividade' && isAtividadeMista && (
                   <div className="mt-4 bg-[#07132B] text-white border border-[#D4AF37]/40 p-4 sm:p-5 rounded-xl space-y-4 shadow-md animate-fade-in">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#D4AF37]/20">
-                      <div>
-                        <Label className="text-xs sm:text-sm font-bold text-white block">
-                          Calibração Proporcional da Atividade Mista
-                        </Label>
-                        <span className="text-[11px] text-slate-300">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs sm:text-sm font-bold text-white block">
+                            Calibração Proporcional da Atividade Mista
+                          </Label>
+                          <BadgeOrigemPropagada origem="configuracoes" />
+                        </div>
+                        <span className="text-[11px] text-slate-300 block">
                           Ajuste o slider para calibrar a ponderação de risco e as regras setoriais.
                         </span>
                       </div>

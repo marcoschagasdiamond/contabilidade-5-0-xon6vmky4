@@ -34,6 +34,7 @@ import pb from '@/lib/pocketbase/client'
 import { registrarDiagnosticoUsado } from '@/services/freemium'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
 // Definição completa dos 7 riscos extraídos com rigor do PDF da Diamond Intelligence
 export interface Risco360Item {
@@ -483,19 +484,34 @@ export default function Diagnostico360() {
         <section className="space-y-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
-              <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block mb-1">
-                Matriz Estrutural Diamond Intelligence
-              </span>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
+                  Matriz Estrutural Diamond Intelligence
+                </span>
+                <BadgeOrigemPropagada origem="configuracoes" />
+              </div>
               <h2 className="text-2xl sm:text-3xl font-heading font-black text-[#07132B]">
                 Os 7 Riscos Mapeados
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Conteúdo integral do Dossiê Diamond Group & Grupo Baumgartener.
+                Conteúdo integral do Dossiê Diamond Group & Grupo Baumgartener. Parâmetros
+                sincronizados das Configurações.
               </p>
             </div>
 
-            <div className="text-xs text-slate-500 bg-slate-100 p-2.5 rounded-xl border border-slate-200">
-              Setor da Empresa: <strong className="text-[#07132B]">{dadosEmpresa.segmento}</strong>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="text-xs text-slate-500 bg-slate-100 p-2.5 rounded-xl border border-slate-200 flex items-center gap-2">
+                <span>
+                  Setor: <strong className="text-[#07132B]">{dadosEmpresa.segmento}</strong>
+                </span>
+                <span>
+                  • Regime:{' '}
+                  <strong className="text-[#07132B]">
+                    {dadosEmpresa.regimeAtual || 'Simples Nacional'}
+                  </strong>
+                </span>
+                <BadgeOrigemPropagada origem="configuracoes" />
+              </div>
             </div>
           </div>
 

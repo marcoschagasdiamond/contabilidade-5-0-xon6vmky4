@@ -960,6 +960,19 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       empresa: perfil.nomeEmpresa,
       cnpj: perfil.cnpj,
       nomeContato: perfil.nomeContato,
+      configuracoesDiagnostico: {
+        regimeAtual: perfil.regimeAtual || config.regimeAtualEmpresa || regimeAtualFiltro,
+        segmento: perfil.segmento,
+        atividadeMista: perfil.atividadeMista ?? config.tipoAtividade === 'misto',
+        proporcaoServicoMisto: perfil.proporcaoServicoMisto ?? config.proporcaoServicoMisto,
+        anoBaseTransicao:
+          perfil.anoBaseTransicao ||
+          (typeof config.anoTransicao === 'number' ? config.anoTransicao : 2026),
+        ufOrigem: perfil.ufOrigem || ufOrigem,
+        cidade: perfil.cidade,
+        funcionarios: perfil.funcionarios,
+        emissaoNf: perfil.emissaoNf,
+      },
     }
   }
 
@@ -1084,6 +1097,24 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     }
     if (p.anoTransicaoDashboard !== undefined) {
       setAnoTransicaoDashboard(p.anoTransicaoDashboard)
+    }
+
+    // Se a simulação tiver configuracoesDiagnostico salvas, sincroniza com DadosEmpresa
+    if (p.configuracoesDiagnostico) {
+      salvarDadosEmpresa({
+        nomeEmpresa: p.empresa,
+        cnpj: p.cnpj,
+        nomeContato: p.nomeContato,
+        regimeAtual: p.configuracoesDiagnostico.regimeAtual,
+        segmento: p.configuracoesDiagnostico.segmento,
+        atividadeMista: p.configuracoesDiagnostico.atividadeMista,
+        proporcaoServicoMisto: p.configuracoesDiagnostico.proporcaoServicoMisto,
+        anoBaseTransicao: p.configuracoesDiagnostico.anoBaseTransicao as any,
+        ufOrigem: p.configuracoesDiagnostico.ufOrigem,
+        cidade: p.configuracoesDiagnostico.cidade,
+        funcionarios: p.configuracoesDiagnostico.funcionarios,
+        emissaoNf: p.configuracoesDiagnostico.emissaoNf,
+      })
     }
   }
 

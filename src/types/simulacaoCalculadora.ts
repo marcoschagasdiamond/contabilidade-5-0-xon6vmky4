@@ -70,6 +70,19 @@ export interface ParametrosSimulacaoCalculadora {
   empresa?: string
   cnpj?: string
   nomeContato?: string
+
+  // Metadados de configurações sincronizadas dos diagnósticos
+  configuracoesDiagnostico?: {
+    regimeAtual?: string
+    segmento?: string
+    atividadeMista?: boolean
+    proporcaoServicoMisto?: number
+    anoBaseTransicao?: number
+    ufOrigem?: string
+    cidade?: string
+    funcionarios?: string
+    emissaoNf?: string
+  }
 }
 
 /**

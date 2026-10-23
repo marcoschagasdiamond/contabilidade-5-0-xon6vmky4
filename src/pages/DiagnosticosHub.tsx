@@ -5,6 +5,7 @@ import {
   Calendar,
   Scale,
   FileCheck2,
+  SlidersHorizontal,
   ArrowRight,
   Sparkles,
   ShieldCheck,
@@ -15,6 +16,8 @@ import {
   FileText,
   CheckCircle2,
 } from 'lucide-react'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -33,6 +36,25 @@ export default function DiagnosticosHub() {
   }, [authLoading, temDadosSalvos, navigate])
 
   const diagnosticosCards = [
+    {
+      numero: '00',
+      id: 'configuracoes',
+      nome: 'Configurações dos Diagnósticos',
+      subtitulo: 'Parâmetros Base • Espelhado com Calculadora IBS/CBS',
+      parceria: 'Central de Propagação para os 4 Diagnósticos',
+      descricao:
+        'Defina a razão social, CNPJ com máscara, UF e cidade, segmento (10 opções homologadas), regime atual, quadro de funcionários, perfil de clientes NF (B2B/B2C), slider de atividade mista (0–100%) e o ano da transição (2026–2033). Conectado à Carteira de Clientes.',
+      beneficios: [
+        'Seletor Carteira • Cliente Ativo no Diagnóstico integrado',
+        'Propagação automática para as 4 páginas com badge de origem',
+        'Reaproveitamento bidirecional contínuo com Módulo 1 da Calculadora',
+        'Persistência segura vinculada a cada laudo e cliente_id',
+      ],
+      rota: '/diagnosticos/configuracoes',
+      corAccent: '#D4AF37',
+      badge: 'Parâmetros Base • Propagação Ativa',
+      icone: SlidersHorizontal,
+    },
     {
       numero: '01',
       id: '360',
@@ -173,8 +195,11 @@ export default function DiagnosticosHub() {
                 Segmento: <strong className="text-white">{dadosEmpresa.segmento}</strong>
               </span>
               <span className="text-slate-500">•</span>
-              <Link to="/dados-empresa" className="text-[#D4AF37] hover:underline font-bold">
-                Editar dados →
+              <Link
+                to="/diagnosticos/configuracoes"
+                className="text-[#D4AF37] hover:underline font-bold"
+              >
+                Configurações dos Diagnósticos →
               </Link>
             </div>
           </div>

@@ -36,6 +36,7 @@ import DetalheCliente from './pages/DetalheCliente'
 import Carteira from './pages/Carteira'
 import Diagnostico from './pages/Diagnostico'
 import DiagnosticosHub from './pages/DiagnosticosHub'
+import DiagnosticoConfiguracoes from './pages/DiagnosticoConfiguracoes'
 import Diagnostico360 from './pages/Diagnostico360'
 import DiagnosticoTransicao from './pages/DiagnosticoTransicao'
 import DiagnosticoRegimes from './pages/DiagnosticoRegimes'
@@ -252,8 +253,9 @@ const App = () => (
                     </AnalistaRoute>
                   }
                 />{' '}
-                {/* Hub e Trilha dos 4 Diagnósticos Tributários */}
+                {/* Hub e Trilha dos Diagnósticos Tributários */}
                 <Route path="/diagnosticos" element={<DiagnosticosHub />} />
+                <Route path="/diagnosticos/configuracoes" element={<DiagnosticoConfiguracoes />} />
                 <Route path="/diagnostico-360" element={<Diagnostico360 />} />
                 <Route path="/diagnostico-transicao" element={<DiagnosticoTransicao />} />
                 <Route path="/diagnostico-regimes" element={<DiagnosticoRegimes />} />

@@ -43,6 +43,20 @@ export interface Diagnostico {
   economia_anual_novo?: number
   detalhes_reforma_json?: Record<string, any>
   dados_extra_json?: Record<string, any>
+  configuracoes_diagnostico_json?: {
+    regime_atual?: string
+    segmento?: string
+    atividade_mista?: boolean
+    proporcao_servico_misto?: number
+    ano_base_transicao?: number
+    uf_origem?: string
+    cidade?: string
+    funcionarios?: string
+    emissao_nf?: string
+    cnpj?: string
+    razao_social?: string
+    nome_contato?: string
+  }
   // Novos campos do Módulo 3
   folha_pagamento?: number // folha mensal
   despesas_creditos?: number // despesas com créditos mensais

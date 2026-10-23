@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 
 export interface TrilhaDiagnosticoProps {
-  paginaAtual: 'hub' | '360' | 'transicao' | 'regimes' | 'enquadramento'
+  paginaAtual: 'hub' | 'configuracoes' | '360' | 'transicao' | 'regimes' | 'enquadramento'
   onRestaurarDados?: () => void
   temDadosSalvos?: boolean
   nomeEmpresa?: string
@@ -115,10 +115,21 @@ export default function TrilhaDiagnosticoNav({
             )}
 
             <Link
-              to="/dados-empresa"
-              className="text-xs text-[#D4AF37] hover:underline font-semibold"
+              to="/diagnosticos/configuracoes"
+              className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition-all ${
+                paginaAtual === 'configuracoes'
+                  ? 'bg-[#D4AF37] text-[#07132B] border-[#D4AF37]'
+                  : 'text-[#D4AF37] hover:bg-[#D4AF37]/15 border-[#D4AF37]/40'
+              }`}
             >
-              {temDadosSalvos ? 'Ver perfil da empresa' : 'Cadastrar empresa'}
+              Configurações
+            </Link>
+
+            <Link
+              to="/dados-empresa"
+              className="text-xs text-slate-400 hover:text-white hover:underline font-medium"
+            >
+              {temDadosSalvos ? 'Dados da Empresa' : 'Cadastrar'}
             </Link>
           </div>
         </div>

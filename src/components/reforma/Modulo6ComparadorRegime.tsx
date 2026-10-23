@@ -37,6 +37,7 @@ import {
   obterReducaoSetorialReforma,
 } from '@/lib/reformaTributaria'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
 export interface Modulo6ComparadorRegimeProps {
   modo?: 'reforma' | 'trilha'
@@ -743,10 +744,15 @@ export function Modulo6ComparadorRegime({
                 <span className="w-6 h-6 rounded-full bg-[#07132B] text-[#D4AF37] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
                   {idx + 1}
                 </span>
-                <div>
-                  <h3 className="font-heading font-bold text-sm sm:text-base text-[#07132B]">
-                    {p.pergunta}
-                  </h3>
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="font-heading font-bold text-sm sm:text-base text-[#07132B]">
+                      {p.pergunta}
+                    </h3>
+                    {respostasPreenchidas[p.id] !== undefined && (
+                      <BadgeOrigemPropagada origem="configuracoes" />
+                    )}
+                  </div>
                   <p className="text-xs text-slate-500 mt-0.5">{p.explicacao}</p>
                 </div>
               </div>

@@ -13,6 +13,7 @@ import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
 export default function DiagnosticoTransicao() {
   const navigate = useNavigate()
@@ -151,6 +152,7 @@ export default function DiagnosticoTransicao() {
                 <Calendar className="w-3.5 h-3.5" />
                 <span>DIAGNÓSTICO 2 DE 4 • TRANSIÇÃO FISCAL (ROTEIRO DE 40 MINUTOS)</span>
               </div>
+              <BadgeOrigemPropagada origem="configuracoes" />
               <FreemiumBadge tipo="diagnostico" />
             </div>
 
