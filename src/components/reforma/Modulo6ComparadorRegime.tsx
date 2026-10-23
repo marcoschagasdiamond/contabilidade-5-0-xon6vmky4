@@ -168,6 +168,11 @@ export function Modulo6ComparadorRegime({
   const [respostas, setRespostas] = useState<Record<number, string>>(respostasPreenchidas)
   const [mostrarResultado, setMostrarResultado] = useState(modo === 'trilha')
 
+  // Rastreia se o campo específico foi alterado localmente pelo usuário
+  const [camposEditadosLocalmente, setCamposEditadosLocalmente] = useState<Record<string, boolean>>(
+    {},
+  )
+
   // Se estiver em modo trilha e os dados da empresa carregarem
   useEffect(() => {
     if (dadosEmpresa && Object.keys(respostasPreenchidas).length > 0) {
@@ -179,6 +184,7 @@ export function Modulo6ComparadorRegime({
   }, [respostasPreenchidas, dadosEmpresa])
 
   const handleSelectOption = (perguntaId: number, valor: string) => {
+    setCamposEditadosLocalmente((prev) => ({ ...prev, [perguntaId]: true }))
     setRespostas((prev) => ({
       ...prev,
       [perguntaId]: valor,
@@ -498,6 +504,7 @@ export function Modulo6ComparadorRegime({
       setRespostas({})
       setMostrarResultado(false)
     }
+    setCamposEditadosLocalmente({})
     if (onRestaurarDados) {
       onRestaurarDados()
     }
