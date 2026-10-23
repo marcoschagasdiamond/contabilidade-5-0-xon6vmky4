@@ -460,6 +460,13 @@ export default function ContabilidadeDigital() {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Link
+                to="/servicos/diagnostico-360"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
+              >
+                <Sparkles className="w-4 h-4 text-[#2ECC71]" />
+                Diagnóstico 360°
+              </Link>
+              <Link
                 to="/servicos/gestao-fiscal-tributaria"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
               >

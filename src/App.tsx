@@ -20,6 +20,7 @@ import PlanejamentoSucessorio from './pages/PlanejamentoSucessorio'
 import AssessoriaTributaria from './pages/AssessoriaTributaria'
 import TreinamentoCapacitacao from './pages/TreinamentoCapacitacao'
 import BpoContabil from './pages/BpoContabil'
+import Diagnostico360Servico from './pages/Diagnostico360Servico'
 import Blog from './pages/Blog'
 import BlogPost from './pages/BlogPost'
 import Contato from './pages/Contato'
@@ -143,6 +144,7 @@ const App = () => (
                 <Route path="/sobre" element={<Navigate to="/#sobre" replace />} />
                 {/* Páginas institucionais */}
                 <Route path="/servicos" element={<Servicos />} />
+                <Route path="/servicos/diagnostico-360" element={<Diagnostico360Servico />} />
                 <Route path="/servicos/contabilidade-digital" element={<ContabilidadeDigital />} />
                 <Route
                   path="/contabilidade-digital"

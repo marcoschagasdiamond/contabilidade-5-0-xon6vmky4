@@ -20,6 +20,23 @@ import {
 export default function Servicos() {
   const serviceDetails = [
     {
+      id: 'diagnostico-360',
+      category: 'Diagnóstico & Estratégia',
+      title: 'Diagnóstico 360°',
+      subtitle: 'Mapeamento profundo dos 7 riscos críticos da empresa e plano de ação estruturado',
+      description:
+        'Avaliação corporativa integral para mapear e estancar as vulnerabilidades do seu negócio. Nossa metodologia audita a matriz completa dos 7 riscos da empresa — fiscal, tributária, trabalhista, societária, financeira, cível e regulatória — gerando um laudo executivo fundamentado e um plano de ação priorizado para proteger o patrimônio e preparar a operação para a Reforma Tributária.',
+      features: [
+        'Matriz dos 7 riscos (fiscal, tributária, trabalhista, societária, financeira, cível e regulatória)',
+        'Plano de ação priorizado por Impacto × Risco × Esforço (liquidez rápida, governança e transição)',
+        'Laudo executivo e parecer conclusivo para diretoria e conselho',
+        'Base técnica e modelagem de cenários para a Reforma Tributária (IBS/CBS e LC 214/2025)',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=business%20diagnostic%20strategy%20executive%20meeting&color=emerald',
+      reverse: false,
+    },
+    {
       id: 'contabilidade-digital',
       icon: Calculator,
       title: 'Contabilidade Digital',
@@ -35,7 +52,7 @@ export default function Servicos() {
       ],
       image:
         'https://img.usecurling.com/p/700/500?q=digital%20accounting%20dashboard%20laptop&color=emerald',
-      reverse: false,
+      reverse: true,
     },
     {
       id: 'gestao-fiscal',
@@ -53,7 +70,7 @@ export default function Servicos() {
       ],
       image:
         'https://img.usecurling.com/p/700/500?q=tax%20compliance%20documents%20calculator&color=emerald',
-      reverse: true,
+      reverse: false,
     },
     {
       id: 'departamento-pessoal',
@@ -71,7 +88,7 @@ export default function Servicos() {
       ],
       image:
         'https://img.usecurling.com/p/700/500?q=human%20resources%20team%20payroll&color=emerald',
-      reverse: false,
+      reverse: true,
     },
     {
       id: 'consultoria-financeira',
@@ -90,7 +107,7 @@ export default function Servicos() {
       ],
       image:
         'https://img.usecurling.com/p/700/500?q=financial%20analytics%20dashboard%20growth&color=emerald',
-      reverse: true,
+      reverse: false,
     },
     {
       id: 'planejamento-sucessorio-patrimonial',
@@ -108,7 +125,7 @@ export default function Servicos() {
       ],
       image:
         'https://img.usecurling.com/p/700/500?q=wealth%20management%20family%20office%20estate%20planning&color=emerald',
-      reverse: false,
+      reverse: true,
     },
     {
       id: 'assessoria-tributaria',
@@ -126,7 +143,7 @@ export default function Servicos() {
       ],
       image:
         'https://img.usecurling.com/p/700/500?q=legal%20tax%20audit%20compliance&color=emerald',
-      reverse: true,
+      reverse: false,
     },
     {
       id: 'treinamento-capacitacao',
@@ -166,7 +183,7 @@ export default function Servicos() {
       ],
       image:
         'https://img.usecurling.com/p/700/500?q=corporate%20training%20workshop%20classroom&color=emerald',
-      reverse: false,
+      reverse: true,
     },
     {
       id: 'bpo-contabil',
@@ -185,7 +202,7 @@ export default function Servicos() {
       ],
       image:
         'https://img.usecurling.com/p/700/500?q=business%20process%20outsourcing%20team%20operations&color=emerald',
-      reverse: true,
+      reverse: false,
     },
   ]
 
@@ -230,16 +247,22 @@ export default function Servicos() {
                       className="w-full h-[360px] object-cover transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
-                    <div className="absolute top-4 left-4 p-3 bg-white/90 backdrop-blur-md rounded-xl shadow-md border border-white/40 text-[#145A32]">
-                      <IconComp className="w-6 h-6 stroke-[2.5]" />
-                    </div>
+                    {IconComp ? (
+                      <div className="absolute top-4 left-4 p-3 bg-white/90 backdrop-blur-md rounded-xl shadow-md border border-white/40 text-[#145A32]">
+                        <IconComp className="w-6 h-6 stroke-[2.5]" />
+                      </div>
+                    ) : (
+                      <div className="absolute top-4 left-4 px-3 py-1.5 bg-[#0A1A13]/90 backdrop-blur-md rounded-xl shadow-md border border-white/20 text-white text-xs font-bold uppercase tracking-wider">
+                        <span>Diamond Group</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Texto */}
                 <div className={service.reverse ? 'lg:col-start-1' : ''}>
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-[#145A32] bg-emerald-50 border border-emerald-200 mb-3">
-                    <IconComp className="w-3.5 h-3.5" />
+                    {IconComp && <IconComp className="w-3.5 h-3.5" />}
                     <span>{service.category || 'Especialidade Contábil'}</span>
                   </div>
 
@@ -304,6 +327,16 @@ export default function Servicos() {
                       Contratar este Serviço
                       <ArrowRight className="w-4 h-4" />
                     </a>
+
+                    {service.id === 'diagnostico-360' && (
+                      <Link
+                        to="/servicos/diagnostico-360"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#145A32]" />
+                        Ver Página Completa & Pilares 5.0
+                      </Link>
+                    )}
 
                     {service.id === 'contabilidade-digital' && (
                       <Link
