@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
+  SlidersHorizontal,
   Compass,
   Calendar,
   Scale,
@@ -20,6 +21,15 @@ export interface TrilhaDiagnosticoProps {
 }
 
 export const ETAPAS_TRILHA = [
+  {
+    id: 'configuracoes' as const,
+    numero: '0',
+    nome: 'Configurações',
+    tag: 'Parâmetros Base • Propagação',
+    rota: '/diagnosticos/configuracoes',
+    icone: SlidersHorizontal,
+    cor: '#D4AF37',
+  },
   {
     id: '360' as const,
     numero: '1',
@@ -139,7 +149,7 @@ export default function TrilhaDiagnosticoNav({
           aria-label="Trilha de Diagnósticos Tributários"
           className="pt-3 overflow-x-auto scrollbar-none"
         >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 min-w-[560px] md:min-w-0">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 min-w-[680px] md:min-w-0">
             {ETAPAS_TRILHA.map((etapa) => {
               const IconComp = etapa.icone
               const isAtiva = paginaAtual === etapa.id

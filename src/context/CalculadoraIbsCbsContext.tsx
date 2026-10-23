@@ -1106,7 +1106,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         cnpj: p.cnpj,
         nomeContato: p.nomeContato,
         regimeAtual: p.configuracoesDiagnostico.regimeAtual,
-        segmento: p.configuracoesDiagnostico.segmento,
+        segmento: p.configuracoesDiagnostico.segmento as any,
         atividadeMista: p.configuracoesDiagnostico.atividadeMista,
         proporcaoServicoMisto: p.configuracoesDiagnostico.proporcaoServicoMisto,
         anoBaseTransicao: p.configuracoesDiagnostico.anoBaseTransicao as any,

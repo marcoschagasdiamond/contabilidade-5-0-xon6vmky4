@@ -18,6 +18,8 @@ import {
 } from './reformaTributaria'
 import { LISTA_UFS_ICMS } from '../types/calculadoraIbsCbs'
 
+export { LISTA_UFS_ICMS }
+
 export type SegmentoEmpresa =
   | 'Comércio'
   | 'Serviços'

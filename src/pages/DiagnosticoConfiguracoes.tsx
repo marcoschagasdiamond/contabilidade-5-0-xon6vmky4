@@ -41,11 +41,12 @@ import {
 import { AnoBaseSimulacao } from '@/lib/reformaTributaria'
 import { salvarDadosEmpresa, carregarDadosEmpresa } from '@/types/dadosEmpresa'
 import { atualizarCliente } from '@/services/clientes'
+import pb from '@/lib/pocketbase/client'
 
 export default function DiagnosticoConfiguracoes() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { dadosEmpresa, atualizarDadosEmpresa, temDadosSalvos } = useDadosEmpresa()
+  const { dadosEmpresa, salvar: salvarDadosContext, temDadosSalvos } = useDadosEmpresa()
   const { clienteAtivo, clienteAtivoId, recarregarClientes } = useClienteAtivo()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
 
@@ -80,13 +81,12 @@ export default function DiagnosticoConfiguracoes() {
     if (clienteAtivo) {
       setFormData((prev) => ({
         ...prev,
-        nomeContato: clienteAtivo.contato_nome || clienteAtivo.nome || prev.nomeContato,
-        nomeEmpresa: clienteAtivo.razao_social || clienteAtivo.nome || prev.nomeEmpresa,
-        cnpj: clienteAtivo.cnpj ? formatarCNPJ(clienteAtivo.cnpj) : prev.cnpj,
+        nomeContato: clienteAtivo.nome || prev.nomeContato,
+        nomeEmpresa: clienteAtivo.nome || prev.nomeEmpresa,
+        cnpj: clienteAtivo.cnpj_cpf ? formatarCNPJ(clienteAtivo.cnpj_cpf) : prev.cnpj,
         ufOrigem: clienteAtivo.uf || prev.ufOrigem,
-        cidade: clienteAtivo.cidade || prev.cidade,
         segmento: (clienteAtivo.segmento as SegmentoEmpresa) || prev.segmento,
-        regimeAtual: clienteAtivo.regime_tributario || prev.regimeAtual,
+        regimeAtual: clienteAtivo.regime_atual || prev.regimeAtual,
       }))
     }
   }, [clienteAtivo])
@@ -176,20 +176,17 @@ export default function DiagnosticoConfiguracoes() {
       }
 
       salvarDadosEmpresa(payloadAtualizacao)
-      atualizarDadosEmpresa(payloadAtualizacao)
+      await salvarDadosContext(payloadAtualizacao)
 
       // 2. Se houver cliente ativo no PocketBase, atualizar seu registro
       if (clienteAtivoId) {
         try {
           await atualizarCliente(clienteAtivoId, {
             nome: formData.nomeEmpresa,
-            razao_social: formData.nomeEmpresa,
-            cnpj: limparCNPJ(formData.cnpj),
+            cnpj_cpf: limparCNPJ(formData.cnpj),
             segmento: formData.segmento,
-            regime_tributario: formData.regimeAtual as any,
+            regime_atual: formData.regimeAtual,
             uf: formData.ufOrigem,
-            cidade: formData.cidade,
-            contato_nome: formData.nomeContato,
           })
           if (recarregarClientes) {
             await recarregarClientes()
@@ -197,6 +194,38 @@ export default function DiagnosticoConfiguracoes() {
         } catch (pbErr) {
           console.warn('Aviso ao sincronizar cliente no PocketBase:', pbErr)
         }
+      }
+
+      // 3. Atualizar diagnósticos existentes do cliente ou criar/salvar snapshot de configurações
+      try {
+        const configSnapshot = {
+          regime_atual: formData.regimeAtual,
+          segmento: formData.segmento,
+          atividade_mista: formData.atividadeMista,
+          proporcao_servico_misto: formData.proporcaoServicoMisto,
+          ano_base_transicao: formData.anoBaseTransicao,
+          uf_origem: formData.ufOrigem,
+          cidade: formData.cidade,
+          funcionarios: formData.funcionarios,
+          emissao_nf: formData.emissaoNf,
+          cnpj: formData.cnpj,
+          razao_social: formData.nomeEmpresa,
+          nome_contato: formData.nomeContato,
+        }
+
+        // Se houver cliente ativo, atualiza o campo configuracoes_diagnostico_json nos diagnósticos vinculados
+        if (clienteAtivoId) {
+          const diags = await pb.collection('diagnosticos').getList(1, 10, {
+            filter: `cliente_id = "${clienteAtivoId}"`,
+          })
+          for (const d of diags.items) {
+            await pb.collection('diagnosticos').update(d.id, {
+              configuracoes_diagnostico_json: configSnapshot,
+            })
+          }
+        }
+      } catch (diagErr) {
+        console.warn('Aviso ao atualizar configuracoes_diagnostico_json no PocketBase:', diagErr)
       }
 
       setSalvoSucesso(true)
