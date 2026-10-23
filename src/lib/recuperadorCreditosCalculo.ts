@@ -245,10 +245,106 @@ export function gerarSelecaoTesesPadrao(): Record<
  * Motor de Apuração do Recuperador de Créditos:
  * Calcula ano a ano (60 meses) com correção estimada da taxa SELIC
  */
+/**
+ * Lista de setores elegíveis da Lei 12.546/2011 (CPRB / Desoneração da folha e RAT/FAP):
+ * Inclui Transporte (rodoviário de cargas e passageiros), Construção Civil (obras de infraestrutura/edificações),
+ * Tecnologia (software, call center, TIC) e Indústria (setores fabris contemplados pela Lei 12.546).
+ */
+export const SETORES_ELEGIVEIS_LEI_12546: readonly string[] = [
+  'Transporte',
+  'Construção Civil',
+  'Tecnologia',
+  'Indústria',
+] as const
+
+/**
+ * Regras de elegibilidade e exibição das teses por Segmento Econômico selecionado no Módulo 1.
+ * Retorna true se a tese se aplica ao segmento indicado.
+ */
+export function isTeseElegivelParaSegmento(teseId: string, segmento?: string): boolean {
+  if (!segmento) return true
+
+  switch (teseId) {
+    // 1) Bloco PIS/COFINS
+    case 'tese_pis_icms_base':
+      // "Exclusão do ICMS da base" (STF RE 574.706): apenas setores que recolhem ICMS
+      return ['Comércio', 'Indústria', 'Agro', 'Transporte', 'Bares e Restaurantes'].includes(
+        segmento,
+      )
+
+    case 'tese_pis_iss_servicos':
+      // "Exclusão do ISS da base" (RE 592.616): apenas prestadores de serviço
+      return ['Serviços', 'Saúde', 'Educação', 'Tecnologia', 'Construção Civil'].includes(segmento)
+
+    case 'tese_pis_retencoes_indevidas':
+      // "Retenções indevidas na fonte": apenas os mesmos setores de serviço
+      return ['Serviços', 'Saúde', 'Educação', 'Tecnologia', 'Construção Civil'].includes(segmento)
+
+    case 'tese_pis_creditos_exportacao':
+      // "Créditos acumulados de exportação": apenas Agro, Indústria e Comércio
+      return ['Agro', 'Indústria', 'Comércio'].includes(segmento)
+
+    case 'tese_pis_subvencao_icms':
+      // "Subvenções de ICMS": apenas os setores de ICMS
+      return ['Comércio', 'Indústria', 'Agro', 'Transporte', 'Bares e Restaurantes'].includes(
+        segmento,
+      )
+
+    case 'tese_pis_insumos_presumido':
+      // "Insumos no Lucro Presumido": visível para todos os setores
+      return true
+
+    // 2) Bloco Folha/Previdenciário
+    case 'tese_folha_inss_verbas_indenizatorias':
+    case 'tese_folha_irrf_fgts_multa40':
+    case 'tese_folha_coparticipacao_saude':
+    case 'tese_folha_salario_maternidade_cpr':
+      // Visíveis para todos os setores
+      return true
+
+    case 'tese_folha_revisao_rat_fap':
+    case 'tese_folha_desoneracao_12546':
+      // "Revisão RAT/FAP" e "Desoneração da Lei 12.546": visíveis somente para os setores elegíveis da Lei 12.546
+      // (Transporte, Construção Civil, Tecnologia, Indústria)
+      return SETORES_ELEGIVEIS_LEI_12546.includes(segmento)
+
+    default:
+      return true
+  }
+}
+
+/**
+ * Retorna apenas as definições de teses que se aplicam ao segmento informado.
+ */
+export function obterTesesPorSegmento(segmento?: string): TeseRecuperacaoDefinicao[] {
+  return TESES_RECUPERADOR.filter((t) => isTeseElegivelParaSegmento(t.id, segmento))
+}
+
+export interface OpcoesCalculoRecuperador {
+  /**
+   * Se true (ou se segmento informado), calcula apenas as teses elegíveis para o segmento atual,
+   * garantindo que teses fora do setor não componham o Dashboard ou o PDF.
+   */
+  filtrarPorSetor?: boolean
+}
+
+/**
+ * Motor de Apuração do Recuperador de Créditos:
+ * Calcula ano a ano (60 meses) com correção estimada da taxa SELIC.
+ * Quando filtrarPorSetor estiver ativo (padrão true), calcula apenas as teses elegíveis do segmento.
+ */
 export function calcularRecuperadorCreditos(
   parametros: ParametrosRecuperador,
+  opcoes?: OpcoesCalculoRecuperador,
 ): ResultadosRecuperador {
   const { configuracoes, teses } = parametros
+  const filtrarPorSetor = opcoes?.filtrarPorSetor !== false
+  const segmento = configuracoes.segmento
+
+  const tesesParaCalcular =
+    filtrarPorSetor && segmento
+      ? TESES_RECUPERADOR.filter((t) => isTeseElegivelParaSegmento(t.id, segmento))
+      : TESES_RECUPERADOR
 
   const faturamentosPorAno = configuracoes.anosFaturamento || ANOS_60_MESES_PADRAO
   const folhaMensal = configuracoes.massaSalarialMensal || 0
@@ -281,7 +377,7 @@ export function calcularRecuperadorCreditos(
     mapaPorAno[f.ano] = { valorOriginal: 0, correcaoSelic: 0, totalCorrigido: 0 }
   })
 
-  TESES_RECUPERADOR.forEach((teseDef) => {
+  tesesParaCalcular.forEach((teseDef) => {
     const selecao = teses[teseDef.id] || {
       teseId: teseDef.id,
       ativa: false,

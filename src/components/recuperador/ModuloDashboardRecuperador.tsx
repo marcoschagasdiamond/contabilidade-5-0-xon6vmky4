@@ -5,6 +5,7 @@ import { formatarMoeda } from '@/lib/calculadoraUtils'
 interface Props {
   resultados: ResultadosRecuperador
   cenarioSelecionado: 'integral' | 'conservador'
+  segmento?: string
   onChangeCenario: (cenario: 'integral' | 'conservador') => void
   onGerarPdf: () => void
   onSalvarAnalise: () => void
@@ -13,6 +14,7 @@ interface Props {
 export default function ModuloDashboardRecuperador({
   resultados,
   cenarioSelecionado,
+  segmento,
   onChangeCenario,
   onGerarPdf,
   onSalvarAnalise,
@@ -38,14 +40,23 @@ export default function ModuloDashboardRecuperador({
       <div className="bg-[#07132B] text-white rounded-2xl p-6 border border-[#D4AF37]/30 shadow-lg">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-white/10">
           <div>
-            <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider block">
-              Dashboard Executivo • Recuperação 5.0
-            </span>
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider">
+                Dashboard Executivo • Recuperação 5.0
+              </span>
+              {segmento && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30">
+                  Setor: {segmento}
+                </span>
+              )}
+            </div>
             <h2 className="text-xl font-bold text-white mt-0.5">
               Potencial Total Recuperável: {formatarMoeda(valorExibir)}
             </h2>
             <p className="text-xs text-slate-300 mt-1">
-              Valores acumulados nos últimos 60 meses com correção monetária pela taxa SELIC.
+              Valores acumulados nos últimos 60 meses com correção monetária pela taxa SELIC para as{' '}
+              {resultados.resultadosTeses.length} teses aplicáveis ao setor{' '}
+              {segmento || 'selecionado'}.
             </p>
           </div>
 

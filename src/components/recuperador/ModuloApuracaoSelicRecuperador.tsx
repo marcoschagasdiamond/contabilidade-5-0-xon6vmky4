@@ -4,9 +4,10 @@ import { formatarMoeda } from '@/lib/calculadoraUtils'
 
 interface Props {
   resultados: ResultadosRecuperador
+  segmento?: string
 }
 
-export default function ModuloApuracaoSelicRecuperador({ resultados }: Props) {
+export default function ModuloApuracaoSelicRecuperador({ resultados, segmento }: Props) {
   const [teseSelecionadaId, setTeseSelecionadaId] = React.useState<string>('todas')
 
   const tesesAtivas = resultados.resultadosTeses.filter((t) => t.ativa)
@@ -26,7 +27,8 @@ export default function ModuloApuracaoSelicRecuperador({ resultados }: Props) {
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Demonstrativo das competências de 60 meses com atualização monetária oficial pela taxa
-              SELIC acumulada.
+              SELIC acumulada para o setor{' '}
+              <strong className="text-[#07132B]">{segmento || 'Geral'}</strong>.
             </p>
           </div>
 

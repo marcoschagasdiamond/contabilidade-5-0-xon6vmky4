@@ -11,6 +11,7 @@ interface Props {
   tesesDefinicoes: TeseRecuperacaoDefinicao[]
   tesesSelecionadas: Record<string, TeseSelecaoUsuario>
   resultadosTeses: ResultadoTese[]
+  segmento?: string
   onChangeTese: (teseId: string, atualizacao: Partial<TeseSelecaoUsuario>) => void
 }
 
@@ -18,6 +19,7 @@ export default function BlocoFolhaPrevidenciarioRecuperador({
   tesesDefinicoes,
   tesesSelecionadas,
   resultadosTeses,
+  segmento,
   onChangeTese,
 }: Props) {
   const tesesFolha = tesesDefinicoes.filter((t) => t.modulo === 'folha')
@@ -44,8 +46,9 @@ export default function BlocoFolhaPrevidenciarioRecuperador({
               Bloco 3 • Teses de Folha & Previdenciário (Com Farol de Risco)
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              INSS sobre verbas indenizatórias, IRRF rescisório, saúde, salário-maternidade e
-              revisão RAT/FAP.
+              Checklist filtrado para o setor{' '}
+              <strong className="text-[#07132B]">{segmento || 'Geral'}</strong> ({tesesFolha.length}{' '}
+              {tesesFolha.length === 1 ? 'tese aplicável' : 'teses aplicáveis'}).
             </p>
           </div>
           <div className="text-right">

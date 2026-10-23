@@ -11,6 +11,7 @@ interface Props {
   tesesDefinicoes: TeseRecuperacaoDefinicao[]
   tesesSelecionadas: Record<string, TeseSelecaoUsuario>
   resultadosTeses: ResultadoTese[]
+  segmento?: string
   onChangeTese: (teseId: string, atualizacao: Partial<TeseSelecaoUsuario>) => void
 }
 
@@ -18,6 +19,7 @@ export default function BlocoPisCofinsRecuperador({
   tesesDefinicoes,
   tesesSelecionadas,
   resultadosTeses,
+  segmento,
   onChangeTese,
 }: Props) {
   const tesesPis = tesesDefinicoes.filter((t) => t.modulo === 'pis_cofins')
@@ -44,8 +46,9 @@ export default function BlocoPisCofinsRecuperador({
               Bloco 2 • Teses de PIS / COFINS (Com Farol de Risco)
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Checklist de oportunidades pacíficas e teses tributárias com parametrização de risco e
-              percentuais médios.
+              Checklist filtrado para o setor{' '}
+              <strong className="text-[#07132B]">{segmento || 'Geral'}</strong> ({tesesPis.length}{' '}
+              {tesesPis.length === 1 ? 'tese aplicável' : 'teses aplicáveis'}).
             </p>
           </div>
           <div className="text-right">

@@ -122,8 +122,11 @@ export function gerarParecerRecuperadorPDF(options: GerarPdfRecuperadorOptions):
   doc.setFontSize(7.5)
   doc.setTextColor(203, 213, 225)
   const infoCliente = clienteNome ? `Cliente: ${clienteNome} | ` : ''
+  const segmentoLabel = parametros.configuracoes.segmento
+    ? `Setor: ${parametros.configuracoes.segmento} | `
+    : ''
   doc.text(
-    `${infoCliente}Análise: "${nomeAnalise}" | Emissão: ${dataString} | Período: 60 Meses (Últimos 5 Anos)`,
+    `${infoCliente}${segmentoLabel}Análise: "${nomeAnalise}" | Emissão: ${dataString} | Período: 60 Meses`,
     brandX,
     33,
   )
@@ -325,154 +328,166 @@ export function gerarParecerRecuperadorPDF(options: GerarPdfRecuperadorOptions):
   // ==========================================
   // BLOCO 4: DETALHAMENTO DAS TESES DE PIS / COFINS
   // ==========================================
-  verificarQuebraPagina(50)
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9.5)
-  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
-  doc.text('BLOCO 1 • CRÉDITOS DE PIS / COFINS (APURAÇÃO 60 MESES)', margin, currentY)
-
-  currentY += 4
-
-  // Tabela PIS/COFINS
-  doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
-  doc.rect(margin, currentY, contentWidth, 6, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(6.8)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Tese Tributária & Fundamento', margin + 3, currentY + 4.2)
-  doc.text('Farol', margin + 98, currentY + 4.2)
-  doc.text('Valor Original', margin + 116, currentY + 4.2)
-  doc.text('Correção SELIC', margin + 140, currentY + 4.2)
-  doc.text('Total Corrigido', margin + 164, currentY + 4.2)
-
-  currentY += 6
-
   const tesesPis = resultados.resultadosTeses.filter((t) => t.modulo === 'pis_cofins')
 
-  tesesPis.forEach((t, idx) => {
-    verificarQuebraPagina(7)
-
-    doc.setFillColor(
-      idx % 2 === 0 ? 255 : 248,
-      idx % 2 === 0 ? 255 : 250,
-      idx % 2 === 0 ? 255 : 252,
-    )
-    doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-    doc.rect(margin, currentY, contentWidth, 6.2, 'FD')
-
-    doc.setFont('helvetica', t.ativa ? 'bold' : 'normal')
-    doc.setFontSize(6.8)
-    doc.setTextColor(
-      t.ativa ? COR_TEXTO[0] : COR_MUTED[0],
-      t.ativa ? COR_TEXTO[1] : COR_MUTED[1],
-      t.ativa ? COR_TEXTO[2] : COR_MUTED[2],
-    )
-
-    const titTrunc = t.titulo.length > 52 ? t.titulo.slice(0, 50) + '...' : t.titulo
-    doc.text(titTrunc, margin + 3, currentY + 4.2)
-
-    // Farol
-    doc.setFont('helvetica', 'bold')
-    if (t.farol === 'verde') {
-      doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
-      doc.text('VERDE', margin + 98, currentY + 4.2)
-    } else if (t.farol === 'amarelo') {
-      doc.setTextColor(COR_AMBER[0], COR_AMBER[1], COR_AMBER[2])
-      doc.text('AMARELO', margin + 98, currentY + 4.2)
-    } else {
-      doc.setTextColor(COR_ROSE[0], COR_ROSE[1], COR_ROSE[2])
-      doc.text('VERMELHO', margin + 98, currentY + 4.2)
-    }
-
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(6.8)
-    doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
-    doc.text(formatarMoeda(t.valorOriginalTotal), margin + 116, currentY + 4.2)
-    doc.text(formatarMoeda(t.correcaoSelicTotal), margin + 140, currentY + 4.2)
+  if (tesesPis.length > 0) {
+    verificarQuebraPagina(50)
 
     doc.setFont('helvetica', 'bold')
-    doc.text(formatarMoeda(t.totalCorrigido), margin + 164, currentY + 4.2)
+    doc.setFontSize(9.5)
+    doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.text(
+      `BLOCO 1 • CRÉDITOS DE PIS / COFINS (SETOR: ${(parametros.configuracoes.segmento || 'GERAL').toUpperCase()})`,
+      margin,
+      currentY,
+    )
 
-    currentY += 6.2
-  })
+    currentY += 4
 
-  currentY += 8
+    // Tabela PIS/COFINS
+    doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.rect(margin, currentY, contentWidth, 6, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(6.8)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tese Tributária & Fundamento', margin + 3, currentY + 4.2)
+    doc.text('Farol', margin + 98, currentY + 4.2)
+    doc.text('Valor Original', margin + 116, currentY + 4.2)
+    doc.text('Correção SELIC', margin + 140, currentY + 4.2)
+    doc.text('Total Corrigido', margin + 164, currentY + 4.2)
+
+    currentY += 6
+
+    tesesPis.forEach((t, idx) => {
+      verificarQuebraPagina(7)
+
+      doc.setFillColor(
+        idx % 2 === 0 ? 255 : 248,
+        idx % 2 === 0 ? 255 : 250,
+        idx % 2 === 0 ? 255 : 252,
+      )
+      doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+      doc.rect(margin, currentY, contentWidth, 6.2, 'FD')
+
+      doc.setFont('helvetica', t.ativa ? 'bold' : 'normal')
+      doc.setFontSize(6.8)
+      doc.setTextColor(
+        t.ativa ? COR_TEXTO[0] : COR_MUTED[0],
+        t.ativa ? COR_TEXTO[1] : COR_MUTED[1],
+        t.ativa ? COR_TEXTO[2] : COR_MUTED[2],
+      )
+
+      const titTrunc = t.titulo.length > 52 ? t.titulo.slice(0, 50) + '...' : t.titulo
+      doc.text(titTrunc, margin + 3, currentY + 4.2)
+
+      // Farol
+      doc.setFont('helvetica', 'bold')
+      if (t.farol === 'verde') {
+        doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
+        doc.text('VERDE', margin + 98, currentY + 4.2)
+      } else if (t.farol === 'amarelo') {
+        doc.setTextColor(COR_AMBER[0], COR_AMBER[1], COR_AMBER[2])
+        doc.text('AMARELO', margin + 98, currentY + 4.2)
+      } else {
+        doc.setTextColor(COR_ROSE[0], COR_ROSE[1], COR_ROSE[2])
+        doc.text('VERMELHO', margin + 98, currentY + 4.2)
+      }
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(6.8)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      doc.text(formatarMoeda(t.valorOriginalTotal), margin + 116, currentY + 4.2)
+      doc.text(formatarMoeda(t.correcaoSelicTotal), margin + 140, currentY + 4.2)
+
+      doc.setFont('helvetica', 'bold')
+      doc.text(formatarMoeda(t.totalCorrigido), margin + 164, currentY + 4.2)
+
+      currentY += 6.2
+    })
+
+    currentY += 8
+  }
 
   // ==========================================
   // BLOCO 5: DETALHAMENTO DAS TESES DA FOLHA / PREVIDENCIÁRIO
   // ==========================================
-  verificarQuebraPagina(50)
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9.5)
-  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
-  doc.text('BLOCO 2 • CRÉDITOS DE FOLHA & PREVIDENCIÁRIO (60 MESES)', margin, currentY)
-
-  currentY += 4
-
-  // Tabela Folha
-  doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
-  doc.rect(margin, currentY, contentWidth, 6, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(6.8)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Tese Previdenciária & Fundamento', margin + 3, currentY + 4.2)
-  doc.text('Farol', margin + 98, currentY + 4.2)
-  doc.text('Valor Original', margin + 116, currentY + 4.2)
-  doc.text('Correção SELIC', margin + 140, currentY + 4.2)
-  doc.text('Total Corrigido', margin + 164, currentY + 4.2)
-
-  currentY += 6
-
   const tesesFolha = resultados.resultadosTeses.filter((t) => t.modulo === 'folha')
 
-  tesesFolha.forEach((t, idx) => {
-    verificarQuebraPagina(7)
-
-    doc.setFillColor(
-      idx % 2 === 0 ? 255 : 248,
-      idx % 2 === 0 ? 255 : 250,
-      idx % 2 === 0 ? 255 : 252,
-    )
-    doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-    doc.rect(margin, currentY, contentWidth, 6.2, 'FD')
-
-    doc.setFont('helvetica', t.ativa ? 'bold' : 'normal')
-    doc.setFontSize(6.8)
-    doc.setTextColor(
-      t.ativa ? COR_TEXTO[0] : COR_MUTED[0],
-      t.ativa ? COR_TEXTO[1] : COR_MUTED[1],
-      t.ativa ? COR_TEXTO[2] : COR_MUTED[2],
-    )
-
-    const titTrunc = t.titulo.length > 52 ? t.titulo.slice(0, 50) + '...' : t.titulo
-    doc.text(titTrunc, margin + 3, currentY + 4.2)
-
-    // Farol
-    doc.setFont('helvetica', 'bold')
-    if (t.farol === 'verde') {
-      doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
-      doc.text('VERDE', margin + 98, currentY + 4.2)
-    } else if (t.farol === 'amarelo') {
-      doc.setTextColor(COR_AMBER[0], COR_AMBER[1], COR_AMBER[2])
-      doc.text('AMARELO', margin + 98, currentY + 4.2)
-    } else {
-      doc.setTextColor(COR_ROSE[0], COR_ROSE[1], COR_ROSE[2])
-      doc.text('VERMELHO', margin + 98, currentY + 4.2)
-    }
-
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(6.8)
-    doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
-    doc.text(formatarMoeda(t.valorOriginalTotal), margin + 116, currentY + 4.2)
-    doc.text(formatarMoeda(t.correcaoSelicTotal), margin + 140, currentY + 4.2)
+  if (tesesFolha.length > 0) {
+    verificarQuebraPagina(50)
 
     doc.setFont('helvetica', 'bold')
-    doc.text(formatarMoeda(t.totalCorrigido), margin + 164, currentY + 4.2)
+    doc.setFontSize(9.5)
+    doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.text(
+      `BLOCO 2 • CRÉDITOS DE FOLHA & PREVIDENCIÁRIO (SETOR: ${(parametros.configuracoes.segmento || 'GERAL').toUpperCase()})`,
+      margin,
+      currentY,
+    )
 
-    currentY += 6.2
-  })
+    currentY += 4
+
+    // Tabela Folha
+    doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.rect(margin, currentY, contentWidth, 6, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(6.8)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tese Previdenciária & Fundamento', margin + 3, currentY + 4.2)
+    doc.text('Farol', margin + 98, currentY + 4.2)
+    doc.text('Valor Original', margin + 116, currentY + 4.2)
+    doc.text('Correção SELIC', margin + 140, currentY + 4.2)
+    doc.text('Total Corrigido', margin + 164, currentY + 4.2)
+
+    currentY += 6
+
+    tesesFolha.forEach((t, idx) => {
+      verificarQuebraPagina(7)
+
+      doc.setFillColor(
+        idx % 2 === 0 ? 255 : 248,
+        idx % 2 === 0 ? 255 : 250,
+        idx % 2 === 0 ? 255 : 252,
+      )
+      doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+      doc.rect(margin, currentY, contentWidth, 6.2, 'FD')
+
+      doc.setFont('helvetica', t.ativa ? 'bold' : 'normal')
+      doc.setFontSize(6.8)
+      doc.setTextColor(
+        t.ativa ? COR_TEXTO[0] : COR_MUTED[0],
+        t.ativa ? COR_TEXTO[1] : COR_MUTED[1],
+        t.ativa ? COR_TEXTO[2] : COR_MUTED[2],
+      )
+
+      const titTrunc = t.titulo.length > 52 ? t.titulo.slice(0, 50) + '...' : t.titulo
+      doc.text(titTrunc, margin + 3, currentY + 4.2)
+
+      // Farol
+      doc.setFont('helvetica', 'bold')
+      if (t.farol === 'verde') {
+        doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
+        doc.text('VERDE', margin + 98, currentY + 4.2)
+      } else if (t.farol === 'amarelo') {
+        doc.setTextColor(COR_AMBER[0], COR_AMBER[1], COR_AMBER[2])
+        doc.text('AMARELO', margin + 98, currentY + 4.2)
+      } else {
+        doc.setTextColor(COR_ROSE[0], COR_ROSE[1], COR_ROSE[2])
+        doc.text('VERMELHO', margin + 98, currentY + 4.2)
+      }
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(6.8)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      doc.text(formatarMoeda(t.valorOriginalTotal), margin + 116, currentY + 4.2)
+      doc.text(formatarMoeda(t.correcaoSelicTotal), margin + 140, currentY + 4.2)
+
+      doc.setFont('helvetica', 'bold')
+      doc.text(formatarMoeda(t.totalCorrigido), margin + 164, currentY + 4.2)
+
+      currentY += 6.2
+    })
+  }
 
   // ==========================================
   // PÁGINA FINAL: QUADRO ANO A ANO, RISCOS, PRÓXIMOS PASSOS, OBSERVAÇÕES & ASSINATURA

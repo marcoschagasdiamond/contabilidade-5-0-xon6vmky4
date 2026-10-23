@@ -8,6 +8,7 @@ import { ModalGerarPdf, type ResponsavelTecnicoDados } from '@/components/calcul
 import {
   TESES_RECUPERADOR,
   CONFIGURACOES_PADRAO,
+  obterTesesPorSegmento,
   gerarSelecaoTesesPadrao,
   calcularRecuperadorCreditos,
 } from '@/lib/recuperadorCreditosCalculo'
@@ -127,7 +128,12 @@ export default function RecuperadorCreditos() {
     recarregarSimulacoes()
   }, [user?.id])
 
-  // Cálculo reativo
+  // Teses filtradas pelo segmento selecionado no Módulo 1 (Configurações)
+  const tesesElegiveisSetor = React.useMemo(() => {
+    return obterTesesPorSegmento(configuracoes.segmento)
+  }, [configuracoes.segmento])
+
+  // Cálculo reativo — calcula apenas as teses elegíveis do setor
   const parametrosAtuais: ParametrosRecuperador = {
     configuracoes,
     teses: tesesSelecionadas,
@@ -135,7 +141,7 @@ export default function RecuperadorCreditos() {
   }
 
   const resultadosAtuais: ResultadosRecuperador = React.useMemo(() => {
-    return calcularRecuperadorCreditos(parametrosAtuais)
+    return calcularRecuperadorCreditos(parametrosAtuais, { filtrarPorSetor: true })
   }, [parametrosAtuais])
 
   const handleUpdateTese = (teseId: string, atualizacao: Partial<TeseSelecaoUsuario>) => {
@@ -347,30 +353,36 @@ export default function RecuperadorCreditos() {
 
             {moduloAtivo === 'pis_cofins' && (
               <BlocoPisCofinsRecuperador
-                tesesDefinicoes={TESES_RECUPERADOR}
+                tesesDefinicoes={tesesElegiveisSetor}
                 tesesSelecionadas={tesesSelecionadas}
                 resultadosTeses={resultadosAtuais.resultadosTeses}
+                segmento={configuracoes.segmento}
                 onChangeTese={handleUpdateTese}
               />
             )}
 
             {moduloAtivo === 'folha' && (
               <BlocoFolhaPrevidenciarioRecuperador
-                tesesDefinicoes={TESES_RECUPERADOR}
+                tesesDefinicoes={tesesElegiveisSetor}
                 tesesSelecionadas={tesesSelecionadas}
                 resultadosTeses={resultadosAtuais.resultadosTeses}
+                segmento={configuracoes.segmento}
                 onChangeTese={handleUpdateTese}
               />
             )}
 
             {moduloAtivo === 'apuracao_selic' && (
-              <ModuloApuracaoSelicRecuperador resultados={resultadosAtuais} />
+              <ModuloApuracaoSelicRecuperador
+                resultados={resultadosAtuais}
+                segmento={configuracoes.segmento}
+              />
             )}
 
             {moduloAtivo === 'dashboard' && (
               <ModuloDashboardRecuperador
                 resultados={resultadosAtuais}
                 cenarioSelecionado={cenarioSelecionado}
+                segmento={configuracoes.segmento}
                 onChangeCenario={setCenarioSelecionado}
                 onGerarPdf={() => setModalPdfAberto(true)}
                 onSalvarAnalise={() => setModalSalvarAberto(true)}
