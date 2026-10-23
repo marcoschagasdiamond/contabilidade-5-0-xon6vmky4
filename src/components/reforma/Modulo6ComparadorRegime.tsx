@@ -750,7 +750,10 @@ export function Modulo6ComparadorRegime({
                       {p.pergunta}
                     </h3>
                     {respostasPreenchidas[p.id] !== undefined && (
-                      <BadgeOrigemPropagada origem="configuracoes" />
+                      <BadgeOrigemPropagada
+                        origem="configuracoes"
+                        editadoLocalmente={!!camposEditadosLocalmente[p.id]}
+                      />
                     )}
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">{p.explicacao}</p>

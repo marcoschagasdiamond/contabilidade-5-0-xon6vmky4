@@ -98,6 +98,23 @@ export async function getDiagnosticos(filter?: string): Promise<DiagnosticoRecor
   })
 }
 
+export async function getDiagnosticoPorId(id: string): Promise<DiagnosticoRecord | null> {
+  if (!id) return null
+  try {
+    return await pb.collection('diagnosticos').getOne<DiagnosticoRecord>(id)
+  } catch (err) {
+    console.warn(`Diagnóstico ${id} não encontrado:`, err)
+    return null
+  }
+}
+
+export async function atualizarDiagnostico(
+  id: string,
+  data: Partial<Diagnostico>,
+): Promise<DiagnosticoRecord> {
+  return await pb.collection('diagnosticos').update<DiagnosticoRecord>(id, data)
+}
+
 export async function getDiagnosticosPorCliente(clienteId: string): Promise<DiagnosticoRecord[]> {
   if (!clienteId) return []
   return await pb.collection('diagnosticos').getFullList<DiagnosticoRecord>({

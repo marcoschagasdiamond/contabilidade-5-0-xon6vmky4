@@ -128,6 +128,60 @@ export function mapearDadosEmpresaParaRespostasModulo7(
   return inicial
 }
 
+export function mapearConfiguracoesParaRespostasModulo7(
+  config?: Record<string, any>,
+): Record<string, string> {
+  if (!config) return {}
+  const inicial: Record<string, string> = {}
+
+  if (config.atividade_mista) {
+    inicial['a1_atividade'] = 'atividade_mista'
+  } else if (config.segmento) {
+    const seg = config.segmento
+    if (seg === 'Saúde' || seg === 'Educação') {
+      inicial['a1_atividade'] = 'saude_educacao'
+    } else if (seg === 'Agro') {
+      inicial['a1_atividade'] = 'agro'
+    } else if (seg === 'Comércio') {
+      inicial['a1_atividade'] = 'comercio'
+    } else if (seg === 'Indústria') {
+      inicial['a1_atividade'] = 'industria'
+    } else if (seg === 'Transporte') {
+      inicial['a1_atividade'] = 'transporte_logistica'
+    } else if (seg === 'Construção Civil') {
+      inicial['a1_atividade'] = 'construcao_civil'
+    } else if (seg === 'Tecnologia' || seg === 'Serviços') {
+      inicial['a1_atividade'] = 'servicos_gerais'
+    } else if (seg === 'Bares e Restaurantes') {
+      inicial['a1_atividade'] = 'seletivo'
+    }
+  }
+
+  if (config.regime_atual) {
+    const reg = config.regime_atual
+    if (reg === 'Simples Nacional') {
+      inicial['a2_regime'] = 'simples_baixo'
+    } else if (reg === 'Lucro Presumido') {
+      inicial['a2_regime'] = 'presumido'
+    } else if (reg === 'Lucro Real') {
+      inicial['a2_regime'] = 'real'
+    }
+  }
+
+  if (config.emissao_nf) {
+    const emissao = config.emissao_nf
+    if (emissao.includes('Consumidores Finais (B2C)') || emissao.includes('B2C')) {
+      inicial['a3_clientes'] = 'pf'
+    } else if (emissao.includes('Mista') || emissao.includes('Equilibrado')) {
+      inicial['a3_clientes'] = 'misto'
+    } else if (emissao.includes('Pessoas Jurídicas (B2B)') || emissao.includes('B2B')) {
+      inicial['a3_clientes'] = 'pj_pesado'
+    }
+  }
+
+  return inicial
+}
+
 export function ConteudoModulo7Diagnostico({
   modo = 'reforma',
   dadosEmpresa,
@@ -141,6 +195,11 @@ export function ConteudoModulo7Diagnostico({
   const respostasPreenchidas = useMemo(() => {
     return dadosEmpresa ? mapearDadosEmpresaParaRespostasModulo7(dadosEmpresa) : {}
   }, [dadosEmpresa])
+
+  // Rastreia se o campo específico foi alterado localmente pelo usuário
+  const [camposEditadosLocalmente, setCamposEditadosLocalmente] = useState<Record<string, boolean>>(
+    {},
+  )
 
   const [respostas, setRespostas] = useState<Record<string, string>>(respostasPreenchidas)
   const [laudoGerado, setLaudoGerado] = useState(false)
@@ -175,6 +234,7 @@ export function ConteudoModulo7Diagnostico({
   }, [respostasPreenchidas, dadosEmpresa])
 
   const handleSelect = (id: string, valor: string) => {
+    setCamposEditadosLocalmente((prev) => ({ ...prev, [id]: true }))
     setRespostas((prev) => ({
       ...prev,
       [id]: valor,
@@ -275,6 +335,7 @@ export function ConteudoModulo7Diagnostico({
     } else {
       setRespostas({})
     }
+    setCamposEditadosLocalmente({})
     setProporcaoServicoMisto(50)
     setSubatividadeServicoMisto('servico_comum')
     setSubatividadeComercioMisto('varejo_comum')
@@ -383,13 +444,16 @@ export function ConteudoModulo7Diagnostico({
           <div className="space-y-6">
             {perguntasBlocoA.map((p, idx) => {
               const temValorPropagado = respostasPreenchidas[p.id] !== undefined
+              const foiEditado = !!camposEditadosLocalmente[p.id]
               return (
                 <div key={p.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                     <h4 className="font-heading font-bold text-sm text-[#07132B]">
                       {idx + 1}. {p.titulo}
                     </h4>
-                    {temValorPropagado && <BadgeOrigemPropagada origem="configuracoes" />}
+                    {temValorPropagado && (
+                      <BadgeOrigemPropagada origem="configuracoes" editadoLocalmente={foiEditado} />
+                    )}
                   </div>
                   <p className="text-xs text-slate-500 mb-3">{p.descricao}</p>
 
@@ -431,7 +495,10 @@ export function ConteudoModulo7Diagnostico({
                             <Label className="text-xs sm:text-sm font-bold text-white block">
                               Calibração Proporcional da Atividade Mista
                             </Label>
-                            <BadgeOrigemPropagada origem="configuracoes" />
+                            <BadgeOrigemPropagada
+                              origem="configuracoes"
+                              editadoLocalmente={!!camposEditadosLocalmente['proporcao_mista']}
+                            />
                           </div>
                           <span className="text-[11px] text-slate-300 block">
                             Ajuste o slider para calibrar a ponderação de risco e as regras
@@ -453,7 +520,13 @@ export function ConteudoModulo7Diagnostico({
                           min={0}
                           max={100}
                           step={5}
-                          onValueChange={(val) => setProporcaoServicoMisto(val[0])}
+                          onValueChange={(val) => {
+                            setCamposEditadosLocalmente((prev) => ({
+                              ...prev,
+                              proporcao_mista: true,
+                            }))
+                            setProporcaoServicoMisto(val[0])
+                          }}
                           className="py-1 cursor-pointer"
                         />
                       </div>
@@ -465,9 +538,13 @@ export function ConteudoModulo7Diagnostico({
                           </Label>
                           <Select
                             value={subatividadeServicoMisto}
-                            onValueChange={(val) =>
+                            onValueChange={(val) => {
+                              setCamposEditadosLocalmente((prev) => ({
+                                ...prev,
+                                subatividade_servico: true,
+                              }))
                               setSubatividadeServicoMisto(val as SubatividadeServico)
-                            }
+                            }}
                           >
                             <SelectTrigger className="h-9 bg-[#07132B] border-slate-700 text-white text-xs font-medium">
                               <SelectValue />
@@ -492,9 +569,13 @@ export function ConteudoModulo7Diagnostico({
                           </Label>
                           <Select
                             value={subatividadeComercioMisto}
-                            onValueChange={(val) =>
+                            onValueChange={(val) => {
+                              setCamposEditadosLocalmente((prev) => ({
+                                ...prev,
+                                subatividade_comercio: true,
+                              }))
                               setSubatividadeComercioMisto(val as SubatividadeComercio)
-                            }
+                            }}
                           >
                             <SelectTrigger className="h-9 bg-[#07132B] border-slate-700 text-white text-xs font-medium">
                               <SelectValue />

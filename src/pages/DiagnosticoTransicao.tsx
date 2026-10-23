@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Calendar } from 'lucide-react'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
 import { ConteudoModulo7Diagnostico } from '@/components/reforma/Modulo7DiagnosticoReforma'
-import { createDiagnostico } from '@/services/diagnosticos'
+import { createDiagnostico, getDiagnosticoPorId } from '@/services/diagnosticos'
 import pb from '@/lib/pocketbase/client'
 import { registrarDiagnosticoUsado } from '@/services/freemium'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
@@ -17,7 +17,14 @@ import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropag
 
 export default function DiagnosticoTransicao() {
   const navigate = useNavigate()
-  const { temDadosSalvos, dadosEmpresa, restaurarPadrao } = useDadosEmpresa()
+  const [searchParams] = useSearchParams()
+  const idCarregamento = searchParams.get('id')
+  const {
+    temDadosSalvos,
+    dadosEmpresa,
+    restaurarPadrao,
+    salvar: salvarDadosContext,
+  } = useDadosEmpresa()
   const {
     isAuthenticated,
     isLoading: authLoading,
@@ -36,6 +43,32 @@ export default function DiagnosticoTransicao() {
       })
     }
   }, [authLoading, temDadosSalvos, navigate])
+
+  // Se houver ?id= na URL, carrega o diagnóstico salvo e restaura as configuracoes_diagnostico_json
+  useEffect(() => {
+    if (idCarregamento) {
+      getDiagnosticoPorId(idCarregamento).then((diag) => {
+        if (diag && diag.configuracoes_diagnostico_json) {
+          const cfg = diag.configuracoes_diagnostico_json
+          salvarDadosContext({
+            nomeEmpresa: cfg.razao_social || diag.empresa || dadosEmpresa.nomeEmpresa,
+            cnpj: cfg.cnpj || diag.cnpj || dadosEmpresa.cnpj,
+            nomeContato: cfg.nome_contato || diag.nome || dadosEmpresa.nomeContato,
+            regimeAtual: (cfg.regime_atual as any) || dadosEmpresa.regimeAtual,
+            segmento: (cfg.segmento as any) || diag.segmento || dadosEmpresa.segmento,
+            atividadeMista: cfg.atividade_mista ?? dadosEmpresa.atividadeMista,
+            proporcaoServicoMisto:
+              cfg.proporcao_servico_misto ?? dadosEmpresa.proporcaoServicoMisto,
+            anoBaseTransicao: (cfg.ano_base_transicao as any) || dadosEmpresa.anoBaseTransicao,
+            ufOrigem: cfg.uf_origem || dadosEmpresa.ufOrigem,
+            cidade: cfg.cidade || dadosEmpresa.cidade,
+            funcionarios: cfg.funcionarios || dadosEmpresa.funcionarios,
+            emissaoNf: cfg.emissao_nf || dadosEmpresa.emissaoNf,
+          })
+        }
+      })
+    }
+  }, [idCarregamento])
 
   const [salvando, setSalvando] = useState(false)
   const [salvoFeedback, setSalvoFeedback] = useState(false)

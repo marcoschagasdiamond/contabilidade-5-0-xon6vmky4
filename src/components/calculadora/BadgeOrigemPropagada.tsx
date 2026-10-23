@@ -1,27 +1,48 @@
 import React from 'react'
 
-export type OrigemPropagadaTipo = 'modulo1' | 'dados-empresa' | 'configuracoes' | 'custom'
+export type OrigemPropagadaTipo = 'modulo1' | 'dados-empresa' | 'configuracoes' | 'local' | 'custom'
 
 export interface BadgeOrigemPropagadaProps {
   texto?: string
   origem?: OrigemPropagadaTipo | string
+  editadoLocalmente?: boolean
   className?: string
   title?: string
 }
 
 /**
- * Indicador visual discreto para campos preenchidos automaticamente pelo Módulo 1 ou Dados da Empresa.
- * Estilo padrão Diamond Group (verde escuro / dourado discreto), sem ícones.
+ * Indicador visual discreto para campos preenchidos automaticamente pelo Módulo 1,
+ * Configurações dos Diagnósticos ou Dados da Empresa.
+ * Se o usuário alterar o campo (editadoLocalmente=true ou origem="local"), reflete que o valor passou a ser local.
+ * Estilo padrão Diamond Group (verde escuro / dourado / slate discreto), sem ícones.
  */
 export function BadgeOrigemPropagada({
   texto,
   origem,
+  editadoLocalmente = false,
   className = '',
   title,
 }: BadgeOrigemPropagadaProps) {
-  // Determina texto e tooltip padrão com base na prop 'origem' caso 'texto' ou 'title' não sejam fornecidos
+  const isLocal = editadoLocalmente || origem === 'local'
+
+  // Determina texto e tooltip padrão com base na prop 'origem' e 'editadoLocalmente'
   let textoExibido = texto
   let titleExibido = title
+
+  if (isLocal) {
+    textoExibido = textoExibido || 'editado localmente neste diagnóstico'
+    titleExibido =
+      titleExibido ||
+      'Valor customizado diretamente nesta etapa. O valor original das Configurações permanece preservado.'
+    return (
+      <span
+        title={titleExibido}
+        className={`inline-flex items-center text-[10px] font-medium text-slate-700 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded leading-tight select-none ${className}`}
+      >
+        {textoExibido}
+      </span>
+    )
+  }
 
   if (!textoExibido) {
     if (origem === 'dados-empresa') {
