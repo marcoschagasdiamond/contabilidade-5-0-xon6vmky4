@@ -1,11 +1,55 @@
 import React from 'react'
 import type { ConfiguracoesRecuperador } from '@/types/recuperadorCreditos'
 import { formatarMoeda, parseInputMoeda } from '@/lib/calculadoraUtils'
+import { LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
 
 interface Props {
   configuracoes: ConfiguracoesRecuperador
   onChange: (novasConfigs: ConfiguracoesRecuperador) => void
 }
+
+export const OPCOES_SEGMENTO_RECUPERADOR = [
+  {
+    id: 'Comércio',
+    desc: 'Varejo e atacado de mercadorias (Anexo I / ICMS)',
+  },
+  {
+    id: 'Serviços',
+    desc: 'Prestação de serviços e consultoria (ISS / Fator R)',
+  },
+  {
+    id: 'Indústria',
+    desc: 'Fabricação e transformação fabril (Anexo II / ICMS)',
+  },
+  {
+    id: 'Saúde',
+    desc: 'Clínicas, consultórios e laboratórios (ISS)',
+  },
+  {
+    id: 'Educação',
+    desc: 'Escolas, faculdades e cursos livres (ISS)',
+  },
+  {
+    id: 'Agro',
+    desc: 'Produção rural e agronegócio (Base 8%)',
+  },
+  {
+    id: 'Transporte',
+    desc: 'Cargas e passageiros (Presunção 16% IRPJ)',
+  },
+  {
+    id: 'Tecnologia',
+    desc: 'Software, SaaS e TI (ISS / Fator R)',
+  },
+  {
+    id: 'Construção Civil',
+    desc: 'Obras, reformas e engenharia civil (ISS)',
+  },
+  {
+    id: 'Bares e Restaurantes',
+    desc: 'Alimentação e bebidas (Presunção 8% / ICMS)',
+  },
+] as const
 
 export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange }: Props) {
   const handleChangeAnoFaturamento = (index: number, valor: number) => {
@@ -92,26 +136,58 @@ export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange
           </div>
 
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Segmento Econômico</label>
-            <input
-              type="text"
+            <div className="flex items-center justify-between mb-1">
+              <label className="block font-bold text-slate-700">Segmento Econômico</label>
+              {configuracoes.segmento && (
+                <span className="text-[10px] text-slate-400 font-medium">10 opções</span>
+              )}
+            </div>
+            <select
               value={configuracoes.segmento}
               onChange={(e) => onChange({ ...configuracoes, segmento: e.target.value })}
-              placeholder="Ex: Indústria Metalúrgica"
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
-            />
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+            >
+              {configuracoes.segmento &&
+                !OPCOES_SEGMENTO_RECUPERADOR.some((opt) => opt.id === configuracoes.segmento) && (
+                  <option value={configuracoes.segmento}>
+                    {configuracoes.segmento} (Personalizado)
+                  </option>
+                )}
+              {OPCOES_SEGMENTO_RECUPERADOR.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.id} — {item.desc}
+                </option>
+              ))}
+            </select>
+            {(() => {
+              const optSelecionada = OPCOES_SEGMENTO_RECUPERADOR.find(
+                (opt) => opt.id === configuracoes.segmento,
+              )
+              return optSelecionada ? (
+                <span className="text-[10px] text-slate-500 mt-1 block leading-snug">
+                  {optSelecionada.desc}
+                </span>
+              ) : null
+            })()}
           </div>
 
           <div>
             <label className="block font-bold text-slate-700 mb-1">UF de Domicílio</label>
-            <input
-              type="text"
+            <select
               value={configuracoes.uf}
-              onChange={(e) => onChange({ ...configuracoes, uf: e.target.value.toUpperCase() })}
-              maxLength={2}
-              placeholder="SP"
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
-            />
+              onChange={(e) => onChange({ ...configuracoes, uf: e.target.value })}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+            >
+              {configuracoes.uf &&
+                !LISTA_UFS_ICMS.some(
+                  (u) => u.uf.toUpperCase() === configuracoes.uf.toUpperCase(),
+                ) && <option value={configuracoes.uf}>{configuracoes.uf} (Personalizado)</option>}
+              {LISTA_UFS_ICMS.map((item) => (
+                <option key={item.uf} value={item.uf}>
+                  {item.uf} — {item.nome}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
