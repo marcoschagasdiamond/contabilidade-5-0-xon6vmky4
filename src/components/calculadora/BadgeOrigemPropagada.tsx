@@ -1,8 +1,8 @@
 import React from 'react'
 
-export type OrigemPropagadaTipo = 'modulo1' | 'dados-empresa' | 'custom'
+export type OrigemPropagadaTipo = 'modulo1' | 'dados-empresa' | 'configuracoes' | 'custom'
 
-interface BadgeOrigemPropagadaProps {
+export interface BadgeOrigemPropagadaProps {
   texto?: string
   origem?: OrigemPropagadaTipo | string
   className?: string
@@ -29,6 +29,11 @@ export function BadgeOrigemPropagada({
       titleExibido =
         titleExibido ||
         'Valor preenchido automaticamente a partir do cadastro em Dados da Empresa (/dados-empresa). Você pode editá-lo livremente.'
+    } else if (origem === 'configuracoes') {
+      textoExibido = 'vindo das Configurações — editável aqui'
+      titleExibido =
+        titleExibido ||
+        'Valor preenchido a partir das Configurações do Diagnóstico. Você pode editá-lo livremente aqui.'
     } else {
       // Padrão (modulo1 ou omitido)
       textoExibido = 'vindo do Módulo 1 — editável aqui'
@@ -37,10 +42,14 @@ export function BadgeOrigemPropagada({
         'Valor propagado automaticamente pelo Módulo 1 (Configurações Gerais). Você pode editá-lo livremente aqui.'
     }
   } else if (!titleExibido) {
-    titleExibido =
-      origem === 'dados-empresa'
-        ? 'Valor preenchido a partir de Dados da Empresa (/dados-empresa).'
-        : 'Valor propagado automaticamente pelo Módulo 1. Você pode editar este campo livremente aqui.'
+    if (origem === 'dados-empresa') {
+      titleExibido = 'Valor preenchido a partir de Dados da Empresa (/dados-empresa).'
+    } else if (origem === 'configuracoes') {
+      titleExibido = 'Valor preenchido a partir das Configurações do Diagnóstico.'
+    } else {
+      titleExibido =
+        'Valor propagado automaticamente pelo Módulo 1. Você pode editar este campo livremente aqui.'
+    }
   }
 
   return (
