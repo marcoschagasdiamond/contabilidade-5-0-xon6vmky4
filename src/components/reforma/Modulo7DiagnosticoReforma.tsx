@@ -14,6 +14,21 @@ import {
 import { PERGUNTAS_DIAGNOSTICO_40MIN } from '@/data/reformaTributariaData'
 import { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
 import { Button } from '@/components/ui/button'
+import { Slider } from '@/components/ui/slider'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  SUBATIVIDADES_SERVICO,
+  SUBATIVIDADES_COMERCIO,
+  SubatividadeServico,
+  SubatividadeComercio,
+} from '@/types/calculadoraIbsCbs'
 
 export interface Modulo7DiagnosticoReformaProps {
   // Modo de exibição: 'reforma' (página da Reforma Tributária) ou 'trilha' (página /diagnostico-transicao)
@@ -29,6 +44,12 @@ export interface Modulo7DiagnosticoReformaProps {
     farolTitulo: string
     servicoRecomendado: string
     respostas: Record<string, string>
+    detalhesAtividadeMista?: {
+      proporcaoServico: number
+      proporcaoComercio: number
+      subatividadeServico: SubatividadeServico
+      subatividadeComercio: SubatividadeComercio
+    }
   }) => Promise<void>
   salvando?: boolean
   salvoFeedback?: boolean
@@ -44,25 +65,28 @@ export function mapearDadosEmpresaParaRespostasModulo7(
   if (!dados) return {}
   const inicial: Record<string, string> = {}
 
-  // a1_atividade: baseada no segmento da empresa
-  const seg = dados.segmento
-  if (seg === 'Saúde' || seg === 'Educação') {
-    inicial['a1_atividade'] = 'saude_educacao'
-  } else if (seg === 'Agro') {
-    inicial['a1_atividade'] = 'agro'
-  } else if (seg === 'Comércio') {
-    inicial['a1_atividade'] = 'comercio'
-  } else if (seg === 'Indústria') {
-    inicial['a1_atividade'] = 'industria'
-  } else if (
-    seg === 'Tecnologia' ||
-    seg === 'Serviços' ||
-    seg === 'Transporte' ||
-    seg === 'Construção Civil'
-  ) {
-    inicial['a1_atividade'] = 'servicos_gerais'
-  } else if (seg === 'Bares e Restaurantes') {
-    inicial['a1_atividade'] = 'seletivo'
+  // a1_atividade: baseada no segmento da empresa ou tipoAtividade mista
+  if (dados.tipoAtividade === 'misto' || dados.atividadeMista) {
+    inicial['a1_atividade'] = 'atividade_mista'
+  } else {
+    const seg = dados.segmento
+    if (seg === 'Saúde' || seg === 'Educação') {
+      inicial['a1_atividade'] = 'saude_educacao'
+    } else if (seg === 'Agro') {
+      inicial['a1_atividade'] = 'agro'
+    } else if (seg === 'Comércio') {
+      inicial['a1_atividade'] = 'comercio'
+    } else if (seg === 'Indústria') {
+      inicial['a1_atividade'] = 'industria'
+    } else if (seg === 'Transporte') {
+      inicial['a1_atividade'] = 'transporte_logistica'
+    } else if (seg === 'Construção Civil') {
+      inicial['a1_atividade'] = 'construcao_civil'
+    } else if (seg === 'Tecnologia' || seg === 'Serviços') {
+      inicial['a1_atividade'] = 'servicos_gerais'
+    } else if (seg === 'Bares e Restaurantes') {
+      inicial['a1_atividade'] = 'seletivo'
+    }
   }
 
   // a2_regime: baseado no regimeAtual da empresa e faturamento
@@ -120,6 +144,13 @@ export function ConteudoModulo7Diagnostico({
   const [respostas, setRespostas] = useState<Record<string, string>>(respostasPreenchidas)
   const [laudoGerado, setLaudoGerado] = useState(false)
 
+  // Estado complementar de proporção e subatividades quando a1_atividade === 'atividade_mista'
+  const [proporcaoServicoMisto, setProporcaoServicoMisto] = useState<number>(50)
+  const [subatividadeServicoMisto, setSubatividadeServicoMisto] =
+    useState<SubatividadeServico>('servico_comum')
+  const [subatividadeComercioMisto, setSubatividadeComercioMisto] =
+    useState<SubatividadeComercio>('varejo_comum')
+
   // Quando os dados da empresa forem carregados inicialmente, se o usuário não alterou manualmente
   useEffect(() => {
     if (dadosEmpresa && Object.keys(respostasPreenchidas).length > 0) {
@@ -128,6 +159,17 @@ export function ConteudoModulo7Diagnostico({
         const mesclado = { ...respostasPreenchidas, ...prev }
         return mesclado
       })
+      if (dadosEmpresa.tipoAtividade === 'misto' || dadosEmpresa.atividadeMista) {
+        if (dadosEmpresa.proporcaoServicoMisto !== undefined) {
+          setProporcaoServicoMisto(dadosEmpresa.proporcaoServicoMisto)
+        }
+        if (dadosEmpresa.subatividadeServico) {
+          setSubatividadeServicoMisto(dadosEmpresa.subatividadeServico)
+        }
+        if (dadosEmpresa.subatividadeComercio) {
+          setSubatividadeComercioMisto(dadosEmpresa.subatividadeComercio)
+        }
+      }
     }
   }, [respostasPreenchidas, dadosEmpresa])
 
@@ -140,17 +182,48 @@ export function ConteudoModulo7Diagnostico({
 
   const todasRespondidas = PERGUNTAS_DIAGNOSTICO_40MIN.every((p) => respostas[p.id] !== undefined)
 
+  const isAtividadeMista = respostas['a1_atividade'] === 'atividade_mista'
+
+  // Pontuação ponderada da a1 quando for atividade mista
+  const pontuacaoPonderadaA1 = useMemo(() => {
+    if (!isAtividadeMista) return 3
+    const pServ = proporcaoServicoMisto / 100
+    const pCom = (100 - proporcaoServicoMisto) / 100
+
+    // Risco da parte de serviço: saude_educacao=1, transporte=2, tec/servico=3
+    let riscoServico = 3
+    if (subatividadeServicoMisto === 'saude_educacao') {
+      riscoServico = 1
+    } else if (subatividadeServicoMisto === 'transporte') {
+      riscoServico = 2
+    } else {
+      riscoServico = 3
+    }
+
+    // Risco da parte de comércio: comércio padrão=2
+    const riscoComercio = 2
+
+    // Ponderação calculada
+    const ponderado = pServ * riscoServico + pCom * riscoComercio
+    return Math.round(ponderado * 10) / 10
+  }, [isAtividadeMista, proporcaoServicoMisto, subatividadeServicoMisto])
+
   // Cálculo da pontuação de risco
-  let totalScore = 0
+  let totalScoreRaw = 0
   PERGUNTAS_DIAGNOSTICO_40MIN.forEach((p) => {
     const val = respostas[p.id]
     if (val && p.opcoes) {
-      const opt = p.opcoes.find((o) => o.valor === val)
-      if (opt) {
-        totalScore += opt.pontuacaoRisco
+      if (p.id === 'a1_atividade' && val === 'atividade_mista') {
+        totalScoreRaw += pontuacaoPonderadaA1
+      } else {
+        const opt = p.opcoes.find((o) => o.valor === val)
+        if (opt) {
+          totalScoreRaw += opt.pontuacaoRisco
+        }
       }
     }
   })
+  const totalScore = Math.round(totalScoreRaw)
 
   // Farol: Verde (<=8), Amarelo (9 a 16), Vermelho (>=17)
   let farol: 'verde' | 'amarelo' | 'vermelho' = 'verde'
@@ -201,6 +274,9 @@ export function ConteudoModulo7Diagnostico({
     } else {
       setRespostas({})
     }
+    setProporcaoServicoMisto(50)
+    setSubatividadeServicoMisto('servico_comum')
+    setSubatividadeComercioMisto('varejo_comum')
     setLaudoGerado(false)
     if (onRestaurarDados) {
       onRestaurarDados()
@@ -215,6 +291,14 @@ export function ConteudoModulo7Diagnostico({
         farolTitulo,
         servicoRecomendado,
         respostas,
+        detalhesAtividadeMista: isAtividadeMista
+          ? {
+              proporcaoServico: proporcaoServicoMisto,
+              proporcaoComercio: 100 - proporcaoServicoMisto,
+              subatividadeServico: subatividadeServicoMisto,
+              subatividadeComercio: subatividadeComercioMisto,
+            }
+          : undefined,
       })
     }
   }
@@ -310,15 +394,126 @@ export function ConteudoModulo7Diagnostico({
                         onClick={() => handleSelect(p.id, op.valor)}
                         className={`p-2.5 rounded-xl text-left text-xs transition-all border ${
                           isSel
-                            ? 'bg-[#07132B] text-white border-[#07132B] font-semibold'
+                            ? 'bg-[#07132B] text-white border-[#07132B] font-semibold shadow-sm ring-1 ring-[#D4AF37]/50'
                             : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'
                         }`}
                       >
-                        {op.label}
+                        <div className="font-semibold">{op.label}</div>
+                        {op.descricaoDetalhada && (
+                          <div
+                            className={`text-[11px] mt-1 leading-snug ${
+                              isSel ? 'text-[#F3E5AB]' : 'text-slate-500'
+                            }`}
+                          >
+                            {op.descricaoDetalhada}
+                          </div>
+                        )}
                       </button>
                     )
                   })}
                 </div>
+
+                {/* PAINEL COMPLEMENTAR QUANDO FOR ATIVIDADE MISTA NA PERGUNTA A1 */}
+                {p.id === 'a1_atividade' && isAtividadeMista && (
+                  <div className="mt-4 bg-[#07132B] text-white border border-[#D4AF37]/40 p-4 sm:p-5 rounded-xl space-y-4 shadow-md animate-fade-in">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#D4AF37]/20">
+                      <div>
+                        <Label className="text-xs sm:text-sm font-bold text-white block">
+                          Calibração Proporcional da Atividade Mista
+                        </Label>
+                        <span className="text-[11px] text-slate-300">
+                          Ajuste o slider para calibrar a ponderação de risco e as regras setoriais.
+                        </span>
+                      </div>
+                      <span className="inline-flex items-center self-start sm:self-auto text-xs font-mono font-bold text-[#07132B] bg-[#D4AF37] px-3 py-1 rounded-md shadow-sm">
+                        {proporcaoServicoMisto}% Serviço | {100 - proporcaoServicoMisto}% Comércio
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 pt-1">
+                      <div className="flex justify-between text-[11px] text-[#D4AF37] font-medium">
+                        <span>Serviço ({proporcaoServicoMisto}%)</span>
+                        <span>Comércio ({100 - proporcaoServicoMisto}%)</span>
+                      </div>
+                      <Slider
+                        value={[proporcaoServicoMisto]}
+                        min={0}
+                        max={100}
+                        step={5}
+                        onValueChange={(val) => setProporcaoServicoMisto(val[0])}
+                        className="py-1 cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                      <div className="space-y-1.5 bg-[#0A1A2F] p-3 rounded-lg border border-[#D4AF37]/30">
+                        <Label className="text-xs font-bold text-[#D4AF37]">
+                          Ramo de Serviço ({proporcaoServicoMisto}%):
+                        </Label>
+                        <Select
+                          value={subatividadeServicoMisto}
+                          onValueChange={(val) =>
+                            setSubatividadeServicoMisto(val as SubatividadeServico)
+                          }
+                        >
+                          <SelectTrigger className="h-9 bg-[#07132B] border-slate-700 text-white text-xs font-medium">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#07132B] border-slate-700 text-white">
+                            {SUBATIVIDADES_SERVICO.map((item) => (
+                              <SelectItem
+                                key={item.id}
+                                value={item.id}
+                                className="text-xs text-white hover:bg-slate-800 focus:bg-slate-800"
+                              >
+                                {item.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5 bg-[#0A1A2F] p-3 rounded-lg border border-[#D4AF37]/30">
+                        <Label className="text-xs font-bold text-[#D4AF37]">
+                          Ramo de Comércio ({100 - proporcaoServicoMisto}%):
+                        </Label>
+                        <Select
+                          value={subatividadeComercioMisto}
+                          onValueChange={(val) =>
+                            setSubatividadeComercioMisto(val as SubatividadeComercio)
+                          }
+                        >
+                          <SelectTrigger className="h-9 bg-[#07132B] border-slate-700 text-white text-xs font-medium">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#07132B] border-slate-700 text-white">
+                            {SUBATIVIDADES_COMERCIO.map((item) => (
+                              <SelectItem
+                                key={item.id}
+                                value={item.id}
+                                className="text-xs text-white hover:bg-slate-800 focus:bg-slate-800"
+                              >
+                                {item.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-[#07132B]/70 border border-[#2ECC71]/30 text-[11px] text-slate-200 flex items-center justify-between">
+                      <span>
+                        Ponderação do risco setorial aplicada:{' '}
+                        <strong className="text-[#2ECC71] font-mono">
+                          {pontuacaoPonderadaA1} pts
+                        </strong>
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {proporcaoServicoMisto}% Serviço + {100 - proporcaoServicoMisto}% Comércio
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -422,6 +617,12 @@ export function ConteudoModulo7Diagnostico({
                     Empresa: <strong className="text-slate-800">{dadosEmpresa.nomeEmpresa}</strong>{' '}
                     {dadosEmpresa.cnpj ? `(${dadosEmpresa.cnpj})` : ''} • Pontuação de risco:{' '}
                     <strong>{totalScore} pontos</strong>
+                    {isAtividadeMista && (
+                      <span className="ml-1.5 text-slate-600 font-medium">
+                        (Atividade Mista: {proporcaoServicoMisto}% Serviço /{' '}
+                        {100 - proporcaoServicoMisto}% Comércio)
+                      </span>
+                    )}
                   </p>
                 )}
               </div>

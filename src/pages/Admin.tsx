@@ -1930,6 +1930,15 @@ export default function Admin() {
                             Solução recomendada: {selectedDiag.dados_extra_json.servicoRecomendado}
                           </p>
                         )}
+                        {selectedDiag.dados_extra_json.detalhesAtividadeMista && (
+                          <p className="text-[10px] text-amber-800 mt-1 font-medium">
+                            Atividade Mista:{' '}
+                            {selectedDiag.dados_extra_json.detalhesAtividadeMista.proporcaoServico}%
+                            Serviço /{' '}
+                            {selectedDiag.dados_extra_json.detalhesAtividadeMista.proporcaoComercio}
+                            % Comércio
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>

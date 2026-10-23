@@ -54,6 +54,12 @@ export default function DiagnosticoTransicao() {
     farolTitulo: string
     servicoRecomendado: string
     respostas: Record<string, string>
+    detalhesAtividadeMista?: {
+      proporcaoServico: number
+      proporcaoComercio: number
+      subatividadeServico: any
+      subatividadeComercio: any
+    }
   }) => {
     if (!podeDiagnosticar) {
       setPaywallAberto(true)
@@ -95,6 +101,7 @@ export default function DiagnosticoTransicao() {
           farolTitulo: payload.farolTitulo,
           servicoRecomendado: payload.servicoRecomendado,
           respostas: payload.respostas,
+          detalhesAtividadeMista: payload.detalhesAtividadeMista,
         },
       })
 

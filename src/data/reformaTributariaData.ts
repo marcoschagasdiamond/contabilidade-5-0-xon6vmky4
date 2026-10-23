@@ -863,7 +863,7 @@ export interface PerguntaDiagnostico40Min {
   titulo: string
   descricao: string
   tipo: 'select' | 'boolean'
-  opcoes?: { label: string; valor: string; pontuacaoRisco: number }[]
+  opcoes?: { label: string; valor: string; pontuacaoRisco: number; descricaoDetalhada?: string }[]
 }
 
 export const PERGUNTAS_DIAGNOSTICO_40MIN: PerguntaDiagnostico40Min[] = [
@@ -889,6 +889,32 @@ export const PERGUNTAS_DIAGNOSTICO_40MIN: PerguntaDiagnostico40Min[] = [
         label: 'Bares, Bebidas ou Itens com Imposto Seletivo',
         valor: 'seletivo',
         pontuacaoRisco: 3,
+      },
+      {
+        label: 'Transporte / Logística',
+        valor: 'transporte_logistica',
+        pontuacaoRisco: 2,
+        descricaoDetalhada:
+          'transporte coletivo de passageiros com redução de 60% na base pela LC 214/2025; carga com tratamento padrão',
+      },
+      {
+        label: 'Construção Civil',
+        valor: 'construcao_civil',
+        pontuacaoRisco: 3,
+        descricaoDetalhada: 'regras próprias de incorporação, fornecimento de material e retenções',
+      },
+      {
+        label: 'Locação de Bens Imóveis',
+        valor: 'locacao_imoveis',
+        pontuacaoRisco: 1,
+        descricaoDetalhada: 'locação pura fora do campo do IBS/CBS',
+      },
+      {
+        label: 'Atividade Mista (mais de um ramo)',
+        valor: 'atividade_mista',
+        pontuacaoRisco: 3,
+        descricaoDetalhada:
+          'ao selecionar, informar a proporção entre os ramos com análise ponderada',
       },
     ],
   },
