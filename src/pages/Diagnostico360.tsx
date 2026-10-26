@@ -354,6 +354,19 @@ export default function Diagnostico360() {
               </div>
             </div>
           </div>
+
+          {/* CTA APÓS REESTRUTURAÇÃO × GOVERNANÇA */}
+          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs sm:text-sm text-slate-600 text-center sm:text-left">
+              Precisa equilibrar o saneamento imediato e a governança de longo prazo da sua empresa?
+            </p>
+            <a
+              href="/#contato"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+            >
+              Fale com um Especialista
+            </a>
+          </div>
         </section>
 
         {/* ========================================================= */}
@@ -686,14 +699,19 @@ export default function Diagnostico360() {
             </div>
           </div>
 
-          {/* LINK TEXTUAL DESTACADO / CTA APÓS O PLANO 30-60-90 */}
-          <div className="text-center pt-2">
-            <span className="text-xs sm:text-sm text-slate-600 mr-2">
-              Quer acelerar a implantação do plano na sua empresa?
-            </span>
+          {/* CTA APÓS O PLANO 30-60-90 */}
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="space-y-1 text-center sm:text-left">
+              <h4 className="font-heading font-bold text-sm sm:text-base text-[#07132B]">
+                Quer acelerar a implantação dos marcos 30, 60 e 90 dias na sua operação?
+              </h4>
+              <p className="text-xs text-slate-600">
+                Acompanhamento consultivo direto com os analistas e parceiros do Diamond Group.
+              </p>
+            </div>
             <a
               href="/#contato"
-              className="font-bold text-[#07132B] hover:text-[#D4AF37] underline decoration-[#D4AF37] underline-offset-4 text-xs sm:text-sm transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
             >
               Fale com um Especialista
             </a>
@@ -747,6 +765,19 @@ export default function Diagnostico360() {
                 <p className="text-xs text-slate-600 leading-snug">{etapa.desc}</p>
               </div>
             ))}
+          </div>
+
+          {/* CTA APÓS O CICLO COMPLETO DA ASSESSORIA */}
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200">
+            <p className="text-xs sm:text-sm text-slate-600 text-center sm:text-left">
+              Quer iniciar as 4 etapas do ciclo de assessoria com suporte executivo?
+            </p>
+            <a
+              href="/#contato"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+            >
+              Fale com um Especialista
+            </a>
           </div>
         </section>
 

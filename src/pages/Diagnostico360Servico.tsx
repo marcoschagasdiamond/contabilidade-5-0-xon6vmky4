@@ -265,6 +265,19 @@ export default function Diagnostico360Servico() {
             ))}
           </div>
 
+          {/* CTA APÓS BENEFÍCIOS */}
+          <div className="mt-10 p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs sm:text-sm text-slate-700 font-medium text-center sm:text-left">
+              Identifique esses benefícios na prática e estanque riscos latentes na sua empresa.
+            </p>
+            <a
+              href="/#contato"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+            >
+              Fale com um Especialista
+            </a>
+          </div>
+
           {/* Destaque das 7 frentes da matriz de riscos SEM ÍCONES */}
           <div className="mt-16 p-8 rounded-2xl bg-gradient-to-r from-slate-900 via-[#0A1A13] to-slate-900 text-white border border-white/10">
             <div className="max-w-3xl mb-8">
@@ -318,7 +331,7 @@ export default function Diagnostico360Servico() {
               </p>
               <a
                 href="/#contato"
-                className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
               >
                 Fale com um Especialista
               </a>
@@ -563,6 +576,19 @@ export default function Diagnostico360Servico() {
                   comitê permanente de transição para o Novo Código Tributário (IBS/CBS/IS).
                 </p>
               </div>
+            </div>
+
+            {/* CTA APÓS O ENTREGÁVEL 30-60-90 */}
+            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs sm:text-sm text-slate-600 text-center sm:text-left">
+                Pronto para traçar o plano de ação personalizado da sua empresa?
+              </p>
+              <a
+                href="/#contato"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+              >
+                Fale com um Especialista
+              </a>
             </div>
           </div>
         </div>
