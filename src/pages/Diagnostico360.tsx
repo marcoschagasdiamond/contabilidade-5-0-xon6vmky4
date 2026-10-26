@@ -64,7 +64,7 @@ export const SETE_RISCOS_360: Risco360Item[] = [
     focoNovoCodigo:
       'Proteção contra oscilações de custos da transição tributária por meio de reservas de contingência blindadas e rentáveis.',
     entregavel:
-      'Política de Gestão de Caixa e Excedentes Corporativos + Arquitetura de alocação risco/retorno e parcerias com seguradoras e instituições financeiras.',
+      'Política de Gestão de Caixa e Excedentes Corporativos + Arquitetura de alocação risco/retorno e parcerias com seguradoras e instituições financeiras nacionais e internacionais.',
     perguntaAutoavaliacao:
       'Os excedentes de caixa da empresa são alocados estrategicamente considerando a relação risco/retorno e preservação de liquidez?',
     perguntaProtecaoControle:

@@ -120,7 +120,7 @@ export default function Diagnostico360Servico() {
     },
     {
       nome: '2. Investimentos & Wealth',
-      foco: 'Alocação de excedentes, risco/retorno, parcerias com bancos e seguradoras para produtos estruturados.',
+      foco: 'Alocação de excedentes, risco/retorno, parcerias com bancos e seguradoras nacionais e internacionais para produtos estruturados.',
     },
     {
       nome: '3. Societário & Parcerias — Risco Hub',
