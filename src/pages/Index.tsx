@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
+import { obterRotaInicialDiagnostico } from '@/types/dadosEmpresa'
 import {
   CheckCircle2,
   ArrowRight,
@@ -151,19 +152,14 @@ export default function Index() {
             {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-6">
               <a
-                href={temDadosSalvos ? '/diagnostico-autoavaliacao' : '/diagnostico-configuracoes'}
+                href={obterRotaInicialDiagnostico(temDadosSalvos)}
                 onClick={(e) => {
                   e.preventDefault()
-                  if (temDadosSalvos) {
-                    navigate('/diagnostico-autoavaliacao')
-                  } else {
-                    navigate('/diagnostico-configuracoes')
-                  }
+                  navigate(obterRotaInicialDiagnostico(temDadosSalvos))
                 }}
-                className="px-7 py-4 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-1 btn-press flex items-center justify-center gap-2"
+                className="px-7 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.5)] transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center text-center cursor-pointer"
               >
-                Fazer Diagnóstico Tributário
-                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                Fazer Diagnóstico Gratuito
               </a>
 
               <button
@@ -537,19 +533,14 @@ export default function Index() {
             </div>
             <div className="shrink-0 w-full sm:w-auto">
               <a
-                href="/diagnosticos"
+                href={obterRotaInicialDiagnostico(temDadosSalvos)}
                 onClick={(e) => {
                   e.preventDefault()
-                  if (!temDadosSalvos) {
-                    navigate('/dados-empresa?destino=%2Fdiagnosticos')
-                  } else {
-                    navigate('/diagnosticos')
-                  }
+                  navigate(obterRotaInicialDiagnostico(temDadosSalvos))
                 }}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl font-heading font-bold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-0.5 btn-press whitespace-nowrap"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.5)] transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap cursor-pointer text-center"
               >
-                <span>Conhecer Hub de Diagnósticos</span>
-                <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+                <span>Fazer Diagnóstico Gratuito</span>
               </a>
             </div>
           </div>

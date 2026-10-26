@@ -158,4 +158,13 @@ export function limparDadosEmpresa(): void {
   }
 }
 
+/**
+ * Retorna a rota inicial da esteira/trilha de diagnósticos.
+ * Se a empresa já possui dados cadastrados/salvos, avança direto para a Autoavaliação (/diagnostico-autoavaliacao).
+ * Caso contrário, inicia na tela de Configurações (/diagnostico-configuracoes).
+ */
+export function obterRotaInicialDiagnostico(temDadosSalvos: boolean): string {
+  return temDadosSalvos ? '/diagnostico-autoavaliacao' : '/diagnostico-configuracoes'
+}
+
 export { STORAGE_KEY, STORAGE_EVENT }

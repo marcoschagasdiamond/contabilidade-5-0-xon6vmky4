@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
+import { obterRotaInicialDiagnostico } from '@/types/dadosEmpresa'
 import {
   ArrowLeft,
   ArrowRight,
@@ -40,11 +41,7 @@ export function DiamondHeader({
 
   const handleDiagnosticoNav = (e: React.MouseEvent) => {
     e.preventDefault()
-    if (!temDadosSalvos) {
-      navigate('/dados-empresa?destino=%2Fdiagnostico')
-    } else {
-      navigate('/diagnostico')
-    }
+    navigate(obterRotaInicialDiagnostico(temDadosSalvos))
   }
 
   return (
@@ -87,7 +84,7 @@ export function DiamondHeader({
           {mostrarDiagnosticoBtn && (
             <div className="shrink-0 flex flex-col sm:flex-row gap-3">
               <a
-                href="/diagnostico"
+                href={obterRotaInicialDiagnostico(temDadosSalvos)}
                 onClick={handleDiagnosticoNav}
                 className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-sm sm:text-base text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-[0_4px_20px_rgba(212,175,55,0.35)] transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
               >
@@ -117,11 +114,7 @@ export function DiamondFooterCTA({
 
   const handleDiagnosticoNav = (e: React.MouseEvent) => {
     e.preventDefault()
-    if (!temDadosSalvos) {
-      navigate('/dados-empresa?destino=%2Fdiagnostico')
-    } else {
-      navigate('/diagnostico')
-    }
+    navigate(obterRotaInicialDiagnostico(temDadosSalvos))
   }
 
   return (
@@ -143,7 +136,7 @@ export function DiamondFooterCTA({
 
           <div className="shrink-0 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
             <a
-              href="/diagnostico"
+              href={obterRotaInicialDiagnostico(temDadosSalvos)}
               onClick={handleDiagnosticoNav}
               className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl font-bold text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-lg shadow-[#D4AF37]/20 transition-all hover:scale-105 cursor-pointer"
             >
