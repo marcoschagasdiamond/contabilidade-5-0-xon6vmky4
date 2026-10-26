@@ -23,13 +23,13 @@ export default function Servicos() {
       id: 'diagnostico-360',
       category: 'Diagnóstico & Estratégia',
       title: 'Diagnóstico 360°',
-      subtitle: 'Mapeamento profundo dos 7 riscos críticos da empresa e plano de ação estruturado',
+      subtitle: 'Matriz Semáforo de Riscos e Oportunidades & Plano de Ação 30-60-90',
       description:
-        'Avaliação corporativa integral para mapear e estancar as vulnerabilidades do seu negócio. Nossa metodologia audita a matriz completa dos 7 riscos da empresa — fiscal, tributária, trabalhista, societária, financeira, cível e regulatória — gerando um laudo executivo fundamentado e um plano de ação priorizado para proteger o patrimônio e preparar a operação para a Reforma Tributária.',
+        'Avaliação corporativa integral para mapear e estancar as vulnerabilidades do seu negócio. Nossa metodologia audita as 7 novas frentes estratégicas — Financeiro & Crédito, Investimentos & Wealth, Societário & Parcerias (Risco Hub), Fiscal & Contábil, Tributário, Jurídico e Operacional, Humano & Cultura — gerando a Matriz Semáforo de Riscos e Oportunidades e o Plano de Ação 30-60-90 para proteger o patrimônio e preparar a operação para a Reforma Tributária.',
       features: [
-        'Matriz dos 7 riscos (fiscal, tributária, trabalhista, societária, financeira, cível e regulatória)',
-        'Plano de ação priorizado por Impacto × Risco × Esforço (liquidez rápida, governança e transição)',
-        'Laudo executivo e parecer conclusivo para diretoria e conselho',
+        'Matriz Semáforo de Riscos e Oportunidades nas 7 novas frentes estratégicas',
+        'Plano de Ação 30-60-90 (liquidez rápida, governança societária e transição contínua)',
+        'Análise de liquidez, capacidade de pagamento mensal e due diligence de sócios (Risco Hub)',
         'Base técnica e modelagem de cenários para a Reforma Tributária (IBS/CBS e LC 214/2025)',
       ],
       image:

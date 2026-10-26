@@ -1,26 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  Compass,
-  ShieldCheck,
-  AlertTriangle,
-  ArrowRight,
-  Sparkles,
-  CheckCircle2,
-  FileText,
-  RotateCcw,
-  Building2,
-  TrendingUp,
-  Scale,
-  Activity,
-  Layers,
-  Award,
-  BookOpen,
-  Briefcase,
-  Users2,
-  HelpCircle,
-  Save,
-} from 'lucide-react'
+import { Compass, ArrowRight, Sparkles, CheckCircle2, Save } from 'lucide-react'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
@@ -54,8 +34,87 @@ export interface Risco360Item {
 export const SETE_RISCOS_360: Risco360Item[] = [
   {
     id: 1,
+    slug: 'financeiro-credito',
+    nome: '1. Financeiro & Crédito',
+    subtitulo: 'Liquidez, Rentabilidade, Capital de Giro e Captação',
+    citacaoTecnica:
+      'No plano técnico, a análise da capacidade de pagamento mensal, índices de liquidez e capital de giro destrava limites de crédito e protege o fluxo operacional. No plano estratégico, estruturar o dossiê corporativo habilita captações competitivas junto a bancos nacionais e internacionais com taxas reduzidas e garantias sólidas.',
+    focoAtual:
+      'Liquidez corrente e seca, rentabilidade sobre vendas, capital de giro líquido, ciclo operacional, capacidade de pagamento mensal e prontidão para crédito corporativo.',
+    focoNovoCodigo:
+      'Análise do impacto da não-cumulatividade plena e do Split Payment sobre a necessidade de capital de giro (NCG) e margens operacionais.',
+    entregavel:
+      'Dossiê de Prontidão para Crédito e Captação Bancária + Matriz de Capacidade de Pagamento Mensal e reestruturação do capital de giro.',
+    perguntaAutoavaliacao:
+      'A empresa monitora sua capacidade mensal de pagamento, liquidez e capital de giro para garantir prontidão de crédito sem estrangular o caixa?',
+    perguntaProtecaoControle:
+      'Existe política ativa de crédito e captação bancária estruturada, ou a empresa recorre a linhas emergenciais e juros elevados?',
+    dicaPriorizacao: 'Impacto Alto • Risco Alto • Esforço Médio → Otimização de liquidez e crédito',
+  },
+  {
+    id: 2,
+    slug: 'investimentos-wealth',
+    nome: '2. Investimentos & Wealth',
+    subtitulo: 'Alocação de Excedentes, Risco/Retorno e Parcerias',
+    citacaoTecnica:
+      'No plano técnico, a gestão de excedentes de caixa exige conciliar retorno real acima da inflação com liquidez imediata para oportunidades táticas. No plano de governança patrimonial, parcerias com bancos de primeira linha e seguradoras institucionais protegem a reserva contra desvalorização e eventos imprevistos.',
+    focoAtual:
+      'Alocação eficiente de sobras de caixa, equilíbrio risco/retorno dos ativos líquidos e parcerias com bancos e seguradoras para produtos estruturados.',
+    focoNovoCodigo:
+      'Proteção contra oscilações de custos da transição tributária por meio de reservas de contingência blindadas e rentáveis.',
+    entregavel:
+      'Política de Gestão de Caixa e Excedentes Corporativos + Arquitetura de alocação risco/retorno e parcerias com seguradoras e instituições financeiras.',
+    perguntaAutoavaliacao:
+      'Os excedentes de caixa da empresa são alocados estrategicamente considerando a relação risco/retorno e preservação de liquidez?',
+    perguntaProtecaoControle:
+      'A empresa possui parcerias formalizadas com bancos e seguradoras para proteger o capital e rentabilizar as sobras de tesouraria?',
+    dicaPriorizacao:
+      'Impacto Médio/Alto • Risco Médio • Esforço Baixo/Médio → Rentabilidade de excedentes',
+  },
+  {
+    id: 3,
+    slug: 'societario-parcerias',
+    nome: '3. Societário & Parcerias — Risco Hub',
+    subtitulo: 'Due Diligence de Sócios, M&A e Blindagem em Novos Negócios',
+    citacaoTecnica:
+      'No plano de governança corporativa, o Risco Hub mapeia a integridade e solvência de sócios, parceiros estratégicos e co-investidores antes de alianças ou M&A. Blindar o contrato societário e avaliar a viabilidade de fusões, aquisições e expansões impede a contaminação patrimonial por passivos de terceiros.',
+    focoAtual:
+      'Due diligence rigorosa de sócios e parceiros comerciais (Risco Hub), viabilidade de fusões, aquisições (M&A) e expansão operacional, com blindagem contratual em novos negócios.',
+    focoNovoCodigo:
+      'Estruturação societária resiliente para reorganizações patrimoniais, cisões e fusões no ambiente da reforma.',
+    entregavel:
+      'Relatório de Due Diligence de Sócios e Parceiros (Risco Hub) + Matriz de Viabilidade de M&A/Expansão com cláusulas de blindagem em novos negócios.',
+    perguntaAutoavaliacao:
+      'A empresa realiza due diligence aprofundada de sócios e parceiros de negócios (Risco Hub) antes de assinar contratos de expansão ou sociedade?',
+    perguntaProtecaoControle:
+      'Os contratos societários e de parcerias contam com mecanismos formais de blindagem, acordos de sócios e regras claras de saída/dissolução?',
+    dicaPriorizacao:
+      'Impacto Crítico • Risco Alto • Esforço Médio → Proteção societária e parcerias seguras',
+  },
+  {
+    id: 4,
+    slug: 'fiscal-contabil',
+    nome: '4. Fiscal & Contábil',
+    subtitulo: 'Obrigações Corretas, Eficiência, Conciliações e Fechamento',
+    citacaoTecnica:
+      'No plano técnico, conciliações financeiras diárias e fechamento contábil mensal preciso garantem demonstrações financeiras (Balanço e DRE) inquestionáveis. No compliance fiscal, auditar as obrigações acessórias afasta autuações da Receita e assegura distribuição de lucros isenta.',
+    focoAtual:
+      'Cumprimento tempestivo e correto de obrigações fiscais e contábeis, eficiência da rotina de contabilidade, conciliações bancárias rigorosas e fechamento mensal auditável.',
+    focoNovoCodigo:
+      'Adequação contábil e fiscal para contabilização do IVA Dual (IBS/CBS) e conciliação do Split Payment com os extratos bancários.',
+    entregavel:
+      'Diagnóstico de Eficiência Contábil e Fiscal + Roteiro de saneamento de conciliações, fechamento contábil fidedigno e auditoria de obrigações acessórias.',
+    perguntaAutoavaliacao:
+      'As obrigações fiscais e contábeis da empresa são entregues sem divergências e as conciliações e fechamentos mensais refletem 100% da operação?',
+    perguntaProtecaoControle:
+      'A contabilidade opera com rotinas automatizadas e revisões periódicas que impedem erros em fechamentos e autuações do Fisco?',
+    dicaPriorizacao:
+      'Impacto Alto • Risco Alto • Esforço Médio → Base contábil fidedigna e sem multas',
+  },
+  {
+    id: 5,
     slug: 'tributario',
-    nome: '1. Risco Tributário',
+    nome: '5. Tributário',
     subtitulo: 'Estratégia, Redução e Novo Código',
     citacaoTecnica:
       'No plano técnico, a revisão tributária estanca o pagamento indevido, recupera créditos adormecidos e injeta caixa imediato na operação. No plano sistêmico e energético, o tributo é a "energia financeira" que a empresa devolve ao ambiente de forma compulsória; otimizar essa carga de forma legal significa fechar "vazamentos de energia", retendo a abundância e a vitalidade dentro do negócio para financiar seu próprio motor de crescimento e inovação.',
@@ -72,68 +131,9 @@ export const SETE_RISCOS_360: Risco360Item[] = [
     dicaPriorizacao: 'Impacto Alto • Risco Alto • Esforço Médio → Injeção imediata de liquidez',
   },
   {
-    id: 2,
-    slug: 'fiscal',
-    nome: '2. Risco Fiscal',
-    subtitulo: 'Conformidade, Multas e Sistemas',
-    citacaoTecnica:
-      'No plano técnico, o compliance fiscal blinda a empresa contra multas milionárias geradas pelo cruzamento impecável de dados da Receita Federal. No plano sistêmico de governança, a conformidade reflete a transparência e a coerência da empresa perante o mercado; eliminar os "pontos cegos" fiscais limpa o campo de atuação da empresa, atraindo parceiros e clientes de alto nível e eliminando a ansiedade institucional de uma autuação surpresa.',
-    focoAtual:
-      'Auditoria cruzada de obrigações acessórias (SPEDs, DCTF, EFD) com notas fiscais e folha de pagamento.',
-    focoNovoCodigo:
-      'Avaliação da capacidade dos sistemas (ERP) da empresa em operar no modelo dual (impostos antigos e novos simultaneamente) durante a transição.',
-    entregavel:
-      'Relatório de "malha fina" para neutralização de multas latentes + Roadmap de adequação sistêmica para garantir que o faturamento não pare por erros de emissão fiscal na transição.',
-    perguntaAutoavaliacao:
-      'Os SPEDs, DCTFs e notas fiscais da sua empresa passam por auditoria cruzada antes do envio à Receita?',
-    perguntaProtecaoControle:
-      'Há contingência e plano de resposta preparados caso a Receita questione as obrigações enviadas?',
-    dicaPriorizacao:
-      'Impacto Alto • Risco Crítico • Esforço Médio → Proteção contra autuações e malha fina',
-  },
-  {
-    id: 3,
-    slug: 'financeiro',
-    nome: '3. Risco Financeiro',
-    subtitulo: 'Caixa, Precificação e Otimização',
-    citacaoTecnica:
-      'No plano técnico, reestruturar o modelo financeiro alonga dívidas caras, protege o capital de giro e defende a margem de lucro frente a oscilações. No plano energético da corporação, o fluxo de caixa é a respiração do negócio; processos financeiros destravados garantem "oxigênio" constante à operação, substituindo a frequência de sobrevivência (viver para apagar incêndios) pela vibração de expansão, serenidade e previsibilidade.',
-    focoAtual:
-      'Avaliação do fluxo de caixa operacional, endividamento, estrangulamentos de liquidez, capacidade de pagamento e índices financeiros.',
-    focoNovoCodigo:
-      'Análise do impacto no Capital de Giro (mudança da tributação da origem para o destino e novas regras de não-cumulatividade plena com Split Payment).',
-    entregavel:
-      'Renegociação de dívidas caras + Nova Matriz de Formação de Preço (Pricing), garantindo que a empresa mantenha a rentabilidade absorvendo a nova carga tributária sem perder competitividade, e formulação de dossiê para captação de recursos estruturados.',
-    perguntaAutoavaliacao:
-      'O fluxo de caixa tem previsibilidade sólida e a formação de preços considera os impactos do Split Payment e tributação no destino?',
-    perguntaProtecaoControle:
-      'A empresa mantém reserva de capital de giro e precificação revisada diante do Split Payment?',
-    dicaPriorizacao:
-      'Impacto Alto • Risco Alto • Esforço Médio/Alto → Alívio de capital de giro e margem',
-  },
-  {
-    id: 4,
-    slug: 'contabil',
-    nome: '4. Risco Contábil',
-    subtitulo: 'Balanço Fidedigno e Inteligência de Dados',
-    citacaoTecnica:
-      'No plano técnico, um balanço saneado e auditável é o passaporte obrigatório para aprovar crédito, atrair novos negócios e embasar o valuation da companhia. No plano sistêmico, a contabilidade é o "espelho da verdade corporativa"; quando os números são fidedignos, eles dissipam a neblina da gestão, permitindo que você pare de administrar por intuição cega e passe a liderar baseado em uma consciência clara da realidade.',
-    focoAtual:
-      'Saneamento de Balanço Patrimonial, DRE, conciliação bancária e avaliação de ativos.',
-    focoNovoCodigo: undefined,
-    entregavel:
-      'Números que reflitam a realidade econômica para permitir distribuição de lucros com segurança jurídica, blindagem dos administradores e preparação da contabilidade para as novas exigências de demonstração dos tributos sobre valor agregado (IVA Dual).',
-    perguntaAutoavaliacao:
-      'Seu Balanço Patrimonial e DRE refletem 100% da realidade para sustentar distribuição de lucros isenta e captação bancária sem travas?',
-    perguntaProtecaoControle:
-      'Os sócios recebem relatórios gerenciais que permitem decidir sem depender de achismo?',
-    dicaPriorizacao:
-      'Impacto Médio/Alto • Risco Moderado • Esforço Baixo/Médio → Base para valuation e governança',
-  },
-  {
-    id: 5,
+    id: 6,
     slug: 'juridico',
-    nome: '5. Risco Jurídico',
+    nome: '6. Jurídico',
     subtitulo: 'Contingências, Contratos e Proteção',
     citacaoTecnica:
       'No plano técnico, a inteligência jurídica mapeia litígios em instâncias críticas (como bloqueios e execuções) e implementa estruturas sólidas e internacionais (como Holdings e seguros PPLI) para isolar responsabilidades. No plano sistêmico, a proteção jurídica estabelece a "fronteira de segurança" do fundador; ao separar o risco inerente do negócio do legado familiar, você devolve paz de espírito aos sócios, permitindo que liderem o mercado com agressividade estratégica, livres do medo da ruína pessoal.',
@@ -151,46 +151,64 @@ export const SETE_RISCOS_360: Risco360Item[] = [
       'Impacto Crítico • Risco Alto • Esforço Médio → Proteção patrimonial familiar e contratual',
   },
   {
-    id: 6,
-    slug: 'operacional',
-    nome: '6. Risco Operacional',
-    subtitulo: 'Processos, Faturamento e Controles Internos',
-    citacaoTecnica:
-      'No plano técnico, o processo padronizado elimina a dependência de improvisos e erros manuais repetitivos que geram retrabalho e perdas de caixa. Na governança operacional, fluxos validados transformam a inteligência fiscal em ativo permanente e blindado da corporação.',
-    focoAtual:
-      'Mapeamento de rotinas fiscais, regras de emissão de NF-e, parametrização de CFOP/CST e rotinas de conferência de documentos fiscais.',
-    focoNovoCodigo:
-      'Adequação de processos operacionais para operação em regime dual (antigos tributos + IBS/CBS simultâneos) sem interrupção de expedição ou faturamento.',
-    entregavel:
-      'Elaboração de Procedimentos Operacionais Padrão (POPs fiscais) e automação de conferências para erradicar falhas cadastrais.',
-    perguntaAutoavaliacao:
-      'As rotinas de faturamento e compras possuem POPs documentados ou dependem de conhecimento informal de colaboradores?',
-    perguntaProtecaoControle:
-      'Os POPs são auditados periodicamente ou ficam desatualizados após mudanças de sistema/equipe?',
-    dicaPriorizacao:
-      'Impacto Médio • Risco Médio • Esforço Médio → Estabilidade das operações cotidianas',
-  },
-  {
     id: 7,
-    slug: 'humano',
-    nome: '7. Risco Humano',
-    subtitulo: 'Treinamento, Capacitação e Cultura',
+    slug: 'operacional-humano-cultura',
+    nome: '7. Operacional, Humano & Cultura',
+    subtitulo: 'POPs, Capacitação e Cultura como Condicionante de Mudanças',
     citacaoTecnica:
-      'No plano técnico, o treinamento evita o erro que gera a multa. No plano sistêmico e de governança, o treinamento alinha a "vibração" operacional da empresa com a nova estratégia da diretoria, garantindo que a cultura não sabote o projeto de reestruturação.',
+      'No plano técnico, procedimentos operacionais padrão (POPs) documentados erradicam falhas manuais e retrabalho. No plano cultural e humano, a cultura corporativa e a capacitação contínua são os condicionantes reais do sucesso de qualquer transição: se a equipe não comprar o porquê dos processos, a governança falha.',
     focoAtual:
-      'Avaliação do nível de maturidade técnica das equipes de faturamento, compras e financeiro, identificando a dependência de processos manuais ou a "cegueira técnica" que permite a passagem de erros básicos em notas fiscais e retenções de impostos.',
+      'Mapeamento e formalização de Procedimentos Operacionais Padrão (POPs), maturidade técnica das equipes operacionais e cultura corporativa alinhada à governança.',
     focoNovoCodigo:
-      'Nivelamento crítico de conhecimento sobre a transição tributária (IBS/CBS/IS), mudança na formação de preços e novas exigências de conformidade, garantindo que o time compreenda o porquê das mudanças, não apenas o como fazê-las.',
+      'Capacitação do time para faturamento dual, conferências automáticas e engajamento da equipe na transição fiscal e de processos.',
     entregavel:
-      'Aplicação de um Programa de Capacitação Estratégica com a criação de Manuais de Procedimento Operacional Padrão (POP). O objetivo é transformar a inteligência fiscal e financeira em um ativo blindado da empresa (governança), eliminando falhas humanas que geram multas pesadas ou travam o fluxo de caixa, e elevando a equipe de executores burocráticos para defensores da margem de lucro.',
+      'Manual de Procedimentos Operacionais Padrão (POPs) + Programa de Capacitação e Alinhamento Cultural para sustentabilidade das mudanças.',
     perguntaAutoavaliacao:
-      'Sua equipe já foi capacitada para as regras do Novo Código Tributário e para auditar retenções e créditos com autonomia?',
+      'As rotinas operacionais possuem POPs documentados e a cultura da equipe favorece a adaptação rápida a novas exigências e mudanças?',
     perguntaProtecaoControle:
-      'Existe calendário de treinamento contínuo, ou capacitação só acontece após a ocorrência de erros?',
+      'Existe programa contínuo de capacitação e auditoria de processos para garantir que os POPs sejam cumpridos e a cultura não sabote as melhorias?',
     dicaPriorizacao:
-      'Impacto Alto • Risco Médio • Esforço Baixo/Médio → Cultura de conformidade e engajamento',
+      'Impacto Alto • Risco Médio • Esforço Médio → Sustentação operacional e cultural',
   },
 ]
+
+// Mapeamento retrocompatível para diagnósticos antigos com frentes legadas
+// Tributário (1) -> 5 (Tributário)
+// Fiscal (2) -> 4 (Fiscal & Contábil)
+// Financeiro (3) -> 1 (Financeiro & Crédito)
+// Contábil (4) -> 4 (Fiscal & Contábil)
+// Jurídico (5) -> 6 (Jurídico)
+// Operacional (6) -> 7 (Operacional, Humano & Cultura)
+// Humano (7) -> 7 (Operacional, Humano & Cultura)
+export const MAPA_RETROCOMPATIBILIDADE_FRENTES: Record<number, number> = {
+  1: 5, // Tributário -> Tributário
+  2: 4, // Fiscal -> Fiscal & Contábil
+  3: 1, // Financeiro -> Financeiro & Crédito
+  4: 4, // Contábil -> Fiscal & Contábil
+  5: 6, // Jurídico -> Jurídico
+  6: 7, // Operacional -> Operacional, Humano & Cultura
+  7: 7, // Humano -> Operacional, Humano & Cultura
+}
+
+export function normalizarAvaliacoesRetrocompativeis(
+  salvas?: Record<string | number, number>,
+): Record<number, number> {
+  const padrao: Record<number, number> = { 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2 }
+  if (!salvas || typeof salvas !== 'object') return padrao
+
+  const resultado: Record<number, number> = { ...padrao }
+
+  // Se já tiver as 7 chaves modernas mapeadas, prioriza
+  Object.entries(salvas).forEach(([k, v]) => {
+    const numKey = Number(k)
+    const val = Number(v)
+    if (numKey >= 1 && numKey <= 7 && !isNaN(val)) {
+      resultado[numKey] = val
+    }
+  })
+
+  return resultado
+}
 
 export default function Diagnostico360() {
   const navigate = useNavigate()
@@ -334,20 +352,25 @@ export default function Diagnostico360() {
         },
         dados_extra_json: {
           tipo: '360',
+          versaoMatriz: '7_frentes_v2',
           avaliacoes,
           avaliacoesProtecao,
           scoresPorFrente,
+          painelResultadosNome: 'Matriz Semáforo de Riscos e Oportunidades',
+          planoAcaoNome: 'Plano de Ação 30-60-90',
           resumo: {
             totalCriticos,
             totalAlertas,
             totalControlados,
             totalPerguntas: 14,
             perfil: perfilGlobal.titulo,
+            farolNome: 'Matriz Semáforo de Riscos e Oportunidades',
+            planoNome: 'Plano de Ação 30-60-90',
           },
           frentesPriorizadas: [
-            'Ações Rápidas de Liquidez',
-            'Ações Estruturais de Governança',
-            'Comitê de Transição Tributária',
+            '1. Plano de Ação 30 Dias (Liquidez Rápida e Crédito)',
+            '2. Plano de Ação 60 Dias (Societário, Parcerias e Governança)',
+            '3. Plano de Ação 90 Dias (Transição Tributária, Cultura e Processos)',
           ],
         },
       })
@@ -553,7 +576,7 @@ export default function Diagnostico360() {
                 <BadgeOrigemPropagada origem="configuracoes" />
               </div>
               <h2 className="text-2xl sm:text-3xl font-heading font-black text-[#07132B]">
-                Os 7 Riscos Mapeados
+                As 7 Frentes da Matriz Semáforo de Riscos e Oportunidades
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
                 Conteúdo integral do Dossiê Diamond Group & Grupo Baumgartener. Parâmetros
@@ -587,7 +610,7 @@ export default function Diagnostico360() {
                 <div className="bg-slate-50/80 p-5 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#D4AF37] block">
-                      Risco {risco.id} de 7
+                      Frente {risco.id} de 7
                     </span>
                     <h3 className="font-heading font-extrabold text-xl text-[#07132B]">
                       {risco.nome}
@@ -650,14 +673,14 @@ export default function Diagnostico360() {
         <section className="bg-gradient-to-r from-[#07132B] via-[#0A1A13] to-[#07132B] text-white rounded-[26px] p-6 sm:p-10 border border-[#D4AF37]/30 shadow-xl space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
-              Destino: Inteligência Fiscal
+              Destino: Inteligência Fiscal & Governança
             </span>
             <h2 className="text-2xl sm:text-3xl font-heading font-black text-white">
               A Jornada de Transformação "De → Para"
             </h2>
             <p className="text-xs sm:text-sm text-slate-300">
               O que acontece quando a sua empresa substitui a reação passiva pela estratégia
-              proativa.
+              proativa e governança integrada.
             </p>
           </div>
 
@@ -666,25 +689,20 @@ export default function Diagnostico360() {
               {
                 de: 'Apagar incêndios',
                 para: 'Controle e previsibilidade',
-                icon: TrendingUp,
               },
               {
                 de: 'Risco de caixa e multas',
                 para: 'Prevenção e estratégia',
-                icon: ShieldCheck,
               },
               {
                 de: 'Insegurança e reatividade',
                 para: 'Caixa otimizado e protegido',
-                icon: Sparkles,
               },
               {
                 de: 'Decisões no escuro',
                 para: 'Decisões baseadas em dados',
-                icon: Activity,
               },
             ].map((item, idx) => {
-              const IconComp = item.icon
               return (
                 <div
                   key={idx}
@@ -714,7 +732,7 @@ export default function Diagnostico360() {
         </section>
 
         {/* ========================================================= */}
-        {/* SEÇÃO E: CRITÉRIO DE SUCESSO — DOSSIÊ EXECUTIVO EM 3 FRENTES */}
+        {/* SEÇÃO E: CRITÉRIO DE SUCESSO — PLANO DE AÇÃO 30-60-90 */}
         {/* ========================================================= */}
         <section className="space-y-6">
           <div className="max-w-2xl space-y-2">
@@ -722,11 +740,11 @@ export default function Diagnostico360() {
               Critério de Sucesso
             </span>
             <h2 className="text-2xl sm:text-3xl font-heading font-black text-[#07132B]">
-              Dossiê Executivo (Matriz de Risco) em 3 Frentes
+              Plano de Ação 30-60-90
             </h2>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Ao final do mapeamento 360°, a diretoria recebe um plano de ação claro dividido em
-              três vias de execução:
+              Ao final do mapeamento das 7 frentes, a diretoria recebe um plano de ação claro
+              dividido em três marcos cronológicos de execução:
             </p>
           </div>
 
@@ -734,54 +752,54 @@ export default function Diagnostico360() {
             <div className="bg-white rounded-2xl p-6 sm:p-7 border-2 border-[#D4AF37]/40 shadow-sm flex flex-col justify-between space-y-4">
               <div className="space-y-3">
                 <span className="w-8 h-8 rounded-xl bg-[#07132B] text-[#D4AF37] font-bold text-xs flex items-center justify-center">
-                  1
+                  30
                 </span>
                 <h3 className="font-heading font-bold text-lg text-[#07132B]">
-                  Ações Rápidas (Liquidez)
+                  Marco 30 Dias: Ações Rápidas & Liquidez
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Recuperação tributária imediata e estancamento de passivos para desafogar o fluxo
-                  de caixa da operação no curto prazo.
+                  Recuperação tributária imediata, saneamento da capacidade de pagamento mensal e
+                  reestruturação do capital de giro para oxigenar o fluxo de caixa.
                 </p>
               </div>
               <div className="text-[11px] font-semibold text-[#D4AF37] bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-                Prazo estimado: 30 a 60 dias
+                Prazo estimado: Primeiros 30 dias
               </div>
             </div>
 
             <div className="bg-white rounded-2xl p-6 sm:p-7 border-2 border-emerald-500/40 shadow-sm flex flex-col justify-between space-y-4">
               <div className="space-y-3">
                 <span className="w-8 h-8 rounded-xl bg-[#0A1A13] text-[#2ECC71] font-bold text-xs flex items-center justify-center">
-                  2
+                  60
                 </span>
                 <h3 className="font-heading font-bold text-lg text-[#07132B]">
-                  Ações Estruturais (Governança e Proteção)
+                  Marco 60 Dias: Societário, Parcerias & Governança
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Saneamento contábil e criação das blindagens societárias e patrimoniais (Holdings,
-                  seguros PPLI, acordos de sócios).
+                  Due diligence de sócios e parceiros (Risco Hub), blindagem em novos negócios,
+                  fechamento contábil auditável e estruturação de alocação de excedentes.
                 </p>
               </div>
               <div className="text-[11px] font-semibold text-[#145A32] bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
-                Prazo estimado: 60 a 120 dias
+                Prazo estimado: 30 a 60 dias
               </div>
             </div>
 
             <div className="bg-white rounded-2xl p-6 sm:p-7 border-2 border-blue-500/40 shadow-sm flex flex-col justify-between space-y-4">
               <div className="space-y-3">
                 <span className="w-8 h-8 rounded-xl bg-[#07132B] text-blue-400 font-bold text-xs flex items-center justify-center">
-                  3
+                  90
                 </span>
                 <h3 className="font-heading font-bold text-lg text-[#07132B]">
-                  Comitê de Transição Tributária
+                  Marco 90 Dias: Transição Tributária & Cultura Operacional
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Plano de ação claro de adaptação de preços, contratos e sistemas ERP para o Novo
-                  Código Tributário, colocando a empresa à frente da concorrência.
+                  Implementação de POPs operacionais, programa de capacitação cultural e comitê
+                  permanente de transição para o Novo Código Tributário (IBS/CBS/IS).
                 </p>
               </div>
               <div className="text-[11px] font-semibold text-blue-800 bg-blue-50 p-2.5 rounded-lg border border-blue-200">
-                Prazo contínuo: 2026 a 2033
+                Prazo estimado: 60 a 90 dias e acompanhamento
               </div>
             </div>
           </div>
@@ -838,7 +856,7 @@ export default function Diagnostico360() {
         </section>
 
         {/* ========================================================= */}
-        {/* SEÇÃO G: AUTOAVALIAÇÃO INTERATIVA DOS 7 RISCOS */}
+        {/* SEÇÃO G: AUTOAVALIAÇÃO INTERATIVA DAS 7 FRENTES */}
         {/* ========================================================= */}
         <section
           id="autoavaliacao-360"
@@ -847,15 +865,14 @@ export default function Diagnostico360() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#07132B] bg-[#D4AF37]/20 border border-[#D4AF37]/40 uppercase mb-2">
-                <Activity className="w-3.5 h-3.5" />
-                Interatividade Diamond Intelligence
+                <span>Interatividade Diamond Intelligence</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-heading font-black text-[#07132B]">
-                Autoavaliação dos 7 Riscos na Sua Empresa
+                Autoavaliação das 7 Frentes na Sua Empresa
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 mt-1">
-                Classifique o nível de atenção de cada frente para gerar na tela o seu perfil de
-                risco e priorização do Dossiê.
+                Classifique o nível de cada dimensão para gerar a Matriz Semáforo de Riscos e
+                Oportunidades e o Plano de Ação 30-60-90.
               </p>
             </div>
 
@@ -1026,7 +1043,7 @@ export default function Diagnostico360() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
               <div>
                 <span className="text-xs font-bold text-[#2ECC71] uppercase tracking-wider block mb-1">
-                  Resumo do Perfil Diagnosticado • Matriz 14 Respostas (7 Frentes × 2 Perguntas)
+                  Matriz Semáforo de Riscos e Oportunidades • 14 Respostas (7 Frentes × 2 Perguntas)
                 </span>
                 <h3 className="text-xl sm:text-2xl font-heading font-extrabold text-white">
                   {perfilGlobal.titulo}
@@ -1049,23 +1066,23 @@ export default function Diagnostico360() {
 
             <p className="text-sm text-slate-200 leading-relaxed">{perfilGlobal.desc}</p>
 
-            {/* FRENTES PRIORIZADAS PELA MATRIZ */}
+            {/* PLANO DE AÇÃO 30-60-90 PRIORIZADO */}
             <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
               <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
-                Frentes Priorizadas pela Matriz Impacto × Risco × Esforço:
+                Plano de Ação 30-60-90:
               </span>
               <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#D4AF37]" />
-                  <span>1. Ações Rápidas de Liquidez</span>
+                  <span>1. 30 Dias: Liquidez, Crédito & Caixa</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
-                  <span>2. Saneamento e Governança</span>
+                  <span>2. 60 Dias: Societário, Risco Hub & Fechamento</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-blue-400" />
-                  <span>3. Comitê de Transição Tributária</span>
+                  <span>3. 90 Dias: Transição Tributária, POPs & Cultura</span>
                 </li>
               </ul>
             </div>

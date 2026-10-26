@@ -24,25 +24,25 @@ export default function Diagnostico360Servico() {
   // Os 5 pilares 5.0 da metodologia Diagnóstico 360° (SEM ÍCONES nos cards de pilares/opções)
   const pilaresDiagnostico5 = [
     {
-      id: 'matriz-7-riscos',
+      id: 'matriz-semaforo-7-frentes',
       badge: 'Visão Holística',
-      title: 'Matriz dos 7 Riscos Integrados',
+      title: 'Matriz Semáforo de Riscos e Oportunidades',
       description:
-        'Auditoria profunda e simultânea das 7 dimensões críticas da empresa: tributária, fiscal, financeira, contábil, jurídica, operacional e humana, eliminando pontos cegos entre departamentos.',
+        'Auditoria profunda e simultânea das 7 novas frentes estratégicas: Financeiro & Crédito, Investimentos & Wealth, Societário & Parcerias (Risco Hub), Fiscal & Contábil, Tributário, Jurídico e Operacional, Humano & Cultura.',
     },
     {
-      id: 'priorizacao-impacto-esforco',
-      badge: 'Eficiência de Capital',
-      title: 'Priorização por Impacto × Risco × Esforço',
+      id: 'plano-acao-30-60-90',
+      badge: 'Eficiência de Execução',
+      title: 'Plano de Ação 30-60-90 Estruturado',
       description:
-        'Classificação analítica de cada vulnerabilidade mapeada, destacando intervenções de liberação imediata de liquidez (quick wins) para financiar com o próprio caixa as etapas de governança de médio prazo.',
+        'Cronograma escalonado em 3 marcos objetivos: 30 dias para liquidez rápida e capacidade de pagamento, 60 dias para blindagem societária e fechamento contábil, e 90 dias para transição tributária e cultura de processos.',
     },
     {
       id: 'laudo-executivo-conclusivo',
       badge: 'Rigor Técnico & CRC',
       title: 'Laudo Executivo & Parecer Conclusivo',
       description:
-        'Dossiê técnico com fundamentação legal, análise de balanços, memória de cálculo de créditos e contingências ocultas, pronto para deliberação da diretoria executiva, conselho e comitês.',
+        'Dossiê técnico com fundamentação legal, análise de balanço, DRE, capacidade mensal de pagamento, due diligence de parceiros (Risco Hub) e contingências ocultas, pronto para deliberação da diretoria.',
     },
     {
       id: 'base-reforma-tributaria',
@@ -56,7 +56,7 @@ export default function Diagnostico360Servico() {
       badge: 'Perenidade & Valor',
       title: 'Roadmap de Governança e Blindagem Patrimonial',
       description:
-        'Recomendações estruturais para segregação de riscos entre operação e patrimônio pessoal dos sócios, comitê permanente de transição fiscal e implementação de procedimentos padrão (POPs).',
+        'Recomendações estruturais para segregação de riscos entre operação e patrimônio pessoal dos sócios, comitê permanente de transição fiscal e implementação de procedimentos operacionais padrão (POPs).',
     },
   ]
 
@@ -88,59 +88,59 @@ export default function Diagnostico360Servico() {
   const etapasAplicacao = [
     {
       passo: '01',
-      titulo: 'Aplicação da Matriz dos 7 Riscos',
+      titulo: 'Aplicação da Matriz Semáforo das 7 Frentes',
       texto:
-        'Coleta de dados da empresa, análise de SPEDs, certidões, balanços, contratos e aplicação do questionário diagnóstico estruturado nas 7 frentes.',
+        'Coleta de dados da empresa, análise de balanço, DRE, obrigações fiscais, contratos e questionário estruturado em Exposição vs. Proteção.',
     },
     {
       passo: '02',
       titulo: 'Análise Técnica & Cruzamento de Dados',
       texto:
-        'Auditoria cruzada com os parâmetros da legislação tributária vigente, normas NBC/IFRS e simulações do novo sistema tributário (IBS/CBS).',
+        'Auditoria cruzada com indicadores de liquidez, rentabilidade, capital de giro, capacidade de pagamento mensal e simulações do novo sistema tributário (IBS/CBS).',
     },
     {
       passo: '03',
-      titulo: 'Laudo Executivo & Dossiê Técnico',
+      titulo: 'Matriz Semáforo de Riscos e Oportunidades',
       texto:
-        'Consolidação do diagnóstico em relatório executivo com mapa de calor dos riscos, fundamentação jurídica e oportunidades de economia.',
+        'Consolidação do diagnóstico com visualização semáforo dos riscos críticos, alertas operacionais e fortalezas de controle em cada uma das 7 frentes.',
     },
     {
       passo: '04',
-      titulo: 'Plano de Ação Priorizado',
+      titulo: 'Plano de Ação 30-60-90',
       texto:
-        'Apresentação à diretoria de cronograma com ações divididas em Liquidez Rápida (30-60 dias), Governança (60-120 dias) e Transição Tributária.',
+        'Apresentação à diretoria de cronograma tático escalonado em 3 marcos objetivos: 30 dias (liquidez/crédito), 60 dias (societário/contábil) e 90 dias (tributário/cultura).',
     },
   ]
 
-  // As 7 frentes da matriz para destaque informativo
+  // As 7 novas frentes aprovadas verbatim
   const frentesMatriz = [
     {
-      nome: 'Risco Tributário',
-      foco: 'Regime vigente, créditos a recuperar e projeção do IBS/CBS/IS',
+      nome: '1. Financeiro & Crédito',
+      foco: 'Liquidez, rentabilidade, capital de giro, capacidade de pagamento mensal e captação em bancos nacionais/internacionais, prontidão para crédito.',
     },
     {
-      nome: 'Risco Fiscal',
-      foco: 'Conformidade de SPED, DCTFWeb, eSocial e malha fina digital',
+      nome: '2. Investimentos & Wealth',
+      foco: 'Alocação de excedentes, risco/retorno, parcerias com bancos e seguradoras para produtos estruturados.',
     },
     {
-      nome: 'Risco Financeiro',
-      foco: 'Capital de giro, custos de dívida, margem e impacto de split payment',
+      nome: '3. Societário & Parcerias — Risco Hub',
+      foco: 'Due diligence de sócios/parceiros, viabilidade de fusão, aquisição e expansão, blindagem em novos negócios.',
     },
     {
-      nome: 'Risco Contábil',
-      foco: 'Fidedignidade de balanço, distribuição de lucros e IFRS',
+      nome: '4. Fiscal & Contábil',
+      foco: 'Obrigações corretas, eficiência da contabilidade, conciliações diárias e fechamento mensal auditável.',
     },
     {
-      nome: 'Risco Jurídico / Cível',
-      foco: 'Blindagem do patrimônio dos sócios, passivos e contratos',
+      nome: '5. Tributário',
+      foco: 'Revisão de regime atual, recuperação de créditos pagos a maior e modelagem de transição IBS/CBS/IS.',
     },
     {
-      nome: 'Risco Trabalhista / Societário',
-      foco: 'Governança societária, acordo de quotistas e contingências de RH',
+      nome: '6. Jurídico',
+      foco: 'Mapeamento de litígios, blindagem patrimonial dos sócios, acordos societários e proteção contratual.',
     },
     {
-      nome: 'Risco Regulatório / Humano',
-      foco: 'Capacitação técnica das equipes, processos e POPs fiscais',
+      nome: '7. Operacional, Humano & Cultura',
+      foco: 'Procedimentos Operacionais Padrão (POPs), capacitação técnica e cultura como condicionante das mudanças.',
     },
   ]
 
@@ -175,16 +175,17 @@ export default function Diagnostico360Servico() {
               </h1>
 
               <p className="text-xl sm:text-2xl font-semibold text-[#2ECC71] mb-6 tracking-tight">
-                Mapeamento dos 7 riscos críticos para proteger e expandir seu negócio
+                Matriz Semáforo de Riscos e Oportunidades & Plano de Ação 30-60-90
               </p>
 
               <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal mb-8 max-w-2xl">
                 O Diagnóstico 360° é a avaliação corporativa mais completa do mercado, concebida sob
-                o padrão Diamond Intelligence. Mapeamos com precisão cirúrgica a matriz dos 7 riscos
-                da empresa — fiscal, tributária, trabalhista, societária, financeira, cível e
-                regulatória — entregando um laudo executivo e um plano de ação priorizado para
-                estancar vazamentos de caixa, blindar o patrimônio e preparar a operação para a
-                Reforma Tributária (IBS/CBS).
+                o padrão Diamond Intelligence. Mapeamos com precisão cirúrgica as 7 novas frentes
+                estratégicas da empresa — Financeiro & Crédito, Investimentos & Wealth, Societário &
+                Parcerias (Risco Hub), Fiscal & Contábil, Tributário, Jurídico e Operacional, Humano
+                & Cultura — entregando a Matriz Semáforo de Riscos e Oportunidades e o Plano de Ação
+                30-60-90 para estancar vazamentos de caixa, blindar o patrimônio e preparar a
+                operação para a Reforma Tributária (IBS/CBS).
               </p>
 
               {/* CTA DUPLO SOLICITADO */}
@@ -216,7 +217,9 @@ export default function Diagnostico360Servico() {
                 />
                 <div className="absolute top-7 left-7 p-3 bg-[#0A1A13]/90 backdrop-blur-md rounded-xl shadow-lg border border-white/15 text-white flex items-center gap-2.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#2ECC71] animate-pulse" />
-                  <span className="text-xs font-semibold">Matriz dos 7 Riscos Integrada</span>
+                  <span className="text-xs font-semibold">
+                    Matriz Semáforo de Riscos e Oportunidades
+                  </span>
                 </div>
               </div>
             </div>
@@ -268,12 +271,12 @@ export default function Diagnostico360Servico() {
                 Escopo Técnico da Avaliação
               </span>
               <h3 className="font-heading font-bold text-2xl sm:text-3xl text-white mb-3">
-                A Matriz dos 7 Riscos Mapeados pela Diamond Intelligence
+                Matriz Semáforo de Riscos e Oportunidades • 7 Frentes Integradas
               </h3>
               <p className="text-sm text-slate-300 leading-relaxed">
-                Nenhum departamento é analisado isoladamente. Os 7 riscos conversam entre si para
-                garantir que a otimização tributária não gere vulnerabilidade trabalhista ou que a
-                pressão de caixa não comprometa o balanço.
+                Nenhum departamento é analisado isoladamente. As 7 frentes conversam entre si para
+                garantir que a otimização tributária não gere vulnerabilidade societária ou que a
+                pressão de capital de giro não comprometa a capacidade de pagamento mensal.
               </p>
             </div>
 
@@ -480,57 +483,58 @@ export default function Diagnostico360Servico() {
             ))}
           </div>
 
-          {/* Dossiê Executivo em 3 frentes */}
+          {/* Entregável Concreto: Plano de Ação 30-60-90 */}
           <div className="mt-14 p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-sm">
             <div className="mb-6">
               <span className="text-xs font-bold uppercase tracking-wider text-[#145A32] block mb-1">
                 Entregável Concreto
               </span>
               <h4 className="font-heading font-bold text-xl text-slate-900">
-                O que a diretoria recebe ao final do Diagnóstico 360°
+                Plano de Ação 30-60-90 & Matriz Semáforo
               </h4>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Um laudo executivo e um plano de ação estruturado em três frentes complementares:
+                Ao final do Diagnóstico 360°, a diretoria recebe a Matriz Semáforo de Riscos e
+                Oportunidades e o Plano de Ação 30-60-90:
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="p-5 rounded-xl bg-amber-50/60 border border-amber-200/80">
                 <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-amber-900 bg-amber-100 px-2 py-0.5 rounded mb-2">
-                  Frente 1 • 30 a 60 dias
+                  Marco 30 Dias • Liquidez & Crédito
                 </span>
                 <strong className="text-slate-900 block font-heading font-bold mb-1">
-                  Ações Rápidas de Liquidez
+                  Ações Rápidas de Caixa e Capacidade de Pagamento
                 </strong>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Recuperação tributária imediata de tributos pagos a maior e estancamento de
-                  passivos urgentes para oxigenar o fluxo de caixa.
+                  Recuperação tributária imediata, estancamento de passivos e otimização da
+                  capacidade de pagamento mensal para captação bancária e limites de crédito.
                 </p>
               </div>
 
               <div className="p-5 rounded-xl bg-emerald-50/60 border border-emerald-200/80">
                 <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded mb-2">
-                  Frente 2 • 60 a 120 dias
+                  Marco 60 Dias • Societário & Fechamento
                 </span>
                 <strong className="text-slate-900 block font-heading font-bold mb-1">
-                  Ações Estruturais de Governança
+                  Due Diligence de Sócios, Risco Hub & Balanço
                 </strong>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Saneamento contábil, revisão de acordos societários, blindagem patrimonial dos
-                  sócios e implementação de POPs operacionais.
+                  Due diligence profunda de parceiros (Risco Hub), blindagem em novos negócios,
+                  fechamento contábil auditável e política de alocação de excedentes de caixa.
                 </p>
               </div>
 
               <div className="p-5 rounded-xl bg-blue-50/60 border border-blue-200/80">
                 <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-blue-900 bg-blue-100 px-2 py-0.5 rounded mb-2">
-                  Frente 3 • 2026 a 2033
+                  Marco 90 Dias • Transição & Cultura
                 </span>
                 <strong className="text-slate-900 block font-heading font-bold mb-1">
-                  Comitê de Transição Tributária
+                  Transição Tributária, POPs & Capacitação Cultural
                 </strong>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Acompanhamento contínuo da regulamentação da LC 214/2025, regras de split payment
-                  e adequação da precificação de vendas.
+                  Implementação de POPs operacionais, engajamento e capacitação das equipes, e
+                  comitê permanente de transição para o Novo Código Tributário (IBS/CBS/IS).
                 </p>
               </div>
             </div>
@@ -621,11 +625,11 @@ export default function Diagnostico360Servico() {
           <div className="mt-12 p-6 sm:p-8 rounded-[20px] bg-white/[0.03] border border-white/10 flex flex-col lg:flex-row items-center justify-between gap-6">
             <div className="text-left">
               <h4 className="font-heading font-bold text-base sm:text-lg text-white">
-                Pronto para mapear os 7 riscos e destravar o potencial da sua empresa?
+                Pronto para gerar sua Matriz Semáforo de Riscos e Oportunidades?
               </h4>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
-                Realize a autoavaliação interativa dos 7 riscos diretamente na plataforma ou agende
-                uma reunião estratégica com nossos analistas seniores.
+                Realize a autoavaliação interativa das 7 frentes diretamente na plataforma para
+                obter a Matriz Semáforo e o Plano de Ação 30-60-90.
               </p>
             </div>
 

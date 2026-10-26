@@ -1948,7 +1948,7 @@ export default function Admin() {
                       selectedDiag.dados_extra_json.avaliacoes) && (
                       <div className="p-2.5 rounded-lg bg-[#0E3520]/10 border border-[#145A32]/30 space-y-2">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-[#145A32] block">
-                          Diagnóstico 360° • Matriz de Vulnerabilidade & Proteção:
+                          Diagnóstico 360° • Matriz Semáforo de Riscos e Oportunidades:
                         </span>
                         {selectedDiag.dados_extra_json.resumo?.perfil && (
                           <strong className="text-[#0A1A13] font-bold block">
@@ -1967,6 +1967,11 @@ export default function Admin() {
                             Controlado(s)
                           </span>
                         </div>
+                        {selectedDiag.dados_extra_json.planoAcaoNome && (
+                          <span className="text-[10px] font-semibold text-slate-600 block">
+                            Plano associado: {selectedDiag.dados_extra_json.planoAcaoNome}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
