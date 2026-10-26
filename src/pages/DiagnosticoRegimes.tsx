@@ -5,6 +5,7 @@ import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
+import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 import { Modulo6ComparadorRegime } from '@/components/reforma/Modulo6ComparadorRegime'
 import { createDiagnostico } from '@/services/diagnosticos'
 import pb from '@/lib/pocketbase/client'
@@ -228,7 +229,19 @@ export default function DiagnosticoRegimes() {
       </section>
 
       {/* CONTEÚDO PRINCIPAL: MÓDULO 6 COMPARTILHADO EM MODO TRILHA */}
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-12">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-12 space-y-8">
+        <PainelSucessoFluxoGuiado
+          aberto={salvoFeedback}
+          onClose={() => setSalvoFeedback(false)}
+          titulo="Comparação de Regimes Salva com Sucesso!"
+          mensagem="A matriz comparativa e o ranking dos 4 regimes societários foram salvos na sua conta. Avance para a etapa final: o Simulador de Enquadramento Completo com emissão de parecer e PDF."
+          proximaEtapaNome="Enquadramento Completo (Simulador & Relatório PDF)"
+          proximaEtapaRota="/diagnostico"
+          segundosAutoRedirect={5}
+          etapaConcluidaNumero="ETAPA 04"
+          etapaConcluidaNome="Comparação de Regime"
+        />
+
         <Modulo6ComparadorRegime
           modo="trilha"
           dadosEmpresa={dadosEmpresa}

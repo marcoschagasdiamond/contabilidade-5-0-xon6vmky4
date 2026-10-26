@@ -39,6 +39,7 @@ import Diagnostico from './pages/Diagnostico'
 import DiagnosticosHub from './pages/DiagnosticosHub'
 import DiagnosticoConfiguracoes from './pages/DiagnosticoConfiguracoes'
 import Diagnostico360 from './pages/Diagnostico360'
+import DiagnosticoAutoavaliacao from './pages/DiagnosticoAutoavaliacao'
 import DiagnosticoTransicao from './pages/DiagnosticoTransicao'
 import DiagnosticoRegimes from './pages/DiagnosticoRegimes'
 import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
@@ -258,7 +259,9 @@ const App = () => (
                 {/* Hub e Trilha dos Diagnósticos Tributários */}
                 <Route path="/diagnosticos" element={<DiagnosticosHub />} />
                 <Route path="/diagnosticos/configuracoes" element={<DiagnosticoConfiguracoes />} />
+                <Route path="/diagnostico-configuracoes" element={<DiagnosticoConfiguracoes />} />
                 <Route path="/diagnostico-360" element={<Diagnostico360 />} />
+                <Route path="/diagnostico-autoavaliacao" element={<DiagnosticoAutoavaliacao />} />
                 <Route path="/diagnostico-transicao" element={<DiagnosticoTransicao />} />
                 <Route path="/diagnostico-regimes" element={<DiagnosticoRegimes />} />
                 <Route path="/diagnostico" element={<Diagnostico />} />

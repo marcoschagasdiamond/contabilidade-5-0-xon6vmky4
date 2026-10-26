@@ -80,6 +80,7 @@ import { Button } from '@/components/ui/button'
 import { carregarDadosEmpresa, existeDadosEmpresaSalvos } from '@/types/dadosEmpresa'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 
 interface FormErrors {
   nome?: string
@@ -129,6 +130,7 @@ export default function Diagnostico() {
   const [etapa, setEtapa] = useState<number>(1)
   const [isCalculando, setIsCalculando] = useState(false)
   const [resultado, setResultado] = useState<ResultadoDiagnosticoCompleto | null>(null)
+  const [sucessoTrilhaAberto, setSucessoTrilhaAberto] = useState(false)
 
   // Estado React local da simulação de ano da transição (default: anoBase do formulário/diagnóstico, tipicamente 2027)
   const [anoSimulacao, setAnoSimulacao] = useState<AnoBaseSimulacao>(() => {
@@ -641,6 +643,7 @@ export default function Diagnostico() {
         setResultado(diagResult)
         setAnoSimulacao(formData.anoBase)
         setEtapa(5)
+        setSucessoTrilhaAberto(true)
         const wizardContainer = document.getElementById('wizard-diagnostico-container')
         if (wizardContainer) {
           wizardContainer.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -2115,6 +2118,19 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
         {/* ========================================================= */}
         {etapa === 5 && resultado && (
           <div className="space-y-8 animate-fade-in">
+            {/* PAINEL DE CONCLUSÃO DA TRILHA DE DIAGNÓSTICOS (ETAPA FINAL) */}
+            <PainelSucessoFluxoGuiado
+              aberto={sucessoTrilhaAberto}
+              onClose={() => setSucessoTrilhaAberto(false)}
+              titulo="Trilha de Diagnósticos Concluída com Sucesso!"
+              mensagem="Você concluiu todas as 5 etapas da esteira diagnóstica Contabilidade 5.0 (Configurações, Autoavaliação 360°, Transição Fiscal, Comparação de Regimes e Enquadramento Completo). Os relatórios e pareceres estão disponíveis na sua conta."
+              proximaEtapaNome="Hub de Diagnósticos"
+              proximaEtapaRota="/diagnosticos"
+              segundosAutoRedirect={8}
+              etapaConcluidaNumero="ETAPA 05 (FINAL)"
+              etapaConcluidaNome="Enquadramento Completo"
+              etapaFinal={true}
+            />
             {/* TABS NO TOPO: NOVO SISTEMA (IBS/CBS) vs COMPARATIVO vs SISTEMA ATUAL */}
             <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-md border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-2">

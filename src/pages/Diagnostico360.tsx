@@ -8,6 +8,7 @@ import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { TermoPPLI, formatarTextoComPPLI } from '@/components/diagnosticos/TermoPPLI'
+import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
 // Definição completa dos 7 riscos extraídos com rigor do PDF da Diamond Intelligence
 export interface Risco360Item {

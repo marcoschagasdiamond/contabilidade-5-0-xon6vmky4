@@ -11,6 +11,7 @@ export interface PainelSucessoFluxoGuiadoProps {
   segundosAutoRedirect?: number
   etapaConcluidaNumero?: string
   etapaConcluidaNome?: string
+  etapaFinal?: boolean
 }
 
 export function PainelSucessoFluxoGuiado({
@@ -18,11 +19,12 @@ export function PainelSucessoFluxoGuiado({
   onClose,
   titulo = 'Etapa Salva com Sucesso!',
   mensagem,
-  proximaEtapaNome,
-  proximaEtapaRota,
+  proximaEtapaNome = 'Hub de Diagnósticos',
+  proximaEtapaRota = '/diagnosticos',
   segundosAutoRedirect = 5,
   etapaConcluidaNumero,
   etapaConcluidaNome,
+  etapaFinal = false,
 }: PainelSucessoFluxoGuiadoProps) {
   const navigate = useNavigate()
   const [segundosRestantes, setSegundosRestantes] = useState(segundosAutoRedirect)
@@ -88,7 +90,7 @@ export function PainelSucessoFluxoGuiado({
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#2ECC71]/20 text-[#2ECC71] border border-[#2ECC71]/40 font-mono">
-                FLUXO GUIADO • ETAPA CONCLUÍDA
+                {etapaFinal ? 'TRILHA DE DIAGNÓSTICOS CONCLUÍDA' : 'FLUXO GUIADO • ETAPA CONCLUÍDA'}
               </span>
               {etapaConcluidaNumero && (
                 <span className="text-xs font-bold text-[#D4AF37]">
@@ -102,14 +104,16 @@ export function PainelSucessoFluxoGuiado({
           {/* Contador regressivo visual */}
           {!pausado ? (
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/15 text-xs text-slate-300 self-start sm:self-auto">
-              <span className="text-slate-400">Avançando em:</span>
+              <span className="text-slate-400">
+                {etapaFinal ? 'Concluindo em:' : 'Avançando em:'}
+              </span>
               <span className="font-mono font-black text-[#D4AF37] text-sm">
                 {segundosRestantes}s
               </span>
             </div>
           ) : (
             <span className="text-xs text-slate-400 italic self-start sm:self-auto">
-              Avanço automático pausado
+              {etapaFinal ? 'Retorno automático pausado' : 'Avanço automático pausado'}
             </span>
           )}
         </div>
@@ -139,7 +143,7 @@ export function PainelSucessoFluxoGuiado({
             onClick={handleAvancarImediato}
             className="px-7 py-3.5 rounded-xl font-heading font-black text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-lg transition-all duration-200 hover:-translate-y-0.5 text-center"
           >
-            Continuar → {proximaEtapaNome}
+            {etapaFinal ? `Concluir e Voltar ao Hub` : `Continuar → ${proximaEtapaNome}`}
           </button>
 
           <button
