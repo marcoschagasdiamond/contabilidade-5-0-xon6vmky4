@@ -1,7 +1,5 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
-import { obterRotaInicialDiagnostico } from '@/types/dadosEmpresa'
 import {
   CheckCircle2,
   ArrowRight,
@@ -24,7 +22,6 @@ import LeadForm from '@/components/LeadForm'
 
 export default function Index() {
   const navigate = useNavigate()
-  const { temDadosSalvos } = useDadosEmpresa()
 
   const partners = [
     'TechCorp',
@@ -151,16 +148,12 @@ export default function Index() {
 
             {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-6">
-              <a
-                href={obterRotaInicialDiagnostico(temDadosSalvos)}
-                onClick={(e) => {
-                  e.preventDefault()
-                  navigate(obterRotaInicialDiagnostico(temDadosSalvos))
-                }}
+              <Link
+                to="/diagnostico-configuracoes"
                 className="px-7 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.5)] transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center text-center cursor-pointer"
               >
                 Fazer Diagnóstico Gratuito
-              </a>
+              </Link>
 
               <button
                 type="button"
@@ -532,16 +525,12 @@ export default function Index() {
               </p>
             </div>
             <div className="shrink-0 w-full sm:w-auto">
-              <a
-                href={obterRotaInicialDiagnostico(temDadosSalvos)}
-                onClick={(e) => {
-                  e.preventDefault()
-                  navigate(obterRotaInicialDiagnostico(temDadosSalvos))
-                }}
+              <Link
+                to="/diagnostico-configuracoes"
                 className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.5)] transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap cursor-pointer text-center"
               >
                 <span>Fazer Diagnóstico Gratuito</span>
-              </a>
+              </Link>
             </div>
           </div>
         </div>

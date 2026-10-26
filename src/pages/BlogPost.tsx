@@ -1,7 +1,5 @@
 import React, { useMemo } from 'react'
 import { useParams, Link, Navigate, useNavigate } from 'react-router-dom'
-import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
-import { obterRotaInicialDiagnostico } from '@/types/dadosEmpresa'
 import {
   Calendar,
   Clock,
@@ -20,7 +18,6 @@ import { blogPosts } from '@/data/blogData'
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
-  const { temDadosSalvos } = useDadosEmpresa()
 
   // Encontra o post pelo slug
   const post = blogPosts.find((p) => p.slug === slug)
@@ -292,16 +289,12 @@ export default function BlogPost() {
                   identificar economias e adequar seu regime com total segurança jurídica.
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
-                  <a
-                    href={obterRotaInicialDiagnostico(temDadosSalvos)}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      navigate(obterRotaInicialDiagnostico(temDadosSalvos))
-                    }}
+                  <Link
+                    to="/diagnostico-configuracoes"
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-md transition-all duration-200 btn-press"
                   >
                     Fazer Diagnóstico Gratuito
-                  </a>
+                  </Link>
                   <a
                     href="/#contato"
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition-all duration-200"

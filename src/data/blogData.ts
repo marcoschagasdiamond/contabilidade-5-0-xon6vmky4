@@ -59,7 +59,7 @@ export const blogPosts: BlogPost[] = [
       buttonLink: '/calculadora-ibs-cbs',
       secondaryLink: {
         text: 'Fazer Diagnóstico Gratuito',
-        href: '/diagnostico',
+        href: '/diagnostico-configuracoes',
       },
     },
     content: [
