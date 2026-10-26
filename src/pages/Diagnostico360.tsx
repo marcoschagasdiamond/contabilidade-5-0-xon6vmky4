@@ -47,6 +47,7 @@ export interface Risco360Item {
   focoNovoCodigo?: string
   entregavel: string
   perguntaAutoavaliacao: string
+  perguntaProtecaoControle: string
   dicaPriorizacao: string
 }
 
@@ -66,6 +67,8 @@ export const SETE_RISCOS_360: Risco360Item[] = [
       'Mapa de teses para recuperação imediata de impostos pagos a maior (injeção de liquidez) + Estudo de Cenários Tributários (Modelagem de Transição) para definir o melhor enquadramento societário e logístico no novo modelo.',
     perguntaAutoavaliacao:
       'Sua empresa já revisou se está pagando impostos a mais nos últimos 5 anos ou se o regime atual corrói a margem líquida?',
+    perguntaProtecaoControle:
+      'Existe revisão periódica de créditos e teses tributárias, ou os valores pagos a maior ficam sem recuperação?',
     dicaPriorizacao: 'Impacto Alto • Risco Alto • Esforço Médio → Injeção imediata de liquidez',
   },
   {
@@ -83,6 +86,8 @@ export const SETE_RISCOS_360: Risco360Item[] = [
       'Relatório de "malha fina" para neutralização de multas latentes + Roadmap de adequação sistêmica para garantir que o faturamento não pare por erros de emissão fiscal na transição.',
     perguntaAutoavaliacao:
       'Os SPEDs, DCTFs e notas fiscais da sua empresa passam por auditoria cruzada antes do envio à Receita?',
+    perguntaProtecaoControle:
+      'Há contingência e plano de resposta preparados caso a Receita questione as obrigações enviadas?',
     dicaPriorizacao:
       'Impacto Alto • Risco Crítico • Esforço Médio → Proteção contra autuações e malha fina',
   },
@@ -101,6 +106,8 @@ export const SETE_RISCOS_360: Risco360Item[] = [
       'Renegociação de dívidas caras + Nova Matriz de Formação de Preço (Pricing), garantindo que a empresa mantenha a rentabilidade absorvendo a nova carga tributária sem perder competitividade, e formulação de dossiê para captação de recursos estruturados.',
     perguntaAutoavaliacao:
       'O fluxo de caixa tem previsibilidade sólida e a formação de preços considera os impactos do Split Payment e tributação no destino?',
+    perguntaProtecaoControle:
+      'A empresa mantém reserva de capital de giro e precificação revisada diante do Split Payment?',
     dicaPriorizacao:
       'Impacto Alto • Risco Alto • Esforço Médio/Alto → Alívio de capital de giro e margem',
   },
@@ -118,6 +125,8 @@ export const SETE_RISCOS_360: Risco360Item[] = [
       'Números que reflitam a realidade econômica para permitir distribuição de lucros com segurança jurídica, blindagem dos administradores e preparação da contabilidade para as novas exigências de demonstração dos tributos sobre valor agregado (IVA Dual).',
     perguntaAutoavaliacao:
       'Seu Balanço Patrimonial e DRE refletem 100% da realidade para sustentar distribuição de lucros isenta e captação bancária sem travas?',
+    perguntaProtecaoControle:
+      'Os sócios recebem relatórios gerenciais que permitem decidir sem depender de achismo?',
     dicaPriorizacao:
       'Impacto Médio/Alto • Risco Moderado • Esforço Baixo/Médio → Base para valuation e governança',
   },
@@ -136,6 +145,8 @@ export const SETE_RISCOS_360: Risco360Item[] = [
       'Trilha de auditoria para litígios, aditivos contratuais de proteção tributária e desenho de Blindagem Patrimonial e Sucessória (Holdings, PPLI, acordos de quotistas).',
     perguntaAutoavaliacao:
       'O patrimônio pessoal dos sócios está separado dos riscos operacionais do CNPJ e os contratos contêm cláusula de repasse tributário?',
+    perguntaProtecaoControle:
+      'Existem holdings/contratos formalizados protegendo o patrimônio pessoal dos sócios?',
     dicaPriorizacao:
       'Impacto Crítico • Risco Alto • Esforço Médio → Proteção patrimonial familiar e contratual',
   },
@@ -154,6 +165,8 @@ export const SETE_RISCOS_360: Risco360Item[] = [
       'Elaboração de Procedimentos Operacionais Padrão (POPs fiscais) e automação de conferências para erradicar falhas cadastrais.',
     perguntaAutoavaliacao:
       'As rotinas de faturamento e compras possuem POPs documentados ou dependem de conhecimento informal de colaboradores?',
+    perguntaProtecaoControle:
+      'Os POPs são auditados periodicamente ou ficam desatualizados após mudanças de sistema/equipe?',
     dicaPriorizacao:
       'Impacto Médio • Risco Médio • Esforço Médio → Estabilidade das operações cotidianas',
   },
@@ -172,6 +185,8 @@ export const SETE_RISCOS_360: Risco360Item[] = [
       'Aplicação de um Programa de Capacitação Estratégica com a criação de Manuais de Procedimento Operacional Padrão (POP). O objetivo é transformar a inteligência fiscal e financeira em um ativo blindado da empresa (governança), eliminando falhas humanas que geram multas pesadas ou travam o fluxo de caixa, e elevando a equipe de executores burocráticos para defensores da margem de lucro.',
     perguntaAutoavaliacao:
       'Sua equipe já foi capacitada para as regras do Novo Código Tributário e para auditar retenções e créditos com autonomia?',
+    perguntaProtecaoControle:
+      'Existe calendário de treinamento contínuo, ou capacitação só acontece após a ocorrência de erros?',
     dicaPriorizacao:
       'Impacto Alto • Risco Médio • Esforço Baixo/Médio → Cultura de conformidade e engajamento',
   },
@@ -192,6 +207,7 @@ export default function Diagnostico360() {
   }, [authLoading, temDadosSalvos, navigate])
 
   // Estado da autoavaliação dos 7 riscos (1 = Atenção Baixa/Controlado, 2 = Atenção Média/Alerta, 3 = Atenção Alta/Crítico)
+  // Pergunta 1: Exposição & Vulnerabilidade (pergunta original)
   const [avaliacoes, setAvaliacoes] = useState<Record<number, number>>({
     1: 2,
     2: 2,
@@ -200,6 +216,17 @@ export default function Diagnostico360() {
     5: 2,
     6: 2,
     7: 3,
+  })
+
+  // Pergunta 2: Proteção & Controle (nova dimensão em cada frente)
+  const [avaliacoesProtecao, setAvaliacoesProtecao] = useState<Record<number, number>>({
+    1: 2,
+    2: 2,
+    3: 2,
+    4: 2,
+    5: 2,
+    6: 2,
+    7: 2,
   })
 
   const { isPremium, podeDiagnosticar, recarregarUsuario } = useAuth()
@@ -212,25 +239,43 @@ export default function Diagnostico360() {
     setAvaliacoes((prev) => ({ ...prev, [riscoId]: nivel }))
   }
 
-  // Estatísticas da autoavaliação
-  const totalCriticos = Object.values(avaliacoes).filter((v) => v === 3).length
-  const totalAlertas = Object.values(avaliacoes).filter((v) => v === 2).length
-  const totalControlados = Object.values(avaliacoes).filter((v) => v === 1).length
+  const handleSelectNivelProtecao = (riscoId: number, nivel: number) => {
+    setAvaliacoesProtecao((prev) => ({ ...prev, [riscoId]: nivel }))
+  }
 
-  // Determinação do perfil de risco global
+  // Todas as 14 respostas (7 frentes × 2 perguntas)
+  const todasRespostas = [...Object.values(avaliacoes), ...Object.values(avaliacoesProtecao)]
+
+  // Contadores globais sobre as 14 respostas
+  const totalCriticos = todasRespostas.filter((v) => v === 3).length
+  const totalAlertas = todasRespostas.filter((v) => v === 2).length
+  const totalControlados = todasRespostas.filter((v) => v === 1).length
+
+  // Score de cada frente = média das 2 perguntas (com fallback graceful degradation para pergunta 1 isolada se ausente)
+  const scoresPorFrente = SETE_RISCOS_360.reduce<
+    Record<number, { scoreMedio: number; p1: number; p2: number }>
+  >((acc, risco) => {
+    const p1 = avaliacoes[risco.id] ?? 2
+    const p2 = avaliacoesProtecao[risco.id] ?? p1
+    const scoreMedio = (p1 + p2) / 2
+    acc[risco.id] = { scoreMedio, p1, p2 }
+    return acc
+  }, {})
+
+  // Determinação do perfil de risco global proporcional sobre as 14 respostas
   let perfilGlobal: { titulo: string; cor: string; desc: string } = {
     titulo: 'Vulnerabilidade Moderada com Oportunidades Rápidas',
     cor: '#D4AF37',
     desc: 'Sua empresa possui pontos de atenção imediata que, quando saneados, liberam caixa expressivo e criam blindagem para a transição fiscal.',
   }
 
-  if (totalCriticos >= 3) {
+  if (totalCriticos >= 5) {
     perfilGlobal = {
       titulo: 'Alto Risco Operacional & Financeiro (Prioridade Máxima)',
       cor: '#E74C3C',
       desc: 'Há estrangulamentos críticos de caixa, passivos latentes ou vulnerabilidade patrimonial. Recomendamos acionar o plano de Ações Rápidas de Liquidez imediatamente.',
     }
-  } else if (totalCriticos === 0 && totalAlertas <= 2) {
+  } else if (totalCriticos === 0 && totalAlertas <= 4) {
     perfilGlobal = {
       titulo: 'Operação Madura em Direção à Governança Avançada',
       cor: '#2ECC71',
@@ -290,10 +335,13 @@ export default function Diagnostico360() {
         dados_extra_json: {
           tipo: '360',
           avaliacoes,
+          avaliacoesProtecao,
+          scoresPorFrente,
           resumo: {
             totalCriticos,
             totalAlertas,
             totalControlados,
+            totalPerguntas: 14,
             perfil: perfilGlobal.titulo,
           },
           frentesPriorizadas: [
@@ -824,78 +872,177 @@ export default function Diagnostico360() {
             </Button>
           </div>
 
-          {/* LISTA DAS 7 PERGUNTAS */}
-          <div className="space-y-5">
+          {/* LISTA DAS 7 FRENTES COM 2 PERGUNTAS CADA (14 PERGUNTAS NO TOTAL) */}
+          <div className="space-y-6">
             {SETE_RISCOS_360.map((risco) => {
-              const valorAtual = avaliacoes[risco.id] || 2
+              const valorP1 = avaliacoes[risco.id] ?? 2
+              const valorP2 = avaliacoesProtecao[risco.id] ?? 2
+              const frenteScore = scoresPorFrente[risco.id] || {
+                scoreMedio: (valorP1 + valorP2) / 2,
+                p1: valorP1,
+                p2: valorP2,
+              }
+              const scoreMedio = frenteScore.scoreMedio
+
+              // Badge contextual de risco médio da frente
+              const statusFrente =
+                scoreMedio >= 2.5
+                  ? {
+                      label: 'Crítico',
+                      bg: 'bg-rose-500/15',
+                      text: 'text-rose-700',
+                      border: 'border-rose-300',
+                    }
+                  : scoreMedio >= 1.75
+                    ? {
+                        label: 'Alerta',
+                        bg: 'bg-amber-500/15',
+                        text: 'text-amber-800',
+                        border: 'border-amber-300',
+                      }
+                    : {
+                        label: 'Controlado',
+                        bg: 'bg-[#145A32]/15',
+                        text: 'text-[#145A32]',
+                        border: 'border-[#2ECC71]/40',
+                      }
+
               return (
                 <div
                   key={risco.id}
-                  className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  className="rounded-2xl bg-slate-50/90 border border-slate-200/90 overflow-hidden shadow-sm transition-all hover:border-[#145A32]/40"
                 >
-                  <div className="max-w-xl space-y-1">
-                    <span className="text-xs font-extrabold text-[#D4AF37] uppercase tracking-wider block">
-                      {risco.nome}
-                    </span>
-                    <p className="text-sm font-semibold text-slate-800">
-                      {risco.perguntaAutoavaliacao}
-                    </p>
+                  {/* Cabeçalho da frente com identificação e score médio */}
+                  <div className="p-4 sm:p-5 bg-white border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <span className="text-[11px] font-extrabold text-[#D4AF37] uppercase tracking-wider block">
+                        Frente {risco.id} de 7 • {risco.subtitulo}
+                      </span>
+                      <h3 className="font-heading font-extrabold text-base sm:text-lg text-[#0A1A13]">
+                        {risco.nome}
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <span className="text-[11px] font-semibold text-slate-500">
+                        Score Médio da Frente:
+                      </span>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold border ${statusFrente.bg} ${statusFrente.text} ${statusFrente.border}`}
+                      >
+                        {scoreMedio.toFixed(1)} / 3.0 • {statusFrente.label}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {[
-                      { nivel: 1, label: 'Baixo (Controlado)', cor: 'emerald' },
-                      { nivel: 2, label: 'Médio (Alerta)', cor: 'amber' },
-                      { nivel: 3, label: 'Alto (Crítico)', cor: 'rose' },
-                    ].map((opt) => {
-                      const isSelected = valorAtual === opt.nivel
-                      return (
-                        <button
-                          key={opt.nivel}
-                          type="button"
-                          onClick={() => handleSelectNivel(risco.id, opt.nivel)}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
-                            isSelected
-                              ? opt.nivel === 3
-                                ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
-                                : opt.nivel === 2
-                                  ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
-                                  : 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                              : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      )
-                    })}
+                  <div className="p-4 sm:p-6 space-y-4">
+                    {/* Pergunta 1: Exposição & Vulnerabilidade */}
+                    <div className="p-4 rounded-xl bg-white border border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+                      <div className="space-y-1 max-w-2xl">
+                        <span className="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-[#0A1A13]/5 text-[#0A1A13] border border-[#0A1A13]/15">
+                          Dimensão: Exposição & Vulnerabilidade
+                        </span>
+                        <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-snug">
+                          {risco.perguntaAutoavaliacao}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {[
+                          { nivel: 1, label: 'Baixo (Controlado)' },
+                          { nivel: 2, label: 'Médio (Alerta)' },
+                          { nivel: 3, label: 'Alto (Crítico)' },
+                        ].map((opt) => {
+                          const isSelected = valorP1 === opt.nivel
+                          return (
+                            <button
+                              key={opt.nivel}
+                              type="button"
+                              onClick={() => handleSelectNivel(risco.id, opt.nivel)}
+                              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                isSelected
+                                  ? opt.nivel === 3
+                                    ? 'bg-[#0E3520] text-rose-300 border-rose-500 shadow-sm ring-1 ring-rose-500'
+                                    : opt.nivel === 2
+                                      ? 'bg-[#0E3520] text-amber-300 border-amber-500 shadow-sm ring-1 ring-amber-500'
+                                      : 'bg-[#0E3520] text-[#2ECC71] border-[#2ECC71] shadow-sm ring-1 ring-[#2ECC71]'
+                                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Pergunta 2: Proteção & Controle */}
+                    <div className="p-4 rounded-xl bg-[#0E3520]/5 border border-[#145A32]/25 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+                      <div className="space-y-1 max-w-2xl">
+                        <span className="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-[#145A32] text-white border border-[#2ECC71]/40">
+                          Dimensão: Proteção & Controle
+                        </span>
+                        <p className="text-xs sm:text-sm font-semibold text-[#0A1A13] leading-snug">
+                          {risco.perguntaProtecaoControle}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {[
+                          { nivel: 1, label: 'Baixo (Controlado)' },
+                          { nivel: 2, label: 'Médio (Alerta)' },
+                          { nivel: 3, label: 'Alto (Crítico)' },
+                        ].map((opt) => {
+                          const isSelected = valorP2 === opt.nivel
+                          return (
+                            <button
+                              key={opt.nivel}
+                              type="button"
+                              onClick={() => handleSelectNivelProtecao(risco.id, opt.nivel)}
+                              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                isSelected
+                                  ? opt.nivel === 3
+                                    ? 'bg-[#0A1A13] text-rose-300 border-rose-500 shadow-sm ring-1 ring-rose-500'
+                                    : opt.nivel === 2
+                                      ? 'bg-[#0A1A13] text-amber-300 border-amber-500 shadow-sm ring-1 ring-amber-500'
+                                      : 'bg-[#0A1A13] text-[#2ECC71] border-[#2ECC71] shadow-sm ring-1 ring-[#2ECC71]'
+                                  : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )
             })}
           </div>
 
-          {/* PAINEL DE RESULTADO DA AUTOAVALIAÇÃO */}
-          <div className="p-6 sm:p-8 rounded-2xl bg-[#07132B] text-white border-2 border-[#D4AF37] shadow-xl space-y-6">
+          {/* PAINEL DE RESULTADO DA AUTOAVALIAÇÃO (14 RESPOSTAS • 7 FRENTES × 2 PERGUNTAS) */}
+          <div className="p-6 sm:p-8 rounded-2xl bg-[#0A1A13] text-white border-2 border-[#145A32] shadow-xl space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
               <div>
-                <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block mb-1">
-                  Resumo do Perfil Diagnosticado
+                <span className="text-xs font-bold text-[#2ECC71] uppercase tracking-wider block mb-1">
+                  Resumo do Perfil Diagnosticado • Matriz 14 Respostas (7 Frentes × 2 Perguntas)
                 </span>
                 <h3 className="text-xl sm:text-2xl font-heading font-extrabold text-white">
                   {perfilGlobal.titulo}
                 </h3>
               </div>
 
-              {/* Badges de contagem */}
+              {/* Badges de contagem sobre as 14 respostas */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-400/30">
-                  {totalCriticos} Crítico(s)
+                  {totalCriticos} / 14 Crítico(s)
                 </span>
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30">
-                  {totalAlertas} Alerta(s)
+                  {totalAlertas} / 14 Alerta(s)
                 </span>
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                  {totalControlados} Controlado(s)
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#145A32] text-[#2ECC71] border border-[#2ECC71]/40">
+                  {totalControlados} / 14 Controlado(s)
                 </span>
               </div>
             </div>

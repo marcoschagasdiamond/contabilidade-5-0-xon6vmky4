@@ -1941,6 +1941,34 @@ export default function Admin() {
                         )}
                       </div>
                     )}
+
+                    {/* Diagnóstico 360° (Diamond Intelligence) */}
+                    {(selectedDiag.tipo_diagnostico === '360' ||
+                      selectedDiag.dados_extra_json.tipo === '360' ||
+                      selectedDiag.dados_extra_json.avaliacoes) && (
+                      <div className="p-2.5 rounded-lg bg-[#0E3520]/10 border border-[#145A32]/30 space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#145A32] block">
+                          Diagnóstico 360° • Matriz de Vulnerabilidade & Proteção:
+                        </span>
+                        {selectedDiag.dados_extra_json.resumo?.perfil && (
+                          <strong className="text-[#0A1A13] font-bold block">
+                            Perfil: {selectedDiag.dados_extra_json.resumo.perfil}
+                          </strong>
+                        )}
+                        <div className="flex items-center gap-2 flex-wrap text-[10px]">
+                          <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">
+                            {selectedDiag.dados_extra_json.resumo?.totalCriticos ?? 0} Crítico(s)
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">
+                            {selectedDiag.dados_extra_json.resumo?.totalAlertas ?? 0} Alerta(s)
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-[#145A32] font-bold">
+                            {selectedDiag.dados_extra_json.resumo?.totalControlados ?? 0}{' '}
+                            Controlado(s)
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
