@@ -151,13 +151,13 @@ export default function Index() {
             {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-6">
               <a
-                href="/diagnostico"
+                href={temDadosSalvos ? '/diagnostico-autoavaliacao' : '/diagnostico-configuracoes'}
                 onClick={(e) => {
                   e.preventDefault()
-                  if (!temDadosSalvos) {
-                    navigate('/dados-empresa?destino=%2Fdiagnostico')
+                  if (temDadosSalvos) {
+                    navigate('/diagnostico-autoavaliacao')
                   } else {
-                    navigate('/diagnostico')
+                    navigate('/diagnostico-configuracoes')
                   }
                 }}
                 className="px-7 py-4 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] hover:shadow-[0_10px_30px_rgba(46,204,113,0.55)] transition-all duration-200 hover:-translate-y-1 btn-press flex items-center justify-center gap-2"

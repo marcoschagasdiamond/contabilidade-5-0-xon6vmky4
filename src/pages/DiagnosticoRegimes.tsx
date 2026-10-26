@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Scale } from 'lucide-react'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
@@ -205,9 +204,8 @@ export default function DiagnosticoRegimes() {
         <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6">
           <div className="max-w-3xl space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-blue-400/40 bg-blue-400/15 text-xs font-bold text-blue-300 uppercase tracking-wider backdrop-blur-md">
-                <Scale className="w-3.5 h-3.5" />
-                <span>DIAGNÓSTICO 3 DE 4 • COMPARADOR DE REGIME TRIBUTÁRIO</span>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-blue-400/40 bg-blue-400/15 text-xs font-bold text-blue-300 uppercase tracking-wider backdrop-blur-md font-mono">
+                <span>ETAPA 04 • COMPARADOR DE REGIME TRIBUTÁRIO</span>
               </div>
               <BadgeOrigemPropagada origem="configuracoes" />
               <FreemiumBadge tipo="diagnostico" />
