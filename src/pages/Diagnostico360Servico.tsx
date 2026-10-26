@@ -193,17 +193,15 @@ export default function Diagnostico360Servico() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 <a
                   href="/#contato"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-heading font-semibold text-sm sm:text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_6px_20px_rgba(46,204,113,0.4)] transition-all duration-200 hover:-translate-y-0.5 btn-press"
+                  className="inline-flex items-center justify-center px-7 py-3.5 rounded-xl font-heading font-bold text-sm sm:text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] transition-all duration-200 hover:-translate-y-0.5 btn-press"
                 >
                   Fale com um Especialista
-                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </a>
 
                 <Link
                   to="/diagnostico-360"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-heading font-semibold text-sm sm:text-base text-white border border-white/25 hover:border-white hover:bg-white/10 transition-all duration-200"
+                  className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl font-heading font-semibold text-sm sm:text-base text-white border border-white/25 hover:border-white hover:bg-white/10 transition-all duration-200"
                 >
-                  <Sparkles className="w-4 h-4 text-[#2ECC71]" />
                   Fazer o Diagnóstico 360° na plataforma
                 </Link>
               </div>
@@ -311,6 +309,19 @@ export default function Diagnostico360Servico() {
                   Visão consolidada com mapa de calor, matriz de priorização e roadmap executivo.
                 </p>
               </div>
+            </div>
+
+            {/* CTA APÓS A APRESENTAÇÃO DA MATRIZ DAS 7 FRENTES */}
+            <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs sm:text-sm text-slate-300 text-center sm:text-left">
+                Deseja auditar essas 7 frentes na sua empresa com a equipe Diamond Group?
+              </p>
+              <a
+                href="/#contato"
+                className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap"
+              >
+                Fale com um Especialista
+              </a>
             </div>
           </div>
         </div>
@@ -446,6 +457,16 @@ export default function Diagnostico360Servico() {
                 em dados.
               </div>
             </div>
+          </div>
+
+          {/* CTA APÓS O COMPARATIVO */}
+          <div className="mt-12 text-center">
+            <a
+              href="/#contato"
+              className="inline-flex items-center justify-center px-8 py-3.5 rounded-xl font-heading font-bold text-sm sm:text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_4px_18px_rgba(212,175,55,0.35)] transition-all duration-200 hover:-translate-y-0.5"
+            >
+              Fale com um Especialista
+            </a>
           </div>
         </div>
       </section>
@@ -641,17 +662,15 @@ export default function Diagnostico360Servico() {
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto shrink-0">
               <a
                 href="/#contato"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-heading font-semibold text-sm text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-md transition-all duration-200 hover:-translate-y-0.5 btn-press"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-bold text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 btn-press"
               >
                 Fale com um Especialista
-                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </a>
 
               <Link
                 to="/diagnostico-360"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-heading font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200 hover:-translate-y-0.5"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200 hover:-translate-y-0.5"
               >
-                <Sparkles className="w-4 h-4 text-[#2ECC71]" />
                 Fazer o Diagnóstico 360° na plataforma
               </Link>
             </div>
@@ -749,16 +768,14 @@ export default function Diagnostico360Servico() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
                 href="/#contato"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-lg transition-all duration-200 hover:-translate-y-1 btn-press"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-lg transition-all duration-200 hover:-translate-y-1 btn-press"
               >
                 Fale com um Especialista
-                <ArrowRight className="w-5 h-5 stroke-[2.5]" />
               </a>
               <Link
                 to="/diagnostico-360"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-heading font-semibold text-base text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200 hover:-translate-y-1"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl font-heading font-semibold text-base text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200 hover:-translate-y-1"
               >
-                <Sparkles className="w-5 h-5 text-[#2ECC71]" />
                 Fazer o Diagnóstico 360° na plataforma
               </Link>
             </div>

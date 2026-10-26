@@ -270,6 +270,25 @@ export default function Diagnostico360() {
 
       {/* CONTAINER DO CONTEÚDO PRINCIPAL */}
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-12 space-y-16">
+        {/* CTA INICIAL DE CONTEXTO */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-[#07132B] border border-[#D4AF37]/30 text-white">
+          <div>
+            <h3 className="font-heading font-bold text-base sm:text-lg text-white">
+              Quer uma avaliação personalizada para a sua empresa?
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300">
+              Converse diretamente com o time de especialistas do Diamond Group e Grupo
+              Baumgartener.
+            </p>
+          </div>
+          <a
+            href="/#contato"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+          >
+            Fale com um Especialista
+          </a>
+        </div>
+
         {/* ========================================================= */}
         {/* SEÇÃO A: CONCEITO REESTRUTURAÇÃO × GOVERNANÇA */}
         {/* ========================================================= */}
@@ -500,6 +519,24 @@ export default function Diagnostico360() {
               </div>
             ))}
           </div>
+
+          {/* CTA APÓS A MATRIZ DAS 7 FRENTES */}
+          <div className="p-6 sm:p-8 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="space-y-1 text-center sm:text-left">
+              <h4 className="font-heading font-bold text-base sm:text-lg text-[#07132B]">
+                Identificou riscos na sua operação nestas 7 frentes?
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600">
+                Nossos analistas estruturam a auditoria e o plano de mitigação sob medida.
+              </p>
+            </div>
+            <a
+              href="/#contato"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+            >
+              Fale com um Especialista
+            </a>
+          </div>
         </section>
 
         {/* ========================================================= */}
@@ -563,6 +600,16 @@ export default function Diagnostico360() {
                 </div>
               )
             })}
+          </div>
+
+          {/* CTA APÓS A JORNADA DE TRANSFORMAÇÃO */}
+          <div className="pt-6 border-t border-white/10 text-center">
+            <a
+              href="/#contato"
+              className="inline-flex items-center justify-center px-8 py-3.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+            >
+              Fale com um Especialista
+            </a>
           </div>
         </section>
 
@@ -637,6 +684,19 @@ export default function Diagnostico360() {
                 Prazo estimado: 60 a 90 dias e acompanhamento
               </div>
             </div>
+          </div>
+
+          {/* LINK TEXTUAL DESTACADO / CTA APÓS O PLANO 30-60-90 */}
+          <div className="text-center pt-2">
+            <span className="text-xs sm:text-sm text-slate-600 mr-2">
+              Quer acelerar a implantação do plano na sua empresa?
+            </span>
+            <a
+              href="/#contato"
+              className="font-bold text-[#07132B] hover:text-[#D4AF37] underline decoration-[#D4AF37] underline-offset-4 text-xs sm:text-sm transition-colors"
+            >
+              Fale com um Especialista
+            </a>
           </div>
         </section>
 
@@ -719,7 +779,7 @@ export default function Diagnostico360() {
                 to="/diagnostico-configuracoes"
                 className="w-full sm:w-auto px-8 py-4 rounded-xl font-heading font-black text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-xl transition-all duration-200 hover:-translate-y-0.5 text-center"
               >
-                Iniciar Trilha Completa de Diagnósticos →
+                Iniciar Trilha Completa de Diagnósticos
               </Link>
 
               <Link
@@ -728,6 +788,13 @@ export default function Diagnostico360() {
               >
                 Ir Direto para Autoavaliação das 7 Frentes
               </Link>
+
+              <a
+                href="/#contato"
+                className="w-full sm:w-auto px-6 py-4 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-xl transition-all duration-200 hover:-translate-y-0.5 text-center"
+              >
+                Fale com um Especialista
+              </a>
             </div>
           </div>
         </section>

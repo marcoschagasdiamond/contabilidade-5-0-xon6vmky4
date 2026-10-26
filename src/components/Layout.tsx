@@ -256,15 +256,6 @@ export default function Layout() {
 
           {/* CTA BUTTON & AUTH / USER DROPDOWN (DESKTOP) */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
-            {/* BOTÃO FALE COM UM ESPECIALISTA */}
-            <a
-              href="/#contato"
-              onClick={(e) => handleNavClick(e, 'contato')}
-              className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_4px_14px_rgba(46,204,113,0.35)] transition-all duration-200 hover:-translate-y-0.5 btn-press whitespace-nowrap"
-            >
-              Fale com um Especialista
-            </a>
-
             {isAuthenticated ? (
               /* MENU DO USUÁRIO SUSPENSO (DROPDOWN) - PADRÃO VISUAL DIAMOND GROUP, SEM ÍCONES */
               <div
@@ -633,8 +624,8 @@ export default function Layout() {
             </div>
 
             {/* Bottom action inside mobile drawer */}
-            <div className="pt-6 border-t border-white/10 flex flex-col gap-3 mt-6">
-              {!isAuthenticated && (
+            {!isAuthenticated && (
+              <div className="pt-6 border-t border-white/10 flex flex-col gap-3 mt-6">
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     to="/login"
@@ -651,18 +642,8 @@ export default function Layout() {
                     Criar Conta
                   </Link>
                 </div>
-              )}
-              <a
-                href="/#contato"
-                onClick={(e) => handleNavClick(e, 'contato')}
-                className="w-full py-3 px-4 rounded-xl text-center font-semibold text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-md transition-all"
-              >
-                Fale com um Especialista
-              </a>
-              <p className="text-center text-xs text-slate-400">
-                Atendimento consultivo em até 24h
-              </p>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
