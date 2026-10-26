@@ -36,20 +36,21 @@ export const SETE_RISCOS_360: Risco360Item[] = [
     id: 1,
     slug: 'financeiro-credito',
     nome: '1. Financeiro & Crédito',
-    subtitulo: 'Liquidez, Rentabilidade, Capital de Giro e Captação',
+    subtitulo: 'Liquidez, Rentabilidade, Expansão, M&A e Captação',
     citacaoTecnica:
-      'No plano técnico, a análise da capacidade de pagamento mensal, índices de liquidez e capital de giro destrava limites de crédito e protege o fluxo operacional. No plano estratégico, estruturar o dossiê corporativo habilita captações competitivas junto a bancos nacionais e internacionais com taxas reduzidas e garantias sólidas.',
+      'No plano técnico, a análise da capacidade de pagamento mensal, índices de liquidez, fluxo de caixa projetado e endividamento resultante destrava limites de crédito e viabiliza novos negócios, fusões, aquisições e planos de expansão com segurança. No plano estratégico, estruturar o dossiê corporativo habilita captações competitivas junto a bancos nacionais e internacionais com taxas reduzidas e garantias sólidas.',
     focoAtual:
-      'Liquidez corrente e seca, rentabilidade sobre vendas, capital de giro líquido, ciclo operacional, capacidade de pagamento mensal e prontidão para crédito corporativo.',
+      'Liquidez corrente e seca, rentabilidade sobre vendas, capital de giro líquido, ciclo operacional, capacidade de pagamento mensal, prontidão para crédito corporativo e verificação de viabilidade financeira de novos negócios, fusões, aquisições e expansão.',
     focoNovoCodigo:
-      'Análise do impacto da não-cumulatividade plena e do Split Payment sobre a necessidade de capital de giro (NCG) e margens operacionais.',
+      'Análise do impacto da não-cumulatividade plena e do Split Payment sobre a necessidade de capital de giro (NCG), capacidade de pagamento e margens operacionais em projetos de expansão.',
     entregavel:
-      'Dossiê de Prontidão para Crédito e Captação Bancária + Matriz de Capacidade de Pagamento Mensal e reestruturação do capital de giro.',
+      'Dossiê de Prontidão para Crédito e Captação Bancária + Matriz de Capacidade de Pagamento Mensal, viabilidade financeira de novos negócios/expansão e reestruturação do capital de giro.',
     perguntaAutoavaliacao:
-      'A empresa monitora sua capacidade mensal de pagamento, liquidez e capital de giro para garantir prontidão de crédito sem estrangular o caixa?',
+      'A empresa monitora sua capacidade mensal de pagamento, liquidez, capital de giro e o impacto de novos negócios ou expansão (fluxo de caixa projetado e endividamento resultante) sem estrangular o caixa?',
     perguntaProtecaoControle:
-      'Existe política ativa de crédito e captação bancária estruturada, ou a empresa recorre a linhas emergenciais e juros elevados?',
-    dicaPriorizacao: 'Impacto Alto • Risco Alto • Esforço Médio → Otimização de liquidez e crédito',
+      'Existe política ativa de crédito, captação bancária e análise prévia de viabilidade financeira e capacidade de pagamento para fusão, aquisição e expansão, ou a empresa recorre a linhas emergenciais e expansões no escuro?',
+    dicaPriorizacao:
+      'Impacto Alto • Risco Alto • Esforço Médio → Otimização de liquidez, expansão e crédito',
   },
   {
     id: 2,
@@ -75,17 +76,17 @@ export const SETE_RISCOS_360: Risco360Item[] = [
     id: 3,
     slug: 'societario-parcerias',
     nome: '3. Societário & Parcerias — Risco Hub',
-    subtitulo: 'Due Diligence de Sócios, M&A e Blindagem em Novos Negócios',
+    subtitulo: 'Due Diligence de Sócios, Parceiros e Blindagem Contratual',
     citacaoTecnica:
-      'No plano de governança corporativa, o Risco Hub mapeia a integridade e solvência de sócios, parceiros estratégicos e co-investidores antes de alianças ou M&A. Blindar o contrato societário e avaliar a viabilidade de fusões, aquisições e expansões impede a contaminação patrimonial por passivos de terceiros.',
+      'No plano de governança corporativa, o Risco Hub mapeia a integridade, reputação e solvência de sócios, parceiros estratégicos e co-investidores antes de alianças e joint ventures. Blindar os contratos societários e estabelecer regras claras de saída e governança impede a contaminação patrimonial por passivos de terceiros.',
     focoAtual:
-      'Due diligence rigorosa de sócios e parceiros comerciais (Risco Hub), viabilidade de fusões, aquisições (M&A) e expansão operacional, com blindagem contratual em novos negócios.',
+      'Due diligence rigorosa de sócios e parceiros comerciais (Risco Hub), histórico fiscal e reputacional de co-investidores e blindagem contratual nas relações societárias.',
     focoNovoCodigo:
-      'Estruturação societária resiliente para reorganizações patrimoniais, cisões e fusões no ambiente da reforma.',
+      'Estruturação societária resiliente para reorganizações patrimoniais, cisões e blindagem de participações no ambiente da reforma.',
     entregavel:
-      'Relatório de Due Diligence de Sócios e Parceiros (Risco Hub) + Matriz de Viabilidade de M&A/Expansão com cláusulas de blindagem em novos negócios.',
+      'Relatório de Due Diligence de Sócios e Parceiros (Risco Hub) + Matriz de Integridade Societária com cláusulas de blindagem contratual.',
     perguntaAutoavaliacao:
-      'A empresa realiza due diligence aprofundada de sócios e parceiros de negócios (Risco Hub) antes de assinar contratos de expansão ou sociedade?',
+      'A empresa realiza due diligence aprofundada de sócios e parceiros de negócios (Risco Hub) quanto à idoneidade e solvência antes de formalizar acordos ou sociedades?',
     perguntaProtecaoControle:
       'Os contratos societários e de parcerias contam com mecanismos formais de blindagem, acordos de sócios e regras claras de saída/dissolução?',
     dicaPriorizacao:

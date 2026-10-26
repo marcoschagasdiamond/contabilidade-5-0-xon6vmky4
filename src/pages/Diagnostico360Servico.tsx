@@ -116,7 +116,7 @@ export default function Diagnostico360Servico() {
   const frentesMatriz = [
     {
       nome: '1. Financeiro & Crédito',
-      foco: 'Liquidez, rentabilidade, capital de giro, capacidade de pagamento mensal e captação em bancos nacionais/internacionais, prontidão para crédito.',
+      foco: 'Liquidez, rentabilidade, capital de giro, viabilidade financeira de expansão, fusões e aquisições (fluxo de caixa projetado e endividamento resultante), capacidade de pagamento mensal e captação bancária.',
     },
     {
       nome: '2. Investimentos & Wealth',
@@ -124,7 +124,7 @@ export default function Diagnostico360Servico() {
     },
     {
       nome: '3. Societário & Parcerias — Risco Hub',
-      foco: 'Due diligence de sócios/parceiros, viabilidade de fusão, aquisição e expansão, blindagem em novos negócios.',
+      foco: 'Due diligence minuciosa de sócios e parceiros comerciais (Risco Hub), histórico fiscal e reputacional e cláusulas de blindagem contratual.',
     },
     {
       nome: '4. Fiscal & Contábil',
