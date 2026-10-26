@@ -15,6 +15,7 @@ import { registrarDiagnosticoUsado } from '@/services/freemium'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import { TermoPPLI, formatarTextoComPPLI } from '@/components/diagnosticos/TermoPPLI'
 
 // Definição completa dos 7 riscos extraídos com rigor do PDF da Diamond Intelligence
 export interface Risco360Item {
@@ -58,13 +59,13 @@ export const SETE_RISCOS_360: Risco360Item[] = [
     nome: '2. Investimentos & Wealth',
     subtitulo: 'Alocação de Excedentes, Risco/Retorno e Parcerias',
     citacaoTecnica:
-      'No plano técnico, a gestão de excedentes de caixa exige conciliar retorno real acima da inflação com liquidez imediata para oportunidades táticas. No plano de governança patrimonial, parcerias com bancos de primeira linha e seguradoras institucionais protegem a reserva contra desvalorização e eventos imprevistos.',
+      'No plano técnico, a gestão de excedentes de caixa exige conciliar retorno real acima da inflação com liquidez imediata para oportunidades táticas. No plano de governança patrimonial, parcerias com bancos de primeira linha e apólices estruturadas (como seguros PPLI offshore via 1291 Group) protegem a reserva contra desvalorização, tributação e eventos imprevistos.',
     focoAtual:
-      'Alocação eficiente de sobras de caixa, equilíbrio risco/retorno dos ativos líquidos e parcerias com bancos e seguradoras para produtos estruturados.',
+      'Alocação eficiente de sobras de caixa, equilíbrio risco/retorno dos ativos líquidos e parcerias com bancos e seguradoras internacionais para produtos estruturados (incluindo seguros PPLI).',
     focoNovoCodigo:
       'Proteção contra oscilações de custos da transição tributária por meio de reservas de contingência blindadas e rentáveis.',
     entregavel:
-      'Política de Gestão de Caixa e Excedentes Corporativos + Arquitetura de alocação risco/retorno e parcerias com seguradoras e instituições financeiras nacionais e internacionais.',
+      'Política de Gestão de Caixa e Excedentes Corporativos + Arquitetura de alocação risco/retorno e parcerias internacionais para custódia e estruturação (bancos globais e seguros PPLI).',
     perguntaAutoavaliacao:
       'Os excedentes de caixa da empresa são alocados estrategicamente considerando a relação risco/retorno e preservação de liquidez?',
     perguntaProtecaoControle:
@@ -143,7 +144,7 @@ export const SETE_RISCOS_360: Risco360Item[] = [
     focoNovoCodigo:
       'Revisão de contratos de longo prazo com fornecedores e clientes para incluir cláusulas de repasse/ajuste de custos tributários decorrentes da reforma.',
     entregavel:
-      'Trilha de auditoria para litígios, aditivos contratuais de proteção tributária e desenho de Blindagem Patrimonial e Sucessória (Holdings, PPLI, acordos de quotistas).',
+      'Trilha de auditoria para litígios, aditivos contratuais de proteção tributária e desenho de Blindagem Patrimonial e Sucessória (Holdings, seguros PPLI via Diamond Investments, acordos de quotistas).',
     perguntaAutoavaliacao:
       'O patrimônio pessoal dos sócios está separado dos riscos operacionais do CNPJ e os contratos contêm cláusula de repasse tributário?',
     perguntaProtecaoControle:
@@ -503,7 +504,8 @@ export default function Diagnostico360() {
                 </p>
               </div>
               <div className="pt-3 border-t border-white/10 text-xs text-emerald-300 font-semibold">
-                Foco: Compliance, blindagem patrimonial (Holdings/PPLI) e Comitê Tributário.
+                Foco: Compliance, blindagem patrimonial (Holdings/
+                <TermoPPLI />) e Comitê Tributário.
               </div>
             </div>
           </div>
@@ -627,7 +629,7 @@ export default function Diagnostico360() {
                 <div className="p-6 sm:p-7 space-y-5 text-xs sm:text-sm">
                   {/* Citação Técnica do PDF */}
                   <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-200/60 text-slate-700 italic leading-relaxed text-xs">
-                    "{risco.citacaoTecnica}"
+                    "{formatarTextoComPPLI(risco.citacaoTecnica)}"
                   </div>
 
                   {/* Foco Atual & Foco Novo Código */}
@@ -637,7 +639,9 @@ export default function Diagnostico360() {
                         <span className="w-2 h-2 rounded-full bg-[#07132B]" />
                         Foco Atual (Legislação Vigente)
                       </span>
-                      <p className="text-slate-600 leading-relaxed text-xs">{risco.focoAtual}</p>
+                      <p className="text-slate-600 leading-relaxed text-xs">
+                        {formatarTextoComPPLI(risco.focoAtual)}
+                      </p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-200/70 space-y-1.5">
@@ -646,8 +650,10 @@ export default function Diagnostico360() {
                         Foco no Novo Código Tributário (IBS / CBS / IS)
                       </span>
                       <p className="text-blue-900/80 leading-relaxed text-xs">
-                        {risco.focoNovoCodigo ||
-                          'Preparação contábil para o IVA Dual e alinhamento às exigências de transparência da EC 132/2023.'}
+                        {formatarTextoComPPLI(
+                          risco.focoNovoCodigo ||
+                            'Preparação contábil para o IVA Dual e alinhamento às exigências de transparência da EC 132/2023.',
+                        )}
                       </p>
                     </div>
                   </div>
@@ -659,7 +665,9 @@ export default function Diagnostico360() {
                       <strong className="text-xs font-bold text-emerald-950 uppercase tracking-wide block mb-0.5">
                         Entregável Concreto deste Módulo:
                       </strong>
-                      <p className="text-xs text-emerald-900 leading-relaxed">{risco.entregavel}</p>
+                      <p className="text-xs text-emerald-900 leading-relaxed">
+                        {formatarTextoComPPLI(risco.entregavel)}
+                      </p>
                     </div>
                   </div>
                 </div>

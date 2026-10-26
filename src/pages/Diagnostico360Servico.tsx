@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { TermoPPLI, formatarTextoComPPLI } from '@/components/diagnosticos/TermoPPLI'
 import {
   ArrowRight,
   ChevronLeft,
@@ -56,7 +57,7 @@ export default function Diagnostico360Servico() {
       badge: 'Perenidade & Valor',
       title: 'Roadmap de Governança e Blindagem Patrimonial',
       description:
-        'Recomendações estruturais para segregação de riscos entre operação e patrimônio pessoal dos sócios, comitê permanente de transição fiscal e implementação de procedimentos operacionais padrão (POPs).',
+        'Recomendações estruturais para segregação de riscos entre operação e patrimônio pessoal dos sócios (Holdings, seguros PPLI offshore via 1291 Group, acordos de sócios), comitê permanente de transição fiscal e implementação de procedimentos operacionais padrão (POPs).',
     },
   ]
 
@@ -74,8 +75,8 @@ export default function Diagnostico360Servico() {
     },
     {
       badge: 'Benefício 03',
-      title: 'Decisões Estratégicas Baseadas em Dados',
-      desc: 'Substituição de achismos ou intuições por indicadores fidedignos de margem, endividamento, rentabilidade real e contingências corporativas.',
+      title: 'Decisões Estratégicas Baseadas em Dados & Blindagem',
+      desc: 'Substituição de achismos por indicadores fidedignos de margem, além de governança patrimonial com estruturas sólidas (Holdings e seguros PPLI).',
     },
     {
       badge: 'Benefício 04',
@@ -120,7 +121,7 @@ export default function Diagnostico360Servico() {
     },
     {
       nome: '2. Investimentos & Wealth',
-      foco: 'Alocação de excedentes, risco/retorno, parcerias com bancos e seguradoras nacionais e internacionais para produtos estruturados.',
+      foco: 'Alocação de excedentes de caixa, risco/retorno, parcerias com bancos e seguradoras internacionais para produtos estruturados e apólices de seguro PPLI offshore.',
     },
     {
       nome: '3. Societário & Parcerias — Risco Hub',
@@ -136,7 +137,7 @@ export default function Diagnostico360Servico() {
     },
     {
       nome: '6. Jurídico',
-      foco: 'Mapeamento de litígios, blindagem patrimonial dos sócios, acordos societários e proteção contratual.',
+      foco: 'Mapeamento de litígios em instâncias críticas e proteção sólida aos sócios (como Holdings e seguros PPLI para isolar responsabilidades e blindagem familiar).',
     },
     {
       nome: '7. Operacional, Humano & Cultura',
@@ -258,7 +259,9 @@ export default function Diagnostico360Servico() {
                   <h3 className="font-heading font-bold text-lg text-slate-900 mb-2.5 leading-snug">
                     {b.title}
                   </h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">{b.desc}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    {formatarTextoComPPLI(b.desc)}
+                  </p>
                 </div>
               </div>
             ))}
@@ -292,7 +295,9 @@ export default function Diagnostico360Servico() {
                   <h4 className="font-heading font-bold text-base text-white mb-1">
                     {frente.nome}
                   </h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">{frente.foco}</p>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {formatarTextoComPPLI(frente.foco)}
+                  </p>
                 </div>
               ))}
               <div className="p-4 rounded-xl bg-[#2ECC71]/10 border border-[#2ECC71]/30 flex flex-col justify-center">
@@ -421,8 +426,8 @@ export default function Diagnostico360Servico() {
                     <span className="text-[#2ECC71] font-bold shrink-0 mt-0.5">•</span>
                     <span>
                       <strong className="text-white">Governança e proteção patrimonial:</strong>{' '}
-                      estruturas sólidas (Holdings, acordos de sócios) separando o patrimônio dos
-                      riscos do negócio.
+                      estruturas sólidas (Holdings, seguros <TermoPPLI />, acordos de sócios)
+                      separando o patrimônio dos riscos do negócio.
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
@@ -605,7 +610,7 @@ export default function Diagnostico360Servico() {
 
                     {/* Texto completo VISÍVEL */}
                     <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
-                      {item.description}
+                      {formatarTextoComPPLI(item.description)}
                     </p>
                   </div>
 
