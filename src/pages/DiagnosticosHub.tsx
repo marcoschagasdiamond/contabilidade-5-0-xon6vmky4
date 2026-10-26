@@ -1,26 +1,9 @@
 import React, { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  Compass,
-  Calendar,
-  Scale,
-  FileCheck2,
-  SlidersHorizontal,
-  ArrowRight,
-  Sparkles,
-  ShieldCheck,
-  Building2,
-  Lock,
-  Layers,
-  TrendingUp,
-  FileText,
-  CheckCircle2,
-} from 'lucide-react'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
-import { Button } from '@/components/ui/button'
 import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 
 export default function DiagnosticosHub() {
@@ -38,6 +21,25 @@ export default function DiagnosticosHub() {
   const diagnosticosCards = [
     {
       numero: '00',
+      id: '360',
+      nome: 'Diagnóstico 360°',
+      subtitulo: 'Apresentação do Serviço & Matriz das 7 Frentes Estruturais',
+      parceria: 'Diamond Group & Grupo Baumgartener',
+      descricao:
+        'Card de apresentação do serviço de inteligência corporativa com a matriz completa das 7 frentes: Financeiro & Crédito, Investimentos & Wealth, Societário & Parcerias (Risco Hub), Fiscal & Contábil, Tributário, Jurídico e Operacional, Humano & Cultura. Base metodológica para estancar perdas e blindar a operação.',
+      beneficios: [
+        'Apresentação institucional completa e matriz das 7 frentes',
+        'Conceito de Reestruturação no Agora e Governança no Amanhã',
+        'Foco nos 7 pilares estruturais e novo ambiente tributário',
+        'Porta de entrada oficial da Trilha Guiada de Inteligência',
+      ],
+      rota: '/diagnostico-360',
+      corAccent: '#D4AF37',
+      badge: 'Apresentação do Serviço • 7 Frentes',
+      textoBotao: 'Iniciar Trilha',
+    },
+    {
+      numero: '01',
       id: 'configuracoes',
       nome: 'Configurações dos Diagnósticos',
       subtitulo: 'Parâmetros Base • Espelhado com Calculadora IBS/CBS',
@@ -46,36 +48,36 @@ export default function DiagnosticosHub() {
         'Defina a razão social, CNPJ com máscara, UF e cidade, segmento (10 opções homologadas), regime atual, quadro de funcionários, perfil de clientes NF (B2B/B2C), slider de atividade mista (0–100%) e o ano da transição (2026–2033). Conectado à Carteira de Clientes.',
       beneficios: [
         'Seletor Carteira • Cliente Ativo no Diagnóstico integrado',
-        'Propagação automática para as 4 páginas com badge de origem',
+        'Propagação automática para as páginas com badge de origem',
         'Reaproveitamento bidirecional contínuo com Módulo 1 da Calculadora',
         'Persistência segura vinculada a cada laudo e cliente_id',
       ],
-      rota: '/diagnosticos/configuracoes',
+      rota: '/diagnostico-configuracoes',
       corAccent: '#D4AF37',
       badge: 'Parâmetros Base • Propagação Ativa',
-      icone: SlidersHorizontal,
-    },
-    {
-      numero: '01',
-      id: '360',
-      nome: 'Diagnóstico 360°',
-      subtitulo: 'Matriz Semáforo & Plano de Ação 30-60-90',
-      parceria: 'Diamond Group & Grupo Baumgartener',
-      descricao:
-        'Mapeamento estruturado nas 7 novas frentes: Financeiro & Crédito, Investimentos & Wealth, Societário & Parcerias (Risco Hub), Fiscal & Contábil, Tributário, Jurídico e Operacional, Humano & Cultura. Gera a Matriz Semáforo de Riscos e Oportunidades e o Plano de Ação 30-60-90.',
-      beneficios: [
-        'Matriz Semáforo de Riscos e Oportunidades nas 7 novas frentes',
-        'Autoavaliação em 14 respostas (Exposição/Vulnerabilidade + Proteção/Controle)',
-        'Due diligence de sócios/parceiros e capacidade mensal de pagamento',
-        'Plano de Ação 30-60-90 escalonado para liquidez, governança e transição',
-      ],
-      rota: '/diagnostico-360',
-      corAccent: '#D4AF37',
-      badge: 'Metodologia Diamond Intelligence',
-      icone: Compass,
+      textoBotao: 'Acessar Configurações',
     },
     {
       numero: '02',
+      id: 'autoavaliacao',
+      nome: 'Autoavaliação das 7 Frentes na Sua Empresa',
+      subtitulo: '14 Respostas • Matriz Semáforo & Plano de Ação 30-60-90',
+      parceria: 'Ferramenta Interativa Diamond Intelligence',
+      descricao:
+        'Ferramenta dedicada para autoavaliação interativa nas 7 frentes (2 dimensões por frente: Exposição & Vulnerabilidade e Proteção & Controle, totalizando 14 respostas). Calcula score médio por frente, gera a Matriz Semáforo de Riscos e Oportunidades e o Plano de Ação 30-60-90.',
+      beneficios: [
+        '14 respostas pontuais (Exposição/Vulnerabilidade e Proteção/Controle)',
+        'Score médio por frente e classificação de risco imediata',
+        'Matriz Semáforo de Riscos e Oportunidades consolidada',
+        'Plano de Ação 30-60-90 com salvamento na conta e vínculo ao Cliente',
+      ],
+      rota: '/diagnostico-autoavaliacao',
+      corAccent: '#2ECC71',
+      badge: 'Ferramenta Interativa • 14 Respostas',
+      textoBotao: 'Fazer Autoavaliação',
+    },
+    {
+      numero: '03',
       id: 'transicao',
       nome: 'Diagnóstico de Transição Fiscal',
       subtitulo: 'Roteiro de 40 Minutos • Farol de Urgência & ERP',
@@ -91,10 +93,10 @@ export default function DiagnosticosHub() {
       rota: '/diagnostico-transicao',
       corAccent: '#F59E0B',
       badge: 'Roteiro 40 min • Farol de Risco',
-      icone: Calendar,
+      textoBotao: 'Acessar Transição Fiscal',
     },
     {
-      numero: '03',
+      numero: '04',
       id: 'regimes',
       nome: 'Diagnóstico de Comparação de Regime',
       subtitulo: 'Decisão Estratégica • 4 Modelos Societários & IVA Dual',
@@ -110,10 +112,10 @@ export default function DiagnosticosHub() {
       rota: '/diagnostico-regimes',
       corAccent: '#3B82F6',
       badge: 'Comparador + Matriz 4 Regimes',
-      icone: Scale,
+      textoBotao: 'Comparar Regimes',
     },
     {
-      numero: '04',
+      numero: '05',
       id: 'enquadramento',
       nome: 'Diagnóstico de Enquadramento Completo',
       subtitulo: 'Wizard Completo com Relatório Executivo',
@@ -127,9 +129,9 @@ export default function DiagnosticosHub() {
         'Salvamento automático no histórico e visível no painel admin',
       ],
       rota: '/diagnostico',
-      corAccent: '#2ECC71',
+      corAccent: '#10B981',
       badge: 'Parecer Executivo + PDF',
-      icone: FileCheck2,
+      textoBotao: 'Abrir Enquadramento',
     },
   ]
 
@@ -162,27 +164,28 @@ export default function DiagnosticosHub() {
         <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6">
           <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/15 text-xs sm:text-sm font-bold text-[#D4AF37] mb-5 backdrop-blur-md">
-              <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+              <span className="font-mono text-xs text-[#D4AF37]">◆</span>
               <span>DIAMOND INTELLIGENCE • ECOSSISTEMA CORPORATIVO</span>
             </div>
 
             <h1 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-white mb-5 leading-tight">
-              Diagnósticos{' '}
+              Trilha de{' '}
               <span className="text-[#D4AF37] underline decoration-[#D4AF37]/40 underline-offset-8">
-                Tributários Estratégicos
+                Diagnósticos Estratégicos
               </span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed mb-6">
-              Uma trilha completa de 4 ferramentas integradas alimentadas pelos{' '}
-              <strong className="text-white">Dados da Empresa</strong>. Do mapeamento dos 7 riscos
-              de governança ao enquadramento matemático completo sob o Novo Código Tributário.
+              Esteira guiada e modular alimentada pelos{' '}
+              <strong className="text-white">Dados da Empresa</strong>: da apresentação do
+              Diagnóstico 360° e autoavaliação das 7 frentes até o enquadramento matemático completo
+              sob a EC 132/2023.
             </p>
 
             {/* BARRA DA EMPRESA ATIVA */}
             <div className="inline-flex flex-wrap items-center justify-center gap-3 p-3 px-5 rounded-2xl bg-white/10 border border-white/15 text-xs text-slate-200 backdrop-blur-md">
               <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-[#2ECC71]" />
+                <span className="text-[#2ECC71] font-mono font-bold">EMPRESA:</span>
                 <span className="font-semibold text-white">
                   {dadosEmpresa.nomeEmpresa || 'Empresa Cadastrada'}
                 </span>
@@ -196,7 +199,7 @@ export default function DiagnosticosHub() {
               </span>
               <span className="text-slate-500">•</span>
               <Link
-                to="/diagnosticos/configuracoes"
+                to="/diagnostico-configuracoes"
                 className="text-[#D4AF37] hover:underline font-bold"
               >
                 Configurações dos Diagnósticos →
@@ -206,11 +209,10 @@ export default function DiagnosticosHub() {
         </div>
       </section>
 
-      {/* CARDS DOS 4 DIAGNÓSTICOS */}
+      {/* CARDS DA TRILHA DE DIAGNÓSTICOS (SEM ÍCONES, FOCO TIPOGRÁFICO) */}
       <section className="max-w-[1200px] mx-auto px-4 sm:px-6 -mt-8 scroll-mt-28">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
           {diagnosticosCards.map((diag) => {
-            const IconComp = diag.icone
             return (
               <div
                 key={diag.id}
@@ -225,22 +227,22 @@ export default function DiagnosticosHub() {
                 />
 
                 <div className="p-7 sm:p-9 space-y-6">
-                  {/* Top do card: Número + Badge + Ícone */}
+                  {/* Top do card: Número + Badge */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <span className="text-3xl font-heading font-black text-slate-300 group-hover:text-[#07132B] transition-colors">
+                      <span className="text-3xl font-heading font-black text-slate-300 group-hover:text-[#07132B] transition-colors font-mono">
                         {diag.numero}
                       </span>
-                      <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:scale-105"
+                      <span
+                        className="px-2.5 py-1 rounded-lg text-xs font-mono font-extrabold uppercase tracking-wider"
                         style={{
                           backgroundColor: '#07132B',
                           color: diag.corAccent,
                           border: `1px solid ${diag.corAccent}40`,
                         }}
                       >
-                        <IconComp className="w-6 h-6 stroke-[2]" />
-                      </div>
+                        ETAPA {diag.numero}
+                      </span>
                     </div>
 
                     <span
@@ -272,17 +274,17 @@ export default function DiagnosticosHub() {
                   {/* Benefícios / Entregáveis */}
                   <div className="space-y-2 pt-2 border-t border-slate-100">
                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                      O que este diagnóstico entrega:
+                      O que esta etapa entrega:
                     </span>
                     <ul className="space-y-1.5">
                       {diag.beneficios.map((b, idx) => (
                         <li
                           key={idx}
-                          className="flex items-start gap-2 text-xs text-slate-700 leading-snug"
+                          className="flex items-start gap-2.5 text-xs text-slate-700 leading-snug"
                         >
-                          <CheckCircle2
-                            className="w-4 h-4 shrink-0 mt-0.5"
-                            style={{ color: diag.corAccent }}
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5"
+                            style={{ backgroundColor: diag.corAccent }}
                           />
                           <span>{b}</span>
                         </li>
@@ -300,14 +302,13 @@ export default function DiagnosticosHub() {
 
                   <Link
                     to={diag.rota}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-heading font-bold text-xs sm:text-sm text-white shadow-md transition-all hover:brightness-110 group-hover:shadow-lg"
+                    className="inline-flex items-center px-6 py-3 rounded-xl font-heading font-black text-xs sm:text-sm text-white shadow-md transition-all hover:brightness-110 group-hover:shadow-lg text-center"
                     style={{
                       backgroundColor: '#07132B',
                       border: `1px solid ${diag.corAccent}60`,
                     }}
                   >
-                    <span>Acessar Diagnóstico</span>
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    <span>{diag.textoBotao || 'Acessar Etapa'} →</span>
                   </Link>
                 </div>
               </div>
@@ -322,10 +323,9 @@ export default function DiagnosticosHub() {
           <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 max-w-3xl space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 uppercase">
-              <ShieldCheck className="w-3.5 h-3.5" />
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 uppercase tracking-wider">
               Metodologia Integrada
-            </div>
+            </span>
 
             <h2 className="font-heading font-extrabold text-2xl sm:text-3xl text-white">
               Reestruturação no Agora, Governança no Amanhã

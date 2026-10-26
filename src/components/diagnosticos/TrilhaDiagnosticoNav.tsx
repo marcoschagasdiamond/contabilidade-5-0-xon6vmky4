@@ -1,20 +1,18 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import {
-  SlidersHorizontal,
-  Compass,
-  Calendar,
-  Scale,
-  FileCheck2,
-  ChevronRight,
-  Sparkles,
-  Building2,
-  RotateCcw,
-} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+export type PaginaDiagnostico =
+  | 'hub'
+  | '360'
+  | 'configuracoes'
+  | 'autoavaliacao'
+  | 'transicao'
+  | 'regimes'
+  | 'enquadramento'
+
 export interface TrilhaDiagnosticoProps {
-  paginaAtual: 'hub' | 'configuracoes' | '360' | 'transicao' | 'regimes' | 'enquadramento'
+  paginaAtual: PaginaDiagnostico
   onRestaurarDados?: () => void
   temDadosSalvos?: boolean
   nomeEmpresa?: string
@@ -22,49 +20,52 @@ export interface TrilhaDiagnosticoProps {
 
 export const ETAPAS_TRILHA = [
   {
-    id: 'configuracoes' as const,
-    numero: '0',
-    nome: 'Configurações',
-    tag: 'Parâmetros Base • Propagação',
-    rota: '/diagnosticos/configuracoes',
-    icone: SlidersHorizontal,
+    id: '360' as const,
+    numero: '00',
+    nome: 'Diagnóstico 360°',
+    tag: 'Apresentação & Matriz 7 Frentes',
+    rota: '/diagnostico-360',
     cor: '#D4AF37',
   },
   {
-    id: '360' as const,
-    numero: '1',
-    nome: 'Diagnóstico 360°',
-    tag: 'Matriz dos 7 Riscos',
-    rota: '/diagnostico-360',
-    icone: Compass,
+    id: 'configuracoes' as const,
+    numero: '01',
+    nome: 'Configurações',
+    tag: 'Parâmetros Base • Propagação',
+    rota: '/diagnostico-configuracoes',
     cor: '#D4AF37',
+  },
+  {
+    id: 'autoavaliacao' as const,
+    numero: '02',
+    nome: 'Autoavaliação das 7 Frentes',
+    tag: '14 Respostas • Semáforo • 30-60-90',
+    rota: '/diagnostico-autoavaliacao',
+    cor: '#2ECC71',
   },
   {
     id: 'transicao' as const,
-    numero: '2',
+    numero: '03',
     nome: 'Transição Fiscal',
-    tag: 'Roteiro 40 min • Farol',
+    tag: 'Roteiro 40 min • 2026–2033',
     rota: '/diagnostico-transicao',
-    icone: Calendar,
     cor: '#F59E0B',
   },
   {
     id: 'regimes' as const,
-    numero: '3',
-    nome: 'Comparação de Regimes',
+    numero: '04',
+    nome: 'Comparação de Regime',
     tag: 'Simples vs Presumido vs Real',
     rota: '/diagnostico-regimes',
-    icone: Scale,
     cor: '#3B82F6',
   },
   {
     id: 'enquadramento' as const,
-    numero: '4',
+    numero: '05',
     nome: 'Enquadramento Completo',
     tag: 'Simulador com Ranking e PDF',
     rota: '/diagnostico',
-    icone: FileCheck2,
-    cor: '#2ECC71',
+    cor: '#10B981',
   },
 ]
 
@@ -88,13 +89,13 @@ export default function TrilhaDiagnosticoNav({
                 paginaAtual === 'hub' ? 'text-[#D4AF37]' : 'text-slate-300 hover:text-white'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span className="text-[#D4AF37] font-mono text-xs">◆</span>
               <span>Hub de Diagnósticos</span>
             </Link>
 
             {paginaAtual !== 'hub' && (
               <>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                <span className="text-slate-500">/</span>
                 <span className="font-semibold text-white">
                   {ETAPAS_TRILHA.find((e) => e.id === paginaAtual)?.nome || 'Diagnóstico'}
                 </span>
@@ -103,8 +104,7 @@ export default function TrilhaDiagnosticoNav({
 
             {nomeEmpresa && (
               <span className="hidden md:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/10 text-emerald-300 text-[11px] font-medium border border-white/10">
-                <Building2 className="w-3 h-3" />
-                {nomeEmpresa}
+                <span className="text-[#D4AF37] font-bold">EMPRESA:</span> {nomeEmpresa}
               </span>
             )}
           </div>
@@ -116,10 +116,9 @@ export default function TrilhaDiagnosticoNav({
                 variant="ghost"
                 size="sm"
                 onClick={onRestaurarDados}
-                className="h-7 text-xs text-slate-300 hover:text-white hover:bg-white/10 font-semibold gap-1.5 px-2.5"
+                className="h-7 text-xs text-slate-300 hover:text-white hover:bg-white/10 font-semibold px-2.5"
                 title="Restaura os valores a partir dos Dados da Empresa cadastrados"
               >
-                <RotateCcw className="w-3 h-3 text-[#D4AF37]" />
                 Restaurar dados da empresa
               </Button>
             )}
@@ -144,59 +143,54 @@ export default function TrilhaDiagnosticoNav({
           </div>
         </div>
 
-        {/* 4 Cards da Trilha em linha (responsivo horizontal scroll em telas muito pequenas) */}
+        {/* Cards da Trilha em linha (SEM ÍCONES - padrão tipográfico Diamond Group) */}
         <nav
           aria-label="Trilha de Diagnósticos Tributários"
           className="pt-3 overflow-x-auto scrollbar-none"
         >
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 min-w-[680px] md:min-w-0">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-2.5 min-w-[760px] md:min-w-0">
             {ETAPAS_TRILHA.map((etapa) => {
-              const IconComp = etapa.icone
               const isAtiva = paginaAtual === etapa.id
               return (
                 <Link
                   key={etapa.id}
                   to={etapa.rota}
-                  className={`group relative p-2.5 sm:p-3 rounded-xl border transition-all flex items-center gap-2.5 ${
+                  className={`group relative p-2 sm:p-2.5 rounded-xl border transition-all flex flex-col justify-between ${
                     isAtiva
                       ? 'bg-gradient-to-r from-white/15 to-white/5 border-[#D4AF37] ring-1 ring-[#D4AF37]/50 shadow-md'
                       : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                   }`}
                 >
-                  {/* Número / Ícone */}
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs transition-transform group-hover:scale-105"
-                    style={{
-                      backgroundColor: isAtiva ? etapa.cor : '#0A1A13',
-                      color: isAtiva ? '#07132B' : etapa.cor,
-                      border: `1px solid ${etapa.cor}40`,
-                    }}
-                  >
-                    <IconComp className="w-4 h-4 stroke-[2.2]" />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                        {etapa.numero}.
-                      </span>
-                      <span
-                        className={`text-xs font-bold truncate block ${
-                          isAtiva ? 'text-white' : 'text-slate-200 group-hover:text-white'
-                        }`}
-                      >
-                        {etapa.nome}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 truncate block">{etapa.tag}</span>
-                  </div>
-
-                  {isAtiva && (
+                  <div className="flex items-center justify-between gap-1.5 mb-1">
                     <span
-                      className="w-1.5 h-1.5 rounded-full shrink-0 animate-ping"
-                      style={{ backgroundColor: etapa.cor }}
-                    />
-                  )}
+                      className="px-1.5 py-0.5 rounded text-[10px] font-mono font-extrabold uppercase tracking-wider"
+                      style={{
+                        backgroundColor: isAtiva ? etapa.cor : 'rgba(255,255,255,0.08)',
+                        color: isAtiva ? '#07132B' : etapa.cor,
+                      }}
+                    >
+                      {etapa.numero}
+                    </span>
+                    {isAtiva && (
+                      <span
+                        className="w-1.5 h-1.5 rounded-full shrink-0 animate-ping"
+                        style={{ backgroundColor: etapa.cor }}
+                      />
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <span
+                      className={`text-[11px] sm:text-xs font-bold leading-tight block ${
+                        isAtiva ? 'text-white' : 'text-slate-200 group-hover:text-white'
+                      }`}
+                    >
+                      {etapa.nome}
+                    </span>
+                    <span className="text-[9px] text-slate-400 truncate block mt-0.5">
+                      {etapa.tag}
+                    </span>
+                  </div>
                 </Link>
               )
             })}

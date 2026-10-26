@@ -1,22 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  SlidersHorizontal,
-  Save,
-  RotateCcw,
-  Building2,
-  CheckCircle2,
-  Sparkles,
-  ArrowRight,
-  ShieldCheck,
-} from 'lucide-react'
+
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
-import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
+import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 import {
   LISTA_SEGMENTOS,
   SegmentoEmpresa,
@@ -302,7 +293,7 @@ export default function DiagnosticoConfiguracoes() {
           <div className="max-w-3xl space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/15 text-xs font-bold text-[#D4AF37] uppercase tracking-wider backdrop-blur-md">
-                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span className="font-mono text-xs text-[#D4AF37]">◆</span>
                 <span>CENTRAL DE CONFIGURAÇÕES • HUB DE DIAGNÓSTICOS</span>
               </div>
               <BadgeOrigemPropagada origem="configuracoes" />
@@ -344,8 +335,7 @@ export default function DiagnosticoConfiguracoes() {
               </div>
               {clienteAtivo && (
                 <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-300/60">
-                  <Building2 className="w-3.5 h-3.5 text-[#2ECC71]" />
-                  Cliente: {clienteAtivo.nome}
+                  <span className="text-[#2ECC71] font-bold">CLIENTE:</span> {clienteAtivo.nome}
                 </span>
               )}
             </div>
@@ -718,16 +708,18 @@ export default function DiagnosticoConfiguracoes() {
             </div>
           </div>
 
-          {/* FEEDBACK DE SALVAMENTO */}
-          {salvoSucesso && (
-            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs sm:text-sm flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-[#2ECC71] shrink-0" />
-              <span>
-                <strong>Configurações salvas e propagadas!</strong> As 4 páginas de diagnóstico e a
-                Calculadora IBS/CBS agora refletem estes parâmetros automaticamente.
-              </span>
-            </div>
-          )}
+          {/* PAINEL DE SUCESSO DO FLUXO GUIADO (ESTEIRA) */}
+          <PainelSucessoFluxoGuiado
+            aberto={salvoSucesso}
+            onClose={() => setSalvoSucesso(false)}
+            titulo="Configurações Salvas e Propagadas com Sucesso!"
+            mensagem="Os parâmetros da sua empresa foram atualizados e sincronizados com a Calculadora IBS/CBS, Carteira de Clientes e toda a esteira de diagnósticos. Siga para a Autoavaliação das 7 Frentes."
+            proximaEtapaNome="Autoavaliação das 7 Frentes na Sua Empresa"
+            proximaEtapaRota="/diagnostico-autoavaliacao"
+            segundosAutoRedirect={5}
+            etapaConcluidaNumero="ETAPA 01"
+            etapaConcluidaNome="Configurações dos Diagnósticos"
+          />
 
           {/* BOTÕES DE AÇÃO (SEM ÍCONES EM BOTÕES DE AÇÃO) */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-200">
@@ -760,10 +752,10 @@ export default function DiagnosticoConfiguracoes() {
           </div>
         </div>
 
-        {/* BOX INFORMATIVO DA PROPAGAÇÃO PARA AS 4 PÁGINAS */}
+        {/* BOX INFORMATIVO DA PROPAGAÇÃO PARA AS PÁGINAS DA TRILHA */}
         <div className="bg-[#07132B] text-white rounded-2xl p-6 sm:p-8 border border-[#D4AF37]/30 shadow-lg space-y-4">
           <div className="flex items-center gap-2 text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
-            <ShieldCheck className="w-4 h-4 text-[#2ECC71]" />
+            <span className="text-[#2ECC71] font-mono">◆</span>
             Mapeamento de Propagação Automática
           </div>
           <h3 className="text-lg sm:text-xl font-heading font-extrabold text-white">

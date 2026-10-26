@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Compass, ArrowRight, Sparkles, CheckCircle2, Save } from 'lucide-react'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
-import { createDiagnostico } from '@/services/diagnosticos'
-import pb from '@/lib/pocketbase/client'
-import { registrarDiagnosticoUsado } from '@/services/freemium'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
-import { PaywallModal } from '@/components/freemium/PaywallModal'
-import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import { TermoPPLI, formatarTextoComPPLI } from '@/components/diagnosticos/TermoPPLI'
 
 // Definição completa dos 7 riscos extraídos com rigor do PDF da Diamond Intelligence
@@ -214,7 +206,7 @@ export function normalizarAvaliacoesRetrocompativeis(
 
 export default function Diagnostico360() {
   const navigate = useNavigate()
-  const { temDadosSalvos, dadosEmpresa, restaurarPadrao } = useDadosEmpresa()
+  const { temDadosSalvos, dadosEmpresa } = useDadosEmpresa()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
 
   // Gate de Dados da Empresa
@@ -225,172 +217,6 @@ export default function Diagnostico360() {
       })
     }
   }, [authLoading, temDadosSalvos, navigate])
-
-  // Estado da autoavaliação dos 7 riscos (1 = Atenção Baixa/Controlado, 2 = Atenção Média/Alerta, 3 = Atenção Alta/Crítico)
-  // Pergunta 1: Exposição & Vulnerabilidade (pergunta original)
-  const [avaliacoes, setAvaliacoes] = useState<Record<number, number>>({
-    1: 2,
-    2: 2,
-    3: 3,
-    4: 2,
-    5: 2,
-    6: 2,
-    7: 3,
-  })
-
-  // Pergunta 2: Proteção & Controle (nova dimensão em cada frente)
-  const [avaliacoesProtecao, setAvaliacoesProtecao] = useState<Record<number, number>>({
-    1: 2,
-    2: 2,
-    3: 2,
-    4: 2,
-    5: 2,
-    6: 2,
-    7: 2,
-  })
-
-  const { isPremium, podeDiagnosticar, recarregarUsuario } = useAuth()
-  const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
-  const [salvandoDiagnostico, setSalvandoDiagnostico] = useState(false)
-  const [salvoFeedback, setSalvoFeedback] = useState(false)
-  const [paywallAberto, setPaywallAberto] = useState(false)
-
-  const handleSelectNivel = (riscoId: number, nivel: number) => {
-    setAvaliacoes((prev) => ({ ...prev, [riscoId]: nivel }))
-  }
-
-  const handleSelectNivelProtecao = (riscoId: number, nivel: number) => {
-    setAvaliacoesProtecao((prev) => ({ ...prev, [riscoId]: nivel }))
-  }
-
-  // Todas as 14 respostas (7 frentes × 2 perguntas)
-  const todasRespostas = [...Object.values(avaliacoes), ...Object.values(avaliacoesProtecao)]
-
-  // Contadores globais sobre as 14 respostas
-  const totalCriticos = todasRespostas.filter((v) => v === 3).length
-  const totalAlertas = todasRespostas.filter((v) => v === 2).length
-  const totalControlados = todasRespostas.filter((v) => v === 1).length
-
-  // Score de cada frente = média das 2 perguntas (com fallback graceful degradation para pergunta 1 isolada se ausente)
-  const scoresPorFrente = SETE_RISCOS_360.reduce<
-    Record<number, { scoreMedio: number; p1: number; p2: number }>
-  >((acc, risco) => {
-    const p1 = avaliacoes[risco.id] ?? 2
-    const p2 = avaliacoesProtecao[risco.id] ?? p1
-    const scoreMedio = (p1 + p2) / 2
-    acc[risco.id] = { scoreMedio, p1, p2 }
-    return acc
-  }, {})
-
-  // Determinação do perfil de risco global proporcional sobre as 14 respostas
-  let perfilGlobal: { titulo: string; cor: string; desc: string } = {
-    titulo: 'Vulnerabilidade Moderada com Oportunidades Rápidas',
-    cor: '#D4AF37',
-    desc: 'Sua empresa possui pontos de atenção imediata que, quando saneados, liberam caixa expressivo e criam blindagem para a transição fiscal.',
-  }
-
-  if (totalCriticos >= 5) {
-    perfilGlobal = {
-      titulo: 'Alto Risco Operacional & Financeiro (Prioridade Máxima)',
-      cor: '#E74C3C',
-      desc: 'Há estrangulamentos críticos de caixa, passivos latentes ou vulnerabilidade patrimonial. Recomendamos acionar o plano de Ações Rápidas de Liquidez imediatamente.',
-    }
-  } else if (totalCriticos === 0 && totalAlertas <= 4) {
-    perfilGlobal = {
-      titulo: 'Operação Madura em Direção à Governança Avançada',
-      cor: '#2ECC71',
-      desc: 'Os riscos básicos estão controlados. O foco agora é alavancagem estruturada, holdings patrimoniais e o Comitê de Transição Tributária.',
-    }
-  }
-
-  // Salvar diagnóstico 360 no PocketBase vinculado à conta do usuário
-  const handleSalvarDiagnostico360 = async () => {
-    if (!podeDiagnosticar) {
-      setPaywallAberto(true)
-      return
-    }
-
-    setSalvandoDiagnostico(true)
-    try {
-      const authUserId = pb.authStore.record?.id || undefined
-      const fatAnual = dadosEmpresa.faturamentoMensal ? dadosEmpresa.faturamentoMensal * 12 : 600000
-      const folhaAnual = dadosEmpresa.folhaPagamentoMensal
-        ? dadosEmpresa.folhaPagamentoMensal * 12
-        : 120000
-
-      await createDiagnostico({
-        user_id: authUserId,
-        cliente_id: clienteAtivoId || undefined,
-        tipo_diagnostico: '360',
-        nome: clienteAtivo?.nome || dadosEmpresa.nomeContato || 'Contato',
-        email: dadosEmpresa.email || 'contato@empresa.com.br',
-        telefone: dadosEmpresa.telefone || '',
-        empresa: dadosEmpresa.nomeEmpresa || 'Empresa',
-        cnpj: dadosEmpresa.cnpj || '',
-        segmento: dadosEmpresa.segmento || 'Serviços',
-        rbt12: fatAnual,
-        folha12: folhaAnual,
-        margem_lucro: dadosEmpresa.margemLucroEstimada ?? 25,
-        regime_recomendado: 'Diagnóstico 360°',
-        carga_simples: 0,
-        carga_presumido: 0,
-        carga_real: 0,
-        economia_anual: 0,
-        sistema_recomendado_atual: dadosEmpresa.regimeAtual || 'Simples Nacional',
-        sistema_recomendado_novo: perfilGlobal.titulo,
-        configuracoes_diagnostico_json: {
-          regime_atual: dadosEmpresa.regimeAtual,
-          segmento: dadosEmpresa.segmento,
-          atividade_mista: dadosEmpresa.atividadeMista,
-          proporcao_servico_misto: dadosEmpresa.proporcaoServicoMisto,
-          ano_base_transicao: dadosEmpresa.anoBaseTransicao,
-          uf_origem: dadosEmpresa.ufOrigem,
-          cidade: dadosEmpresa.cidade,
-          funcionarios: dadosEmpresa.funcionarios,
-          emissao_nf: dadosEmpresa.emissaoNf,
-          cnpj: dadosEmpresa.cnpj,
-          razao_social: dadosEmpresa.nomeEmpresa,
-          nome_contato: dadosEmpresa.nomeContato,
-        },
-        dados_extra_json: {
-          tipo: '360',
-          versaoMatriz: '7_frentes_v2',
-          avaliacoes,
-          avaliacoesProtecao,
-          scoresPorFrente,
-          painelResultadosNome: 'Matriz Semáforo de Riscos e Oportunidades',
-          planoAcaoNome: 'Plano de Ação 30-60-90',
-          resumo: {
-            totalCriticos,
-            totalAlertas,
-            totalControlados,
-            totalPerguntas: 14,
-            perfil: perfilGlobal.titulo,
-            farolNome: 'Matriz Semáforo de Riscos e Oportunidades',
-            planoNome: 'Plano de Ação 30-60-90',
-          },
-          frentesPriorizadas: [
-            '1. Plano de Ação 30 Dias (Liquidez Rápida e Crédito)',
-            '2. Plano de Ação 60 Dias (Societário, Parcerias e Governança)',
-            '3. Plano de Ação 90 Dias (Transição Tributária, Cultura e Processos)',
-          ],
-        },
-      })
-
-      await registrarDiagnosticoUsado(authUserId)
-      await recarregarUsuario()
-
-      setSalvoFeedback(true)
-      setTimeout(() => setSalvoFeedback(false), 4000)
-    } catch (err) {
-      console.error('Erro ao salvar Diagnóstico 360:', err)
-      // Feedback amigável mesmo se offline
-      setSalvoFeedback(true)
-      setTimeout(() => setSalvoFeedback(false), 4000)
-    } finally {
-      setSalvandoDiagnostico(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-20 sm:pt-24 pb-20">
@@ -419,10 +245,9 @@ export default function Diagnostico360() {
         <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6">
           <div className="max-w-3xl space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/15 text-xs font-bold text-[#D4AF37] uppercase tracking-wider backdrop-blur-md">
-                <Compass className="w-3.5 h-3.5" />
-                <span>DIAMOND INTELLIGENCE • PARCERIA GRUPO BAUMGARTENER</span>
-              </div>
+              <span className="px-3.5 py-1.5 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/15 text-xs font-bold text-[#D4AF37] uppercase tracking-wider backdrop-blur-md">
+                DIAMOND INTELLIGENCE • PARCERIA GRUPO BAUMGARTENER
+              </span>
               <FreemiumBadge tipo="diagnostico" />
             </div>
 
@@ -660,7 +485,7 @@ export default function Diagnostico360() {
 
                   {/* Entregável do Risco */}
                   <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-[#2ECC71] shrink-0 mt-0.5" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#2ECC71] shrink-0 mt-1.5" />
                     <div>
                       <strong className="text-xs font-bold text-emerald-950 uppercase tracking-wide block mb-0.5">
                         Entregável Concreto deste Módulo:
@@ -726,7 +551,7 @@ export default function Diagnostico360() {
                     </span>
                   </div>
 
-                  <ArrowRight className="w-5 h-5 text-[#D4AF37] shrink-0" />
+                  <span className="font-heading font-black text-sm text-[#D4AF37] shrink-0">→</span>
 
                   <div className="space-y-0.5 text-right">
                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
@@ -865,302 +690,49 @@ export default function Diagnostico360() {
         </section>
 
         {/* ========================================================= */}
-        {/* SEÇÃO G: AUTOAVALIAÇÃO INTERATIVA DAS 7 FRENTES */}
+        {/* SEÇÃO G: CTA DE ENTRADA NA ESTEIRA DE DIAGNÓSTICOS */}
         {/* ========================================================= */}
-        <section
-          id="autoavaliacao-360"
-          className="bg-white rounded-[26px] p-6 sm:p-10 border-2 border-[#D4AF37]/50 shadow-xl space-y-8 scroll-mt-28"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#07132B] bg-[#D4AF37]/20 border border-[#D4AF37]/40 uppercase mb-2">
-                <span>Interatividade Diamond Intelligence</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-heading font-black text-[#07132B]">
-                Autoavaliação das 7 Frentes na Sua Empresa
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1">
-                Classifique o nível de cada dimensão para gerar a Matriz Semáforo de Riscos e
-                Oportunidades e o Plano de Ação 30-60-90.
-              </p>
-            </div>
+        <section className="bg-gradient-to-br from-[#07132B] via-[#0D1F3C] to-[#07132B] rounded-[26px] p-8 sm:p-12 border-2 border-[#D4AF37]/50 shadow-2xl text-white space-y-6 text-center relative overflow-hidden">
+          <div
+            className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/15 rounded-full blur-3xl pointer-events-none"
+            aria-hidden="true"
+          />
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleSalvarDiagnostico360}
-              disabled={salvandoDiagnostico}
-              className="self-start sm:self-auto border-[#07132B] text-[#07132B] hover:bg-slate-100 font-bold gap-1.5"
-            >
-              <Save className="w-4 h-4" />
-              {salvandoDiagnostico ? 'Salvando...' : 'Salvar na Conta'}
-            </Button>
-          </div>
+          <div className="relative z-10 max-w-3xl mx-auto space-y-4">
+            <span className="inline-block px-3.5 py-1.5 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/20 border border-[#D4AF37]/40 uppercase tracking-wider">
+              Trilha Guiada Diamond Intelligence
+            </span>
 
-          {/* LISTA DAS 7 FRENTES COM 2 PERGUNTAS CADA (14 PERGUNTAS NO TOTAL) */}
-          <div className="space-y-6">
-            {SETE_RISCOS_360.map((risco) => {
-              const valorP1 = avaliacoes[risco.id] ?? 2
-              const valorP2 = avaliacoesProtecao[risco.id] ?? 2
-              const frenteScore = scoresPorFrente[risco.id] || {
-                scoreMedio: (valorP1 + valorP2) / 2,
-                p1: valorP1,
-                p2: valorP2,
-              }
-              const scoreMedio = frenteScore.scoreMedio
+            <h2 className="text-2xl sm:text-4xl font-heading font-black text-white leading-tight">
+              Pronto para Iniciar a Trilha de Diagnósticos?
+            </h2>
 
-              // Badge contextual de risco médio da frente
-              const statusFrente =
-                scoreMedio >= 2.5
-                  ? {
-                      label: 'Crítico',
-                      bg: 'bg-rose-500/15',
-                      text: 'text-rose-700',
-                      border: 'border-rose-300',
-                    }
-                  : scoreMedio >= 1.75
-                    ? {
-                        label: 'Alerta',
-                        bg: 'bg-amber-500/15',
-                        text: 'text-amber-800',
-                        border: 'border-amber-300',
-                      }
-                    : {
-                        label: 'Controlado',
-                        bg: 'bg-[#145A32]/15',
-                        text: 'text-[#145A32]',
-                        border: 'border-[#2ECC71]/40',
-                      }
+            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+              Inicie a esteira completa: ajuste as premissas em Configurações, execute a
+              Autoavaliação das 7 Frentes na sua empresa, analise a Transição Fiscal, compare
+              regimes vigentes e emita o Enquadramento Completo.
+            </p>
 
-              return (
-                <div
-                  key={risco.id}
-                  className="rounded-2xl bg-slate-50/90 border border-slate-200/90 overflow-hidden shadow-sm transition-all hover:border-[#145A32]/40"
-                >
-                  {/* Cabeçalho da frente com identificação e score médio */}
-                  <div className="p-4 sm:p-5 bg-white border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <span className="text-[11px] font-extrabold text-[#D4AF37] uppercase tracking-wider block">
-                        Frente {risco.id} de 7 • {risco.subtitulo}
-                      </span>
-                      <h3 className="font-heading font-extrabold text-base sm:text-lg text-[#0A1A13]">
-                        {risco.nome}
-                      </h3>
-                    </div>
-
-                    <div className="flex items-center gap-2 self-start sm:self-auto">
-                      <span className="text-[11px] font-semibold text-slate-500">
-                        Score Médio da Frente:
-                      </span>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold border ${statusFrente.bg} ${statusFrente.text} ${statusFrente.border}`}
-                      >
-                        {scoreMedio.toFixed(1)} / 3.0 • {statusFrente.label}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-4 sm:p-6 space-y-4">
-                    {/* Pergunta 1: Exposição & Vulnerabilidade */}
-                    <div className="p-4 rounded-xl bg-white border border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
-                      <div className="space-y-1 max-w-2xl">
-                        <span className="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-[#0A1A13]/5 text-[#0A1A13] border border-[#0A1A13]/15">
-                          Dimensão: Exposição & Vulnerabilidade
-                        </span>
-                        <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-snug">
-                          {risco.perguntaAutoavaliacao}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        {[
-                          { nivel: 1, label: 'Baixo (Controlado)' },
-                          { nivel: 2, label: 'Médio (Alerta)' },
-                          { nivel: 3, label: 'Alto (Crítico)' },
-                        ].map((opt) => {
-                          const isSelected = valorP1 === opt.nivel
-                          return (
-                            <button
-                              key={opt.nivel}
-                              type="button"
-                              onClick={() => handleSelectNivel(risco.id, opt.nivel)}
-                              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
-                                isSelected
-                                  ? opt.nivel === 3
-                                    ? 'bg-[#0E3520] text-rose-300 border-rose-500 shadow-sm ring-1 ring-rose-500'
-                                    : opt.nivel === 2
-                                      ? 'bg-[#0E3520] text-amber-300 border-amber-500 shadow-sm ring-1 ring-amber-500'
-                                      : 'bg-[#0E3520] text-[#2ECC71] border-[#2ECC71] shadow-sm ring-1 ring-[#2ECC71]'
-                                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Pergunta 2: Proteção & Controle */}
-                    <div className="p-4 rounded-xl bg-[#0E3520]/5 border border-[#145A32]/25 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
-                      <div className="space-y-1 max-w-2xl">
-                        <span className="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-[#145A32] text-white border border-[#2ECC71]/40">
-                          Dimensão: Proteção & Controle
-                        </span>
-                        <p className="text-xs sm:text-sm font-semibold text-[#0A1A13] leading-snug">
-                          {risco.perguntaProtecaoControle}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        {[
-                          { nivel: 1, label: 'Baixo (Controlado)' },
-                          { nivel: 2, label: 'Médio (Alerta)' },
-                          { nivel: 3, label: 'Alto (Crítico)' },
-                        ].map((opt) => {
-                          const isSelected = valorP2 === opt.nivel
-                          return (
-                            <button
-                              key={opt.nivel}
-                              type="button"
-                              onClick={() => handleSelectNivelProtecao(risco.id, opt.nivel)}
-                              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
-                                isSelected
-                                  ? opt.nivel === 3
-                                    ? 'bg-[#0A1A13] text-rose-300 border-rose-500 shadow-sm ring-1 ring-rose-500'
-                                    : opt.nivel === 2
-                                      ? 'bg-[#0A1A13] text-amber-300 border-amber-500 shadow-sm ring-1 ring-amber-500'
-                                      : 'bg-[#0A1A13] text-[#2ECC71] border-[#2ECC71] shadow-sm ring-1 ring-[#2ECC71]'
-                                  : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* PAINEL DE RESULTADO DA AUTOAVALIAÇÃO (14 RESPOSTAS • 7 FRENTES × 2 PERGUNTAS) */}
-          <div className="p-6 sm:p-8 rounded-2xl bg-[#0A1A13] text-white border-2 border-[#145A32] shadow-xl space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
-              <div>
-                <span className="text-xs font-bold text-[#2ECC71] uppercase tracking-wider block mb-1">
-                  Matriz Semáforo de Riscos e Oportunidades • 14 Respostas (7 Frentes × 2 Perguntas)
-                </span>
-                <h3 className="text-xl sm:text-2xl font-heading font-extrabold text-white">
-                  {perfilGlobal.titulo}
-                </h3>
-              </div>
-
-              {/* Badges de contagem sobre as 14 respostas */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-400/30">
-                  {totalCriticos} / 14 Crítico(s)
-                </span>
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30">
-                  {totalAlertas} / 14 Alerta(s)
-                </span>
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#145A32] text-[#2ECC71] border border-[#2ECC71]/40">
-                  {totalControlados} / 14 Controlado(s)
-                </span>
-              </div>
-            </div>
-
-            <p className="text-sm text-slate-200 leading-relaxed">{perfilGlobal.desc}</p>
-
-            {/* PLANO DE AÇÃO 30-60-90 PRIORIZADO */}
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
-              <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
-                Plano de Ação 30-60-90:
-              </span>
-              <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#D4AF37]" />
-                  <span>1. 30 Dias: Liquidez, Crédito & Caixa</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
-                  <span>2. 60 Dias: Societário, Risco Hub & Fechamento</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-400" />
-                  <span>3. 90 Dias: Transição Tributária, POPs & Cultura</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* FEEDBACK DE SALVAMENTO */}
-            {salvoFeedback && (
-              <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>
-                  Diagnóstico 360° salvo com sucesso na sua conta! Disponível no histórico e para a
-                  equipe contábil no painel administrativo.
-                </span>
-              </div>
-            )}
-
-            {/* BOTÕES DE AÇÃO */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Button
-                type="button"
-                onClick={handleSalvarDiagnostico360}
-                disabled={salvandoDiagnostico}
-                className="bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] font-bold text-xs sm:text-sm h-11 px-6 rounded-xl"
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                to="/diagnostico-configuracoes"
+                className="w-full sm:w-auto px-8 py-4 rounded-xl font-heading font-black text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-xl transition-all duration-200 hover:-translate-y-0.5 text-center"
               >
-                {salvandoDiagnostico ? 'Salvando...' : 'Salvar Resultado na Conta'}
-              </Button>
+                Iniciar Trilha Completa de Diagnósticos →
+              </Link>
 
               <Link
-                to="/diagnostico-transicao"
-                className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm h-11 px-6 rounded-xl border border-white/20 transition-all"
+                to="/diagnostico-autoavaliacao"
+                className="w-full sm:w-auto px-6 py-4 rounded-xl font-heading font-bold text-xs sm:text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all text-center"
               >
-                <span>Avançar para Etapa 2: Transição Fiscal</span>
-                <ArrowRight className="w-4 h-4" />
+                Ir Direto para Autoavaliação das 7 Frentes
               </Link>
             </div>
-          </div>
-        </section>
-
-        {/* ========================================================= */}
-        {/* SEÇÃO H: CTA FINAL LEVANDO À PRÓXIMA ETAPA */}
-        {/* ========================================================= */}
-        <section className="bg-white rounded-2xl p-8 border border-slate-200 text-center space-y-4">
-          <h3 className="font-heading font-extrabold text-2xl text-[#07132B]">
-            Próximo Passo na Trilha de Inteligência Fiscal
-          </h3>
-          <p className="text-sm text-slate-600 max-w-xl mx-auto leading-relaxed">
-            Agora que você mapeou as 7 vulnerabilidades, simule o impacto ano a ano da substituição
-            de tributos no Diagnóstico de Transição Fiscal (2026–2033).
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <Link
-              to="/diagnostico-transicao"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-heading font-bold text-sm text-white bg-[#07132B] hover:brightness-110 shadow-md transition-all"
-            >
-              <span>Acessar Diagnóstico de Transição Fiscal</span>
-              <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
-            </Link>
-            <Link
-              to="/diagnostico"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-heading font-semibold text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all"
-            >
-              <span>Ir direto para o Enquadramento Completo</span>
-            </Link>
           </div>
         </section>
       </div>
 
       <DiamondFooterCTA />
-
-      <PaywallModal open={paywallAberto} onOpenChange={setPaywallAberto} motivo="diagnostico" />
     </div>
   )
 }

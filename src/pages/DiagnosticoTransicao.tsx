@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Calendar } from 'lucide-react'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
+import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 import { ConteudoModulo7Diagnostico } from '@/components/reforma/Modulo7DiagnosticoReforma'
 import { createDiagnostico, getDiagnosticoPorId } from '@/services/diagnosticos'
 import pb from '@/lib/pocketbase/client'
@@ -196,8 +196,7 @@ export default function DiagnosticoTransicao() {
           <div className="max-w-3xl space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-400/40 bg-amber-400/15 text-xs font-bold text-amber-300 uppercase tracking-wider backdrop-blur-md">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>DIAGNÓSTICO 2 DE 4 • TRANSIÇÃO FISCAL (ROTEIRO DE 40 MINUTOS)</span>
+                <span>ETAPA 03 • TRANSIÇÃO FISCAL (ROTEIRO DE 40 MINUTOS)</span>
               </div>
               <BadgeOrigemPropagada origem="configuracoes" />
               <FreemiumBadge tipo="diagnostico" />
@@ -219,7 +218,19 @@ export default function DiagnosticoTransicao() {
       </section>
 
       {/* CONTEÚDO PRINCIPAL: MÓDULO 7 REPLICADO */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+        <PainelSucessoFluxoGuiado
+          aberto={salvoFeedback}
+          onClose={() => setSalvoFeedback(false)}
+          titulo="Diagnóstico de Transição Fiscal Salvo com Sucesso!"
+          mensagem="Seu roteiro da Reforma Tributária, farol de risco e prioridades de 90 dias foram salvos. Avance agora para o Comparador de Regimes Societários."
+          proximaEtapaNome="Diagnóstico de Comparação de Regime"
+          proximaEtapaRota="/diagnostico-regimes"
+          segundosAutoRedirect={5}
+          etapaConcluidaNumero="ETAPA 03"
+          etapaConcluidaNome="Diagnóstico de Transição Fiscal"
+        />
+
         <ConteudoModulo7Diagnostico
           modo="trilha"
           dadosEmpresa={dadosEmpresa}
