@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { DadosEmpresaProvider } from '@/context/DadosEmpresaContext'
 import { ClienteAtivoProvider } from '@/context/ClienteAtivoContext'
 import Layout from './components/Layout'
+import ScrollToTop from './components/ScrollToTop'
 
 // Pages
 import Index from './pages/Index'
@@ -131,6 +132,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 const App = () => (
   <BrowserRouter>
+    <ScrollToTop />
     <AuthProvider>
       <TooltipProvider>
         <DadosEmpresaProvider>
