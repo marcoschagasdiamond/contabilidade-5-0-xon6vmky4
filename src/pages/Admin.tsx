@@ -25,7 +25,12 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { getLeads, deleteLead, type LeadRecord } from '@/services/leads'
-import { getDiagnosticos, deleteDiagnostico, type DiagnosticoRecord } from '@/services/diagnosticos'
+import {
+  getDiagnosticos,
+  deleteDiagnostico,
+  excluirDiagnosticoCompletoPorCliente,
+  type DiagnosticoRecord,
+} from '@/services/diagnosticos'
 import {
   getTodosClientesEmpresas,
   deleteClienteEmpresa,
@@ -79,6 +84,20 @@ export default function Admin() {
   const [diagToDelete, setDiagToDelete] = useState<DiagnosticoRecord | null>(null)
   const [isDeletingDiag, setIsDeletingDiag] = useState(false)
   const [selectedDiag, setSelectedDiag] = useState<DiagnosticoRecord | null>(null)
+
+  // Estado para exclusão da trilha completa de diagnósticos por cliente/diagnóstico
+  const [diagCompletoToDelete, setDiagCompletoToDelete] = useState<{
+    clienteId?: string | null
+    empresaNome: string
+    clienteNome?: string | null
+    diagnosticoId?: string | null
+    totalEtapas?: number
+  } | null>(null)
+  const [isDeletingDiagCompleto, setIsDeletingDiagCompleto] = useState(false)
+  const [feedbackFeedbackDiag, setFeedbackDiag] = useState<{
+    tipo: 'sucesso' | 'erro'
+    mensagem: string
+  } | null>(null)
 
   const fetchClientes = async () => {
     setIsLoadingClientes(true)
@@ -190,14 +209,85 @@ export default function Admin() {
     try {
       await deleteDiagnostico(diagToDelete.id)
       setDiagnosticos((prev) => prev.filter((d) => d.id !== diagToDelete.id))
+      const empresaNome = diagToDelete.empresa || 'empresa'
       setDiagToDelete(null)
       if (selectedDiag?.id === diagToDelete.id) {
         setSelectedDiag(null)
       }
+      setFeedbackDiag({
+        tipo: 'sucesso',
+        mensagem: `Registro de diagnóstico da empresa "${empresaNome}" excluído com sucesso.`,
+      })
+      setTimeout(() => setFeedbackDiag(null), 5000)
     } catch (err) {
       console.error('Erro ao excluir diagnóstico:', err)
+      setFeedbackDiag({
+        tipo: 'erro',
+        mensagem: 'Não foi possível excluir o diagnóstico. Tente novamente.',
+      })
+      setTimeout(() => setFeedbackDiag(null), 5000)
     } finally {
       setIsDeletingDiag(false)
+    }
+  }
+
+  const handleDeleteDiagCompletoConfirm = async () => {
+    if (!diagCompletoToDelete) return
+    setIsDeletingDiagCompleto(true)
+    try {
+      const { empresaNome, clienteId, clienteNome, diagnosticoId } = diagCompletoToDelete
+
+      const resultado = await excluirDiagnosticoCompletoPorCliente({
+        clienteId,
+        empresaNome,
+        clienteNome,
+        diagnosticoId,
+      })
+
+      if (resultado.success) {
+        // Atualiza a listagem local imediatamente
+        setDiagnosticos((prev) =>
+          prev.filter((d) => {
+            if (clienteId && d.cliente_id === clienteId) return false
+            if (diagnosticoId && d.id === diagnosticoId) return false
+            if (
+              empresaNome &&
+              d.empresa?.trim().toLowerCase() === empresaNome.trim().toLowerCase()
+            ) {
+              return false
+            }
+            return true
+          }),
+        )
+
+        if (
+          selectedDiag &&
+          (selectedDiag.id === diagnosticoId ||
+            (clienteId && selectedDiag.cliente_id === clienteId) ||
+            selectedDiag.empresa === empresaNome)
+        ) {
+          setSelectedDiag(null)
+        }
+
+        const msgTotal = `Diagnóstico Completo de "${empresaNome}" excluído com sucesso: ${resultado.totalDiagnosticosExcluidos} registro(s) da trilha e ${resultado.totalRelatoriosExcluidos} versão(ões) do relatório removidos.`
+        setFeedbackDiag({
+          tipo: 'sucesso',
+          mensagem: msgTotal,
+        })
+        setDiagCompletoToDelete(null)
+        setTimeout(() => setFeedbackDiag(null), 6000)
+      } else {
+        throw new Error('Falha na operação de exclusão completa.')
+      }
+    } catch (err) {
+      console.error('Erro ao excluir diagnóstico completo:', err)
+      setFeedbackDiag({
+        tipo: 'erro',
+        mensagem: 'Ocorreu um erro ao excluir o diagnóstico completo. Tente novamente.',
+      })
+      setTimeout(() => setFeedbackDiag(null), 6000)
+    } finally {
+      setIsDeletingDiagCompleto(false)
     }
   }
 
@@ -914,6 +1004,20 @@ export default function Admin() {
                                   Ver perfil
                                 </button>
                                 <button
+                                  onClick={() =>
+                                    setDiagCompletoToDelete({
+                                      clienteId: item.id,
+                                      empresaNome: item.nome_empresa,
+                                      clienteNome: item.nome_contato,
+                                      totalEtapas: diagsVinculados.length,
+                                    })
+                                  }
+                                  className="px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50/50 text-[#C0392B] hover:bg-red-100 text-xs font-semibold transition-colors"
+                                  title="Excluir Diagnóstico Completo (todas as etapas deste cliente)"
+                                >
+                                  Excluir Trilha
+                                </button>
+                                <button
                                   onClick={() => setClienteToDelete(item)}
                                   className="p-1.5 rounded-lg text-slate-400 hover:text-[#E74C3C] hover:bg-red-50 transition-colors"
                                   title="Excluir cliente"
@@ -1303,6 +1407,26 @@ export default function Admin() {
               </div>
             </div>
 
+            {/* FEEDBACK DE SUCESSO OU ERRO */}
+            {feedbackFeedbackDiag && (
+              <div
+                className={`mb-6 p-4 rounded-xl border text-sm font-medium flex items-center justify-between ${
+                  feedbackFeedbackDiag.tipo === 'sucesso'
+                    ? 'bg-emerald-50 text-[#07132B] border-emerald-300'
+                    : 'bg-red-50 text-red-900 border-red-300'
+                }`}
+              >
+                <span>{feedbackFeedbackDiag.mensagem}</span>
+                <button
+                  type="button"
+                  onClick={() => setFeedbackDiag(null)}
+                  className="text-xs uppercase tracking-wider font-bold underline ml-4 hover:opacity-75"
+                >
+                  Fechar
+                </button>
+              </div>
+            )}
+
             {/* TABELA DE DIAGNÓSTICOS */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               {isLoadingDiagnosticos ? (
@@ -1481,16 +1605,28 @@ export default function Admin() {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => setSelectedDiag(item)}
-                                className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                                className="px-3 py-1.5 rounded-lg border border-[#07132B]/20 text-xs font-medium text-[#07132B] hover:bg-slate-100 transition-colors"
                               >
                                 Ver detalhes
                               </button>
                               <button
-                                onClick={() => setDiagToDelete(item)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-[#E74C3C] hover:bg-red-50 transition-colors"
-                                title="Excluir diagnóstico"
+                                onClick={() =>
+                                  setDiagCompletoToDelete({
+                                    clienteId: item.cliente_id || null,
+                                    empresaNome: item.empresa || 'Empresa sem nome',
+                                    clienteNome: item.nome || null,
+                                    diagnosticoId: item.id,
+                                    totalEtapas: diagnosticos.filter(
+                                      (d) =>
+                                        (item.cliente_id && d.cliente_id === item.cliente_id) ||
+                                        (item.empresa && d.empresa === item.empresa),
+                                    ).length,
+                                  })
+                                }
+                                className="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50/50 text-[#C0392B] hover:bg-red-100 hover:border-red-300 text-xs font-semibold transition-colors"
+                                title="Excluir Diagnóstico Completo (todas as etapas e relatórios deste cliente)"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                Excluir Diagnóstico Completo
                               </button>
                             </div>
                           </td>
@@ -2300,18 +2436,23 @@ export default function Admin() {
         </Dialog>
       )}
 
-      {/* DIÁLOGO CONFIRMAÇÃO DE EXCLUSÃO DIAGNÓSTICOS */}
+      {/* DIÁLOGO CONFIRMAÇÃO DE EXCLUSÃO DIAGNÓSTICO INDIVIDUAL (LEGADO) */}
       {diagToDelete && (
         <Dialog open={!!diagToDelete} onOpenChange={(open) => !open && setDiagToDelete(null)}>
-          <DialogContent className="sm:max-w-md bg-white rounded-2xl p-6 shadow-2xl">
+          <DialogContent className="sm:max-w-md bg-[#07132B] text-slate-100 border border-[#D4AF37]/40 rounded-2xl p-6 shadow-2xl">
             <DialogHeader>
-              <DialogTitle className="font-heading font-bold text-lg text-slate-900">
-                Confirmar exclusão do diagnóstico
+              <div className="inline-block text-[11px] font-bold tracking-widest uppercase text-[#D4AF37] mb-1">
+                Diamond Group • Confirmação de Exclusão
+              </div>
+              <DialogTitle className="font-heading font-bold text-lg text-white">
+                Confirmar exclusão de registro
               </DialogTitle>
-              <DialogDescription className="text-slate-600 text-sm mt-2">
-                Tem certeza que deseja excluir o diagnóstico da empresa{' '}
-                <strong className="text-slate-900">{diagToDelete.empresa}</strong>? Esta ação não
-                pode ser desfeita.
+              <DialogDescription className="text-slate-300 text-sm mt-2 leading-relaxed">
+                Tem certeza que deseja excluir o registro de diagnóstico da empresa{' '}
+                <strong className="text-white font-semibold">{diagToDelete.empresa}</strong>?
+                <span className="block mt-2 text-amber-300/90 font-medium text-xs">
+                  Atenção: esta ação é irreversível e os dados desta etapa serão removidos.
+                </span>
               </DialogDescription>
             </DialogHeader>
 
@@ -2320,16 +2461,118 @@ export default function Admin() {
                 variant="outline"
                 disabled={isDeletingDiag}
                 onClick={() => setDiagToDelete(null)}
-                className="rounded-xl"
+                className="rounded-xl border-slate-600 text-slate-200 hover:bg-slate-800 hover:text-white"
               >
                 Cancelar
               </Button>
               <Button
                 disabled={isDeletingDiag}
                 onClick={handleDeleteDiagConfirm}
-                className="bg-[#E74C3C] hover:bg-red-700 text-white rounded-xl"
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl border border-red-500/50"
               >
-                {isDeletingDiag ? 'Excluindo...' : 'Excluir Diagnóstico'}
+                {isDeletingDiag ? 'Excluindo...' : 'Confirmar Exclusão'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* MODAL DIAMOND GROUP - EXCLUIR DIAGNÓSTICO COMPLETO */}
+      {diagCompletoToDelete && (
+        <Dialog
+          open={!!diagCompletoToDelete}
+          onOpenChange={(open) => !open && !isDeletingDiagCompleto && setDiagCompletoToDelete(null)}
+        >
+          <DialogContent className="sm:max-w-lg bg-[#07132B] text-slate-100 border-2 border-[#D4AF37] rounded-2xl p-6 shadow-2xl">
+            <DialogHeader>
+              <div className="inline-block text-[11px] font-bold tracking-widest uppercase text-[#D4AF37] mb-1">
+                Diamond Group • Gestão de Diagnósticos
+              </div>
+              <DialogTitle className="font-heading font-bold text-xl text-white">
+                Excluir Diagnóstico Completo
+              </DialogTitle>
+              <DialogDescription className="text-slate-300 text-xs sm:text-sm mt-2 leading-relaxed">
+                Você está prestes a apagar permanentemente toda a trilha tributária vinculada à
+                empresa{' '}
+                <strong className="text-white font-semibold underline decoration-[#D4AF37]">
+                  {diagCompletoToDelete.empresaNome}
+                </strong>
+                {diagCompletoToDelete.clienteNome ? ` (${diagCompletoToDelete.clienteNome})` : ''}.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="my-4 p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2 text-xs">
+              <div className="text-[#D4AF37] font-bold uppercase tracking-wider text-[11px]">
+                O que será excluído permanentemente:
+              </div>
+              <ul className="space-y-1.5 text-slate-300">
+                <li className="flex items-start gap-2">
+                  <span className="text-[#D4AF37] font-bold">•</span>
+                  <span>
+                    <strong>Etapa 01 - Configurações:</strong> Parâmetros, alíquotas e faturamento
+                    salvos
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#D4AF37] font-bold">•</span>
+                  <span>
+                    <strong>Etapa 02 - Autoavaliação 360°:</strong> Análise de vulnerabilidade e
+                    proteção das 7 frentes de risco
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#D4AF37] font-bold">•</span>
+                  <span>
+                    <strong>Etapa 03 - Transição Fiscal:</strong> Cronograma 2026–2033 (IBS/CBS) e
+                    impacto operacional
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#D4AF37] font-bold">•</span>
+                  <span>
+                    <strong>Etapa 04 - Comparação de Regime:</strong> Comparativo Simples vs
+                    Presumido vs Real
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#D4AF37] font-bold">•</span>
+                  <span>
+                    <strong>Etapa 05 - Enquadramento:</strong> Pareceres e projeção de economia
+                    anual
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#D4AF37] font-bold">•</span>
+                  <span>
+                    <strong>Relatório Consolidado:</strong> Todas as versões e snapshots arquivados
+                    deste cliente
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="p-3 rounded-lg bg-red-950/40 border border-red-800/60 text-xs text-red-200 font-medium">
+              Aviso de Irreversibilidade: Esta operação não poderá ser desfeita. Todos os cálculos e
+              históricos desta empresa serão apagados do sistema.
+            </div>
+
+            <DialogFooter className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
+              <Button
+                variant="outline"
+                type="button"
+                disabled={isDeletingDiagCompleto}
+                onClick={() => setDiagCompletoToDelete(null)}
+                className="rounded-xl border-slate-700 bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={isDeletingDiagCompleto}
+                onClick={handleDeleteDiagCompletoConfirm}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl border border-red-500 shadow-lg"
+              >
+                {isDeletingDiagCompleto ? 'Excluindo trilha...' : 'Excluir Diagnóstico Completo'}
               </Button>
             </DialogFooter>
           </DialogContent>

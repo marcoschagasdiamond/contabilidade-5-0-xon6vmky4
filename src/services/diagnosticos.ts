@@ -142,3 +142,183 @@ export async function getDiagnosticoCount(): Promise<number> {
 export async function deleteDiagnostico(id: string): Promise<boolean> {
   return await pb.collection('diagnosticos').delete(id)
 }
+
+export type EtapaDiagnosticoIdentificador =
+  | 'configuracoes'
+  | 'autoavaliacao'
+  | 'transicao'
+  | 'regimes'
+  | 'enquadramento'
+
+/**
+ * Remove a etapa individual de diagnóstico de um cliente.
+ * - 'configuracoes': limpa configuracoes_diagnostico_json nos registros vinculados e, se ativo, limpa localStorage.
+ * - 'autoavaliacao': exclui registros com tipo_diagnostico '360' ou 'autoavaliacao'.
+ * - 'transicao': exclui registros com tipo_diagnostico 'transicao'.
+ * - 'regimes': exclui registros com tipo_diagnostico 'regimes'.
+ * - 'enquadramento': exclui registros com tipo_diagnostico 'enquadramento' ou sem tipo_diagnostico definido.
+ */
+export async function excluirEtapaDiagnosticoPorCliente(
+  clienteId: string,
+  etapa: EtapaDiagnosticoIdentificador,
+): Promise<{ success: boolean; totalRemovidos: number }> {
+  if (!clienteId) return { success: false, totalRemovidos: 0 }
+
+  try {
+    const lista = await getDiagnosticosPorCliente(clienteId)
+    let totalRemovidos = 0
+
+    if (etapa === 'configuracoes') {
+      // Remove o snapshot de configurações dos diagnósticos vinculados
+      for (const diag of lista) {
+        if (
+          diag.configuracoes_diagnostico_json &&
+          Object.keys(diag.configuracoes_diagnostico_json).length > 0
+        ) {
+          try {
+            await pb.collection('diagnosticos').update(diag.id, {
+              configuracoes_diagnostico_json: null,
+            })
+            totalRemovidos++
+          } catch (err) {
+            console.warn(`Erro ao limpar configuracoes do diagnostico ${diag.id}:`, err)
+          }
+        }
+      }
+      return { success: true, totalRemovidos }
+    }
+
+    const matchesEtapa = (d: DiagnosticoRecord): boolean => {
+      const tipo = d.tipo_diagnostico
+      if (etapa === 'autoavaliacao') {
+        return tipo === '360' || tipo === 'autoavaliacao'
+      }
+      if (etapa === 'transicao') {
+        return tipo === 'transicao'
+      }
+      if (etapa === 'regimes') {
+        return tipo === 'regimes'
+      }
+      if (etapa === 'enquadramento') {
+        return tipo === 'enquadramento' || !tipo
+      }
+      return false
+    }
+
+    const alvos = lista.filter(matchesEtapa)
+    for (const d of alvos) {
+      try {
+        await pb.collection('diagnosticos').delete(d.id)
+        totalRemovidos++
+      } catch (err) {
+        console.warn(`Erro ao excluir diagnóstico ${d.id} da etapa ${etapa}:`, err)
+      }
+    }
+
+    return { success: true, totalRemovidos }
+  } catch (err) {
+    console.error(`Erro ao excluir etapa ${etapa} do cliente ${clienteId}:`, err)
+    return { success: false, totalRemovidos: 0 }
+  }
+}
+
+/**
+ * Exclui a trilha completa de diagnósticos tributários vinculada a um cliente:
+ * 1. Registros das etapas de diagnósticos (360/Autoavaliação, Transição, Comparação, Enquadramento e snapshots de Configurações).
+ * 2. Todas as versões arquivadas do relatório consolidado (coleção historico_relatorios_diagnostico + local).
+ */
+export async function excluirDiagnosticoCompletoPorCliente(params: {
+  clienteId?: string | null
+  empresaNome?: string | null
+  clienteNome?: string | null
+  diagnosticoId?: string | null
+}): Promise<{
+  success: boolean
+  totalDiagnosticosExcluidos: number
+  totalRelatoriosExcluidos: number
+}> {
+  let totalDiagnosticosExcluidos = 0
+  let totalRelatoriosExcluidos = 0
+
+  try {
+    // 1. Localiza os diagnósticos vinculados por clienteId ou pelo registro do diagnóstico
+    const diagsParaRemover: DiagnosticoRecord[] = []
+
+    if (params.clienteId) {
+      const diagsDoCliente = await getDiagnosticosPorCliente(params.clienteId)
+      diagsParaRemover.push(...diagsDoCliente)
+    }
+
+    // Se tiver diagnosticoId pontual e ainda não estiver na lista
+    if (params.diagnosticoId) {
+      if (!diagsParaRemover.some((d) => d.id === params.diagnosticoId)) {
+        const diagPontual = await getDiagnosticoPorId(params.diagnosticoId)
+        if (diagPontual) {
+          diagsParaRemover.push(diagPontual)
+          // Se esse diagnóstico tiver cliente_id ou empresa, busca irmãos para garantir apagar a trilha toda
+          if (diagPontual.cliente_id && !params.clienteId) {
+            const irmaos = await getDiagnosticosPorCliente(diagPontual.cliente_id)
+            for (const irm of irmaos) {
+              if (!diagsParaRemover.some((d) => d.id === irm.id)) {
+                diagsParaRemover.push(irm)
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Se foi passado empresaNome mas sem clienteId, busca diagnósticos que batam com a empresa
+    if (params.empresaNome && diagsParaRemover.length === 0) {
+      try {
+        const porEmpresa = await pb.collection('diagnosticos').getFullList<DiagnosticoRecord>({
+          filter: `empresa = "${params.empresaNome.replace(/"/g, '\\"')}"`,
+        })
+        diagsParaRemover.push(...porEmpresa)
+      } catch (e) {
+        console.warn('Erro ao buscar diagnósticos por nome de empresa:', e)
+      }
+    }
+
+    // Exclui todos os diagnósticos identificados
+    for (const diag of diagsParaRemover) {
+      try {
+        await pb.collection('diagnosticos').delete(diag.id)
+        totalDiagnosticosExcluidos++
+      } catch (err) {
+        console.warn(`Erro ao excluir diagnóstico ${diag.id}:`, err)
+      }
+    }
+
+    // 2. Exclui versões arquivadas do relatório consolidado
+    // Importa dinamicamente ou executa via PocketBase para evitar ciclo
+    try {
+      const { excluirHistoricoRelatoriosPorCliente } =
+        await import('@/services/historicoRelatorios')
+      totalRelatoriosExcluidos = await excluirHistoricoRelatoriosPorCliente({
+        clienteId: params.clienteId,
+        empresaNome: params.empresaNome,
+        clienteNome: params.clienteNome,
+      })
+    } catch (errRel) {
+      console.warn('Erro ao excluir histórico de relatórios:', errRelRef(errRel))
+    }
+
+    return {
+      success: true,
+      totalDiagnosticosExcluidos,
+      totalRelatoriosExcluidos,
+    }
+  } catch (err) {
+    console.error('Erro ao excluir diagnóstico completo do cliente:', err)
+    return {
+      success: false,
+      totalDiagnosticosExcluidos,
+      totalRelatoriosExcluidos,
+    }
+  }
+}
+
+function errRelRef(err: unknown) {
+  return err instanceof Error ? err.message : String(err)
+}

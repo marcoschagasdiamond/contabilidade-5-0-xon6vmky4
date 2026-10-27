@@ -16,7 +16,11 @@ import {
   getDiagnosticosPorCliente,
   getDiagnosticos,
   vincularDiagnosticoACliente,
+  deleteDiagnostico,
+  excluirEtapaDiagnosticoPorCliente,
+  excluirDiagnosticoCompletoPorCliente,
   type DiagnosticoRecord,
+  type EtapaDiagnosticoIdentificador,
 } from '@/services/diagnosticos'
 import {
   listarConversasPorCliente,
@@ -80,6 +84,28 @@ export default function DetalheCliente() {
 
   const [modalConviteAberto, setModalConviteAberto] = useState(false)
   const [convitesDoCliente, setConvitesDoCliente] = useState<ConviteCliente[]>([])
+
+  // Estado para exclusão individual de etapa da trilha
+  const [etapaParaExcluir, setEtapaParaExcluir] = useState<{
+    identificador: EtapaDiagnosticoIdentificador
+    numero: string
+    titulo: string
+    descricao: string
+    rotaRefazer: string
+    possuiDados: boolean
+    diagnosticoId?: string
+  } | null>(null)
+  const [isExcluindoEtapa, setIsExcluindoEtapa] = useState(false)
+
+  // Estado para exclusão completa da trilha do cliente
+  const [modalExcluirTrilhaCompleta, setModalExcluirTrilhaCompleta] = useState(false)
+  const [isExcluindoTrilhaCompleta, setIsExcluindoTrilhaCompleta] = useState(false)
+
+  // Feedback de exclusão
+  const [feedbackMensagem, setFeedbackMensagem] = useState<{
+    tipo: 'sucesso' | 'erro'
+    texto: string
+  } | null>(null)
 
   const carregarConvitesDoCliente = React.useCallback(async () => {
     if (!id) return
@@ -248,6 +274,91 @@ export default function DetalheCliente() {
         description: 'Não foi possível remover a conversa.',
         variant: 'destructive',
       })
+    }
+  }
+
+  // Executa exclusão de uma etapa individual (Configurações, Autoavaliação, Transição, Comparação ou Enquadramento)
+  const handleConfirmarExcluirEtapa = async () => {
+    if (!etapaParaExcluir || !id) return
+    setIsExcluindoEtapa(true)
+    try {
+      const { identificador, titulo, diagnosticoId } = etapaParaExcluir
+
+      // Se temos o ID direto do diagnóstico, excluímos diretamente
+      if (diagnosticoId) {
+        await deleteDiagnostico(diagnosticoId)
+      } else {
+        await excluirEtapaDiagnosticoPorCliente(id, identificador)
+      }
+
+      // Se foi a etapa de configurações e o cliente for o ativo, limpa dados locais da empresa
+      if (identificador === 'configuracoes' && clienteAtivoId === id) {
+        try {
+          const { limparDadosEmpresa } = await import('@/types/dadosEmpresa')
+          limparDadosEmpresa()
+        } catch (e) {
+          console.warn('Erro ao limpar localStorage de dados da empresa:', e)
+        }
+      }
+
+      // Atualiza listagem local de diagnósticos do cliente
+      await carregarDados()
+
+      setFeedbackMensagem({
+        tipo: 'sucesso',
+        texto: `Etapa "${titulo}" excluída com sucesso. Os dados desta fase foram removidos.`,
+      })
+      setEtapaParaExcluir(null)
+      setTimeout(() => setFeedbackMensagem(null), 6000)
+    } catch (err) {
+      console.error('Erro ao excluir etapa do diagnóstico:', err)
+      setFeedbackMensagem({
+        tipo: 'erro',
+        texto: 'Não foi possível excluir a etapa. Tente novamente.',
+      })
+      setTimeout(() => setFeedbackMensagem(null), 6000)
+    } finally {
+      setIsExcluindoEtapa(false)
+    }
+  }
+
+  // Executa exclusão da trilha completa (todas as etapas + relatórios)
+  const handleConfirmarExcluirTrilhaCompleta = async () => {
+    if (!id || !cliente) return
+    setIsExcluindoTrilhaCompleta(true)
+    try {
+      const resultado = await excluirDiagnosticoCompletoPorCliente({
+        clienteId: id,
+        empresaNome: cliente.nome,
+        clienteNome: cliente.nome,
+      })
+
+      if (clienteAtivoId === id) {
+        try {
+          const { limparDadosEmpresa } = await import('@/types/dadosEmpresa')
+          limparDadosEmpresa()
+        } catch (e) {
+          console.warn('Erro ao limpar localStorage de dados da empresa:', e)
+        }
+      }
+
+      await carregarDados()
+
+      setFeedbackMensagem({
+        tipo: 'sucesso',
+        texto: `Trilha completa de diagnósticos excluída com sucesso (${resultado.totalDiagnosticosExcluidos} registros de etapas e ${resultado.totalRelatoriosExcluidos} versões do relatório removidos).`,
+      })
+      setModalExcluirTrilhaCompleta(false)
+      setTimeout(() => setFeedbackMensagem(null), 6000)
+    } catch (err) {
+      console.error('Erro ao excluir trilha completa:', err)
+      setFeedbackMensagem({
+        tipo: 'erro',
+        texto: 'Erro ao excluir a trilha completa do cliente.',
+      })
+      setTimeout(() => setFeedbackMensagem(null), 6000)
+    } finally {
+      setIsExcluindoTrilhaCompleta(false)
     }
   }
 
@@ -824,118 +935,365 @@ export default function DetalheCliente() {
             </div>
           )}
 
-          {/* ABA 2: DIAGNÓSTICOS FEITOS */}
+          {/* ABA 2: DIAGNÓSTICOS FEITOS E GESTÃO DAS ETAPAS DA TRILHA */}
           {abaHistorico === 'diagnosticos' && (
-            <div className="p-6">
-              {diagnosticos.length === 0 ? (
-                <div className="text-center py-12 space-y-3">
-                  <span className="text-sm font-semibold text-slate-700 block">
-                    Nenhum diagnóstico registrado para este cliente
-                  </span>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto">
-                    Realize diagnósticos (Diagnóstico Completo, 360°, Transição Fiscal ou Comparador
-                    de Regimes) com o cliente ativo selecionado.
-                  </p>
-                  <div className="pt-2 flex justify-center gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => {
-                        selecionarClienteAtivo(cliente.id)
-                        navigate('/diagnostico')
-                      }}
-                      className="bg-[#07132B] text-[#D4AF37] hover:bg-[#0B1E3F] text-xs font-bold"
-                    >
-                      Iniciar Diagnóstico
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={abrirModalVincular}
-                      className="text-xs"
-                    >
-                      Vincular Existente
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {diagnosticos.map((diag) => (
-                    <div
-                      key={diag.id}
-                      className="bg-slate-50/70 hover:bg-slate-50 border border-slate-200 rounded-xl p-4.5 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
-                    >
-                      <div className="space-y-1.5 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                          <h4 className="text-sm font-bold text-[#07132B]">
-                            {diag.tipo_diagnostico || 'Diagnóstico Tributário'}
-                          </h4>
-                          <Badge className="bg-[#07132B] text-[#D4AF37] text-[10px]">
-                            {diag.regime_recomendado || 'Concluído'}
-                          </Badge>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                          <span>
-                            Data: <strong>{formatarData(diag.created)}</strong>
-                          </span>
-                          {diag.empresa && (
-                            <span>
-                              Empresa declarada: <strong>{diag.empresa}</strong>
-                            </span>
-                          )}
-                          {diag.economia_estimada && diag.economia_estimada > 0 && (
-                            <span className="text-emerald-700 font-semibold">
-                              Economia Estimada: {formatarMoeda(diag.economia_estimada)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            selecionarClienteAtivo(cliente.id)
-                            const rotaDestino =
-                              diag.tipo_diagnostico === '360'
-                                ? '/diagnostico/relatorio?aba=autoavaliacao'
-                                : diag.tipo_diagnostico === 'transicao'
-                                  ? '/diagnostico/relatorio?aba=transicao'
-                                  : diag.tipo_diagnostico === 'regimes'
-                                    ? '/diagnostico/relatorio?aba=regimes'
-                                    : '/diagnostico/relatorio?aba=enquadramento'
-                            navigate(rotaDestino)
-                          }}
-                          className="text-xs font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0B1E3F] px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                          Ver Relatório →
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            selecionarClienteAtivo(cliente.id)
-                            navigate('/diagnostico/relatorio')
-                          }}
-                          className="text-xs font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 px-2.5 py-1.5 rounded-lg transition-colors"
-                        >
-                          Consolidado
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDesvincularDiagnostico(diag.id)}
-                          className="text-xs text-slate-500 hover:text-red-600 px-2.5 py-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Desvincular do cliente"
-                        >
-                          Desvincular
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+            <div className="p-6 space-y-6">
+              {/* FEEDBACK DE SUCESSO OU ERRO */}
+              {feedbackMensagem && (
+                <div
+                  className={`p-4 rounded-xl border text-xs sm:text-sm font-medium flex items-center justify-between ${
+                    feedbackMensagem.tipo === 'sucesso'
+                      ? 'bg-emerald-50 text-[#07132B] border-emerald-300'
+                      : 'bg-red-50 text-red-900 border-red-300'
+                  }`}
+                >
+                  <span>{feedbackMensagem.texto}</span>
+                  <button
+                    type="button"
+                    onClick={() => setFeedbackMensagem(null)}
+                    className="text-xs font-bold uppercase underline tracking-wider ml-4 hover:opacity-75"
+                  >
+                    Fechar
+                  </button>
                 </div>
               )}
+
+              {/* PAINEL DAS 5 ETAPAS DA TRILHA DE DIAGNÓSTICO DO CLIENTE */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-200">
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#D4AF37]">
+                      Trilha Diamond Group 5.0
+                    </div>
+                    <h3 className="text-base font-bold text-[#07132B]">
+                      Etapas da Trilha de Diagnóstico Tributário
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Gerencie cada etapa individualmente para este cliente ou limpe etapas que
+                      precisam ser recalculadas.
+                    </p>
+                  </div>
+                  {diagnosticos.length > 0 && (
+                    <Button
+                      type="button"
+                      onClick={() => setModalExcluirTrilhaCompleta(true)}
+                      className="border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-900 text-xs font-bold shrink-0 self-start sm:self-center"
+                    >
+                      Excluir Trilha Completa
+                    </Button>
+                  )}
+                </div>
+
+                {/* Grade das 5 etapas da trilha com status e botão de exclusão individual */}
+                {(() => {
+                  const diagConfig = diagnosticos.find(
+                    (d) =>
+                      d.configuracoes_diagnostico_json &&
+                      Object.keys(d.configuracoes_diagnostico_json).length > 0,
+                  )
+                  const diag360 = diagnosticos.find(
+                    (d) => d.tipo_diagnostico === '360' || d.tipo_diagnostico === 'autoavaliacao',
+                  )
+                  const diagTransicao = diagnosticos.find((d) => d.tipo_diagnostico === 'transicao')
+                  const diagRegimes = diagnosticos.find((d) => d.tipo_diagnostico === 'regimes')
+                  const diagEnquadramento = diagnosticos.find(
+                    (d) => d.tipo_diagnostico === 'enquadramento' || !d.tipo_diagnostico,
+                  )
+
+                  const etapasConfig: Array<{
+                    identificador: EtapaDiagnosticoIdentificador
+                    numero: string
+                    titulo: string
+                    descricao: string
+                    rotaRefazer: string
+                    possuiDados: boolean
+                    diagnosticoId?: string
+                  }> = [
+                    {
+                      identificador: 'configuracoes',
+                      numero: '01',
+                      titulo: 'Configurações Iniciais',
+                      descricao:
+                        'Cadastro fiscal base (segmento, faturamento, folha de pagamento e alíquotas)',
+                      rotaRefazer: '/diagnostico/configuracoes',
+                      possuiDados: !!diagConfig || diagnosticos.length > 0,
+                      diagnosticoId: diagConfig?.id,
+                    },
+                    {
+                      identificador: 'autoavaliacao',
+                      numero: '02',
+                      titulo: 'Autoavaliação 360°',
+                      descricao:
+                        'Matriz das 7 frentes de risco (vulnerabilidade, proteção e plano 30-60-90)',
+                      rotaRefazer: '/diagnostico/autoavaliacao',
+                      possuiDados: !!diag360,
+                      diagnosticoId: diag360?.id,
+                    },
+                    {
+                      identificador: 'transicao',
+                      numero: '03',
+                      titulo: 'Transição Fiscal',
+                      descricao:
+                        'Cronograma 2026–2033 (IBS/CBS), split payment e testes operacionais',
+                      rotaRefazer: '/diagnostico/transicao',
+                      possuiDados: !!diagTransicao,
+                      diagnosticoId: diagTransicao?.id,
+                    },
+                    {
+                      identificador: 'regimes',
+                      numero: '04',
+                      titulo: 'Comparação de Regime',
+                      descricao:
+                        'Comparativo Simples Nacional vs Presumido vs Lucro Real na Reforma',
+                      rotaRefazer: '/diagnostico/regimes',
+                      possuiDados: !!diagRegimes,
+                      diagnosticoId: diagRegimes?.id,
+                    },
+                    {
+                      identificador: 'enquadramento',
+                      numero: '05',
+                      titulo: 'Enquadramento & Pareceres',
+                      descricao:
+                        'Recomendação final, projeções de economia anual e parecer técnico',
+                      rotaRefazer: '/diagnostico',
+                      possuiDados: !!diagEnquadramento,
+                      diagnosticoId: diagEnquadramento?.id,
+                    },
+                  ]
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                      {etapasConfig.map((et) => (
+                        <div
+                          key={et.identificador}
+                          className={`rounded-xl p-3.5 border flex flex-col justify-between transition-colors ${
+                            et.possuiDados
+                              ? 'bg-white border-slate-300 shadow-xs'
+                              : 'bg-slate-100/60 border-slate-200 border-dashed opacity-80'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-[11px] font-bold text-[#D4AF37] tracking-wider">
+                                ETAPA {et.numero}
+                              </span>
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  et.possuiDados
+                                    ? 'bg-emerald-100 text-[#07132B]'
+                                    : 'bg-slate-200 text-slate-600'
+                                }`}
+                              >
+                                {et.possuiDados ? 'Registrada' : 'Pendente'}
+                              </span>
+                            </div>
+                            <h4 className="font-bold text-xs text-[#07132B] leading-tight mb-1">
+                              {et.titulo}
+                            </h4>
+                            <p className="text-[11px] text-slate-500 leading-normal">
+                              {et.descricao}
+                            </p>
+                          </div>
+
+                          <div className="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                selecionarClienteAtivo(cliente.id)
+                                navigate(et.rotaRefazer)
+                              }}
+                              className="w-full text-center py-1 px-2 rounded-lg text-[11px] font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0c1f44] transition-colors"
+                            >
+                              {et.possuiDados ? 'Abrir / Recalcular' : 'Executar Etapa'}
+                            </button>
+
+                            {et.possuiDados && (
+                              <button
+                                type="button"
+                                onClick={() => setEtapaParaExcluir(et)}
+                                className="w-full text-center py-1 px-2 rounded-lg text-[11px] font-semibold border border-red-200 text-red-700 hover:bg-red-50 transition-colors"
+                              >
+                                Excluir esta etapa
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* LISTAGEM DOS REGISTROS SALVOS NO BANCO */}
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                    Histórico de Registros ({diagnosticos.length})
+                  </h4>
+                  <span className="text-xs text-slate-400">
+                    {diagnosticos.length === 0
+                      ? 'Nenhum registro individual'
+                      : 'Cálculos salvos vinculados à conta'}
+                  </span>
+                </div>
+
+                {diagnosticos.length === 0 ? (
+                  <div className="text-center py-10 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 space-y-3">
+                    <span className="text-sm font-semibold text-slate-700 block">
+                      Nenhum diagnóstico registrado para este cliente
+                    </span>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto">
+                      Realize diagnósticos com o cliente ativo selecionado para compor a trilha
+                      tributária.
+                    </p>
+                    <div className="pt-2 flex justify-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          selecionarClienteAtivo(cliente.id)
+                          navigate('/diagnostico')
+                        }}
+                        className="bg-[#07132B] text-[#D4AF37] hover:bg-[#0B1E3F] text-xs font-bold"
+                      >
+                        Iniciar Diagnóstico
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={abrirModalVincular}
+                        className="text-xs"
+                      >
+                        Vincular Existente
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {diagnosticos.map((diag) => (
+                      <div
+                        key={diag.id}
+                        className="bg-slate-50/70 hover:bg-slate-50 border border-slate-200 rounded-xl p-4 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
+                      >
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                            <h4 className="text-sm font-bold text-[#07132B]">
+                              {diag.tipo_diagnostico === '360'
+                                ? 'Etapa 02 • Autoavaliação 360°'
+                                : diag.tipo_diagnostico === 'transicao'
+                                  ? 'Etapa 03 • Transição Fiscal'
+                                  : diag.tipo_diagnostico === 'regimes'
+                                    ? 'Etapa 04 • Comparação de Regime'
+                                    : diag.tipo_diagnostico === 'enquadramento'
+                                      ? 'Etapa 05 • Enquadramento Completo'
+                                      : 'Diagnóstico Tributário'}
+                            </h4>
+                            <Badge className="bg-[#07132B] text-[#D4AF37] text-[10px]">
+                              {diag.regime_recomendado || 'Concluído'}
+                            </Badge>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                            <span>
+                              Data: <strong>{formatarData(diag.created)}</strong>
+                            </span>
+                            {diag.empresa && (
+                              <span>
+                                Empresa: <strong>{diag.empresa}</strong>
+                              </span>
+                            )}
+                            {diag.economia_estimada && diag.economia_estimada > 0 && (
+                              <span className="text-emerald-700 font-semibold">
+                                Economia: {formatarMoeda(diag.economia_estimada)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              selecionarClienteAtivo(cliente.id)
+                              const rotaDestino =
+                                diag.tipo_diagnostico === '360'
+                                  ? '/diagnostico/relatorio?aba=autoavaliacao'
+                                  : diag.tipo_diagnostico === 'transicao'
+                                    ? '/diagnostico/relatorio?aba=transicao'
+                                    : diag.tipo_diagnostico === 'regimes'
+                                      ? '/diagnostico/relatorio?aba=regimes'
+                                      : '/diagnostico/relatorio?aba=enquadramento'
+                              navigate(rotaDestino)
+                            }}
+                            className="text-xs font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0B1E3F] px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            Ver Relatório →
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              selecionarClienteAtivo(cliente.id)
+                              navigate('/diagnostico/relatorio')
+                            }}
+                            className="text-xs font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 px-2.5 py-1.5 rounded-lg transition-colors"
+                          >
+                            Consolidado
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEtapaParaExcluir({
+                                identificador:
+                                  diag.tipo_diagnostico === '360'
+                                    ? 'autoavaliacao'
+                                    : diag.tipo_diagnostico === 'transicao'
+                                      ? 'transicao'
+                                      : diag.tipo_diagnostico === 'regimes'
+                                        ? 'regimes'
+                                        : 'enquadramento',
+                                numero:
+                                  diag.tipo_diagnostico === '360'
+                                    ? '02'
+                                    : diag.tipo_diagnostico === 'transicao'
+                                      ? '03'
+                                      : diag.tipo_diagnostico === 'regimes'
+                                        ? '04'
+                                        : '05',
+                                titulo:
+                                  diag.tipo_diagnostico === '360'
+                                    ? 'Autoavaliação 360°'
+                                    : diag.tipo_diagnostico === 'transicao'
+                                      ? 'Transição Fiscal'
+                                      : diag.tipo_diagnostico === 'regimes'
+                                        ? 'Comparação de Regime'
+                                        : 'Enquadramento Completo',
+                                descricao: `Registro criado em ${formatarData(diag.created)}`,
+                                rotaRefazer: '/diagnostico',
+                                possuiDados: true,
+                                diagnosticoId: diag.id,
+                              })
+                            }
+                            className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-2.5 py-1.5 rounded-lg border border-red-200 transition-colors"
+                            title="Excluir este registro"
+                          >
+                            Excluir Etapa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDesvincularDiagnostico(diag.id)}
+                            className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Desvincular do cliente sem apagar o registro"
+                          >
+                            Desvincular
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1281,6 +1639,123 @@ export default function DetalheCliente() {
                 className="text-xs"
               >
                 Concluir
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DIAMOND GROUP - EXCLUIR ETAPA INDIVIDUAL */}
+      {etapaParaExcluir && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#07132B] text-slate-100 rounded-2xl max-w-md w-full p-6 shadow-2xl border-2 border-[#D4AF37] space-y-4">
+            <div>
+              <div className="text-[11px] font-bold tracking-widest uppercase text-[#D4AF37] mb-1">
+                Diamond Group • Excluir Etapa da Trilha
+              </div>
+              <h3 className="font-heading font-bold text-lg text-white">
+                Confirmar exclusão da Etapa {etapaParaExcluir.numero}: {etapaParaExcluir.titulo}
+              </h3>
+            </div>
+
+            <div className="text-xs text-slate-300 leading-relaxed space-y-2">
+              <p>
+                Tem certeza que deseja excluir os dados salvos da etapa{' '}
+                <strong className="text-white font-semibold">{etapaParaExcluir.titulo}</strong> de{' '}
+                <strong className="text-[#D4AF37]">{cliente.nome}</strong>?
+              </p>
+              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300">
+                {etapaParaExcluir.descricao}
+              </div>
+              <div className="p-3 rounded-lg bg-red-950/40 border border-red-800/60 text-[11px] text-red-200 font-medium">
+                Aviso: Esta ação é irreversível. O cálculo e os dados gravados desta etapa serão
+                apagados e você poderá recalculá-la a qualquer momento.
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isExcluindoEtapa}
+                onClick={() => setEtapaParaExcluir(null)}
+                className="rounded-xl border-slate-700 bg-transparent text-slate-300 hover:bg-slate-800 hover:text-white text-xs"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={isExcluindoEtapa}
+                onClick={handleConfirmarExcluirEtapa}
+                className="rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs border border-red-500 shadow-md"
+              >
+                {isExcluindoEtapa ? 'Excluindo etapa...' : 'Confirmar Exclusão'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DIAMOND GROUP - EXCLUIR TRILHA COMPLETA DO CLIENTE */}
+      {modalExcluirTrilhaCompleta && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#07132B] text-slate-100 rounded-2xl max-w-lg w-full p-6 shadow-2xl border-2 border-[#D4AF37] space-y-4">
+            <div>
+              <div className="text-[11px] font-bold tracking-widest uppercase text-[#D4AF37] mb-1">
+                Diamond Group • Excluir Trilha Completa
+              </div>
+              <h3 className="font-heading font-bold text-xl text-white">
+                Excluir Trilha Completa de Diagnósticos
+              </h3>
+            </div>
+
+            <div className="text-xs text-slate-300 leading-relaxed space-y-3">
+              <p>
+                Você está prestes a apagar permanentemente todas as 5 etapas da trilha de
+                diagnóstico tributário e os relatórios consolidados de{' '}
+                <strong className="text-white font-semibold underline decoration-[#D4AF37]">
+                  {cliente.nome}
+                </strong>
+                .
+              </p>
+
+              <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5 text-[11px]">
+                <div className="text-[#D4AF37] font-bold uppercase tracking-wider text-[10px]">
+                  Itens que serão removidos:
+                </div>
+                <div className="text-slate-300 space-y-1">
+                  <div>• Etapa 01 - Configurações Iniciais</div>
+                  <div>• Etapa 02 - Autoavaliação 360° (7 Frentes de Risco)</div>
+                  <div>• Etapa 03 - Transição Fiscal (IBS/CBS 2026-2033)</div>
+                  <div>• Etapa 04 - Comparação de Regime</div>
+                  <div>• Etapa 05 - Enquadramento & Pareceres</div>
+                  <div>• Versões salvas do Relatório Consolidado</div>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-red-950/40 border border-red-800/60 text-[11px] text-red-200 font-medium">
+                Ação Irreversível: Todos os cálculos e históricos deste cliente serão removidos. Os
+                cadastros de simulações da calculadora e do recuperador permanecerão intactos.
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isExcluindoTrilhaCompleta}
+                onClick={() => setModalExcluirTrilhaCompleta(false)}
+                className="rounded-xl border-slate-700 bg-transparent text-slate-300 hover:bg-slate-800 hover:text-white text-xs"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={isExcluindoTrilhaCompleta}
+                onClick={handleConfirmarExcluirTrilhaCompleta}
+                className="rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs border border-red-500 shadow-lg"
+              >
+                {isExcluindoTrilhaCompleta ? 'Excluindo trilha...' : 'Excluir Trilha Completa'}
               </Button>
             </div>
           </div>

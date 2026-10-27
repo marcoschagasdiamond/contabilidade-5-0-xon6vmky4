@@ -255,3 +255,70 @@ export async function excluirVersaoRelatorio(id: string): Promise<boolean> {
     return false
   }
 }
+
+/**
+ * Exclui todas as versões salvas de relatório consolidado vinculadas a um cliente
+ * (por cliente_id ou fallback por nome/empresa).
+ */
+export async function excluirHistoricoRelatoriosPorCliente(params: {
+  clienteId?: string | null
+  empresaNome?: string | null
+  clienteNome?: string | null
+}): Promise<number> {
+  let totalExcluidos = 0
+
+  // 1. Limpa versões do localStorage
+  try {
+    const local = carregarHistoricoLocal()
+    const filtradosLocal = local.filter((item) => {
+      if (params.clienteId && item.cliente_id === params.clienteId) return false
+      if (
+        params.empresaNome &&
+        item.empresa_nome?.trim().toLowerCase() === params.empresaNome.trim().toLowerCase()
+      ) {
+        return false
+      }
+      return true
+    })
+    totalExcluidos += local.length - filtradosLocal.length
+    salvarHistoricoLocal(filtradosLocal)
+  } catch (err) {
+    console.warn('Erro ao limpar versões locais do relatório:', err)
+  }
+
+  // 2. Busca e exclui da coleção historico_relatorios_diagnostico no PocketBase
+  try {
+    const filtros: string[] = []
+    if (params.clienteId) {
+      filtros.push(`cliente_id = "${params.clienteId}"`)
+    }
+    if (params.empresaNome) {
+      filtros.push(`empresa_nome = "${params.empresaNome.replace(/"/g, '\\"')}"`)
+    }
+    if (params.clienteNome) {
+      filtros.push(`cliente_nome = "${params.clienteNome.replace(/"/g, '\\"')}"`)
+    }
+
+    if (filtros.length > 0) {
+      const filterExpr = filtros.join(' || ')
+      const lista = await pb
+        .collection('historico_relatorios_diagnostico')
+        .getFullList<HistoricoRelatorioRecord>({
+          filter: filterExpr,
+        })
+
+      for (const reg of lista) {
+        try {
+          await pb.collection('historico_relatorios_diagnostico').delete(reg.id)
+          totalExcluidos++
+        } catch (e) {
+          console.warn(`Erro ao excluir versão de relatório ${reg.id}:`, e)
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Erro ao excluir versões no backend:', err)
+  }
+
+  return totalExcluidos
+}
