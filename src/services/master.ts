@@ -243,12 +243,25 @@ export async function listarClientesVisaoGlobal(): Promise<ClienteGlobalItem[]> 
     // 3. Processa clientes da carteira de analistas ('clientes')
     clientesLista.forEach((c: any) => {
       const analista = c.user_id ? mapaUsuarios.get(c.user_id) : undefined
+      const atualizador = c.funil_atualizado_por
+        ? mapaUsuarios.get(c.funil_atualizado_por)
+        : undefined
+
       const totalD =
         (mapaDiagsPorCliente.get(c.id) || 0) +
         (c.cnpj_cpf ? mapaDiagsPorCliente.get(`cnpj_${c.cnpj_cpf}`) || 0 : 0)
       const totalS =
         (mapaSimsPorCliente.get(c.id) || 0) +
         (c.cnpj_cpf ? mapaSimsPorCliente.get(`cnpj_${c.cnpj_cpf}`) || 0 : 0)
+
+      // Fallback inteligente para estagio_funil: se não definido, calcula com base nas atividades
+      const estagioCalculado =
+        c.estagio_funil ||
+        (totalD > 0 || totalS > 0
+          ? totalD > 0 && totalS > 0
+            ? 'proposta'
+            : 'diagnostico'
+          : 'lead')
 
       itensGlobais.push({
         id: c.id,
@@ -272,6 +285,12 @@ export async function listarClientesVisaoGlobal(): Promise<ClienteGlobalItem[]> 
           (c.cnpj_cpf ? mapaUltimoDiagData.get(`cnpj_${c.cnpj_cpf}`) : undefined),
         created: c.created,
         collection_origem: 'clientes',
+        estagio_funil: estagioCalculado,
+        origem_lead:
+          c.origem_lead || (analista ? `Analista: ${analista.name}` : 'Cadastro Direto no Site'),
+        funil_atualizado_em: c.funil_atualizado_em,
+        funil_atualizado_por: c.funil_atualizado_por,
+        funil_atualizado_por_nome: atualizador?.name || atualizador?.email,
       })
     })
 
@@ -288,6 +307,10 @@ export async function listarClientesVisaoGlobal(): Promise<ClienteGlobalItem[]> 
       }
 
       const usuarioDono = ce.user_id ? mapaUsuarios.get(ce.user_id) : undefined
+      const atualizador = ce.funil_atualizado_por
+        ? mapaUsuarios.get(ce.funil_atualizado_por)
+        : undefined
+
       const ehAnalista =
         usuarioDono?.perfil === 'contador' || usuarioDono?.nivel_acesso === 'analista'
 
@@ -299,6 +322,14 @@ export async function listarClientesVisaoGlobal(): Promise<ClienteGlobalItem[]> 
       const totalS =
         (mapaSimsPorCliente.get(ce.id) || 0) +
         (ce.cnpj ? mapaSimsPorCliente.get(`cnpj_${ce.cnpj}`) || 0 : 0)
+
+      const estagioCalculado =
+        ce.estagio_funil ||
+        (totalD > 0 || totalS > 0
+          ? totalD > 0 && totalS > 0
+            ? 'proposta'
+            : 'diagnostico'
+          : 'lead')
 
       itensGlobais.push({
         id: ce.id,
@@ -323,6 +354,13 @@ export async function listarClientesVisaoGlobal(): Promise<ClienteGlobalItem[]> 
           (ce.cnpj ? mapaUltimoDiagData.get(`cnpj_${ce.cnpj}`) : undefined),
         created: ce.created,
         collection_origem: 'clientes_empresas',
+        estagio_funil: estagioCalculado,
+        origem_lead:
+          ce.origem_lead ||
+          (ehAnalista ? `Analista: ${usuarioDono?.name}` : 'Cadastro Direto no Site'),
+        funil_atualizado_em: ce.funil_atualizado_em,
+        funil_atualizado_por: ce.funil_atualizado_por,
+        funil_atualizado_por_nome: atualizador?.name || atualizador?.email,
       })
     })
 
@@ -441,6 +479,37 @@ export async function excluirClienteGlobal(params: {
       }
     } catch {
       /* intentionally ignored */
+    }
+
+    // 4.1 CRM Fase 2: Anotações e Tarefas do cliente
+    try {
+      const anotacoes = await pb
+        .collection('crm_anotacoes')
+        .getFullList({
+          filter: `cliente = "${clienteId}" || cliente_empresa_id = "${clienteId}"`,
+        })
+        .catch(() => [])
+      for (const a of anotacoes) {
+        await pb
+          .collection('crm_anotacoes')
+          .delete(a.id)
+          .catch(() => {})
+      }
+
+      const tarefas = await pb
+        .collection('crm_tarefas')
+        .getFullList({
+          filter: `cliente = "${clienteId}" || cliente_empresa_id = "${clienteId}"`,
+        })
+        .catch(() => [])
+      for (const t of tarefas) {
+        await pb
+          .collection('crm_tarefas')
+          .delete(t.id)
+          .catch(() => {})
+      }
+    } catch (e) {
+      console.warn('Erro ao excluir anotações/tarefas do CRM vinculadas:', e)
     }
   }
 

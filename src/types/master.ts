@@ -77,6 +77,12 @@ export interface ClienteGlobalItem {
   faturamento_mensal?: number
   created: string
   collection_origem: 'clientes' | 'clientes_empresas'
+  // Campos de CRM Fase 2
+  estagio_funil?: 'lead' | 'diagnostico' | 'proposta' | 'cliente_ativo' | 'descartado'
+  origem_lead?: string
+  funil_atualizado_em?: string
+  funil_atualizado_por?: string
+  funil_atualizado_por_nome?: string
 }
 
 export interface AnalistaMetricasItem {

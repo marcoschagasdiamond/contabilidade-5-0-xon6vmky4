@@ -842,6 +842,25 @@ export default function Admin() {
                 setTimeout(() => setFeedbackDiag(null), 6000)
               }
             }}
+            onClienteAtualizado={(clienteId, novoEstagio) => {
+              setClientesGlobais((prev) =>
+                prev.map((c) =>
+                  c.id === clienteId
+                    ? {
+                        ...c,
+                        estagio_funil: novoEstagio,
+                        funil_atualizado_em: new Date().toISOString(),
+                        funil_atualizado_por_nome: user?.name || user?.email,
+                      }
+                    : c,
+                ),
+              )
+              if (clienteGlobalSelecionado && clienteGlobalSelecionado.id === clienteId) {
+                setClienteGlobalSelecionado((prev) =>
+                  prev ? { ...prev, estagio_funil: novoEstagio } : null,
+                )
+              }
+            }}
           />
         )}
 
@@ -898,10 +917,30 @@ export default function Admin() {
           />
         )}
 
-        {/* MODAL FICHA COMPLETA CLIENTE GLOBAL */}
+        {/* MODAL FICHA COMPLETA CLIENTE GLOBAL COM CRM FASE 2 */}
         <ModalFichaClienteGlobal
           cliente={clienteGlobalSelecionado}
           aoFechar={() => setClienteGlobalSelecionado(null)}
+          onClienteAtualizado={(clienteId, novoEstagio) => {
+            setClientesGlobais((prev) =>
+              prev.map((c) =>
+                c.id === clienteId
+                  ? {
+                      ...c,
+                      estagio_funil: novoEstagio,
+                      funil_atualizado_em: new Date().toISOString(),
+                      funil_atualizado_por_nome: user?.name || user?.email,
+                    }
+                  : c,
+              ),
+            )
+          }}
+          onFeedback={(fb) => {
+            setFeedbackDiag(fb)
+            if (fb) {
+              setTimeout(() => setFeedbackDiag(null), 6000)
+            }
+          }}
         />
 
         {/* ========================================================= */}

@@ -25,6 +25,10 @@ export interface Cliente {
   arquivado?: boolean
   created?: string
   updated?: string
+  estagio_funil?: 'lead' | 'diagnostico' | 'proposta' | 'cliente_ativo' | 'descartado'
+  origem_lead?: string
+  funil_atualizado_em?: string
+  funil_atualizado_por?: string
 }
 
 export type ClienteRecord = Cliente & RecordModel
