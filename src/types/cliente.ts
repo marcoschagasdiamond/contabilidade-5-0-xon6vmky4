@@ -22,6 +22,7 @@ export interface Cliente {
   regime_atual: string
   email?: string
   telefone?: string
+  arquivado?: boolean
   created?: string
   updated?: string
 }

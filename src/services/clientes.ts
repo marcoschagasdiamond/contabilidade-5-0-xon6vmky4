@@ -44,6 +44,7 @@ export async function listarClientes(): Promise<Cliente[]> {
       regime_atual: rec.regime_atual,
       email: rec.email,
       telefone: rec.telefone,
+      arquivado: Boolean(rec.arquivado),
       created: rec.created,
       updated: rec.updated,
     }))
@@ -77,6 +78,7 @@ export async function obterClientePorId(id: string): Promise<Cliente | null> {
       regime_atual: rec.regime_atual,
       email: rec.email,
       telefone: rec.telefone,
+      arquivado: Boolean(rec.arquivado),
       created: rec.created,
       updated: rec.updated,
     }
@@ -115,6 +117,7 @@ export async function criarCliente(dados: ClienteInput): Promise<Cliente> {
       regime_atual: rec.regime_atual,
       email: rec.email,
       telefone: rec.telefone,
+      arquivado: Boolean(rec.arquivado),
       created: rec.created,
       updated: rec.updated,
     }
@@ -124,6 +127,7 @@ export async function criarCliente(dados: ClienteInput): Promise<Cliente> {
     const novo: Cliente = {
       id: 'local_cli_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
       ...payload,
+      arquivado: false,
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
     }
@@ -148,6 +152,7 @@ export async function atualizarCliente(id: string, dados: Partial<ClienteInput>)
       regime_atual: rec.regime_atual,
       email: rec.email,
       telefone: rec.telefone,
+      arquivado: Boolean(rec.arquivado),
       created: rec.created,
       updated: rec.updated,
     }
@@ -178,4 +183,18 @@ export async function excluirCliente(id: string): Promise<boolean> {
     salvarClientesLocais(filtrados)
     return true
   }
+}
+
+/**
+ * Arquiva um cliente (mantém registros e vínculos intactos, apenas marca arquivado: true)
+ */
+export async function arquivarCliente(id: string): Promise<Cliente> {
+  return await atualizarCliente(id, { arquivado: true })
+}
+
+/**
+ * Desarquiva um cliente (restaura para a listagem ativa, arquivado: false)
+ */
+export async function desarquivarCliente(id: string): Promise<Cliente> {
+  return await atualizarCliente(id, { arquivado: false })
 }

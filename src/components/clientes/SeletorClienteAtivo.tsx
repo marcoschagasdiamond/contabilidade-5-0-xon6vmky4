@@ -22,6 +22,11 @@ export function SeletorClienteAtivo({
   const { clienteAtivo, clienteAtivoId, clientes, carregando, selecionarClienteAtivo } =
     useClienteAtivo()
 
+  // Filtra apenas clientes ativos (não arquivados) para o seletor, mantendo o atualmente ativo caso tenha sido arquivado
+  const clientesAtivosDropdown = React.useMemo(() => {
+    return clientes.filter((c) => !c.arquivado || c.id === clienteAtivoId)
+  }, [clientes, clienteAtivoId])
+
   return (
     <div
       className={`bg-[#07132B] text-white border border-[#D4AF37]/35 rounded-xl px-3.5 py-2.5 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs ${className}`}
@@ -48,9 +53,10 @@ export function SeletorClienteAtivo({
           aria-label="Selecionar cliente ativo da carteira"
         >
           <option value="">Sem cliente (Modo Teste / Geral)</option>
-          {clientes.map((c) => (
+          {clientesAtivosDropdown.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nome} {c.cnpj_cpf ? `• ${c.cnpj_cpf}` : ''} ({c.uf})
+              {c.arquivado ? ' [Arquivado]' : ''}
             </option>
           ))}
         </select>
@@ -98,7 +104,7 @@ export function SeletorClienteAtivo({
             to="/clientes"
             className="text-slate-300 hover:text-white underline font-medium text-[11px] transition-colors"
           >
-            Gerenciar Carteira ({clientes.length})
+            Gerenciar Carteira ({clientesAtivosDropdown.length})
           </Link>
         </div>
       )}

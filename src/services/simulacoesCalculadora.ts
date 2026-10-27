@@ -256,6 +256,45 @@ export async function excluirSimulacao(simulacao: SimulacaoCalculadora): Promise
 }
 
 /**
+ * Exclui todas as simulações da calculadora vinculadas a um cliente (por cliente_id).
+ */
+export async function excluirSimulacoesCalculadoraPorCliente(clienteId: string): Promise<number> {
+  if (!clienteId) return 0
+  let totalExcluidos = 0
+
+  // 1. Limpa locais
+  try {
+    const locais = carregarSimulacoesLocais()
+    const filtrados = locais.filter((s) => s.cliente_id !== clienteId)
+    totalExcluidos += locais.length - filtrados.length
+    salvarSimulacoesLocais(filtrados)
+  } catch (err) {
+    console.warn('Erro ao excluir simulações locais do cliente:', err)
+  }
+
+  // 2. Limpa nuvem
+  try {
+    const nuvem = await pb
+      .collection('simulacoes_calculadora')
+      .getFullList<PocketBaseSimulacaoRecord>({
+        filter: `cliente_id = "${clienteId}"`,
+      })
+    for (const rec of nuvem) {
+      try {
+        await pb.collection('simulacoes_calculadora').delete(rec.id)
+        totalExcluidos++
+      } catch (e) {
+        console.warn(`Erro ao excluir simulação ${rec.id}:`, e)
+      }
+    }
+  } catch (err) {
+    console.warn('Erro ao excluir simulações na nuvem do cliente:', err)
+  }
+
+  return totalExcluidos
+}
+
+/**
  * Renomeia uma simulação
  */
 export async function renomearSimulacao(

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T19:32:03.090Z",
+  "generatedAt": "2026-10-27T19:56:22.484Z",
   "collections": [
     {
       "name": "users",
@@ -848,13 +848,20 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "arquivado",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_clientes_user ON clientes (user_id)",
         "CREATE INDEX idx_clientes_nome ON clientes (nome)",
         "CREATE INDEX idx_clientes_cnpj_cpf ON clientes (cnpj_cpf)",
-        "CREATE INDEX idx_clientes_created ON clientes (created DESC)"
+        "CREATE INDEX idx_clientes_created ON clientes (created DESC)",
+        "CREATE INDEX `idx_clientes_arquivado` ON `clientes` (arquivado)"
       ]
     },
     {

@@ -5,10 +5,17 @@ import { listarSimulacoes } from '@/services/simulacoesCalculadora'
 import { listarSimulacoesRecuperador } from '@/services/simulacoesRecuperador'
 import { getDiagnosticos } from '@/services/diagnosticos'
 import { listarConversasAssistente } from '@/services/conversasAssistente'
+import {
+  listarHistoricoRelatoriosPorCliente,
+  type HistoricoRelatorioRecord,
+} from '@/services/historicoRelatorios'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import { useAuth } from '@/context/AuthContext'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
+import { ModalArquivarCliente } from '@/components/clientes/ModalArquivarCliente'
+import { ModalExcluirCliente } from '@/components/clientes/ModalExcluirCliente'
 import type { Cliente } from '@/types/cliente'
 import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
 import type { SimulacaoRecuperador } from '@/types/recuperadorCreditos'
@@ -25,6 +32,7 @@ interface ClienteCarteiraConsolidado {
   totalRecuperavelCreditos: number
   totalDiagnosticos: number
   totalConversas: number
+  totalRelatorios: number
   ultimaEconomiaAnual: number | null
   temEconomiaPositiva: boolean
   alertaSimples: boolean
@@ -36,6 +44,7 @@ interface ClienteCarteiraConsolidado {
   conversaMaisRecente?: ConversaAssistente
 }
 
+type AbaVisualizacao = 'ativos' | 'arquivados' | 'todos'
 type FiltroDiagnostico = 'todos' | 'com' | 'sem'
 type FiltroEconomia = 'todos' | 'positiva' | 'sem_economia'
 type FiltroAlertaSimples = 'todos' | 'com_alerta' | 'sem_alerta'
@@ -49,7 +58,12 @@ type OrdenacaoCampo =
 
 export default function Carteira() {
   const navigate = useNavigate()
-  const { clienteAtivoId, selecionarClienteAtivo, limparClienteAtivo } = useClienteAtivo()
+  const { clienteAtivoId, selecionarClienteAtivo, limparClienteAtivo, recarregarClientes } =
+    useClienteAtivo()
+  const { isContador, isAdmin } = useAuth()
+
+  // Usuário que tem acesso via AnalistaRoute é Analista/Admin, podendo excluir
+  const podeExcluir = isContador || isAdmin
 
   const [carregando, setCarregando] = useState(true)
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -57,8 +71,22 @@ export default function Carteira() {
   const [recuperadorSims, setRecuperadorSims] = useState<SimulacaoRecuperador[]>([])
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoRecord[]>([])
   const [conversas, setConversas] = useState<ConversaAssistente[]>([])
+  const [relatorios, setRelatorios] = useState<HistoricoRelatorioRecord[]>([])
 
-  // Filtros e busca
+  // Feedback banner
+  const [bannerFeedback, setBannerFeedback] = useState<{
+    tipo: 'sucesso' | 'erro'
+    mensagem: string
+  } | null>(null)
+
+  // Estado dos modais de Arquivar e Excluir
+  const [modalArquivarAberto, setModalArquivarAberto] = useState(false)
+  const [modalExcluirAberto, setModalExcluirAberto] = useState(false)
+  const [clienteAlvoAcao, setClienteAlvoAcao] = useState<Cliente | null>(null)
+  const [modoArquivamento, setModoArquivamento] = useState<'arquivar' | 'desarquivar'>('arquivar')
+
+  // Filtros e abas
+  const [abaAtual, setAbaAtual] = useState<AbaVisualizacao>('ativos')
   const [busca, setBusca] = useState('')
   const [filtroDiag, setFiltroDiag] = useState<FiltroDiagnostico>('todos')
   const [filtroEco, setFiltroEco] = useState<FiltroEconomia>('todos')
@@ -71,19 +99,22 @@ export default function Carteira() {
   const carregarDadosCarteira = async () => {
     try {
       setCarregando(true)
-      const [listaClientes, listaSims, listaRecup, listaDiags, listaConvs] = await Promise.all([
-        listarClientes(),
-        listarSimulacoes(),
-        listarSimulacoesRecuperador(),
-        getDiagnosticos(),
-        listarConversasAssistente(),
-      ])
+      const [listaClientes, listaSims, listaRecup, listaDiags, listaConvs, listaRelats] =
+        await Promise.all([
+          listarClientes(),
+          listarSimulacoes(),
+          listarSimulacoesRecuperador(),
+          getDiagnosticos(),
+          listarConversasAssistente(),
+          listarHistoricoRelatoriosPorCliente(),
+        ])
 
       setClientes(listaClientes)
       setSimulacoes(listaSims)
       setRecuperadorSims(listaRecup)
       setDiagnosticos(listaDiags)
       setConversas(listaConvs)
+      setRelatorios(listaRelats)
     } catch (err) {
       console.error('Erro ao consolidar dados da carteira:', err)
     } finally {
@@ -134,11 +165,21 @@ export default function Carteira() {
       }
     })
 
+    const relatsPorCliente = new Map<string, HistoricoRelatorioRecord[]>()
+    relatorios.forEach((r) => {
+      if (r.cliente_id) {
+        const arr = relatsPorCliente.get(r.cliente_id) || []
+        arr.push(r)
+        relatsPorCliente.set(r.cliente_id, arr)
+      }
+    })
+
     return clientes.map((cliente) => {
       const cliSims = simsPorCliente.get(cliente.id) || []
       const cliRecup = recupPorCliente.get(cliente.id) || []
       const cliDiags = diagsPorCliente.get(cliente.id) || []
       const cliConvs = convsPorCliente.get(cliente.id) || []
+      const cliRelats = relatsPorCliente.get(cliente.id) || []
 
       const totalRecuperavelCreditos = cliRecup.reduce(
         (acc, curr) => acc + (curr.total_recuperavel_integral || 0),
@@ -251,6 +292,7 @@ export default function Carteira() {
         totalRecuperavelCreditos,
         totalDiagnosticos: cliDiags.length,
         totalConversas: cliConvs.length,
+        totalRelatorios: cliRelats.length,
         ultimaEconomiaAnual: ultimaEco,
         temEconomiaPositiva: temEcoPositiva,
         alertaSimples: temAlertaSimples,
@@ -262,24 +304,35 @@ export default function Carteira() {
         conversaMaisRecente: convMaisRecente,
       }
     })
-  }, [clientes, simulacoes, recuperadorSims, diagnosticos, conversas])
+  }, [clientes, simulacoes, recuperadorSims, diagnosticos, conversas, relatorios])
 
-  // KPIs Consolidados do Topo
+  // Separação por arquivado / ativo para abas e contadores
+  const totalAtivos = useMemo(
+    () => consolidados.filter((c) => !c.cliente.arquivado).length,
+    [consolidados],
+  )
+  const totalArquivados = useMemo(
+    () => consolidados.filter((c) => Boolean(c.cliente.arquivado)).length,
+    [consolidados],
+  )
+
+  // KPIs Consolidados do Topo (focados nos clientes ativos, mas com indicador dos arquivados)
   const kpis = useMemo(() => {
-    const totalClientes = consolidados.length
-    const comDiagnostico = consolidados.filter((c) => c.totalDiagnosticos > 0).length
-    const comSimulacoes = consolidados.filter((c) => c.totalSimulacoes > 0).length
-    const comRecuperador = consolidados.filter((c) => c.totalRecuperador > 0).length
-    const comEconomiaPositiva = consolidados.filter((c) => c.temEconomiaPositiva).length
-    const comAlertaSimples = consolidados.filter((c) => c.alertaSimples).length
+    const baseAtivos = consolidados.filter((c) => !c.cliente.arquivado)
+    const totalClientesAtivos = baseAtivos.length
+    const comDiagnostico = baseAtivos.filter((c) => c.totalDiagnosticos > 0).length
+    const comSimulacoes = baseAtivos.filter((c) => c.totalSimulacoes > 0).length
+    const comRecuperador = baseAtivos.filter((c) => c.totalRecuperador > 0).length
+    const comEconomiaPositiva = baseAtivos.filter((c) => c.temEconomiaPositiva).length
+    const comAlertaSimples = baseAtivos.filter((c) => c.alertaSimples).length
 
-    const somaCreditosRecuperador = consolidados.reduce(
+    const somaCreditosRecuperador = baseAtivos.reduce(
       (acc, c) => acc + c.totalRecuperavelCreditos,
       0,
     )
 
-    // Soma da economia potencial identificada na carteira
-    const somaEconomiaPositiva = consolidados.reduce((acc, c) => {
+    // Soma da economia potencial identificada na carteira ativa
+    const somaEconomiaPositiva = baseAtivos.reduce((acc, c) => {
       if (c.ultimaEconomiaAnual && c.ultimaEconomiaAnual > 0) {
         return acc + c.ultimaEconomiaAnual
       }
@@ -287,7 +340,7 @@ export default function Carteira() {
     }, 0)
 
     return {
-      totalClientes,
+      totalClientesAtivos,
       comDiagnostico,
       comSimulacoes,
       comRecuperador,
@@ -298,12 +351,16 @@ export default function Carteira() {
     }
   }, [consolidados])
 
-  // Filtros aplicados à lista
+  // Filtros aplicados à lista (considerando a aba ativa/arquivados/todos)
   const clientesFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase()
 
     return consolidados
       .filter((item) => {
+        // Filtro da aba (Ativos vs Arquivados vs Todos)
+        if (abaAtual === 'ativos' && item.cliente.arquivado) return false
+        if (abaAtual === 'arquivados' && !item.cliente.arquivado) return false
+
         // Busca textual por nome, CNPJ/CPF, UF, segmento, regime
         const atendeBusca =
           !termo ||
@@ -371,6 +428,7 @@ export default function Carteira() {
       })
   }, [
     consolidados,
+    abaAtual,
     busca,
     filtroDiag,
     filtroEco,
@@ -400,6 +458,51 @@ export default function Carteira() {
     } catch {
       return '—'
     }
+  }
+
+  // Handlers para os modais de Arquivar e Excluir
+  const abrirModalArquivar = (
+    cliente: Cliente,
+    modo: 'arquivar' | 'desarquivar',
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation()
+    setClienteAlvoAcao(cliente)
+    setModoArquivamento(modo)
+    setModalArquivarAberto(true)
+  }
+
+  const abrirModalExcluir = (cliente: Cliente, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setClienteAlvoAcao(cliente)
+    setModalExcluirAberto(true)
+  }
+
+  const handleSucessoArquivamento = (clienteAtualizado: Cliente, mensagem: string) => {
+    // Se o cliente arquivado era o ativo, limpa a seleção ativa
+    if (clienteAtualizado.arquivado && clienteAtivoId === clienteAtualizado.id) {
+      limparClienteAtivo()
+    }
+
+    // Atualiza estado local imediatamente sem recarregar página
+    setClientes((prev) => prev.map((c) => (c.id === clienteAtualizado.id ? clienteAtualizado : c)))
+    recarregarClientes()
+    setBannerFeedback({ tipo: 'sucesso', mensagem })
+  }
+
+  const handleSucessoExclusao = (clienteId: string, mensagem: string) => {
+    // Se o cliente excluído era o ativo, limpa a seleção ativa
+    if (clienteAtivoId === clienteId) {
+      limparClienteAtivo()
+    }
+
+    // Atualiza estado local de clientes, diagnósticos e simulações sem recarregar a página
+    setClientes((prev) => prev.filter((c) => c.id !== clienteId))
+    setDiagnosticos((prev) => prev.filter((d) => d.cliente_id !== clienteId))
+    setSimulacoes((prev) => prev.filter((s) => s.cliente_id !== clienteId))
+    setRelatorios((prev) => prev.filter((r) => r.cliente_id !== clienteId))
+    recarregarClientes()
+    setBannerFeedback({ tipo: 'sucesso', mensagem })
   }
 
   return (
@@ -451,20 +554,59 @@ export default function Carteira() {
 
       {/* ÁREA PRINCIPAL */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* CARDS DE RESUMO DA CARTEIRA (TOP KPIs) */}
+        {/* BANNER DE FEEDBACK DINÂMICO (SUCESSO / ERRO) */}
+        {bannerFeedback && (
+          <div
+            className={`rounded-2xl p-4 border transition-all flex items-center justify-between gap-4 shadow-sm ${
+              bannerFeedback.tipo === 'sucesso'
+                ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
+                : 'bg-rose-50/90 border-rose-300 text-rose-950'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span
+                className={`w-3 h-3 rounded-full shrink-0 ${
+                  bannerFeedback.tipo === 'sucesso' ? 'bg-emerald-600' : 'bg-rose-600'
+                }`}
+              />
+              <div className="space-y-0.5">
+                <div className="font-bold text-xs">
+                  {bannerFeedback.tipo === 'sucesso'
+                    ? 'Operação realizada com sucesso'
+                    : 'Aviso do sistema'}
+                </div>
+                <div className="text-xs text-slate-700 leading-relaxed">
+                  {bannerFeedback.mensagem}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setBannerFeedback(null)}
+              className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-700 border border-slate-200 transition-colors shrink-0"
+            >
+              Fechar
+            </button>
+          </div>
+        )}
+
+        {/* CARDS DE RESUMO DA CARTEIRA (TOP KPIs - CLIENTES ATIVOS) */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {/* Card 1: Total de Clientes */}
+          {/* Card 1: Total de Clientes Ativos */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-1.5 transition-all hover:border-[#D4AF37]/50">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Total de Clientes
+                Clientes Ativos
               </span>
               <span className="w-2 h-2 rounded-full bg-[#07132B]" />
             </div>
             <div className="font-heading font-black text-2xl sm:text-3xl text-[#07132B]">
-              {kpis.totalClientes}
+              {kpis.totalClientesAtivos}
             </div>
-            <p className="text-[11px] text-slate-500 leading-tight">Cadastrados na carteira</p>
+            <p className="text-[11px] text-slate-500 leading-tight">
+              {totalArquivados > 0 ? `${totalArquivados} arquivado(s)` : 'Base ativa na carteira'}
+            </p>
           </div>
 
           {/* Card 2: Com Diagnóstico Feito */}
@@ -479,8 +621,8 @@ export default function Carteira() {
               {kpis.comDiagnostico}
             </div>
             <p className="text-[11px] text-slate-500 leading-tight">
-              {kpis.totalClientes > 0
-                ? `${Math.round((kpis.comDiagnostico / kpis.totalClientes) * 100)}% da base analisada`
+              {kpis.totalClientesAtivos > 0
+                ? `${Math.round((kpis.comDiagnostico / kpis.totalClientesAtivos) * 100)}% da base ativa`
                 : 'Nenhum registro'}
             </p>
           </div>
@@ -553,21 +695,60 @@ export default function Carteira() {
         {/* BARRA DE BUSCA, FILTROS RÁPIDOS E ORDENAÇÃO */}
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            {/* Campo de Busca */}
-            <div className="w-full lg:w-96">
-              <Input
-                type="text"
-                placeholder="Buscar por cliente, CNPJ/CPF, UF ou segmento..."
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                className="text-xs h-10 border-slate-200"
-              />
+            {/* ABAS DE VISUALIZAÇÃO: ATIVOS / ARQUIVADOS / TODOS */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setAbaAtual('ativos')}
+                className={`text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all ${
+                  abaAtual === 'ativos'
+                    ? 'bg-[#07132B] text-[#D4AF37] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Clientes Ativos ({totalAtivos})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAbaAtual('arquivados')}
+                className={`text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all ${
+                  abaAtual === 'arquivados'
+                    ? 'bg-[#07132B] text-[#D4AF37] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Arquivados ({totalArquivados})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAbaAtual('todos')}
+                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                  abaAtual === 'todos'
+                    ? 'bg-[#07132B] text-[#D4AF37] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Todos ({consolidados.length})
+              </button>
             </div>
 
-            {/* Contagem de resultados */}
-            <div className="text-xs text-slate-600 font-medium">
-              Exibindo <strong>{clientesFiltrados.length}</strong> de{' '}
-              <strong>{consolidados.length}</strong> clientes
+            {/* Campo de Busca e Contagem */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="w-full sm:w-80">
+                <Input
+                  type="text"
+                  placeholder="Buscar por cliente, CNPJ/CPF, UF ou segmento..."
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  className="text-xs h-10 border-slate-200"
+                />
+              </div>
+
+              <div className="text-xs text-slate-600 font-medium whitespace-nowrap self-center">
+                Exibindo <strong>{clientesFiltrados.length}</strong> clientes
+              </div>
             </div>
           </div>
 
@@ -764,28 +945,37 @@ export default function Carteira() {
                         <span className="text-[#D4AF37] ml-1">{ordemDesc ? '↓' : '↑'}</span>
                       )}
                     </th>
-                    <th className="py-3.5 px-4 text-right">Ação</th>
+                    <th className="py-3.5 px-4 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {clientesFiltrados.map((item) => {
                     const isAtivo = clienteAtivoId === item.cliente.id
+                    const isArquivado = Boolean(item.cliente.arquivado)
 
                     return (
                       <tr
                         key={item.cliente.id}
                         onClick={() => navigate(`/clientes/${item.cliente.id}`)}
                         className={`cursor-pointer transition-colors hover:bg-slate-50/90 ${
-                          isAtivo ? 'bg-amber-50/30' : ''
+                          isAtivo
+                            ? 'bg-amber-50/30'
+                            : isArquivado
+                              ? 'bg-slate-50/60 opacity-90'
+                              : ''
                         }`}
                       >
-                        {/* COLUNA 1: NOME + CNPJ/CPF + BADGE ATIVO */}
+                        {/* COLUNA 1: NOME + CNPJ/CPF + BADGES ATIVO / ARQUIVADO */}
                         <td className="py-3.5 px-4 max-w-xs">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span
                                 className={`w-2 h-2 rounded-full shrink-0 ${
-                                  isAtivo ? 'bg-[#D4AF37] animate-pulse' : 'bg-slate-300'
+                                  isAtivo
+                                    ? 'bg-[#D4AF37] animate-pulse'
+                                    : isArquivado
+                                      ? 'bg-slate-400'
+                                      : 'bg-slate-300'
                                 }`}
                               />
                               <strong className="text-slate-900 font-bold text-xs truncate block hover:text-[#D4AF37] transition-colors">
@@ -794,6 +984,11 @@ export default function Carteira() {
                               {isAtivo && (
                                 <span className="bg-[#D4AF37] text-[#07132B] font-extrabold text-[9px] px-1.5 py-0.2 rounded shrink-0">
                                   ATIVO
+                                </span>
+                              )}
+                              {isArquivado && (
+                                <span className="bg-slate-200 text-slate-700 font-bold text-[9px] px-1.5 py-0.2 rounded shrink-0 border border-slate-300">
+                                  ARQUIVADO
                                 </span>
                               )}
                             </div>
@@ -925,33 +1120,71 @@ export default function Carteira() {
                           {formatarDataSimples(item.dataUltimaAtividade)}
                         </td>
 
-                        {/* COLUNA 9: AÇÃO RÁPIDA / FICHA */}
+                        {/* COLUNA 9: AÇÃO RÁPIDA / FICHA / ARQUIVAR / EXCLUIR */}
                         <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1.5">
-                            {isAtivo ? (
-                              <button
-                                type="button"
-                                onClick={() => limparClienteAtivo()}
-                                className="text-[11px] font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-lg transition-colors"
-                              >
-                                Desativar
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => selecionarClienteAtivo(item.cliente.id)}
-                                className="text-[11px] font-bold text-[#07132B] bg-[#D4AF37]/25 hover:bg-[#D4AF37]/40 border border-[#D4AF37]/60 px-2.5 py-1 rounded-lg transition-colors"
-                              >
-                                Ativar
-                              </button>
-                            )}
+                            {/* Ativar/Desativar: somente se não estiver arquivado */}
+                            {!isArquivado &&
+                              (isAtivo ? (
+                                <button
+                                  type="button"
+                                  onClick={() => limparClienteAtivo()}
+                                  className="text-[11px] font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-lg transition-colors"
+                                  title="Remover seleção de Cliente Ativo"
+                                >
+                                  Desativar
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => selecionarClienteAtivo(item.cliente.id)}
+                                  className="text-[11px] font-bold text-[#07132B] bg-[#D4AF37]/25 hover:bg-[#D4AF37]/40 border border-[#D4AF37]/60 px-2.5 py-1 rounded-lg transition-colors"
+                                  title="Tornar este o Cliente Ativo para simulações e diagnósticos"
+                                >
+                                  Ativar
+                                </button>
+                              ))}
 
                             <Link
                               to={`/clientes/${item.cliente.id}`}
                               className="text-[11px] font-bold text-[#07132B] hover:text-[#D4AF37] bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-colors"
+                              title="Ver ficha completa do cliente"
                             >
                               Ver Ficha →
                             </Link>
+
+                            {/* Botão Arquivar ou Desarquivar */}
+                            {isArquivado ? (
+                              <button
+                                type="button"
+                                onClick={(e) => abrirModalArquivar(item.cliente, 'desarquivar', e)}
+                                className="text-[11px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 px-2 py-1 rounded-lg transition-colors"
+                                title="Desarquivar e retornar à listagem ativa"
+                              >
+                                Desarquivar
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => abrirModalArquivar(item.cliente, 'arquivar', e)}
+                                className="text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg transition-colors"
+                                title="Arquivar cliente (mantém todo o histórico e vínculos intactos)"
+                              >
+                                Arquivar
+                              </button>
+                            )}
+
+                            {/* Botão Excluir (restrito ao perfil Analista/Admin) */}
+                            {podeExcluir && (
+                              <button
+                                type="button"
+                                onClick={(e) => abrirModalExcluir(item.cliente, e)}
+                                className="text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-1 rounded-lg transition-colors"
+                                title="Excluir cliente e opcionalmente apagar seus dados vinculados"
+                              >
+                                Excluir
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -974,13 +1207,44 @@ export default function Carteira() {
           <p className="text-xs text-slate-300 leading-relaxed">
             A Carteira do Analista agrega todos os dados fiscais gerados na Calculadora IBS/CBS, no
             Diagnóstico 360° e na trilha de transição tributária (EC 132/2023 e LC 214/2025). O
-            alerta do Simples Nacional monitora se as projeções de faturamento anualizado aproximam
-            ou superam o teto de <strong>R$ 4,8 milhões</strong> ou o sublimite de{' '}
-            <strong>R$ 3,6 milhões</strong> (Simples Híbrido com ICMS e ISS apurados por fora da
-            guia DAS).
+            arquivamento de clientes é reversível e mantém todos os cálculos e diagnósticos
+            preservados. A exclusão definitiva é restrita a Analistas/Admins e permite remover o
+            cadastro bem como desvincular ou apagar todas as etapas de diagnósticos, simulações e
+            relatórios consolidados.
           </p>
         </div>
       </div>
+
+      {/* MODAL DE CONFIRMAÇÃO: ARQUIVAR / DESARQUIVAR */}
+      <ModalArquivarCliente
+        open={modalArquivarAberto}
+        onOpenChange={setModalArquivarAberto}
+        cliente={clienteAlvoAcao}
+        modo={modoArquivamento}
+        onSucesso={handleSucessoArquivamento}
+        onErro={(msg) => setBannerFeedback({ tipo: 'erro', mensagem: msg })}
+      />
+
+      {/* MODAL DE CONFIRMAÇÃO: EXCLUIR CLIENTE E DADOS VINCULADOS */}
+      <ModalExcluirCliente
+        open={modalExcluirAberto}
+        onOpenChange={setModalExcluirAberto}
+        cliente={clienteAlvoAcao}
+        detalhes={
+          clienteAlvoAcao
+            ? {
+                totalDiagnosticos: consolidados.find((c) => c.cliente.id === clienteAlvoAcao.id)
+                  ?.totalDiagnosticos,
+                totalSimulacoes: consolidados.find((c) => c.cliente.id === clienteAlvoAcao.id)
+                  ?.totalSimulacoes,
+                totalRelatorios: consolidados.find((c) => c.cliente.id === clienteAlvoAcao.id)
+                  ?.totalRelatorios,
+              }
+            : undefined
+        }
+        onSucesso={handleSucessoExclusao}
+        onErro={(msg) => setBannerFeedback({ tipo: 'erro', mensagem: msg })}
+      />
     </div>
   )
 }
