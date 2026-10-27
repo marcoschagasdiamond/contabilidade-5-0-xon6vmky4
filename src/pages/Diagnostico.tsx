@@ -811,18 +811,18 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
 
         {/* AVISO DE DADOS DA EMPRESA INTEGRADOS (quando etapa <= 4) */}
         {etapa <= 4 && (
-          <div className="mb-4 bg-white border border-[#D4AF37]/40 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#07132B] text-[#D4AF37] flex items-center justify-center shrink-0">
+          <div className="mb-4 bg-white border border-[#D4AF37]/40 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs min-h-[auto]">
+            <div className="flex items-center gap-3 py-1">
+              <div className="w-9 h-9 rounded-lg bg-[#07132B] text-[#D4AF37] flex items-center justify-center shrink-0">
                 <Building2 className="w-4 h-4" />
               </div>
-              <div>
-                <span className="font-bold text-[#07132B] block">
+              <div className="py-2 min-w-0">
+                <span className="font-bold text-[#07132B] block text-xs sm:text-sm leading-relaxed sm:leading-6">
                   {temPerfilSalvo
                     ? 'Formulário pré-preenchido com seus Dados da Empresa'
                     : 'Usando valores padrão da plataforma Contabilidade 5.0'}
                 </span>
-                <span className="text-slate-500 text-[11px] block">
+                <span className="text-slate-500 text-[11px] sm:text-xs leading-relaxed block mt-0.5">
                   {temPerfilSalvo
                     ? 'As alterações feitas neste wizard valem apenas para este diagnóstico.'
                     : 'Cadastre sua empresa uma única vez para preencher todos os módulos automaticamente.'}
@@ -846,7 +846,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               )}
               <Link
                 to="/dados-empresa"
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#07132B] hover:text-[#D4AF37] underline"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#07132B] hover:text-[#D4AF37] underline py-1"
               >
                 {temPerfilSalvo ? 'Ver perfil cadastrado →' : 'Preencher Dados da Empresa →'}
               </Link>
