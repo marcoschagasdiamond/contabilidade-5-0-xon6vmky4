@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 export interface PainelSucessoFluxoGuiadoProps {
   aberto: boolean
@@ -137,14 +137,33 @@ export function PainelSucessoFluxoGuiado({
         )}
 
         {/* Ações da Esteira: SEM ÍCONES, foco em tipografia */}
-        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <button
-            type="button"
-            onClick={handleAvancarImediato}
-            className="px-7 py-3.5 rounded-xl font-heading font-black text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-lg transition-all duration-200 hover:-translate-y-0.5 text-center"
-          >
-            {etapaFinal ? `Concluir e Voltar ao Hub` : `Continuar → ${proximaEtapaNome}`}
-          </button>
+        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
+          {etapaFinal ? (
+            <>
+              <Link
+                to="/diagnostico/relatorio"
+                className="px-7 py-3.5 rounded-xl font-heading font-black text-xs sm:text-sm text-[#07132B] bg-[#2ECC71] hover:bg-[#27ae60] shadow-lg transition-all duration-200 hover:-translate-y-0.5 text-center"
+              >
+                Ver Relatório Consolidado →
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleAvancarImediato}
+                className="px-6 py-3.5 rounded-xl font-heading font-black text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 text-center"
+              >
+                Voltar ao Hub de Diagnósticos
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAvancarImediato}
+              className="px-7 py-3.5 rounded-xl font-heading font-black text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-lg transition-all duration-200 hover:-translate-y-0.5 text-center"
+            >
+              Continuar → {proximaEtapaNome}
+            </button>
+          )}
 
           <button
             type="button"

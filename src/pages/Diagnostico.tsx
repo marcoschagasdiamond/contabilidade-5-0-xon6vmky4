@@ -2123,10 +2123,10 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               aberto={sucessoTrilhaAberto}
               onClose={() => setSucessoTrilhaAberto(false)}
               titulo="Trilha de Diagnósticos Concluída com Sucesso!"
-              mensagem="Você concluiu todas as 5 etapas da esteira diagnóstica Contabilidade 5.0 (Configurações, Autoavaliação 360°, Transição Fiscal, Comparação de Regimes e Enquadramento Completo). Os relatórios e pareceres estão disponíveis na sua conta."
-              proximaEtapaNome="Hub de Diagnósticos"
-              proximaEtapaRota="/diagnosticos"
-              segundosAutoRedirect={8}
+              mensagem="Você concluiu todas as etapas da esteira diagnóstica Contabilidade 5.0. O Dossiê Consolidado reúne todas as fases por Cliente Ativo com relatórios imprimíveis."
+              proximaEtapaNome="Relatório Consolidado"
+              proximaEtapaRota="/diagnostico/relatorio"
+              segundosAutoRedirect={10}
               etapaConcluidaNumero="ETAPA 05 (FINAL)"
               etapaConcluidaNome="Enquadramento Completo"
               etapaFinal={true}

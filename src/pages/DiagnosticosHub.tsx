@@ -182,7 +182,7 @@ export default function DiagnosticosHub() {
               sob a EC 132/2023.
             </p>
 
-            {/* BARRA DA EMPRESA ATIVA */}
+            {/* BARRA DA EMPRESA ATIVA & ACESSO AO RELATÓRIO CONSOLIDADO */}
             <div className="inline-flex flex-wrap items-center justify-center gap-3 p-3 px-5 rounded-2xl bg-white/10 border border-white/15 text-xs text-slate-200 backdrop-blur-md">
               <div className="flex items-center gap-2">
                 <span className="text-[#2ECC71] font-mono font-bold">EMPRESA:</span>
@@ -199,10 +199,17 @@ export default function DiagnosticosHub() {
               </span>
               <span className="text-slate-500">•</span>
               <Link
+                to="/diagnostico/relatorio"
+                className="px-3 py-1 rounded-lg bg-[#2ECC71] text-[#07132B] font-bold hover:bg-[#27ae60] transition-colors"
+              >
+                Ver Relatório Consolidado →
+              </Link>
+              <span className="text-slate-500">•</span>
+              <Link
                 to="/diagnostico-configuracoes"
                 className="text-[#D4AF37] hover:underline font-bold"
               >
-                Configurações dos Diagnósticos →
+                Configurações →
               </Link>
             </div>
           </div>

@@ -899,11 +899,29 @@ export default function DetalheCliente() {
                           type="button"
                           onClick={() => {
                             selecionarClienteAtivo(cliente.id)
-                            navigate('/diagnostico')
+                            const rotaDestino =
+                              diag.tipo_diagnostico === '360'
+                                ? '/diagnostico/relatorio?aba=autoavaliacao'
+                                : diag.tipo_diagnostico === 'transicao'
+                                  ? '/diagnostico/relatorio?aba=transicao'
+                                  : diag.tipo_diagnostico === 'regimes'
+                                    ? '/diagnostico/relatorio?aba=regimes'
+                                    : '/diagnostico/relatorio?aba=enquadramento'
+                            navigate(rotaDestino)
                           }}
                           className="text-xs font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0B1E3F] px-3 py-1.5 rounded-lg transition-colors"
                         >
-                          Visualizar Módulo →
+                          Ver Relatório →
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            selecionarClienteAtivo(cliente.id)
+                            navigate('/diagnostico/relatorio')
+                          }}
+                          className="text-xs font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 px-2.5 py-1.5 rounded-lg transition-colors"
+                        >
+                          Consolidado
                         </button>
                         <button
                           type="button"

@@ -615,16 +615,28 @@ export default function MinhaConta() {
                           </span>
                         </div>
 
-                        {isContador && (
-                          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-                            <Link
-                              to="/diagnostico"
-                              className="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-                            >
-                              Novo cálculo
-                            </Link>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+                          <Link
+                            to={
+                              diag.tipo_diagnostico === '360'
+                                ? '/diagnostico/relatorio?aba=autoavaliacao'
+                                : diag.tipo_diagnostico === 'transicao'
+                                  ? '/diagnostico/relatorio?aba=transicao'
+                                  : diag.tipo_diagnostico === 'regimes'
+                                    ? '/diagnostico/relatorio?aba=regimes'
+                                    : '/diagnostico/relatorio?aba=enquadramento'
+                            }
+                            className="px-3.5 py-2 rounded-xl bg-[#07132B] text-[#D4AF37] hover:bg-[#0c1f44] text-xs font-bold transition-colors"
+                          >
+                            Ver Relatório
+                          </Link>
+                          <Link
+                            to="/diagnostico/relatorio"
+                            className="px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold transition-colors"
+                          >
+                            Consolidado
+                          </Link>
+                        </div>
                       </div>
                     ))}
                   </div>

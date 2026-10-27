@@ -36,13 +36,14 @@ import Admin from './pages/Admin'
 import Clientes from './pages/Clientes'
 import DetalheCliente from './pages/DetalheCliente'
 import Carteira from './pages/Carteira'
-import Diagnostico from './pages/Diagnostico'
 import DiagnosticosHub from './pages/DiagnosticosHub'
 import DiagnosticoConfiguracoes from './pages/DiagnosticoConfiguracoes'
 import Diagnostico360 from './pages/Diagnostico360'
 import DiagnosticoAutoavaliacao from './pages/DiagnosticoAutoavaliacao'
 import DiagnosticoTransicao from './pages/DiagnosticoTransicao'
 import DiagnosticoRegimes from './pages/DiagnosticoRegimes'
+import Diagnostico from './pages/Diagnostico'
+import DiagnosticoRelatorioConsolidado from './pages/DiagnosticoRelatorioConsolidado'
 import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
 import RecuperadorCreditos from './pages/RecuperadorCreditos'
 import DadosEmpresa from './pages/DadosEmpresa'
@@ -267,6 +268,14 @@ const App = () => (
                 <Route path="/diagnostico-transicao" element={<DiagnosticoTransicao />} />
                 <Route path="/diagnostico-regimes" element={<DiagnosticoRegimes />} />
                 <Route path="/diagnostico" element={<Diagnostico />} />
+                <Route
+                  path="/diagnostico/relatorio"
+                  element={<DiagnosticoRelatorioConsolidado />}
+                />
+                <Route
+                  path="/diagnostico-relatorio"
+                  element={<DiagnosticoRelatorioConsolidado />}
+                />
                 <Route path="/blog" element={<Blog />} />{' '}
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/contato" element={<Contato />} />

@@ -10,6 +10,7 @@ export type PaginaDiagnostico =
   | 'transicao'
   | 'regimes'
   | 'enquadramento'
+  | 'relatorio'
 
 export interface TrilhaDiagnosticoProps {
   paginaAtual: PaginaDiagnostico
@@ -132,6 +133,17 @@ export default function TrilhaDiagnosticoNav({
               }`}
             >
               Configurações
+            </Link>
+
+            <Link
+              to="/diagnostico/relatorio"
+              className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition-all ${
+                paginaAtual === 'relatorio'
+                  ? 'bg-[#2ECC71] text-[#07132B] border-[#2ECC71]'
+                  : 'text-[#2ECC71] hover:bg-[#2ECC71]/15 border-[#2ECC71]/40'
+              }`}
+            >
+              Relatório Consolidado
             </Link>
 
             <Link
