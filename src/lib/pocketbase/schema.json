@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T01:50:03.753Z",
+  "generatedAt": "2026-10-27T02:11:54.243Z",
   "collections": [
     {
       "name": "users",
@@ -1133,6 +1133,93 @@
         "CREATE INDEX idx_sim_recup_user ON simulacoes_recuperador (user_id)",
         "CREATE INDEX idx_sim_recup_cliente ON simulacoes_recuperador (cliente_id)",
         "CREATE INDEX idx_sim_recup_created ON simulacoes_recuperador (created DESC)"
+      ]
+    },
+    {
+      "name": "historico_relatorios_diagnostico",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "cliente_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cliente_nome",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "empresa_nome",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "gerado_por",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "versao_rotulo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "motivo_evento",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "dados_json",
+          "type": "json",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "resumo_json",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_hist_relat_cliente ON historico_relatorios_diagnostico (cliente_id)",
+        "CREATE INDEX idx_hist_relat_user ON historico_relatorios_diagnostico (user_id)",
+        "CREATE INDEX idx_hist_relat_created ON historico_relatorios_diagnostico (created DESC)"
       ]
     }
   ]

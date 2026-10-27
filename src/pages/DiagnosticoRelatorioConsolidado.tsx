@@ -18,7 +18,14 @@ import {
   exportarPdfEtapaTransicao,
   exportarPdfEtapaRegimes,
   exportarPdfRelatorioConsolidado,
+  type DadosRelatorioConsolidado,
 } from '@/lib/pdfRelatoriosDiagnosticos'
+import {
+  listarHistoricoRelatoriosPorCliente,
+  registrarVersaoRelatorio,
+  excluirVersaoRelatorio,
+  type HistoricoRelatorioRecord,
+} from '@/services/historicoRelatorios'
 
 export default function DiagnosticoRelatorioConsolidado() {
   const [searchParams] = useSearchParams()
@@ -29,8 +36,20 @@ export default function DiagnosticoRelatorioConsolidado() {
 
   const [carregando, setCarregando] = useState(true)
   const [todosDiagnosticos, setTodosDiagnosticos] = useState<DiagnosticoRecord[]>([])
+  const [historicoVersoes, setHistoricoVersoes] = useState<HistoricoRelatorioRecord[]>([])
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false)
+  const [versaoSelecionada, setVersaoSelecionada] = useState<HistoricoRelatorioRecord | null>(null)
+  const [salvandoSnapshotManual, setSalvandoSnapshotManual] = useState(false)
+  const [sucessoSnapshotMsg, setSucessoSnapshotMsg] = useState<string | null>(null)
+
   const [abaAtiva, setAbaAtiva] = useState<
-    'consolidado' | 'configuracoes' | 'autoavaliacao' | 'transicao' | 'regimes' | 'enquadramento'
+    | 'consolidado'
+    | 'historico'
+    | 'configuracoes'
+    | 'autoavaliacao'
+    | 'transicao'
+    | 'regimes'
+    | 'enquadramento'
   >(abaUrl as any)
 
   // Sincroniza aba se mudar na URL
@@ -60,6 +79,31 @@ export default function DiagnosticoRelatorioConsolidado() {
       }
     }
     carregar()
+    return () => {
+      montado = false
+    }
+  }, [clienteAtivoId])
+
+  // Carrega histórico de versões sempre que o cliente mudar
+  useEffect(() => {
+    let montado = true
+    const carregarHistorico = async () => {
+      setCarregandoHistorico(true)
+      try {
+        const versoes = await listarHistoricoRelatoriosPorCliente(clienteAtivoId || undefined)
+        if (montado) {
+          setHistoricoVersoes(versoes)
+          if (versoes.length > 0 && !versaoSelecionada) {
+            setVersaoSelecionada(versoes[0])
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar histórico de versões:', err)
+      } finally {
+        if (montado) setCarregandoHistorico(false)
+      }
+    }
+    carregarHistorico()
     return () => {
       montado = false
     }
@@ -121,6 +165,69 @@ export default function DiagnosticoRelatorioConsolidado() {
   const handleBaixarRegimes = () => {
     exportarPdfEtapaRegimes(diagRegimes, nomeClienteExibir, nomeEmpresaExibir)
   }
+
+  // Snapshot manual da versão atual
+  const handleGravarSnapshotAtual = async () => {
+    setSalvandoSnapshotManual(true)
+    try {
+      const dadosAtuais: DadosRelatorioConsolidado = {
+        clienteNome: nomeClienteExibir,
+        dadosEmpresa: temDadosSalvos ? dadosEmpresa : null,
+        diagnosticoAutoavaliacao: diagAutoavaliacao,
+        diagnosticoTransicao: diagTransicao,
+        diagnosticoRegimes: diagRegimes,
+        diagnosticoEnquadramento: diagEnquadramento,
+        dataEmissao: new Date().toLocaleDateString('pt-BR'),
+      }
+
+      const novo = await registrarVersaoRelatorio({
+        cliente_id: clienteAtivoId || undefined,
+        cliente_nome: nomeClienteExibir,
+        empresa_nome: nomeEmpresaExibir,
+        motivo_evento: 'Snapshot manual registrado no painel',
+        dados_json: dadosAtuais,
+      })
+
+      setHistoricoVersoes((prev) => [novo, ...prev])
+      setVersaoSelecionada(novo)
+      setSucessoSnapshotMsg('Nova versão do relatório registrada com sucesso!')
+      setTimeout(() => setSucessoSnapshotMsg(null), 4000)
+    } catch (err) {
+      console.error('Erro ao salvar snapshot manual:', err)
+    } finally {
+      setSalvandoSnapshotManual(false)
+    }
+  }
+
+  // Exportar PDF de versão arquivada
+  const handleBaixarVersaoHistorico = (item: HistoricoRelatorioRecord) => {
+    exportarPdfRelatorioConsolidado(item.dados_json)
+  }
+
+  // Excluir versão
+  const handleExcluirVersao = async (id: string) => {
+    if (!window.confirm('Deseja excluir esta versão salva do histórico?')) return
+    const ok = await excluirVersaoRelatorio(id)
+    if (ok) {
+      setHistoricoVersoes((prev) => prev.filter((it) => it.id !== id))
+      if (versaoSelecionada?.id === id) {
+        setVersaoSelecionada(null)
+      }
+    }
+  }
+
+  // Derivação de cores do semáforo da versão atual para comparativo com versões históricas
+  const semaforoAtual = useMemo(() => {
+    const scores = (diagAutoavaliacao?.dados_extra_json as any)?.scoresPorFrente || {}
+    const mapa: Record<number, 'vermelho' | 'amarelo' | 'verde'> = {}
+    for (let f = 1; f <= 7; f++) {
+      const s = scores[f]?.scoreMedio
+      if (typeof s === 'number') {
+        mapa[f] = s >= 2.5 ? 'vermelho' : s >= 1.75 ? 'amarelo' : 'verde'
+      }
+    }
+    return mapa
+  }, [diagAutoavaliacao])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-20 sm:pt-24 pb-20">
@@ -194,10 +301,15 @@ export default function DiagnosticoRelatorioConsolidado() {
 
       {/* CONTAINER PRINCIPAL */}
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10 space-y-8">
-        {/* NAVEGAÇÃO POR ABAS: CONSOLIDADO + 5 RELATÓRIOS INDIVIDUAIS */}
+        {/* NAVEGAÇÃO POR ABAS: CONSOLIDADO + HISTÓRICO DE VERSÕES + 5 RELATÓRIOS INDIVIDUAIS */}
         <div className="bg-white rounded-2xl p-2 sm:p-2.5 border border-slate-200 shadow-sm flex flex-wrap gap-1.5">
           {[
             { id: 'consolidado' as const, label: 'Dossiê Consolidado Completo', badge: '5 Fases' },
+            {
+              id: 'historico' as const,
+              label: 'Histórico de Versões',
+              badge: `${historicoVersoes.length} versão(ões)`,
+            },
             { id: 'configuracoes' as const, label: '01. Configurações', badge: 'Base' },
             { id: 'autoavaliacao' as const, label: '02. Autoavaliação 360°', badge: '7 Frentes' },
             { id: 'transicao' as const, label: '03. Transição Fiscal', badge: '2026–2033' },
@@ -228,6 +340,482 @@ export default function DiagnosticoRelatorioConsolidado() {
             )
           })}
         </div>
+
+        {/* ========================================================================= */}
+        {/* ABA: HISTÓRICO DE VERSÕES DO RELATÓRIO POR CLIENTE */}
+        {/* ========================================================================= */}
+        {abaAtiva === 'historico' && (
+          <div className="space-y-8 animate-fade-in">
+            {/* BARRA SUPERIOR DO HISTÓRICO */}
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-[11px] font-mono font-extrabold uppercase tracking-wider text-[#07132B] block">
+                  Linha do Tempo & Snapshots Auditoriais
+                </span>
+                <h2 className="text-2xl font-heading font-black text-[#07132B]">
+                  Histórico de Versões do Relatório
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Versões salvas automaticamente ao concluir etapas para o Cliente Ativo ou geradas
+                  manualmente.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleGravarSnapshotAtual}
+                  disabled={salvandoSnapshotManual}
+                  className="px-5 py-2.5 rounded-xl font-heading font-bold text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all text-center disabled:opacity-60"
+                >
+                  {salvandoSnapshotManual ? 'Registrando...' : 'Registrar Versão Agora'}
+                </button>
+              </div>
+            </div>
+
+            {sucessoSnapshotMsg && (
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between">
+                <span>{sucessoSnapshotMsg}</span>
+                <span className="text-emerald-600 font-mono text-[10px]">DIAMOND SNAPSHOT</span>
+              </div>
+            )}
+
+            {carregandoHistorico ? (
+              <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
+                <span className="text-xs text-slate-500 font-semibold">
+                  Carregando histórico de versões...
+                </span>
+              </div>
+            ) : historicoVersoes.length === 0 ? (
+              <div className="p-10 text-center bg-white rounded-2xl border border-slate-200 space-y-4 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-[#D4AF37] border border-amber-200/80 flex items-center justify-center mx-auto text-xl font-heading font-bold">
+                  ◆
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-heading font-bold text-lg text-slate-800">
+                    Nenhuma versão registrada ainda
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+                    Cada vez que você salva ou conclui etapas para o{' '}
+                    <strong className="text-slate-800">{nomeEmpresaExibir}</strong>, um snapshot com
+                    as 5 etapas, data/hora e autor é arquivado aqui.
+                  </p>
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleGravarSnapshotAtual}
+                    disabled={salvandoSnapshotManual}
+                    className="px-6 py-2.5 rounded-xl font-heading font-bold text-xs text-white bg-[#07132B] hover:bg-[#0c1f44] shadow-md transition-all"
+                  >
+                    Gerar Primeira Versão Agora
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* LISTA DAS VERSÕES SALVAS (LADO ESQUERDO) */}
+                <div className="lg:col-span-5 space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-xs font-heading font-bold uppercase tracking-wider text-slate-600">
+                      Versões Arquivadas ({historicoVersoes.length})
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      Mais recente primeiro
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {historicoVersoes.map((versao, idx) => {
+                      const isSel = versaoSelecionada?.id === versao.id
+                      const dataFormatada = versao.created
+                        ? new Date(versao.created).toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : 'Data não informada'
+
+                      const resumo = (versao.resumo_json as any) || {}
+                      const frentes: Record<number, string> = resumo.frentesCores || {}
+
+                      return (
+                        <div
+                          key={versao.id || idx}
+                          onClick={() => setVersaoSelecionada(versao)}
+                          className={`p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer relative ${
+                            isSel
+                              ? 'bg-white border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/30'
+                              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#07132B] text-[#D4AF37]">
+                                  #{historicoVersoes.length - idx}
+                                </span>
+                                {idx === 0 && (
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800">
+                                    Mais Recente
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="font-heading font-bold text-sm text-[#07132B]">
+                                {versao.versao_rotulo || `Versão de ${dataFormatada}`}
+                              </h4>
+                              <p className="text-[11px] text-slate-500 mt-0.5">
+                                Gerado por:{' '}
+                                <strong className="text-slate-700">
+                                  {versao.gerado_por || 'Analista'}
+                                </strong>{' '}
+                                • {dataFormatada}
+                              </p>
+                              {versao.motivo_evento && (
+                                <p className="text-[10px] text-slate-400 italic mt-0.5">
+                                  Evento: {versao.motivo_evento}
+                                </p>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (versao.id) handleExcluirVersao(versao.id)
+                              }}
+                              className="text-slate-400 hover:text-rose-600 text-xs px-2 py-1 rounded transition-colors"
+                              title="Excluir versão do histórico"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          {/* Mini indicadores de etapas e semáforo */}
+                          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <span className="text-[11px] text-slate-600">
+                              Etapas:{' '}
+                              <strong className="text-[#07132B]">
+                                {resumo.etapasConcluidas ?? 0}/5
+                              </strong>
+                            </span>
+
+                            {/* Semáforo das 7 frentes em bolinhas */}
+                            <div
+                              className="flex items-center gap-1"
+                              title="Semáforo das 7 frentes nesta versão"
+                            >
+                              {[1, 2, 3, 4, 5, 6, 7].map((f) => {
+                                const cor = frentes[f]
+                                return (
+                                  <span
+                                    key={f}
+                                    className={`w-2.5 h-2.5 rounded-full ${
+                                      cor === 'vermelho'
+                                        ? 'bg-rose-500'
+                                        : cor === 'amarelo'
+                                          ? 'bg-amber-400'
+                                          : cor === 'verde'
+                                            ? 'bg-emerald-500'
+                                            : 'bg-slate-200'
+                                    }`}
+                                  />
+                                )
+                              })}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleBaixarVersaoHistorico(versao)
+                              }}
+                              className="text-[11px] font-bold text-[#07132B] hover:text-[#D4AF37] underline"
+                            >
+                              Baixar PDF ↓
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* DETALHE / VISUALIZADOR DA VERSÃO SELECIONADA (LADO DIREITO) */}
+                <div className="lg:col-span-7 space-y-6">
+                  {versaoSelecionada ? (
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
+                      {/* HEADER DO DETALHE */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                        <div>
+                          <span className="text-[10px] font-mono font-bold text-[#D4AF37] uppercase tracking-wider block">
+                            Visualizando Snapshot Arquivado
+                          </span>
+                          <h3 className="text-xl font-heading font-black text-[#07132B]">
+                            {versaoSelecionada.versao_rotulo || 'Detalhes da Versão'}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Autor:{' '}
+                            <strong className="text-slate-800">
+                              {versaoSelecionada.gerado_por || 'Analista'}
+                            </strong>{' '}
+                            •{' '}
+                            {versaoSelecionada.created
+                              ? new Date(versaoSelecionada.created).toLocaleString('pt-BR')
+                              : ''}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleBaixarVersaoHistorico(versaoSelecionada)}
+                            className="px-4 py-2 rounded-xl text-xs font-heading font-bold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-sm transition-all"
+                          >
+                            Exportar PDF desta Versão ↓
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* QUADRO COMPARATIVO DAS 7 FRENTES (ESTA VERSÃO vs VERSÃO ATUAL) */}
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="text-xs font-heading font-extrabold text-[#07132B] uppercase tracking-wider">
+                            Comparativo Semáforo das 7 Frentes (Versão Arquivada vs Atual)
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            Mudanças de controle
+                          </span>
+                        </div>
+
+                        <div className="space-y-2 text-xs">
+                          {[
+                            { f: 1, nome: '1. Financeiro & Crédito' },
+                            { f: 2, nome: '2. Investimentos & Wealth' },
+                            { f: 3, nome: '3. Societário & Parcerias — Risco Hub' },
+                            { f: 4, nome: '4. Fiscal & Contábil' },
+                            { f: 5, nome: '5. Tributário' },
+                            { f: 6, nome: '6. Jurídico' },
+                            { f: 7, nome: '7. Operacional, Humano & Cultura' },
+                          ].map((item) => {
+                            const corVersao = (versaoSelecionada.resumo_json as any)
+                              ?.frentesCores?.[item.f]
+                            const corAtual = semaforoAtual[item.f]
+                            const mudou = corVersao && corAtual && corVersao !== corAtual
+
+                            const corPill = (c?: 'vermelho' | 'amarelo' | 'verde') =>
+                              c === 'vermelho'
+                                ? 'bg-rose-100 text-rose-800 border-rose-300'
+                                : c === 'amarelo'
+                                  ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                  : c === 'verde'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                    : 'bg-slate-100 text-slate-500 border-slate-200'
+
+                            return (
+                              <div
+                                key={item.f}
+                                className={`p-2.5 rounded-xl bg-white border flex items-center justify-between gap-2 ${
+                                  mudou
+                                    ? 'border-[#D4AF37] ring-1 ring-[#D4AF37]/40'
+                                    : 'border-slate-200'
+                                }`}
+                              >
+                                <span className="font-semibold text-slate-800 truncate max-w-[200px] sm:max-w-none">
+                                  {item.nome}
+                                </span>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-[10px] text-slate-400">Versão:</span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[10px] font-bold border ${corPill(corVersao)}`}
+                                  >
+                                    {corVersao ? corVersao.toUpperCase() : 'N/A'}
+                                  </span>
+
+                                  <span className="text-slate-400 text-xs">→</span>
+
+                                  <span className="text-[10px] text-slate-400">Atual:</span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[10px] font-bold border ${corPill(corAtual)}`}
+                                  >
+                                    {corAtual ? corAtual.toUpperCase() : 'N/A'}
+                                  </span>
+
+                                  {mudou && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[#D4AF37]/20 text-[#07132B]">
+                                      Alterou
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* CONTEÚDO SALVO DA VERSÃO (AS 5 ETAPAS ARQUIVADAS) */}
+                      <div className="space-y-4 text-xs">
+                        {/* 01 Configurações salvas */}
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                          <span className="font-bold text-[#07132B] uppercase text-[11px] block">
+                            01. Configurações Gravadas no Snapshot:
+                          </span>
+                          {versaoSelecionada.dados_json.dadosEmpresa ? (
+                            <div className="grid grid-cols-2 gap-2 text-slate-700">
+                              <p>
+                                • Empresa:{' '}
+                                <strong>
+                                  {versaoSelecionada.dados_json.dadosEmpresa.nomeEmpresa}
+                                </strong>
+                              </p>
+                              <p>
+                                • CNPJ:{' '}
+                                <strong>
+                                  {versaoSelecionada.dados_json.dadosEmpresa.cnpj
+                                    ? formatarCNPJ(versaoSelecionada.dados_json.dadosEmpresa.cnpj)
+                                    : '—'}
+                                </strong>
+                              </p>
+                              <p>
+                                • Segmento:{' '}
+                                <strong>
+                                  {versaoSelecionada.dados_json.dadosEmpresa.segmento}
+                                </strong>
+                              </p>
+                              <p>
+                                • Regime Atual:{' '}
+                                <strong>
+                                  {versaoSelecionada.dados_json.dadosEmpresa.regimeAtual}
+                                </strong>
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-slate-400 italic">
+                              Etapa não estava preenchida neste snapshot.
+                            </p>
+                          )}
+                        </div>
+
+                        {/* 02 Autoavaliação salva */}
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                          <span className="font-bold text-[#07132B] uppercase text-[11px] block">
+                            02. Autoavaliação das 7 Frentes no Snapshot:
+                          </span>
+                          {versaoSelecionada.dados_json.diagnosticoAutoavaliacao
+                            ?.dados_extra_json ? (
+                            <div className="space-y-1">
+                              <p className="font-semibold text-slate-800">
+                                Perfil:{' '}
+                                {
+                                  versaoSelecionada.dados_json.diagnosticoAutoavaliacao
+                                    .dados_extra_json.resumo?.perfil
+                                }
+                              </p>
+                              <p className="text-slate-600">
+                                Semáforo:{' '}
+                                {versaoSelecionada.dados_json.diagnosticoAutoavaliacao
+                                  .dados_extra_json.resumo?.totalCriticos || 0}{' '}
+                                Críticos |{' '}
+                                {versaoSelecionada.dados_json.diagnosticoAutoavaliacao
+                                  .dados_extra_json.resumo?.totalAlertas || 0}{' '}
+                                Alertas |{' '}
+                                {versaoSelecionada.dados_json.diagnosticoAutoavaliacao
+                                  .dados_extra_json.resumo?.totalControlados || 0}{' '}
+                                Controlados
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-slate-400 italic">
+                              Autoavaliação não concluída neste snapshot.
+                            </p>
+                          )}
+                        </div>
+
+                        {/* 03 Transição Fiscal salva */}
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                          <span className="font-bold text-[#07132B] uppercase text-[11px] block">
+                            03. Transição Fiscal no Snapshot:
+                          </span>
+                          {versaoSelecionada.dados_json.diagnosticoTransicao?.dados_extra_json ? (
+                            <div className="space-y-1">
+                              <p className="font-semibold text-slate-800">
+                                Farol:{' '}
+                                {
+                                  versaoSelecionada.dados_json.diagnosticoTransicao.dados_extra_json
+                                    .laudo?.farol
+                                }
+                              </p>
+                              <p className="text-slate-600">
+                                Solução:{' '}
+                                {
+                                  versaoSelecionada.dados_json.diagnosticoTransicao.dados_extra_json
+                                    .laudo?.servicoRecomendado
+                                }
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-slate-400 italic">
+                              Transição Fiscal não concluída neste snapshot.
+                            </p>
+                          )}
+                        </div>
+
+                        {/* 04 & 05 Comparação e Enquadramento salvos */}
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                          <span className="font-bold text-[#07132B] uppercase text-[11px] block">
+                            04 & 05. Comparação de Regime & Enquadramento no Snapshot:
+                          </span>
+                          {versaoSelecionada.dados_json.diagnosticoEnquadramento ||
+                          versaoSelecionada.dados_json.diagnosticoRegimes ? (
+                            <div className="space-y-1">
+                              <p className="font-semibold text-slate-800">
+                                Recomendado:{' '}
+                                {(
+                                  versaoSelecionada.dados_json.diagnosticoEnquadramento ||
+                                  versaoSelecionada.dados_json.diagnosticoRegimes
+                                )?.sistema_recomendado_novo ||
+                                  (
+                                    versaoSelecionada.dados_json.diagnosticoEnquadramento ||
+                                    versaoSelecionada.dados_json.diagnosticoRegimes
+                                  )?.regime_recomendado}
+                              </p>
+                              <p className="text-emerald-700 font-bold">
+                                Economia Anual Estimada:{' '}
+                                {formatarMoeda(
+                                  (
+                                    versaoSelecionada.dados_json.diagnosticoEnquadramento ||
+                                    versaoSelecionada.dados_json.diagnosticoRegimes
+                                  )?.economia_anual_novo ||
+                                    (
+                                      versaoSelecionada.dados_json.diagnosticoEnquadramento ||
+                                      versaoSelecionada.dados_json.diagnosticoRegimes
+                                    )?.economia_anual ||
+                                    0,
+                                )}{' '}
+                                / ano
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-slate-400 italic">
+                              Enquadramento não concluído neste snapshot.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 text-xs">
+                      Selecione uma versão à esquerda para visualizar seu conteúdo salvo.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* ABA: DOSSIÊ CONSOLIDADO (TODAS AS SEÇÕES COM AVISO DE ETAPA NÃO CONCLUÍDA) */}

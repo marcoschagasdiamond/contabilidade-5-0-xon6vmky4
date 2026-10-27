@@ -63,6 +63,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { createDiagnostico } from '@/services/diagnosticos'
+import { registrarSnapshotSeClienteAtivo } from '@/services/historicoRelatorios'
 import { registrarDiagnosticoUsado } from '@/services/freemium'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
@@ -636,6 +637,16 @@ export default function Diagnostico() {
           // Registra o uso no backend/localStorage e atualiza contexto
           await registrarDiagnosticoUsado(authUserId)
           await recarregarUsuario()
+
+          if (clienteAtivoId) {
+            const perfilSalvo = carregarDadosEmpresa()
+            await registrarSnapshotSeClienteAtivo(
+              clienteAtivoId,
+              clienteAtivo?.nome,
+              perfilSalvo,
+              'Enquadramento Completo finalizado',
+            )
+          }
         } catch (dbErr) {
           console.error('Aviso: diagnóstico gerado, mas falha ao salvar no banco:', dbErr)
         }

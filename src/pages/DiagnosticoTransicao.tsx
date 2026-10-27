@@ -7,6 +7,7 @@ import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav
 import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 import { ConteudoModulo7Diagnostico } from '@/components/reforma/Modulo7DiagnosticoReforma'
 import { createDiagnostico, getDiagnosticoPorId } from '@/services/diagnosticos'
+import { registrarSnapshotSeClienteAtivo } from '@/services/historicoRelatorios'
 import pb from '@/lib/pocketbase/client'
 import { registrarDiagnosticoUsado } from '@/services/freemium'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
@@ -155,6 +156,15 @@ export default function DiagnosticoTransicao() {
 
       await registrarDiagnosticoUsado(authUserId)
       await recarregarUsuario()
+
+      if (clienteAtivoId) {
+        await registrarSnapshotSeClienteAtivo(
+          clienteAtivoId,
+          clienteAtivo?.nome,
+          dadosEmpresa,
+          'Transição Fiscal concluída',
+        )
+      }
 
       setSalvoFeedback(true)
       setTimeout(() => setSalvoFeedback(false), 4000)

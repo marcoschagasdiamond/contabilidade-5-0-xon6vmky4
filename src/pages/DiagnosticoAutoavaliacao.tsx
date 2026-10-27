@@ -9,6 +9,7 @@ import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
 import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 import { createDiagnostico } from '@/services/diagnosticos'
+import { registrarSnapshotSeClienteAtivo } from '@/services/historicoRelatorios'
 import pb from '@/lib/pocketbase/client'
 import { registrarDiagnosticoUsado } from '@/services/freemium'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
@@ -210,6 +211,16 @@ export default function DiagnosticoAutoavaliacao() {
 
       await registrarDiagnosticoUsado(authUserId)
       await recarregarUsuario()
+
+      if (clienteAtivoId) {
+        await registrarSnapshotSeClienteAtivo(
+          clienteAtivoId,
+          clienteAtivo?.nome,
+          dadosEmpresa,
+          'Autoavaliação das 7 Frentes concluída',
+        )
+      }
+
       setPainelSucessoAberto(true)
     } catch (err) {
       console.error('Erro ao salvar Autoavaliação das 7 Frentes:', err)

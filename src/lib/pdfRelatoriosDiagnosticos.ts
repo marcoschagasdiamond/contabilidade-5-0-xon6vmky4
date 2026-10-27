@@ -698,7 +698,7 @@ export function exportarPdfRelatorioConsolidado(dados: DadosRelatorioConsolidado
     y += 18
   }
 
-  // SEÇÃO 2: AUTOAVALIAÇÃO
+  // SEÇÃO 2: AUTOAVALIAÇÃO DAS 7 FRENTES (MATRIZ SEMÁFORO COMPLETA)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9.5)
   doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
@@ -708,31 +708,134 @@ export function exportarPdfRelatorioConsolidado(dados: DadosRelatorioConsolidado
   if (dados.diagnosticoAutoavaliacao?.dados_extra_json) {
     const extra = dados.diagnosticoAutoavaliacao.dados_extra_json
     const resumo = extra.resumo || {}
+    const scores = extra.scoresPorFrente || {}
 
-    doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
-    doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-    doc.roundedRect(margin, y, contentWidth, 24, 2, 2, 'FD')
+    // Bloco resumo executivo do perfil
+    doc.setFillColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+    doc.roundedRect(margin, y, contentWidth, 18, 2, 2, 'F')
 
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(8)
-    doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
-    doc.text(`Perfil: ${resumo.perfil || 'Mapeamento das 7 Frentes'}`, margin + 4, y + 6)
+    doc.setTextColor(COR_GOLD[0], COR_GOLD[1], COR_GOLD[2])
+    doc.text(
+      `PERFIL GLOBAL: ${resumo.perfil || 'Mapeamento Estrutural das 7 Frentes'}`,
+      margin + 4,
+      y + 6.5,
+    )
 
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7.5)
-    doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+    doc.setTextColor(203, 213, 225)
     doc.text(
-      `Semáforo: ${resumo.totalCriticos || 0} Críticos | ${resumo.totalAlertas || 0} Alertas | ${resumo.totalControlados || 0} Controlados`,
+      `Semáforo Consolidado: ${resumo.totalCriticos || 0} Crítico(s) (Vermelho)  |  ${resumo.totalAlertas || 0} Alerta(s) (Amarelo)  |  ${resumo.totalControlados || 0} Controlado(s) (Verde) • 14 Respostas Avaliadas`,
       margin + 4,
-      y + 12,
-    )
-    doc.text(
-      'Plano 30-60-90 ativo: Liquidez & Crédito (30d) · Societário & Risco Hub (60d) · Transição & Processos (90d).',
-      margin + 4,
-      y + 18,
+      y + 13,
     )
 
-    y += 28
+    y += 22
+
+    // Tabela completa da Matriz das 7 Frentes com Cores do Semáforo
+    doc.setFillColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+    doc.rect(margin, y, contentWidth, 6.5, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(7.5)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Frente Estrutural (7 Frentes Diamond)', margin + 3, y + 4.5)
+    doc.text('Dimensão 1: Exposição & Vulnerab.', margin + 70, y + 4.5)
+    doc.text('Dimensão 2: Proteção & Controle', margin + 118, y + 4.5)
+    doc.text('Score & Semáforo', margin + 158, y + 4.5)
+
+    y += 6.5
+
+    const FRENTES_NOMES_MATRIZ: Record<number, string> = {
+      1: '1. Financeiro & Crédito',
+      2: '2. Investimentos & Wealth',
+      3: '3. Societário & Parcerias — Risco Hub',
+      4: '4. Fiscal & Contábil',
+      5: '5. Tributário',
+      6: '6. Jurídico',
+      7: '7. Operacional, Humano & Cultura',
+    }
+
+    const nivelLabelTexto = (n?: number) =>
+      n === 3
+        ? 'Alto (Crítico)'
+        : n === 2
+          ? 'Médio (Alerta)'
+          : n === 1
+            ? 'Baixo (Controlado)'
+            : 'Pendente'
+
+    for (let f = 1; f <= 7; f++) {
+      const item = scores[f] || { scoreMedio: 2, p1: 2, p2: 2 }
+      const scoreMedio = typeof item.scoreMedio === 'number' ? item.scoreMedio : 2
+      const p1 = item.p1 ?? 2
+      const p2 = item.p2 ?? 2
+
+      const isCritico = scoreMedio >= 2.5
+      const isAlerta = !isCritico && scoreMedio >= 1.75
+      const statusLabel = isCritico ? 'Crítico' : isAlerta ? 'Alerta' : 'Controlado'
+
+      // Pinta a linha/célula no mesmo padrão visual do painel web da Matriz Semáforo
+      // Vermelho (#FEE2E2 / borda #FCA5A5), Amarelo (#FEF3C7 / borda #FCD34D), Verde (#DCFCE7 / borda #86EFAC)
+      if (isCritico) {
+        doc.setFillColor(254, 242, 242) // rose-50 / red-50
+        doc.setDrawColor(254, 205, 211) // rose-200
+      } else if (isAlerta) {
+        doc.setFillColor(254, 243, 199) // amber-50
+        doc.setDrawColor(253, 230, 138) // amber-200
+      } else {
+        doc.setFillColor(236, 253, 245) // emerald-50
+        doc.setDrawColor(167, 243, 208) // emerald-200
+      }
+
+      doc.rect(margin, y, contentWidth, 6.2, 'FD')
+
+      // Badge/Semáforo indicador lateral colorido
+      if (isCritico) {
+        doc.setFillColor(225, 29, 72) // rose-600
+      } else if (isAlerta) {
+        doc.setFillColor(217, 119, 6) // amber-600
+      } else {
+        doc.setFillColor(22, 163, 74) // emerald-600
+      }
+      doc.rect(margin, y, 2, 6.2, 'F')
+
+      // Nome da frente
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(7)
+      doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+      doc.text(FRENTES_NOMES_MATRIZ[f] || `Frente ${f}`, margin + 4, y + 4.3)
+
+      // Dimensões 1 e 2
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      doc.text(nivelLabelTexto(p1), margin + 70, y + 4.3)
+      doc.text(nivelLabelTexto(p2), margin + 118, y + 4.3)
+
+      // Célula do Semáforo com fundo e texto destacado
+      if (isCritico) {
+        doc.setFillColor(244, 63, 94) // rose-500
+        doc.setTextColor(159, 18, 57) // rose-900
+      } else if (isAlerta) {
+        doc.setFillColor(245, 158, 11) // amber-500
+        doc.setTextColor(146, 64, 14) // amber-900
+      } else {
+        doc.setFillColor(16, 185, 129) // emerald-500
+        doc.setTextColor(6, 95, 70) // emerald-900
+      }
+
+      doc.setFont('helvetica', 'bold')
+      doc.text(
+        `${scoreMedio.toFixed(1)} / 3.0 • ${statusLabel.toUpperCase()}`,
+        margin + 158,
+        y + 4.3,
+      )
+
+      y += 6.2
+    }
+
+    y += 3
   } else {
     doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
     doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
@@ -752,6 +855,11 @@ export function exportarPdfRelatorioConsolidado(dados: DadosRelatorioConsolidado
   }
 
   // SEÇÃO 3: TRANSIÇÃO FISCAL
+  if (y > 225) {
+    doc.addPage()
+    y = 20
+  }
+
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9.5)
   doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
