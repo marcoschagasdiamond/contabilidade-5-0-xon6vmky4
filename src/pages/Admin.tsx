@@ -804,6 +804,26 @@ export default function Admin() {
           </button>
         </div>
 
+        {/* BANNER DE FEEDBACK MASTER / ADMIN */}
+        {feedbackFeedbackDiag && (
+          <div
+            className={`mb-6 p-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between border ${
+              feedbackFeedbackDiag.tipo === 'sucesso'
+                ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                : 'bg-rose-50 text-rose-900 border-rose-200'
+            }`}
+          >
+            <span>{feedbackFeedbackDiag.mensagem}</span>
+            <button
+              type="button"
+              onClick={() => setFeedbackDiag(null)}
+              className="text-xs px-2 py-1 rounded bg-black/5 hover:bg-black/10 font-bold ml-3"
+            >
+              Fechar
+            </button>
+          </div>
+        )}
+
         {/* ========================================================= */}
         {/* CONTEÚDO DAS NOVAS ABAS DE CONTROLE MASTER */}
         {/* ========================================================= */}
@@ -812,7 +832,16 @@ export default function Admin() {
             clientes={clientesGlobais}
             isLoading={isLoadingGlobais}
             onSelecionarCliente={(c) => setClienteGlobalSelecionado(c)}
-            onAtualizar={fetchDadosMaster}
+            onAtualizar={() => {
+              fetchDadosMaster()
+              fetchClientes()
+            }}
+            onFeedback={(fb) => {
+              setFeedbackDiag(fb)
+              if (fb) {
+                setTimeout(() => setFeedbackDiag(null), 6000)
+              }
+            }}
           />
         )}
 
@@ -820,8 +849,25 @@ export default function Admin() {
           <AbaAnalistasParceiros
             analistas={analistasMetricas}
             isLoading={isLoadingAnalistas}
+            masterId={
+              usuariosSistema.find(
+                (u) =>
+                  u.nivel_acesso === 'master' ||
+                  u.email?.toLowerCase() === 'marcoschagasdiamond@icloud.com',
+              )?.id || user?.id
+            }
+            masterNome="Dr. Marco Chagas (Master)"
             onSelecionarCliente={(c) => setClienteGlobalSelecionado(c)}
-            onAtualizar={fetchDadosMaster}
+            onAtualizar={() => {
+              fetchDadosMaster()
+              fetchClientes()
+            }}
+            onFeedback={(fb) => {
+              setFeedbackDiag(fb)
+              if (fb) {
+                setTimeout(() => setFeedbackDiag(null), 6000)
+              }
+            }}
           />
         )}
 
@@ -831,7 +877,24 @@ export default function Admin() {
             isLoading={isLoadingUsuarios}
             isMaster={isMaster}
             usuarioLogadoId={user?.id}
-            onAtualizar={fetchDadosMaster}
+            usuarioLogadoEmail={user?.email}
+            nivelLogado={isMaster ? 'master' : (user as any)?.nivel_acesso || 'admin'}
+            masterId={
+              usuariosSistema.find(
+                (u) =>
+                  u.nivel_acesso === 'master' ||
+                  u.email?.toLowerCase() === 'marcoschagasdiamond@icloud.com',
+              )?.id
+            }
+            onAtualizar={() => {
+              fetchDadosMaster()
+            }}
+            onFeedback={(fb) => {
+              setFeedbackDiag(fb)
+              if (fb) {
+                setTimeout(() => setFeedbackDiag(null), 6000)
+              }
+            }}
           />
         )}
 

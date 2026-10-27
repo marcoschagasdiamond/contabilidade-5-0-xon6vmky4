@@ -1,23 +1,31 @@
 import React, { useState } from 'react'
 import type { AnalistaMetricasItem, ClienteGlobalItem } from '@/types/master'
+import { ModalExcluirAnalista } from '@/components/admin/ModalExcluirAnalista'
 
 interface AbaAnalistasParceirosProps {
   analistas: AnalistaMetricasItem[]
   isLoading: boolean
+  masterId?: string
+  masterNome?: string
   onSelecionarCliente: (cliente: ClienteGlobalItem) => void
   onAtualizar: () => void
+  onFeedback?: (feedback: { tipo: 'sucesso' | 'erro'; mensagem: string } | null) => void
 }
 
 export function AbaAnalistasParceiros({
   analistas,
   isLoading,
+  masterId,
+  masterNome,
   onSelecionarCliente,
   onAtualizar,
+  onFeedback,
 }: AbaAnalistasParceirosProps) {
   const [busca, setBusca] = useState('')
   const [analistaSelecionadoDrilldown, setAnalistaSelecionadoDrilldown] =
     useState<AnalistaMetricasItem | null>(null)
   const [buscaDrilldown, setBuscaDrilldown] = useState('')
+  const [analistaParaExcluir, setAnalistaParaExcluir] = useState<AnalistaMetricasItem | null>(null)
 
   const analistasFiltrados = analistas.filter((a) => {
     const termo = busca.toLowerCase().trim()
@@ -249,75 +257,128 @@ export function AbaAnalistasParceiros({
                   <th className="py-3.5 px-5 text-center">Nº Clientes Carteira</th>
                   <th className="py-3.5 px-5 text-center">Nº Diagnósticos</th>
                   <th className="py-3.5 px-5 text-center">Nº Simulações</th>
-                  <th className="py-3.5 px-5 text-right">Drill-Down da Carteira</th>
+                  <th className="py-3.5 px-5 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {analistasFiltrados.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-slate-50 cursor-pointer transition-colors"
-                    onClick={() => setAnalistaSelecionadoDrilldown(item)}
-                  >
-                    <td className="py-4 px-5">
-                      <div className="font-bold text-slate-900">{item.name}</div>
-                      <div className="text-xs text-slate-500">{item.email}</div>
-                    </td>
+                {analistasFiltrados.map((item) => {
+                  const ehMarco =
+                    item.email?.toLowerCase() === 'marcoschagasdiamond@icloud.com' ||
+                    item.nivel_acesso === 'master'
 
-                    <td className="py-4 px-5">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
-                          item.nivel_acesso === 'master'
-                            ? 'bg-[#D4AF37] text-[#07132B]'
-                            : item.nivel_acesso === 'admin'
-                              ? 'bg-[#07132B] text-white'
-                              : 'bg-slate-100 text-slate-800'
-                        }`}
-                      >
-                        {item.nivel_acesso}
-                      </span>
-                    </td>
+                  return (
+                    <tr
+                      key={item.id}
+                      className="hover:bg-slate-50 cursor-pointer transition-colors"
+                      onClick={() => setAnalistaSelecionadoDrilldown(item)}
+                    >
+                      <td className="py-4 px-5">
+                        <div className="font-bold text-slate-900">{item.name}</div>
+                        <div className="text-xs text-slate-500">{item.email}</div>
+                      </td>
 
-                    <td className="py-4 px-5 text-center">
-                      <span className="font-bold text-slate-900 text-base">
-                        {item.total_clientes}
-                      </span>
-                      <span className="text-xs text-slate-500 block">clientes</span>
-                    </td>
+                      <td className="py-4 px-5">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
+                            item.nivel_acesso === 'master'
+                              ? 'bg-[#D4AF37] text-[#07132B]'
+                              : item.nivel_acesso === 'admin'
+                                ? 'bg-[#07132B] text-white'
+                                : 'bg-slate-100 text-slate-800'
+                          }`}
+                        >
+                          {item.nivel_acesso}
+                        </span>
+                      </td>
 
-                    <td className="py-4 px-5 text-center">
-                      <span className="font-bold text-[#07132B] text-base">
-                        {item.total_diagnosticos}
-                      </span>
-                      <span className="text-xs text-slate-500 block">diagnósticos</span>
-                    </td>
+                      <td className="py-4 px-5 text-center">
+                        <span className="font-bold text-slate-900 text-base">
+                          {item.total_clientes}
+                        </span>
+                        <span className="text-xs text-slate-500 block">clientes</span>
+                      </td>
 
-                    <td className="py-4 px-5 text-center">
-                      <span className="font-bold text-[#D4AF37] text-base">
-                        {item.total_simulacoes}
-                      </span>
-                      <span className="text-xs text-slate-500 block">simulações</span>
-                    </td>
+                      <td className="py-4 px-5 text-center">
+                        <span className="font-bold text-[#07132B] text-base">
+                          {item.total_diagnosticos}
+                        </span>
+                        <span className="text-xs text-slate-500 block">diagnósticos</span>
+                      </td>
 
-                    <td className="py-4 px-5 text-right">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setAnalistaSelecionadoDrilldown(item)
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] text-xs font-bold transition-colors"
-                      >
-                        Abrir Carteira ({item.total_clientes})
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      <td className="py-4 px-5 text-center">
+                        <span className="font-bold text-[#D4AF37] text-base">
+                          {item.total_simulacoes}
+                        </span>
+                        <span className="text-xs text-slate-500 block">simulações</span>
+                      </td>
+
+                      <td className="py-4 px-5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setAnalistaSelecionadoDrilldown(item)
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] text-xs font-bold transition-colors"
+                          >
+                            Abrir Carteira ({item.total_clientes})
+                          </button>
+
+                          {!ehMarco ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setAnalistaParaExcluir(item)
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition-colors"
+                              title="Excluir analista e transferir carteira"
+                            >
+                              Excluir Analista
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 font-medium px-2">
+                              Master
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* MODAL DE TRANSFERIR CARTEIRA E EXCLUIR ANALISTA */}
+      <ModalExcluirAnalista
+        open={!!analistaParaExcluir}
+        onOpenChange={(open) => {
+          if (!open) setAnalistaParaExcluir(null)
+        }}
+        analista={analistaParaExcluir}
+        todosAnalistas={analistas}
+        masterId={masterId}
+        masterNome={masterNome}
+        onSucesso={(msg) => {
+          setAnalistaParaExcluir(null)
+          if (analistaSelecionadoDrilldown?.id === analistaParaExcluir?.id) {
+            setAnalistaSelecionadoDrilldown(null)
+          }
+          onAtualizar()
+          if (onFeedback) {
+            onFeedback({ tipo: 'sucesso', mensagem: msg })
+          }
+        }}
+        onErro={(msg) => {
+          if (onFeedback) {
+            onFeedback({ tipo: 'erro', mensagem: msg })
+          }
+        }}
+      />
     </div>
   )
 }

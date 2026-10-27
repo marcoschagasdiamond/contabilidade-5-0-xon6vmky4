@@ -292,6 +292,353 @@ export async function listarClientesVisaoGlobal(): Promise<ClienteGlobalItem[]> 
 /**
  * Consolida métricas por Analista/Parceiro com drill-down da carteira
  */
+/**
+ * Exclui um cliente da Visão Global (seja da coleção 'clientes' ou 'clientes_empresas')
+ * e, opcionalmente (padrão true), remove todos os dados vinculados:
+ * - Diagnósticos das 5 etapas
+ * - Simulações da Calculadora IBS/CBS
+ * - Versões do Relatório Consolidado
+ * - Simulações do Recuperador
+ * - Conversas do assistente
+ */
+export async function excluirClienteGlobal(params: {
+  clienteId: string
+  clienteNome: string
+  empresaNome?: string
+  collectionOrigem?: 'clientes' | 'clientes_empresas'
+  excluirDadosVinculados?: boolean
+}): Promise<{
+  success: boolean
+  totalDiagnosticos: number
+  totalSimulacoes: number
+  totalRelatorios: number
+}> {
+  const {
+    clienteId,
+    clienteNome,
+    empresaNome,
+    collectionOrigem = 'clientes',
+    excluirDadosVinculados = true,
+  } = params
+
+  let totalDiagnosticos = 0
+  let totalSimulacoes = 0
+  let totalRelatorios = 0
+
+  if (excluirDadosVinculados) {
+    // 1. Diagnósticos das 5 etapas + histórico de relatórios
+    try {
+      const { excluirDiagnosticoCompletoPorCliente } = await import('@/services/diagnosticos')
+      const resDiag = await excluirDiagnosticoCompletoPorCliente({
+        clienteId,
+        clienteNome,
+        empresaNome: empresaNome || clienteNome,
+      })
+      totalDiagnosticos += resDiag.totalDiagnosticosExcluidos
+      totalRelatorios += resDiag.totalRelatoriosExcluidos
+    } catch (e) {
+      console.warn('Erro ao excluir diagnósticos completos:', e)
+    }
+
+    // Garante exclusão de relatórios extras por nome
+    try {
+      const { excluirHistoricoRelatoriosPorCliente } =
+        await import('@/services/historicoRelatorios')
+      const relExtra = await excluirHistoricoRelatoriosPorCliente({
+        clienteId,
+        clienteNome,
+        empresaNome: empresaNome || clienteNome,
+      })
+      totalRelatorios += relExtra
+    } catch (e) {
+      console.warn('Erro ao excluir histórico de relatórios:', e)
+    }
+
+    // 2. Simulações da Calculadora IBS/CBS
+    try {
+      const { excluirSimulacoesCalculadoraPorCliente } =
+        await import('@/services/simulacoesCalculadora')
+      totalSimulacoes = await excluirSimulacoesCalculadoraPorCliente(clienteId)
+    } catch (e) {
+      console.warn('Erro ao excluir simulações da calculadora:', e)
+    }
+
+    // 3. Simulações do Recuperador
+    try {
+      const recs = await pb
+        .collection('simulacoes_recuperador')
+        .getFullList({
+          filter: `cliente_id = "${clienteId}"`,
+        })
+        .catch(() => [])
+      for (const r of recs) {
+        await pb
+          .collection('simulacoes_recuperador')
+          .delete(r.id)
+          .catch(() => {})
+      }
+    } catch {
+      /* intentionally ignored */
+    }
+
+    // 4. Conversas do assistente vinculadas ao cliente
+    try {
+      const convs = await pb
+        .collection('conversas_assistente')
+        .getFullList({
+          filter: `cliente_id = "${clienteId}"`,
+        })
+        .catch(() => [])
+      for (const c of convs) {
+        await pb
+          .collection('conversas_assistente')
+          .delete(c.id)
+          .catch(() => {})
+      }
+    } catch {
+      /* intentionally ignored */
+    }
+  }
+
+  // 5. Excluir o registro principal de cadastro
+  if (collectionOrigem === 'clientes_empresas') {
+    try {
+      await pb.collection('clientes_empresas').delete(clienteId)
+    } catch (err) {
+      console.warn('Tentando fallback para clientes:', err)
+      await pb
+        .collection('clientes')
+        .delete(clienteId)
+        .catch(() => {})
+    }
+  } else {
+    try {
+      await pb.collection('clientes').delete(clienteId)
+    } catch (err) {
+      console.warn('Tentando fallback para clientes_empresas:', err)
+      await pb
+        .collection('clientes_empresas')
+        .delete(clienteId)
+        .catch(() => {})
+    }
+  }
+
+  // Limpa também do localStorage de carteira se existir
+  try {
+    const raw = localStorage.getItem('contabilidade50_carteira_clientes_v1')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        const filtrados = parsed.filter((c: any) => c.id !== clienteId)
+        localStorage.setItem('contabilidade50_carteira_clientes_v1', JSON.stringify(filtrados))
+      }
+    }
+  } catch {
+    /* intentionally ignored */
+  }
+
+  // Se o cliente era o Cliente Ativo no localStorage, limpa
+  try {
+    const ativoId = localStorage.getItem('contabilidade50_cliente_ativo_id_v1')
+    if (ativoId === clienteId) {
+      localStorage.removeItem('contabilidade50_cliente_ativo_id_v1')
+    }
+  } catch {
+    /* intentionally ignored */
+  }
+
+  return {
+    success: true,
+    totalDiagnosticos,
+    totalSimulacoes,
+    totalRelatorios,
+  }
+}
+
+/**
+ * Transfere a carteira de clientes (e registros vinculados) de um analista para outro (ou para o master).
+ */
+export async function transferirCarteiraAnalista(params: {
+  analistaOrigemId: string
+  analistaDestinoId: string
+}): Promise<{ totalTransferidos: number }> {
+  const { analistaOrigemId, analistaDestinoId } = params
+  let totalTransferidos = 0
+
+  // 1. Atualizar clientes vinculados na coleção 'clientes'
+  try {
+    const clientesLista = await pb
+      .collection('clientes')
+      .getFullList({
+        filter: `user_id = "${analistaOrigemId}"`,
+      })
+      .catch(() => [])
+
+    for (const c of clientesLista) {
+      await pb.collection('clientes').update(c.id, {
+        user_id: analistaDestinoId,
+      })
+      totalTransferidos++
+    }
+  } catch (err) {
+    console.error('Erro ao transferir clientes:', err)
+  }
+
+  // 2. Atualizar clientes_empresas vinculados se o analista era o dono
+  try {
+    const empresasLista = await pb
+      .collection('clientes_empresas')
+      .getFullList({
+        filter: `user_id = "${analistaOrigemId}"`,
+      })
+      .catch(() => [])
+
+    for (const ce of empresasLista) {
+      await pb.collection('clientes_empresas').update(ce.id, {
+        user_id: analistaDestinoId,
+      })
+    }
+  } catch (err) {
+    console.warn('Erro ao transferir clientes_empresas:', err)
+  }
+
+  // 3. Atualizar convites pendentes/aceitos do analista de origem
+  try {
+    const convites = await pb
+      .collection('convites_clientes')
+      .getFullList({
+        filter: `analista_id = "${analistaOrigemId}"`,
+      })
+      .catch(() => [])
+
+    for (const conv of convites) {
+      await pb.collection('convites_clientes').update(conv.id, {
+        analista_id: analistaDestinoId,
+      })
+    }
+  } catch (err) {
+    console.warn('Erro ao transferir convites:', err)
+  }
+
+  // 4. Atualizar diagnósticos e simulações com user_id do analista de origem
+  try {
+    const diags = await pb
+      .collection('diagnosticos')
+      .getFullList({
+        filter: `user_id = "${analistaOrigemId}"`,
+      })
+      .catch(() => [])
+    for (const d of diags) {
+      await pb
+        .collection('diagnosticos')
+        .update(d.id, { user_id: analistaDestinoId })
+        .catch(() => {})
+    }
+  } catch {
+    /* intentionally ignored */
+  }
+
+  try {
+    const sims = await pb
+      .collection('simulacoes_calculadora')
+      .getFullList({
+        filter: `user_id = "${analistaOrigemId}"`,
+      })
+      .catch(() => [])
+    for (const s of sims) {
+      await pb
+        .collection('simulacoes_calculadora')
+        .update(s.id, { user_id: analistaDestinoId })
+        .catch(() => {})
+    }
+  } catch {
+    /* intentionally ignored */
+  }
+
+  return { totalTransferidos }
+}
+
+/**
+ * Exclui um Analista:
+ * 1. Transfere os clientes da carteira dele para o analista destino (ou master)
+ * 2. Remove o registro do usuário na coleção 'users'
+ */
+export async function excluirAnalista(params: {
+  analistaId: string
+  analistaDestinoId: string
+}): Promise<{ success: boolean; totalTransferidos: number }> {
+  const { analistaId, analistaDestinoId } = params
+
+  // 1. Transfere a carteira antes de excluir
+  const { totalTransferidos } = await transferirCarteiraAnalista({
+    analistaOrigemId: analistaId,
+    analistaDestinoId,
+  })
+
+  // 2. Remove o usuário analista da coleção 'users'
+  await pb.collection('users').delete(analistaId)
+
+  return { success: true, totalTransferidos }
+}
+
+/**
+ * Exclui um Usuário do sistema (Aba Usuários & Permissões):
+ * - Marco Chagas (marcoschagasdiamond@icloud.com ou nivel_acesso = 'master') NUNCA pode ser excluído
+ * - Apenas Master pode excluir Admins
+ * - Trata vínculos órfãos desassociando ou transferindo para o master
+ */
+export async function excluirUsuario(params: {
+  usuarioId: string
+  executorNivel: NivelAcesso
+  executorEmail?: string
+  masterId?: string
+}): Promise<boolean> {
+  const { usuarioId, executorNivel, executorEmail, masterId } = params
+
+  // 1. Carrega dados do usuário a ser excluído
+  const alvo = await pb.collection('users').getOne(usuarioId)
+  if (!alvo) {
+    throw new Error('Usuário não encontrado.')
+  }
+
+  const emailAlvo = (alvo.email || '').toLowerCase()
+  const nivelAlvo = ((alvo as any).nivel_acesso || alvo.role || 'empresario') as NivelAcesso
+
+  // Marco Chagas NUNCA pode ser excluído
+  if (emailAlvo === 'marcoschagasdiamond@icloud.com' || nivelAlvo === 'master') {
+    throw new Error(
+      'O Administrador Master (Dr. Marco Chagas) é o titular vitalício e não pode ser excluído.',
+    )
+  }
+
+  // Apenas Master pode excluir Admins
+  const ehMasterExecutor =
+    executorNivel === 'master' || executorEmail?.toLowerCase() === 'marcoschagasdiamond@icloud.com'
+  if (nivelAlvo === 'admin' && !ehMasterExecutor) {
+    throw new Error(
+      'Permissão negada: apenas o Administrador Master tem autoridade para excluir Administradores.',
+    )
+  }
+
+  // 2. Trata vínculos órfãos:
+  // Se tiver clientes vinculados e houver masterId, transfere a posse dos clientes para o master
+  if (masterId && masterId !== usuarioId) {
+    try {
+      await transferirCarteiraAnalista({
+        analistaOrigemId: usuarioId,
+        analistaDestinoId: masterId,
+      })
+    } catch (e) {
+      console.warn('Erro ao reassociar registros ao master:', e)
+    }
+  }
+
+  // 3. Exclui o registro na coleção users
+  await pb.collection('users').delete(usuarioId)
+
+  return true
+}
+
 export async function obterMetricasAnalistas(): Promise<AnalistaMetricasItem[]> {
   const [usuarios, clientesGlobais, diags, sims] = await Promise.all([
     listarTodosUsuarios(),

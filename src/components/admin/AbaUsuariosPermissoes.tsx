@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import type { UsuarioSistema, NivelAcesso, PermissaoMaster } from '@/types/master'
 import { TODAS_PERMISSOES } from '@/types/master'
 import { atualizarNivelEPermissoesUsuario } from '@/services/master'
+import { ModalExcluirUsuario } from '@/components/admin/ModalExcluirUsuario'
 import {
   Dialog,
   DialogContent,
@@ -16,7 +17,11 @@ interface AbaUsuariosPermissoesProps {
   isLoading: boolean
   isMaster: boolean
   usuarioLogadoId?: string
+  usuarioLogadoEmail?: string
+  nivelLogado?: NivelAcesso
+  masterId?: string
   onAtualizar: () => void
+  onFeedback?: (feedback: { tipo: 'sucesso' | 'erro'; mensagem: string } | null) => void
 }
 
 export function AbaUsuariosPermissoes({
@@ -24,7 +29,11 @@ export function AbaUsuariosPermissoes({
   isLoading,
   isMaster,
   usuarioLogadoId,
+  usuarioLogadoEmail,
+  nivelLogado = 'master',
+  masterId,
   onAtualizar,
+  onFeedback,
 }: AbaUsuariosPermissoesProps) {
   const [busca, setBusca] = useState('')
   const [filtroNivel, setFiltroNivel] = useState<string>('todos')
@@ -36,6 +45,9 @@ export function AbaUsuariosPermissoes({
   const [isSalvando, setIsSalvando] = useState(false)
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null)
   const [mensagemErro, setMensagemErro] = useState<string | null>(null)
+
+  // Estado do Modal de Exclusão de Usuário
+  const [usuarioParaExcluir, setUsuarioParaExcluir] = useState<UsuarioSistema | null>(null)
 
   const usuariosFiltrados = usuarios.filter((u) => {
     const termo = busca.toLowerCase().trim()
@@ -284,19 +296,37 @@ export function AbaUsuariosPermissoes({
                       </td>
 
                       <td className="py-4 px-5 text-right">
-                        {isMaster && !ehMarco ? (
-                          <button
-                            type="button"
-                            onClick={() => abrirModalEdicao(u)}
-                            className="px-3.5 py-1.5 rounded-lg bg-[#07132B] hover:bg-[#D4AF37] hover:text-[#07132B] text-white text-xs font-bold transition-all"
-                          >
-                            Editar Funções
-                          </button>
-                        ) : ehMarco ? (
-                          <span className="text-xs text-slate-400 font-medium">Titular Master</span>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">Apenas Master</span>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {isMaster && !ehMarco ? (
+                            <button
+                              type="button"
+                              onClick={() => abrirModalEdicao(u)}
+                              className="px-3 py-1.5 rounded-lg bg-[#07132B] hover:bg-[#D4AF37] hover:text-[#07132B] text-white text-xs font-bold transition-all"
+                            >
+                              Editar Funções
+                            </button>
+                          ) : null}
+
+                          {/* Botão Excluir Usuário: Marco Chagas não pode ser excluído; Apenas Master exclui Admin */}
+                          {!ehMarco && (isMaster || u.nivel_acesso !== 'admin') ? (
+                            <button
+                              type="button"
+                              onClick={() => setUsuarioParaExcluir(u)}
+                              className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition-colors"
+                              title="Excluir usuário do sistema"
+                            >
+                              Excluir Usuário
+                            </button>
+                          ) : ehMarco ? (
+                            <span className="text-xs text-slate-400 font-medium px-2">
+                              Titular Master
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic px-2">
+                              Apenas Master
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -463,6 +493,30 @@ export function AbaUsuariosPermissoes({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* MODAL DE EXCLUSÃO DE USUÁRIO */}
+      <ModalExcluirUsuario
+        open={!!usuarioParaExcluir}
+        onOpenChange={(open) => {
+          if (!open) setUsuarioParaExcluir(null)
+        }}
+        usuario={usuarioParaExcluir}
+        executorNivel={nivelLogado}
+        executorEmail={usuarioLogadoEmail}
+        masterId={masterId || usuarioLogadoId}
+        onSucesso={(msg) => {
+          setUsuarioParaExcluir(null)
+          onAtualizar()
+          if (onFeedback) {
+            onFeedback({ tipo: 'sucesso', mensagem: msg })
+          }
+        }}
+        onErro={(msg) => {
+          if (onFeedback) {
+            onFeedback({ tipo: 'erro', mensagem: msg })
+          }
+        }}
+      />
     </div>
   )
 }

@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
 import type { ClienteGlobalItem } from '@/types/master'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
+import { ModalExcluirClienteGlobal } from '@/components/admin/ModalExcluirClienteGlobal'
 
 interface AbaClientesVisaoGlobalProps {
   clientes: ClienteGlobalItem[]
   isLoading: boolean
   onSelecionarCliente: (cliente: ClienteGlobalItem) => void
   onAtualizar: () => void
+  onFeedback?: (feedback: { tipo: 'sucesso' | 'erro'; mensagem: string } | null) => void
 }
 
 export function AbaClientesVisaoGlobal({
@@ -14,11 +16,13 @@ export function AbaClientesVisaoGlobal({
   isLoading,
   onSelecionarCliente,
   onAtualizar,
+  onFeedback,
 }: AbaClientesVisaoGlobalProps) {
   const [busca, setBusca] = useState('')
   const [filtroOrigem, setFiltroOrigem] = useState<'todos' | 'analista' | 'direto'>('todos')
   const [filtroSegmento, setFiltroSegmento] = useState('todos')
   const [filtroRegime, setFiltroRegime] = useState('todos')
+  const [clienteParaExcluir, setClienteParaExcluir] = useState<ClienteGlobalItem | null>(null)
 
   const clientesFiltrados = clientes.filter((c) => {
     const termo = busca.toLowerCase().trim()
@@ -300,16 +304,29 @@ export function AbaClientesVisaoGlobal({
                     </td>
 
                     <td className="py-4 px-5 text-right">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onSelecionarCliente(item)
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-[#07132B] hover:bg-[#07132B]/90 text-white text-xs font-semibold transition-colors"
-                      >
-                        Ver Detalhes
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onSelecionarCliente(item)
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-[#07132B] hover:bg-[#07132B]/90 text-white text-xs font-semibold transition-colors"
+                        >
+                          Ver Detalhes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setClienteParaExcluir(item)
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition-colors"
+                          title="Excluir cliente e dados vinculados"
+                        >
+                          Excluir Cliente
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -318,6 +335,27 @@ export function AbaClientesVisaoGlobal({
           </div>
         )}
       </div>
+
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      <ModalExcluirClienteGlobal
+        open={!!clienteParaExcluir}
+        onOpenChange={(open) => {
+          if (!open) setClienteParaExcluir(null)
+        }}
+        cliente={clienteParaExcluir}
+        onSucesso={(msg) => {
+          setClienteParaExcluir(null)
+          onAtualizar()
+          if (onFeedback) {
+            onFeedback({ tipo: 'sucesso', mensagem: msg })
+          }
+        }}
+        onErro={(msg) => {
+          if (onFeedback) {
+            onFeedback({ tipo: 'erro', mensagem: msg })
+          }
+        }}
+      />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T20:40:44.869Z",
+  "generatedAt": "2026-10-27T21:03:24.648Z",
   "collections": [
     {
       "name": "users",
@@ -9,7 +9,7 @@
         "view": "@request.auth.id != \"\"",
         "create": "",
         "update": "(@request.auth.nivel_acesso = \"master\" || @request.auth.role = \"admin\" || @request.auth.email = \"marcoschagasdiamond@icloud.com\") || (id = @request.auth.id && @request.body.nivel_acesso:changed = false && @request.body.permissoes_json:changed = false && @request.body.criado_por:changed = false && @request.body.role:changed = false && @request.body.plano:changed = false && @request.body.is_premium:changed = false)",
-        "delete": "id = @request.auth.id"
+        "delete": "email != 'marcoschagasdiamond@icloud.com' && nivel_acesso != 'master' && (id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || (@request.auth.nivel_acesso = 'admin' && nivel_acesso != 'admin' && nivel_acesso != 'master'))"
       },
       "fields": [
         {
@@ -488,8 +488,8 @@
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
         "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.email = 'marcoschagasdiamond@icloud.com')",
-        "delete": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.email = 'marcoschagasdiamond@icloud.com')"
+        "update": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')",
+        "delete": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')"
       },
       "fields": [
         {
@@ -964,11 +964,11 @@
       "name": "convites_clientes",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != \"\" && (analista_id = @request.auth.id || @request.auth.role = \"admin\")",
+        "list": "@request.auth.id != '' && (analista_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')",
         "view": "",
         "create": "@request.auth.id != \"\"",
-        "update": "@request.auth.id != \"\" && (analista_id = @request.auth.id || @request.auth.role = \"admin\")",
-        "delete": "@request.auth.id != \"\" && (analista_id = @request.auth.id || @request.auth.role = \"admin\")"
+        "update": "@request.auth.id != '' && (analista_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')",
+        "delete": "@request.auth.id != '' && (analista_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')"
       },
       "fields": [
         {
