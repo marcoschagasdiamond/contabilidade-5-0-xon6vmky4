@@ -15,9 +15,37 @@ const STORAGE_USUARIOS_KEY = 'c50_master_usuarios'
  */
 export async function listarTodosUsuarios(): Promise<UsuarioSistema[]> {
   try {
-    const records = await pb.collection('users').getFullList({
-      sort: '-created',
-      expand: 'criado_por',
+    const [records, diags, sims, clientes] = await Promise.all([
+      pb.collection('users').getFullList({
+        sort: '-created',
+        expand: 'criado_por,autorizado_por',
+      }),
+      pb
+        .collection('diagnosticos')
+        .getFullList({ fields: 'id,user_id' })
+        .catch(() => []),
+      pb
+        .collection('simulacoes_calculadora')
+        .getFullList({ fields: 'id,user_id' })
+        .catch(() => []),
+      pb
+        .collection('clientes')
+        .getFullList({ fields: 'id,user_id' })
+        .catch(() => []),
+    ])
+
+    // Mapa de contadores por user_id
+    const diagsCount = new Map<string, number>()
+    diags.forEach((d: any) => {
+      if (d.user_id) diagsCount.set(d.user_id, (diagsCount.get(d.user_id) || 0) + 1)
+    })
+    const simsCount = new Map<string, number>()
+    sims.forEach((s: any) => {
+      if (s.user_id) simsCount.set(s.user_id, (simsCount.get(s.user_id) || 0) + 1)
+    })
+    const clientesCount = new Map<string, number>()
+    clientes.forEach((c: any) => {
+      if (c.user_id) clientesCount.set(c.user_id, (clientesCount.get(c.user_id) || 0) + 1)
     })
 
     const usuarios: UsuarioSistema[] = records.map((r: any) => {
@@ -39,6 +67,8 @@ export async function listarTodosUsuarios(): Promise<UsuarioSistema[]> {
           (r.role === 'admin' ? 'admin' : r.perfil === 'empresario' ? 'empresario' : 'analista')
 
       const criadorExpand = r.expand?.criado_por
+      const autorizadorExpand = r.expand?.autorizado_por
+
       return {
         id: r.id,
         name:
@@ -55,6 +85,20 @@ export async function listarTodosUsuarios(): Promise<UsuarioSistema[]> {
         updated: r.updated,
         criador_nome: criadorExpand?.name || criadorExpand?.email,
         criador_email: criadorExpand?.email,
+        // Novos campos
+        valor_mensal_personalizado:
+          typeof r.valor_mensal_personalizado === 'number'
+            ? r.valor_mensal_personalizado
+            : undefined,
+        status_operacao:
+          (r.status_operacao as 'autorizado' | 'suspenso') ||
+          (nivel === 'analista' ? 'autorizado' : undefined),
+        autorizado_por: r.autorizado_por,
+        autorizado_por_nome: autorizadorExpand?.name || autorizadorExpand?.email,
+        autorizado_em: r.autorizado_em,
+        total_clientes: clientesCount.get(r.id) || 0,
+        total_diagnosticos: diagsCount.get(r.id) || 0,
+        total_simulacoes: simsCount.get(r.id) || 0,
       }
     })
 
@@ -692,4 +736,142 @@ export async function obterMetricasAnalistas(): Promise<AnalistaMetricasItem[]> 
       clientes_carteira: carteira,
     }
   })
+}
+
+/**
+ * Atualiza o controle comercial do Analista:
+ * - valor_mensal_personalizado (padrão R$ 347, pode ser abaixado pelo admin)
+ * - status_operacao ('autorizado' | 'suspenso')
+ * - autorizado_por e autorizado_em
+ */
+export async function atualizarControleComercialAnalista(params: {
+  analistaId: string
+  status_operacao: 'autorizado' | 'suspenso'
+  valor_mensal_personalizado?: number | null
+  autorizadorId?: string
+}): Promise<boolean> {
+  const { analistaId, status_operacao, valor_mensal_personalizado, autorizadorId } = params
+
+  const payload: Record<string, any> = {
+    status_operacao,
+    valor_mensal_personalizado:
+      typeof valor_mensal_personalizado === 'number' && valor_mensal_personalizado >= 0
+        ? valor_mensal_personalizado
+        : null,
+  }
+
+  if (autorizadorId) {
+    payload.autorizado_por = autorizadorId
+    payload.autorizado_em = new Date().toISOString()
+  }
+
+  await pb.collection('users').update(analistaId, payload)
+  return true
+}
+
+/**
+ * Atualiza dados cadastrais básicos de um usuário (nome, e-mail, telefone/whats)
+ */
+export async function atualizarDadosBasicosUsuario(params: {
+  usuarioId: string
+  name: string
+}): Promise<boolean> {
+  const { usuarioId, name } = params
+  await pb.collection('users').update(usuarioId, { name })
+  return true
+}
+
+/**
+ * Suspende ou reactiva o acesso de um usuário empresário/cliente
+ */
+export async function alternarStatusOperacaoUsuario(params: {
+  usuarioId: string
+  novoStatus: 'autorizado' | 'suspenso'
+  autorizadorId?: string
+}): Promise<boolean> {
+  const { usuarioId, novoStatus, autorizadorId } = params
+  const payload: Record<string, any> = {
+    status_operacao: novoStatus,
+  }
+  if (autorizadorId) {
+    payload.autorizado_por = autorizadorId
+    payload.autorizado_em = new Date().toISOString()
+  }
+  await pb.collection('users').update(usuarioId, payload)
+  return true
+}
+
+/**
+ * Criação manual de usuário pelo Master/Admin chamando o hook do backend
+ */
+export async function incluirUsuarioManual(params: {
+  nome: string
+  email: string
+  whatsapp?: string
+  nivel_acesso: NivelAcesso
+  permissoes_json?: PermissaoMaster[]
+  valor_mensal_personalizado?: number
+  status_operacao?: 'autorizado' | 'suspenso'
+}): Promise<{ success: boolean; message?: string; error?: string; email_enviado?: boolean }> {
+  try {
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const res = await pb.send('/backend/v1/usuarios/incluir-manual', {
+      method: 'POST',
+      body: {
+        nome: params.nome.trim(),
+        email: params.email.trim().toLowerCase(),
+        whatsapp: params.whatsapp?.trim(),
+        nivel_acesso: params.nivel_acesso,
+        permissoes_json: params.permissoes_json || [],
+        valor_mensal_personalizado: params.valor_mensal_personalizado,
+        status_operacao: params.status_operacao || 'autorizado',
+        base_url: origin,
+      },
+    })
+    return res
+  } catch (err: any) {
+    console.error('Erro ao incluir usuário manualmente:', err)
+    return {
+      success: false,
+      error:
+        err?.data?.message ||
+        err?.message ||
+        'Não foi possível criar o usuário. Verifique se o e-mail já existe.',
+    }
+  }
+}
+
+/**
+ * Envio de convite com nível pré-definido (admin, analista, empresario)
+ */
+export async function enviarConviteComNivel(params: {
+  email: string
+  nivel_convite: NivelAcesso
+  whatsapp?: string
+  mensagem?: string
+  cliente_id?: string
+  cliente_nome?: string
+}): Promise<{ success: boolean; link?: string; error?: string }> {
+  try {
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const res = await pb.send('/backend/v1/convites/enviar', {
+      method: 'POST',
+      body: {
+        email: params.email.trim().toLowerCase(),
+        nivel_convite: params.nivel_convite,
+        whatsapp: params.whatsapp?.trim(),
+        mensagem: params.mensagem?.trim(),
+        cliente_id: params.cliente_id || '',
+        cliente_nome: params.cliente_nome || '',
+        base_url: origin,
+      },
+    })
+    return res
+  } catch (err: any) {
+    console.error('Erro ao enviar convite com nível:', err)
+    return {
+      success: false,
+      error: err?.data?.message || err?.message || 'Falha ao enviar convite por e-mail.',
+    }
+  }
 }

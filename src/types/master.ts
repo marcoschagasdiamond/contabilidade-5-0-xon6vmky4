@@ -44,6 +44,16 @@ export interface UsuarioSistema {
   updated?: string
   criador_nome?: string
   criador_email?: string
+  // Novos campos de controle comercial (migração 0029)
+  valor_mensal_personalizado?: number
+  status_operacao?: 'autorizado' | 'suspenso'
+  autorizado_por?: string
+  autorizado_por_nome?: string
+  autorizado_em?: string
+  // Métricas agregadas
+  total_clientes?: number
+  total_diagnosticos?: number
+  total_simulacoes?: number
 }
 
 export interface ClienteGlobalItem {

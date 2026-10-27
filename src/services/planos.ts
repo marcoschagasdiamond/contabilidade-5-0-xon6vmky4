@@ -132,9 +132,13 @@ export interface EnviarConviteInput {
   email: string
   cliente_id?: string
   cliente_nome?: string
+  status?: 'pendente' | 'aceito' | 'expirado'
+  nivel_convite?: 'admin' | 'analista' | 'empresario'
+  analista_id?: string
+  analista_nome?: string
   mensagem?: string
+  whatsapp?: string
 }
-
 /**
  * Envia um convite de cliente via backend hook (utiliza o SMTP ativo do PocketBase)
  */
@@ -234,6 +238,7 @@ export async function validarTokenConvite(token: string): Promise<{
   status: string
   analista_id: string
   analista_nome: string
+  nivel_convite?: 'admin' | 'analista' | 'empresario'
 } | null> {
   try {
     const res = await pb.send(`/backend/v1/convites/validar/${encodeURIComponent(token)}`, {

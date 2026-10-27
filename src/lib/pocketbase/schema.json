@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T21:03:24.648Z",
+  "generatedAt": "2026-10-27T21:24:46.065Z",
   "collections": [
     {
       "name": "users",
@@ -8,7 +8,7 @@
         "list": "@request.auth.id != \"\"",
         "view": "@request.auth.id != \"\"",
         "create": "",
-        "update": "(@request.auth.nivel_acesso = \"master\" || @request.auth.role = \"admin\" || @request.auth.email = \"marcoschagasdiamond@icloud.com\") || (id = @request.auth.id && @request.body.nivel_acesso:changed = false && @request.body.permissoes_json:changed = false && @request.body.criado_por:changed = false && @request.body.role:changed = false && @request.body.plano:changed = false && @request.body.is_premium:changed = false)",
+        "update": "(@request.auth.nivel_acesso = \"master\" || @request.auth.role = \"admin\" || @request.auth.email = \"marcoschagasdiamond@icloud.com\") || (id = @request.auth.id && @request.body.nivel_acesso:changed = false && @request.body.permissoes_json:changed = false && @request.body.criado_por:changed = false && @request.body.role:changed = false && @request.body.plano:changed = false && @request.body.is_premium:changed = false && @request.body.valor_mensal_personalizado:changed = false && @request.body.status_operacao:changed = false && @request.body.autorizado_por:changed = false && @request.body.autorizado_em:changed = false)",
         "delete": "email != 'marcoschagasdiamond@icloud.com' && nivel_acesso != 'master' && (id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || (@request.auth.nivel_acesso = 'admin' && nivel_acesso != 'admin' && nivel_acesso != 'master'))"
       },
       "fields": [
@@ -102,6 +102,32 @@
           "required": false,
           "system": false,
           "collectionRef": "users"
+        },
+        {
+          "name": "valor_mensal_personalizado",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status_operacao",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["autorizado", "suspenso"]
+        },
+        {
+          "name": "autorizado_por",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "autorizado_em",
+          "type": "date",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -1048,6 +1074,19 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "nivel_convite",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["admin", "analista", "empresario"]
+        },
+        {
+          "name": "whatsapp",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

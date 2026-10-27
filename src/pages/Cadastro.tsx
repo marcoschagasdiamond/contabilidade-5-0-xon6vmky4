@@ -33,6 +33,7 @@ export default function Cadastro() {
     status: string
     analista_id: string
     analista_nome: string
+    nivel_convite?: 'admin' | 'analista' | 'empresario'
   } | null>(null)
   const [validandoConvite, setValidandoConvite] = useState(false)
 
@@ -43,8 +44,9 @@ export default function Cadastro() {
 
   const tokenConvite = searchParams.get('convite')
   const emailParam = searchParams.get('email')
+  const nivelParam = searchParams.get('nivel')
 
-  // Se houver token de convite na URL, valida no backend e pré-configura para Empresário
+  // Se houver token de convite na URL, valida no backend e pré-configura o perfil correto
   React.useEffect(() => {
     if (tokenConvite) {
       setValidandoConvite(true)
@@ -52,7 +54,12 @@ export default function Cadastro() {
         .then((dados) => {
           if (dados) {
             setDadosConvite(dados)
-            setPerfil('empresario') // Conta criada com perfil Empresário
+            const nivelEfetivo = dados.nivel_convite || nivelParam
+            if (nivelEfetivo === 'admin' || nivelEfetivo === 'analista') {
+              setPerfil('contador')
+            } else {
+              setPerfil('empresario')
+            }
             if (dados.email) {
               setEmail(dados.email)
             }
@@ -64,7 +71,7 @@ export default function Cadastro() {
     } else if (emailParam) {
       setEmail(emailParam)
     }
-  }, [tokenConvite, emailParam])
+  }, [tokenConvite, emailParam, nivelParam])
 
   // Helper para obter o destino de retorno (state ou query param ?redirect=...)
   const getDestination = (): string | null => {
@@ -106,12 +113,18 @@ export default function Cadastro() {
     setIsLoading(true)
 
     try {
-      // Se tiver token de convite, força perfil 'empresario'
-      const perfilFinal: PerfilUsuario = tokenConvite ? 'empresario' : perfil
+      // Determina perfil final conforme o convite
+      let perfilFinal: PerfilUsuario = perfil
+      if (dadosConvite?.nivel_convite) {
+        perfilFinal =
+          dadosConvite.nivel_convite === 'admin' || dadosConvite.nivel_convite === 'analista'
+            ? 'contador'
+            : 'empresario'
+      }
 
       await signup(nome, email, password, passwordConfirm, perfilFinal)
 
-      // Se cadastrou via convite, chama aceitarConviteCliente para atualizar status e vínculos
+      // Se cadastrou via convite, chama aceitarConviteCliente para atualizar status, vínculos e nível
       if (tokenConvite) {
         try {
           await aceitarConviteCliente(tokenConvite)
@@ -120,11 +133,14 @@ export default function Cadastro() {
         }
       }
 
-      // Após cadastrar, direciona para o destino solicitado ou conforme perfil
-      // Para contador: dados-empresa ou destino
-      // Para empresário: minha-conta
+      // Destino inteligente
       const target =
-        destination || (perfilFinal === 'empresario' ? '/minha-conta' : '/dados-empresa')
+        destination ||
+        (dadosConvite?.nivel_convite === 'admin'
+          ? '/admin'
+          : perfilFinal === 'empresario'
+            ? '/minha-conta'
+            : '/dados-empresa')
       navigate(target, { replace: true })
     } catch (err: any) {
       console.error('Falha no cadastro:', err)
@@ -164,10 +180,10 @@ export default function Cadastro() {
             <div className="mb-6 p-4 bg-gradient-to-br from-[#07132B] to-[#0d2249] text-white rounded-2xl border border-[#D4AF37] shadow-md space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider">
-                  Convite de Analista Reconhecido
+                  Convite Oficial Diamond Group
                 </span>
-                <span className="text-[10px] font-bold bg-[#D4AF37] text-[#07132B] px-2 py-0.5 rounded">
-                  Modo Teste Grátis
+                <span className="text-[10px] font-bold bg-[#D4AF37] text-[#07132B] px-2 py-0.5 rounded uppercase">
+                  Nível {dadosConvite.nivel_convite || 'Empresário'}
                 </span>
               </div>
               <p className="leading-relaxed text-slate-200">
@@ -178,12 +194,18 @@ export default function Cadastro() {
                 .
               </p>
               <div className="p-2.5 rounded-xl bg-white/10 border border-white/10 text-[11px] text-slate-300">
-                Sua conta será criada com o <strong>Plano Empresário</strong>, vinculado diretamente
-                à carteira do seu analista contábil.
+                Sua conta será criada no nível{' '}
+                <strong>
+                  {dadosConvite.nivel_convite === 'admin'
+                    ? 'Administrador'
+                    : dadosConvite.nivel_convite === 'analista'
+                      ? 'Analista & Parceiro'
+                      : 'Empresário / Cliente'}
+                </strong>
+                .
               </div>
             </div>
           )}
-
           {/* Benefícios rápidos */}
           {!dadosConvite && (
             <div className="mb-6 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1.5">
