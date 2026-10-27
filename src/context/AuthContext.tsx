@@ -3,6 +3,7 @@ import pb from '@/lib/pocketbase/client'
 import type { RecordModel } from 'pocketbase'
 
 export type PerfilUsuario = 'contador' | 'empresario'
+export type NivelAcesso = 'master' | 'admin' | 'analista' | 'empresario'
 
 interface AuthContextType {
   user: RecordModel | null
@@ -10,6 +11,10 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   isAdmin: boolean
+  isMaster: boolean
+  nivelAcesso: NivelAcesso
+  permissoes: string[]
+  temPermissao: (perm: string) => boolean
   isPremium: boolean
   perfil: PerfilUsuario
   isContador: boolean
@@ -101,8 +106,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null)
   }
 
-  const isAdmin =
-    (user as any)?.role === 'admin' || user?.email === 'marcoschagasdiamond@icloud.com'
+  const isEmailMarco = user?.email?.toLowerCase() === 'marcoschagasdiamond@icloud.com'
+  const rawNivel = (user as any)?.nivel_acesso as NivelAcesso | undefined
+
+  const isMaster = isEmailMarco || rawNivel === 'master'
+
+  const isAdmin = isMaster || rawNivel === 'admin' || (user as any)?.role === 'admin'
+
+  const nivelAcesso: NivelAcesso = isMaster
+    ? 'master'
+    : rawNivel === 'admin'
+      ? 'admin'
+      : (user as any)?.perfil === 'empresario' || rawNivel === 'empresario'
+        ? 'empresario'
+        : 'analista'
+
+  let rawPermissoes = (user as any)?.permissoes_json
+  if (typeof rawPermissoes === 'string') {
+    try {
+      rawPermissoes = JSON.parse(rawPermissoes)
+    } catch (_) {
+      rawPermissoes = []
+    }
+  }
+  const permissoes: string[] = Array.isArray(rawPermissoes) ? rawPermissoes : []
+
+  const temPermissao = (perm: string): boolean => {
+    if (isMaster) return true
+    if (permissoes.includes(perm)) return true
+    return false
+  }
 
   // Perfil: 'contador' ou 'empresario'. Se não preenchido ou vazio, padrão seguro é 'contador'
   const rawPerfil = (user as any)?.perfil
@@ -143,6 +176,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         isAuthenticated: !!token && !!user,
         isAdmin,
+        isMaster,
+        nivelAcesso,
+        permissoes,
+        temPermissao,
         isPremium,
         perfil,
         isContador,

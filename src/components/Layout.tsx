@@ -31,7 +31,7 @@ export default function Layout() {
 
   const location = useLocation()
   const navigate = useNavigate()
-  const { isAuthenticated, user, isAdmin, isEmpresario, logout } = useAuth()
+  const { isAuthenticated, user, isAdmin, isMaster, isEmpresario, logout } = useAuth()
   const { temDadosSalvos } = useDadosEmpresa()
 
   const nomeExibicao = (user as any)?.name || user?.email?.split('@')[0] || 'Usuário'
@@ -366,7 +366,7 @@ export default function Layout() {
                             onClick={() => setIsUserMenuOpen(false)}
                             className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:bg-white/10 transition-colors font-semibold"
                           >
-                            Painel Administrativo
+                            {isMaster ? 'Painel Master (Dr. Marco)' : 'Painel Administrativo'}
                           </Link>
                         )}
                       </div>
@@ -527,7 +527,7 @@ export default function Layout() {
                           onClick={() => setIsMobileMenuOpen(false)}
                           className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:bg-white/10 transition-colors font-semibold"
                         >
-                          Painel Administrativo
+                          {isMaster ? 'Painel Master (Dr. Marco)' : 'Painel Administrativo'}
                         </Link>
                       )}
 

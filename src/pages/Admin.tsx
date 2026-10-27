@@ -48,11 +48,38 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
-type TabTipo = 'clientes' | 'leads' | 'diagnosticos'
+import { AbaClientesVisaoGlobal } from '@/components/admin/AbaClientesVisaoGlobal'
+import { AbaAnalistasParceiros } from '@/components/admin/AbaAnalistasParceiros'
+import { AbaUsuariosPermissoes } from '@/components/admin/AbaUsuariosPermissoes'
+import { ModalFichaClienteGlobal } from '@/components/admin/ModalFichaClienteGlobal'
+import {
+  listarClientesVisaoGlobal,
+  obterMetricasAnalistas,
+  listarTodosUsuarios,
+} from '@/services/master'
+import type { ClienteGlobalItem, AnalistaMetricasItem, UsuarioSistema } from '@/types/master'
+
+type TabTipo =
+  | 'visao_global'
+  | 'analistas'
+  | 'usuarios_permissoes'
+  | 'clientes'
+  | 'leads'
+  | 'diagnosticos'
 
 export default function Admin() {
-  const { user, logout } = useAuth()
-  const [activeTab, setActiveTab] = useState<TabTipo>('clientes')
+  const { user, logout, isMaster, temPermissao } = useAuth()
+  const [activeTab, setActiveTab] = useState<TabTipo>('visao_global')
+
+  // Controle Master: Dados consolidados
+  const [clientesGlobais, setClientesGlobais] = useState<ClienteGlobalItem[]>([])
+  const [isLoadingGlobais, setIsLoadingGlobais] = useState(true)
+  const [analistasMetricas, setAnalistasMetricas] = useState<AnalistaMetricasItem[]>([])
+  const [isLoadingAnalistas, setIsLoadingAnalistas] = useState(true)
+  const [usuariosSistema, setUsuariosSistema] = useState<UsuarioSistema[]>([])
+  const [isLoadingUsuarios, setIsLoadingUsuarios] = useState(true)
+  const [clienteGlobalSelecionado, setClienteGlobalSelecionado] =
+    useState<ClienteGlobalItem | null>(null)
 
   // Clientes Empresas
   const [clientes, setClientes] = useState<ClienteEmpresaRecord[]>([])
@@ -135,10 +162,33 @@ export default function Admin() {
     }
   }
 
+  const fetchDadosMaster = async () => {
+    setIsLoadingGlobais(true)
+    setIsLoadingAnalistas(true)
+    setIsLoadingUsuarios(true)
+    try {
+      const [globais, analistas, usersList] = await Promise.all([
+        listarClientesVisaoGlobal(),
+        obterMetricasAnalistas(),
+        listarTodosUsuarios(),
+      ])
+      setClientesGlobais(globais)
+      setAnalistasMetricas(analistas)
+      setUsuariosSistema(usersList)
+    } catch (err) {
+      console.error('Erro ao carregar dados do controle master:', err)
+    } finally {
+      setIsLoadingGlobais(false)
+      setIsLoadingAnalistas(false)
+      setIsLoadingUsuarios(false)
+    }
+  }
+
   useEffect(() => {
     fetchClientes()
     fetchLeads()
     fetchDiagnosticos()
+    fetchDadosMaster()
   }, [])
 
   // Inscrição em tempo real na coleção 'clientes_empresas'
@@ -575,16 +625,29 @@ export default function Admin() {
           <div>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#2ECC71] animate-pulse"></span>
-              <span className="text-xs uppercase tracking-wider font-semibold text-[#145A32]">
-                Painel Administrativo • Tempo Real Ativo
+              <span className="text-xs uppercase tracking-wider font-semibold text-[#D4AF37]">
+                {isMaster
+                  ? 'Painel Master Diamond • Controle Global'
+                  : 'Painel Administrativo • Tempo Real Ativo'}
               </span>
             </div>
             <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight mt-1">
-              Contabilidade 5.0 — Gestão Integrada
+              {isMaster
+                ? 'Gestão Master — Dr. Marco Chagas'
+                : 'Contabilidade 5.0 — Gestão Integrada'}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Logado como{' '}
-              <strong className="text-slate-800">{user?.email || 'Administrador'}</strong>
+              {isMaster ? (
+                <span>
+                  Administrador Master: <strong className="text-[#07132B]">Dr. Marco Chagas</strong>{' '}
+                  ({user?.email}) • Acesso Irrestrito
+                </span>
+              ) : (
+                <span>
+                  Logado como{' '}
+                  <strong className="text-slate-800">{user?.email || 'Administrador'}</strong>
+                </span>
+              )}
             </p>
           </div>
 
@@ -594,62 +657,99 @@ export default function Admin() {
                 fetchClientes()
                 fetchLeads()
                 fetchDiagnosticos()
+                fetchDadosMaster()
               }}
-              className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors"
-              title="Recarregar dados"
+              className="px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors"
+              title="Recarregar todos os dados"
             >
-              <RefreshCw
-                className={`w-4 h-4 ${isLoadingClientes || isLoadingLeads || isLoadingDiagnosticos ? 'animate-spin' : ''}`}
-              />
-            </button>
-            <button
-              onClick={
-                activeTab === 'clientes'
-                  ? handleExportClientesCSV
-                  : activeTab === 'leads'
-                    ? handleExportLeadsCSV
-                    : handleExportDiagCSV
-              }
-              disabled={
-                activeTab === 'clientes'
-                  ? clientes.length === 0
-                  : activeTab === 'leads'
-                    ? leads.length === 0
-                    : diagnosticos.length === 0
-              }
-              className="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
-            >
-              <Download className="w-4 h-4" />
-              Exportar CSV (
-              {activeTab === 'clientes'
-                ? 'Clientes'
-                : activeTab === 'leads'
-                  ? 'Leads'
-                  : 'Diagnósticos'}
-              )
+              Atualizar Painel
             </button>
             <button
               onClick={logout}
-              className="px-4 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-[#E74C3C] text-xs font-semibold flex items-center gap-2 transition-colors"
+              className="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-[#E74C3C] text-xs font-semibold transition-colors"
             >
-              <LogOut className="w-4 h-4" />
               Sair
             </button>
           </div>
         </div>
 
-        {/* NAVEGAÇÃO DE ABAS: CLIENTES vs. LEADS vs. DIAGNÓSTICOS */}
-        <div className="flex items-center gap-3 mb-6 border-b border-slate-200 pb-2 flex-wrap">
+        {/* NAVEGAÇÃO DE ABAS - PADRÃO DIAMOND GROUP (NAVY #07132B / DOURADO #D4AF37, SEM ÍCONES) */}
+        <div className="flex items-center gap-2 mb-6 border-b border-slate-200 pb-3 flex-wrap">
+          {/* ABA MASTER 1: CLIENTES - VISÃO GLOBAL */}
+          <button
+            onClick={() => setActiveTab('visao_global')}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-heading font-bold flex items-center gap-2 transition-all ${
+              activeTab === 'visao_global'
+                ? 'bg-[#07132B] text-[#D4AF37] shadow-sm ring-2 ring-[#D4AF37]/60'
+                : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <span>Clientes — Visão Global</span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'visao_global'
+                  ? 'bg-[#D4AF37] text-[#07132B]'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              {clientesGlobais.length}
+            </span>
+          </button>
+
+          {/* ABA MASTER 2: ANALISTAS & PARCEIROS */}
+          <button
+            onClick={() => setActiveTab('analistas')}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-heading font-bold flex items-center gap-2 transition-all ${
+              activeTab === 'analistas'
+                ? 'bg-[#07132B] text-[#D4AF37] shadow-sm ring-2 ring-[#D4AF37]/60'
+                : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <span>Analistas & Parceiros</span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'analistas'
+                  ? 'bg-[#D4AF37] text-[#07132B]'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              {analistasMetricas.length}
+            </span>
+          </button>
+
+          {/* ABA MASTER 3: USUÁRIOS & PERMISSÕES */}
+          <button
+            onClick={() => setActiveTab('usuarios_permissoes')}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-heading font-bold flex items-center gap-2 transition-all ${
+              activeTab === 'usuarios_permissoes'
+                ? 'bg-[#07132B] text-[#D4AF37] shadow-sm ring-2 ring-[#D4AF37]/60'
+                : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <span>Usuários & Permissões</span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'usuarios_permissoes'
+                  ? 'bg-[#D4AF37] text-[#07132B]'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              {usuariosSistema.length}
+            </span>
+          </button>
+
+          <div className="h-6 w-px bg-slate-300 mx-1 hidden sm:block" />
+
+          {/* ABAS ORIGINAIS PRESERVADAS */}
           <button
             onClick={() => setActiveTab('clientes')}
-            className={`px-5 py-2.5 rounded-xl text-sm font-heading font-bold flex items-center gap-2 transition-all ${
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-heading font-bold flex items-center gap-2 transition-all ${
               activeTab === 'clientes'
                 ? 'bg-[#07132B] text-white shadow-sm ring-2 ring-[#D4AF37]/40'
                 : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
-            <Building2 className="w-4 h-4 text-[#D4AF37]" />
-            <span>Clientes & Empresas</span>
+            <span>Empresas Registradas</span>
             <span
               className={`text-xs px-2 py-0.5 rounded-full ${
                 activeTab === 'clientes'
@@ -705,7 +805,44 @@ export default function Admin() {
         </div>
 
         {/* ========================================================= */}
-        {/* CONTEÚDO DA ABA 0: CLIENTES & EMPRESAS */}
+        {/* CONTEÚDO DAS NOVAS ABAS DE CONTROLE MASTER */}
+        {/* ========================================================= */}
+        {activeTab === 'visao_global' && (
+          <AbaClientesVisaoGlobal
+            clientes={clientesGlobais}
+            isLoading={isLoadingGlobais}
+            onSelecionarCliente={(c) => setClienteGlobalSelecionado(c)}
+            onAtualizar={fetchDadosMaster}
+          />
+        )}
+
+        {activeTab === 'analistas' && (
+          <AbaAnalistasParceiros
+            analistas={analistasMetricas}
+            isLoading={isLoadingAnalistas}
+            onSelecionarCliente={(c) => setClienteGlobalSelecionado(c)}
+            onAtualizar={fetchDadosMaster}
+          />
+        )}
+
+        {activeTab === 'usuarios_permissoes' && (
+          <AbaUsuariosPermissoes
+            usuarios={usuariosSistema}
+            isLoading={isLoadingUsuarios}
+            isMaster={isMaster}
+            usuarioLogadoId={user?.id}
+            onAtualizar={fetchDadosMaster}
+          />
+        )}
+
+        {/* MODAL FICHA COMPLETA CLIENTE GLOBAL */}
+        <ModalFichaClienteGlobal
+          cliente={clienteGlobalSelecionado}
+          aoFechar={() => setClienteGlobalSelecionado(null)}
+        />
+
+        {/* ========================================================= */}
+        {/* CONTEÚDO DA ABA ORIGINAL: EMPRESAS REGISTRADAS */}
         {/* ========================================================= */}
         {activeTab === 'clientes' && (
           <>
@@ -1609,25 +1746,27 @@ export default function Admin() {
                               >
                                 Ver detalhes
                               </button>
-                              <button
-                                onClick={() =>
-                                  setDiagCompletoToDelete({
-                                    clienteId: item.cliente_id || null,
-                                    empresaNome: item.empresa || 'Empresa sem nome',
-                                    clienteNome: item.nome || null,
-                                    diagnosticoId: item.id,
-                                    totalEtapas: diagnosticos.filter(
-                                      (d) =>
-                                        (item.cliente_id && d.cliente_id === item.cliente_id) ||
-                                        (item.empresa && d.empresa === item.empresa),
-                                    ).length,
-                                  })
-                                }
-                                className="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50/50 text-[#C0392B] hover:bg-red-100 hover:border-red-300 text-xs font-semibold transition-colors"
-                                title="Excluir Diagnóstico Completo (todas as etapas e relatórios deste cliente)"
-                              >
-                                Excluir Diagnóstico Completo
-                              </button>
+                              {(isMaster || temPermissao('excluir_diagnosticos')) && (
+                                <button
+                                  onClick={() =>
+                                    setDiagCompletoToDelete({
+                                      clienteId: item.cliente_id || null,
+                                      empresaNome: item.empresa || 'Empresa sem nome',
+                                      clienteNome: item.nome || null,
+                                      diagnosticoId: item.id,
+                                      totalEtapas: diagnosticos.filter(
+                                        (d) =>
+                                          (item.cliente_id && d.cliente_id === item.cliente_id) ||
+                                          (item.empresa && d.empresa === item.empresa),
+                                      ).length,
+                                    })
+                                  }
+                                  className="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50/50 text-[#C0392B] hover:bg-red-100 hover:border-red-300 text-xs font-semibold transition-colors"
+                                  title="Excluir Diagnóstico Completo (todas as etapas e relatórios deste cliente)"
+                                >
+                                  Excluir Diagnóstico Completo
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
