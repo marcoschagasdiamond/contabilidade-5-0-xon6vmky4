@@ -484,8 +484,8 @@ export default function Index() {
                 return (
                   <div
                     key={srv.title}
-                    className="group relative p-8 rounded-[16px] bg-[#07132B] text-white border-2 border-[#D4AF37]/40 hover:border-[#D4AF37] hover:shadow-[0_20px_40px_rgba(7,19,43,0.35)] transition-all duration-300 hover:-translate-y-2 flex flex-col justify-between shadow-lg"
-                    style={{ animationDelay: `${idx * 100}ms` }}
+                    id={srv.link.replace('/servicos/', 'card-')}
+                    className="group relative p-8 rounded-[16px] bg-[#07132B] text-white border-2 border-[#D4AF37]/40 hover:border-[#D4AF37] hover:shadow-[0_20px_40px_rgba(7,19,43,0.35)] transition-all duration-300 hover:-translate-y-2 flex flex-col justify-between shadow-lg md:col-span-1 lg:col-span-2"
                   >
                     <div>
                       {/* Topo sem ícone - Badge Diamond Group */}
