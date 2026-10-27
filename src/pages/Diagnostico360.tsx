@@ -813,13 +813,6 @@ export default function Diagnostico360() {
                 Iniciar Trilha Completa de Diagnósticos
               </Link>
 
-              <Link
-                to="/diagnostico-autoavaliacao"
-                className="w-full sm:w-auto px-6 py-4 rounded-xl font-heading font-bold text-xs sm:text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all text-center"
-              >
-                Ir Direto para Autoavaliação das 7 Frentes
-              </Link>
-
               <a
                 href="/#contato"
                 className="w-full sm:w-auto px-6 py-4 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-xl transition-all duration-200 hover:-translate-y-0.5 text-center"
