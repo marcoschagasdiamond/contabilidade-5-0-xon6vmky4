@@ -91,6 +91,24 @@ export default function Index() {
         'Delegue a operação fiscal, folha, contas e faturamento para especialistas com tecnologia, alertas preditivos e painel em tempo real.',
       link: '/servicos/bpo-contabil',
     },
+    {
+      icon: null,
+      title: 'Estruturação de Recebimentos & Gestão de Fluxo',
+      description:
+        'Proteção e governança de recebíveis contra contingências bancárias, com meios de pagamento homologados, esteiras lícitas e foco na priorização da folha e fornecedores.',
+      link: '/servicos/gestao-recebiveis',
+      badge: 'Proteção Operacional',
+      isDiamondSpecial: true,
+    },
+    {
+      icon: null,
+      title: 'Back Office 5.0',
+      description:
+        'Fábrica técnica white-label para escritórios parceiros: assumimos fiscal, contabilidade e DP com esteira de Diagnóstico 360° enquanto sua firma foca no cliente e cresce.',
+      link: '/servicos/back-office-50',
+      badge: 'Parceria Estratégica',
+      isDiamondSpecial: true,
+    },
   ]
 
   const scrollToSection = (id: string) => {
@@ -457,10 +475,47 @@ export default function Index() {
             </p>
           </div>
 
-          {/* Grid de 8 cards */}
+          {/* Grid de cards de serviços */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {services.map((srv, idx) => {
               const IconComp = srv.icon
+
+              if (srv.isDiamondSpecial) {
+                return (
+                  <div
+                    key={srv.title}
+                    className="group relative p-8 rounded-[16px] bg-[#07132B] text-white border-2 border-[#D4AF37]/40 hover:border-[#D4AF37] hover:shadow-[0_20px_40px_rgba(7,19,43,0.35)] transition-all duration-300 hover:-translate-y-2 flex flex-col justify-between shadow-lg"
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                  >
+                    <div>
+                      {/* Topo sem ícone - Badge Diamond Group */}
+                      <div className="flex items-center justify-between gap-2 mb-6">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-[#D4AF37] bg-[#D4AF37]/15 border border-[#D4AF37]/40">
+                          {srv.badge || 'Diamond Group'}
+                        </span>
+                        <span className="text-[11px] font-bold text-[#D4AF37]/80">5.0</span>
+                      </div>
+
+                      <h3 className="font-heading font-bold text-xl text-white mb-3 group-hover:text-[#D4AF37] transition-colors">
+                        {srv.title}
+                      </h3>
+
+                      <p className="text-sm text-slate-300 leading-relaxed mb-6">
+                        {srv.description}
+                      </p>
+                    </div>
+
+                    <Link
+                      to={srv.link}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm font-bold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 mt-auto text-center"
+                    >
+                      <span>Ver Página Completa & Pilares 5.0</span>
+                      <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  </div>
+                )
+              }
+
               return (
                 <div
                   key={srv.title}
@@ -469,9 +524,11 @@ export default function Index() {
                 >
                   <div>
                     {/* Icon */}
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#145A32] mb-6 transition-transform duration-300 group-hover:scale-110 group-hover:bg-[#2ECC71] group-hover:text-[#0A1A13] group-hover:shadow-md">
-                      <IconComp className="w-7 h-7 stroke-[2]" />
-                    </div>
+                    {IconComp && (
+                      <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#145A32] mb-6 transition-transform duration-300 group-hover:scale-110 group-hover:bg-[#2ECC71] group-hover:text-[#0A1A13] group-hover:shadow-md">
+                        <IconComp className="w-7 h-7 stroke-[2]" />
+                      </div>
+                    )}
 
                     <h3 className="font-heading font-bold text-xl text-slate-900 mb-3 group-hover:text-[#145A32] transition-colors">
                       {srv.title}
