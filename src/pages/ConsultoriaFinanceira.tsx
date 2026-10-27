@@ -651,6 +651,13 @@ export default function ConsultoriaFinanceira() {
                 BPO Contábil 5.0
               </Link>
               <Link
+                to="/servicos/gestao-recebiveis"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-amber-300 bg-white/5 hover:bg-white/10 border border-[#D4AF37]/30 transition-all"
+              >
+                <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
+                Gestão de Recebíveis 5.0
+              </Link>
+              <Link
                 to="/servicos"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/15 transition-all"
               >

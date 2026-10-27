@@ -205,6 +205,24 @@ export default function Servicos() {
       reverse: false,
     },
     {
+      id: 'gestao-recebiveis',
+      category: 'Proteção Operacional & Continuidade',
+      title: 'Estruturação de Recebimentos & Gestão de Fluxo',
+      subtitle: 'Mantenha as vendas ativas, folha em dia e operação protegida.',
+      description:
+        'Estruturação especializada para empresas com restrições ou contingências em contas bancárias. Garantimos a proteção do fluxo de recebimentos contra bloqueios e contingências em bancos por meio de meios de pagamento inteligentes, esteiras de fomento lícitas (Lei 14.463/2022) e governança na aplicação de recursos para honrar folha e fornecedores.',
+      features: [
+        'Continuidade imediata das vendas e cobranças sem travar a esteira comercial',
+        'Estrutura montada com base legal, contratos e assessoria dedicada',
+        'Priorização rigorosa de recursos para folha salarial e fornecedores vitais',
+        'Diversificação de meios de pagamento homologados (cartões, Pix e boletos)',
+        'Relatórios de conciliação diária e preparação técnica para regularizar passivos',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=financial%20operations%20corporate%20cashflow%20technology&color=blue',
+      reverse: true,
+    },
+    {
       id: 'back-office-50',
       category: 'Parceria Estratégica para Escritórios Contábeis',
       title: 'Back Office 5.0',
@@ -220,7 +238,7 @@ export default function Servicos() {
       ],
       image:
         'https://img.usecurling.com/p/700/500?q=executive%20accounting%20firm%20partnership%20office&color=blue',
-      reverse: true,
+      reverse: false,
     },
   ]
 
@@ -432,6 +450,16 @@ export default function Servicos() {
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
                       >
                         <Sparkles className="w-4 h-4 text-[#145A32]" />
+                        Ver Página Completa & Pilares 5.0
+                      </Link>
+                    )}
+
+                    {service.id === 'gestao-recebiveis' && (
+                      <Link
+                        to="/servicos/gestao-recebiveis"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#07132B] bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 border border-[#D4AF37]/50 transition-all duration-200 hover:-translate-y-0.5"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#07132B]" />
                         Ver Página Completa & Pilares 5.0
                       </Link>
                     )}

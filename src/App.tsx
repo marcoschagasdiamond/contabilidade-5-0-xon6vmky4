@@ -22,6 +22,7 @@ import AssessoriaTributaria from './pages/AssessoriaTributaria'
 import TreinamentoCapacitacao from './pages/TreinamentoCapacitacao'
 import BpoContabil from './pages/BpoContabil'
 import BackOffice50 from './pages/BackOffice50'
+import GestaoRecebiveis from './pages/GestaoRecebiveis'
 import Diagnostico360Servico from './pages/Diagnostico360Servico'
 import Blog from './pages/Blog'
 import BlogPost from './pages/BlogPost'
@@ -203,6 +204,11 @@ const App = () => (
                 <Route
                   path="/back-office-50"
                   element={<Navigate to="/servicos/back-office-50" replace />}
+                />
+                <Route path="/servicos/gestao-recebiveis" element={<GestaoRecebiveis />} />
+                <Route
+                  path="/gestao-recebiveis"
+                  element={<Navigate to="/servicos/gestao-recebiveis" replace />}
                 />
                 <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
                 <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
