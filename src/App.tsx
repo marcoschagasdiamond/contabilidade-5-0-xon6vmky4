@@ -21,6 +21,7 @@ import PlanejamentoSucessorio from './pages/PlanejamentoSucessorio'
 import AssessoriaTributaria from './pages/AssessoriaTributaria'
 import TreinamentoCapacitacao from './pages/TreinamentoCapacitacao'
 import BpoContabil from './pages/BpoContabil'
+import BackOffice50 from './pages/BackOffice50'
 import Diagnostico360Servico from './pages/Diagnostico360Servico'
 import Blog from './pages/Blog'
 import BlogPost from './pages/BlogPost'
@@ -197,6 +198,11 @@ const App = () => (
                 <Route
                   path="/bpo-contabil"
                   element={<Navigate to="/servicos/bpo-contabil" replace />}
+                />
+                <Route path="/servicos/back-office-50" element={<BackOffice50 />} />
+                <Route
+                  path="/back-office-50"
+                  element={<Navigate to="/servicos/back-office-50" replace />}
                 />
                 <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
                 <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />

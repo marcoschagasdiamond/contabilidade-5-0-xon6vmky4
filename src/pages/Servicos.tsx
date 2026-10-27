@@ -204,6 +204,24 @@ export default function Servicos() {
         'https://img.usecurling.com/p/700/500?q=business%20process%20outsourcing%20team%20operations&color=emerald',
       reverse: false,
     },
+    {
+      id: 'back-office-50',
+      category: 'Parceria Estratégica para Escritórios Contábeis',
+      title: 'Back Office 5.0',
+      subtitle: 'Sua firma mantém o cliente. Nós fazemos toda a parte técnica.',
+      description:
+        'Transformamos escritórios contábeis tradicionais em potências comerciais. Assumimos toda a fábrica técnica em modelo white-label (fiscal, contábil, folha e tributária) com a esteira do Diagnóstico 360° e Calculadora IBS/CBS, enquanto seu escritório mantém o relacionamento, visita clientes, vende mais e recebe participação recorrente.',
+      features: [
+        'Fábrica técnica white-label com a sua marca e logotipo preservados',
+        'Regra de ouro: o parceiro nunca deixa de ser o rosto do cliente',
+        'Dois modelos de parceria: prestação de serviço por cliente/mês ou compra de carteira',
+        'Tecnologia própria: esteira do Diagnóstico 360° e Calculadora IBS/CBS inclusas',
+        'Segurança jurídica absoluta com acordo de sigilo e não-concorrência estrita',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=executive%20accounting%20firm%20partnership%20office&color=blue',
+      reverse: true,
+    },
   ]
 
   return (
@@ -414,6 +432,16 @@ export default function Servicos() {
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:-translate-y-0.5"
                       >
                         <Sparkles className="w-4 h-4 text-[#145A32]" />
+                        Ver Página Completa & Pilares 5.0
+                      </Link>
+                    )}
+
+                    {service.id === 'back-office-50' && (
+                      <Link
+                        to="/servicos/back-office-50"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#07132B] bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 border border-[#D4AF37]/50 transition-all duration-200 hover:-translate-y-0.5"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#07132B]" />
                         Ver Página Completa & Pilares 5.0
                       </Link>
                     )}

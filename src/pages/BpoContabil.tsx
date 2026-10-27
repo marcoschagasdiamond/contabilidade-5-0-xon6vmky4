@@ -632,19 +632,26 @@ export default function BpoContabil() {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Link
-                to="/servicos/diagnostico-360"
+                to="/servicos/bpo-contabil"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
               >
-                <Sparkles className="w-4 h-4 text-[#2ECC71]" />
-                Diagnóstico 360°
+                <Briefcase className="w-4 h-4 text-[#2ECC71]" />
+                BPO Contábil 5.0
               </Link>
               <Link
-                to="/servicos/contabilidade-digital"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
+                to="/servicos/back-office-50"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-[#D4AF37] bg-white/5 hover:bg-white/10 border border-[#D4AF37]/30 transition-all"
               >
-                <Calculator className="w-4 h-4 text-[#2ECC71]" />
-                Contabilidade Digital 5.0
+                <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                Back Office 5.0
               </Link>
+              <Link
+                to="/servicos"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/15 transition-all"
+              >
+                Ver Todos os Serviços
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>{' '}
               <Link
                 to="/servicos/gestao-fiscal-tributaria"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-300 bg-white/5 hover:bg-white/10 border border-emerald-400/20 transition-all"
