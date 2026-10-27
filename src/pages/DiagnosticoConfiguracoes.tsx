@@ -67,6 +67,7 @@ export default function DiagnosticoConfiguracoes() {
   const [salvando, setSalvando] = useState(false)
   const [salvoSucesso, setSalvoSucesso] = useState(false)
   const [erros, setErros] = useState<Record<string, string>>({})
+  const painelRef = React.useRef<HTMLDivElement>(null)
 
   // Sincroniza com Cliente Ativo se selecionado na Carteira
   useEffect(() => {
@@ -227,7 +228,12 @@ export default function DiagnosticoConfiguracoes() {
           'Os parâmetros foram atualizados e sincronizados com a Calculadora IBS/CBS e as 4 páginas de diagnóstico.',
       })
 
-      setTimeout(() => setSalvoSucesso(false), 4000)
+      // Rola a visualização suavemente até o painel de fluxo guiado
+      setTimeout(() => {
+        if (painelRef.current) {
+          painelRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
     } catch (err: any) {
       console.error('Erro ao salvar configurações do diagnóstico:', err)
       toast({
@@ -710,17 +716,19 @@ export default function DiagnosticoConfiguracoes() {
           </div>
 
           {/* PAINEL DE SUCESSO DO FLUXO GUIADO (ESTEIRA) */}
-          <PainelSucessoFluxoGuiado
-            aberto={salvoSucesso}
-            onClose={() => setSalvoSucesso(false)}
-            titulo="Configurações Salvas e Propagadas com Sucesso!"
-            mensagem="Os parâmetros da sua empresa foram atualizados e sincronizados com a Calculadora IBS/CBS, Carteira de Clientes e toda a esteira de diagnósticos. Siga para a Autoavaliação das 7 Frentes."
-            proximaEtapaNome="Autoavaliação das 7 Frentes na Sua Empresa"
-            proximaEtapaRota="/diagnostico-autoavaliacao"
-            segundosAutoRedirect={5}
-            etapaConcluidaNumero="ETAPA 01"
-            etapaConcluidaNome="Configurações dos Diagnósticos"
-          />
+          <div ref={painelRef}>
+            <PainelSucessoFluxoGuiado
+              aberto={salvoSucesso}
+              onClose={() => setSalvoSucesso(false)}
+              titulo="Configurações Salvas e Propagadas com Sucesso!"
+              mensagem="Os parâmetros da sua empresa foram atualizados e sincronizados com a Calculadora IBS/CBS, Carteira de Clientes e toda a esteira de diagnósticos. Siga para a Autoavaliação das 7 Frentes."
+              proximaEtapaNome="Autoavaliação das 7 Frentes na Sua Empresa"
+              proximaEtapaRota="/diagnostico-autoavaliacao"
+              segundosAutoRedirect={5}
+              etapaConcluidaNumero="ETAPA 01"
+              etapaConcluidaNome="Configurações dos Diagnósticos"
+            />
+          </div>
 
           {/* BOTÕES DE AÇÃO (SEM ÍCONES EM BOTÕES DE AÇÃO) */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-200">
