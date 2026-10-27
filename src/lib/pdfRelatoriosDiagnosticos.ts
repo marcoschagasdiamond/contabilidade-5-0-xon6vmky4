@@ -341,7 +341,7 @@ export function exportarPdfEtapaAutoavaliacao(
   doc.setFontSize(7.5)
   doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
   doc.text(
-    '• 30 Dias (Liquidez Rápida e Crédito): Renegociação de dívidas, blindagem do fluxo de caixa e contingências imediatas.',
+    '• 30 Dias (Liquidez Rápida e Crédito): Renegociação de dívidas, blindagem do fluxo de caixa e Análise Financeira Completa via sistema externo.',
     margin + 6,
     y + 14,
   )
@@ -835,7 +835,35 @@ export function exportarPdfRelatorioConsolidado(dados: DadosRelatorioConsolidado
       y += 6.2
     }
 
-    y += 3
+    // Recomendação de Análise Financeira no sistema externo se a Frente 1 (Financeiro & Crédito) estiver em atenção
+    const scoreFrente1 = scores[1]?.scoreMedio ?? 2
+    if (scoreFrente1 >= 1.75) {
+      doc.setFillColor(254, 243, 199) // amber-50
+      doc.setDrawColor(245, 158, 11) // amber-500
+      doc.roundedRect(margin, y, contentWidth, 11, 1.5, 1.5, 'FD')
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(7.5)
+      doc.setTextColor(146, 64, 14) // amber-900
+      doc.text(
+        'RECOMENDAÇÃO TÉCNICA • FRENTE 1 FINANCEIRO & CRÉDITO EM ATENÇÃO:',
+        margin + 4,
+        y + 4.5,
+      )
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7)
+      doc.setTextColor(120, 53, 15) // amber-950
+      doc.text(
+        'Recomenda-se realizar a Análise Financeira Completa (balanço, DRE e capacidade de pagamento) no sistema externo parceiro disponível na plataforma.',
+        margin + 4,
+        y + 8.5,
+      )
+
+      y += 14
+    } else {
+      y += 3
+    }
   } else {
     doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
     doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])

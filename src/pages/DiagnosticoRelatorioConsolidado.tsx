@@ -12,6 +12,7 @@ import {
 } from '@/services/diagnosticos'
 import { formatarCNPJ } from '@/lib/cnpj'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
+import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
 import {
   exportarPdfEtapaConfiguracoes,
   exportarPdfEtapaAutoavaliacao,
@@ -1020,16 +1021,63 @@ export default function DiagnosticoRelatorioConsolidado() {
                     </div>
                   </div>
 
+                  {/* ALERTA DE ATENÇÃO NA FRENTE FINANCEIRO & CRÉDITO */}
+                  {(semaforoAtual[1] === 'vermelho' || semaforoAtual[1] === 'amarelo') && (
+                    <div className="p-4 sm:p-5 rounded-xl bg-amber-50/90 border border-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-amber-200 text-amber-900 border border-amber-300">
+                            Frente 1 em Atenção •{' '}
+                            {semaforoAtual[1] === 'vermelho' ? 'Crítico' : 'Alerta'}
+                          </span>
+                          <span className="text-slate-500 font-semibold">
+                            • Financeiro & Crédito
+                          </span>
+                        </div>
+                        <p className="text-slate-800 font-medium">
+                          Detectada pressão de capital de giro ou capacidade de pagamento mensal.
+                          Recomendado executar a auditoria aprofundada de balanço e DRE no sistema
+                          externo.
+                        </p>
+                      </div>
+                      <a
+                        href={URL_SISTEMA_ANALISE_FINANCEIRA}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-5 py-2.5 rounded-xl font-heading font-bold text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-sm transition-all whitespace-nowrap shrink-0"
+                      >
+                        Análise Financeira Completa
+                      </a>
+                    </div>
+                  )}
+
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
-                    <strong className="text-slate-800 uppercase text-[11px] block font-bold">
-                      Plano de Ação 30-60-90 Estruturado:
-                    </strong>
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="text-slate-800 uppercase text-[11px] block font-bold">
+                        Plano de Ação 30-60-90 Estruturado:
+                      </strong>
+                      <span className="text-[11px] text-slate-500">Marcos 30, 60 e 90 dias</span>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="p-3 bg-white rounded-lg border border-slate-200">
-                        <span className="text-[11px] font-bold text-[#D4AF37] block">
-                          1. 30 Dias
-                        </span>
-                        <p className="text-slate-600 mt-0.5">Liquidez Rápida, Crédito & Caixa</p>
+                      <div className="p-3 bg-white rounded-lg border border-slate-200 flex flex-col justify-between gap-2">
+                        <div>
+                          <span className="text-[11px] font-bold text-[#D4AF37] block">
+                            1. 30 Dias
+                          </span>
+                          <p className="text-slate-600 mt-0.5">Liquidez Rápida, Crédito & Caixa</p>
+                        </div>
+                        {(semaforoAtual[1] === 'vermelho' ||
+                          semaforoAtual[1] === 'amarelo' ||
+                          !diagAutoavaliacao) && (
+                          <a
+                            href={URL_SISTEMA_ANALISE_FINANCEIRA}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-full px-2.5 py-1.5 rounded-md font-heading font-bold text-[10px] text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-sm transition-all text-center"
+                          >
+                            Análise Financeira Completa
+                          </a>
+                        )}
                       </div>
                       <div className="p-3 bg-white rounded-lg border border-slate-200">
                         <span className="text-[11px] font-bold text-[#2ECC71] block">
@@ -1501,15 +1549,38 @@ export default function DiagnosticoRelatorioConsolidado() {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="text-xs font-bold text-slate-800 uppercase block mb-2">
-                    Plano de Ação 30-60-90
-                  </span>
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-slate-800 uppercase block">
+                      Plano de Ação 30-60-90
+                    </span>
+                    {(semaforoAtual[1] === 'vermelho' || semaforoAtual[1] === 'amarelo') && (
+                      <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
+                        Frente Financeiro & Crédito em Atenção
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     Priorização de ações imediatas de liquidez e caixa em 30 dias, regularização
                     societária e contratos em 60 dias, e adequação ao novo sistema tributário em 90
                     dias.
                   </p>
+                  {(semaforoAtual[1] === 'vermelho' || semaforoAtual[1] === 'amarelo') && (
+                    <div className="pt-2 flex items-center justify-between gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                      <p className="text-[11px] text-amber-950 font-medium">
+                        Aprofunde a avaliação dos balanços e índices de endividamento da empresa no
+                        sistema parceiro:
+                      </p>
+                      <a
+                        href={URL_SISTEMA_ANALISE_FINANCEIRA}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center px-4 py-2 rounded-lg font-heading font-bold text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-sm transition-all whitespace-nowrap shrink-0"
+                      >
+                        Análise Financeira Completa
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

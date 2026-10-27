@@ -9,6 +9,7 @@ import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { TermoPPLI, formatarTextoComPPLI } from '@/components/diagnosticos/TermoPPLI'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
 
 // Definição completa dos 7 riscos extraídos com rigor do PDF da Diamond Intelligence
 export interface Risco360Item {
@@ -519,7 +520,7 @@ export default function Diagnostico360() {
                   {/* Entregável do Risco */}
                   <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-start gap-3">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#2ECC71] shrink-0 mt-1.5" />
-                    <div>
+                    <div className="flex-1">
                       <strong className="text-xs font-bold text-emerald-950 uppercase tracking-wide block mb-0.5">
                         Entregável Concreto deste Módulo:
                       </strong>
@@ -528,6 +529,29 @@ export default function Diagnostico360() {
                       </p>
                     </div>
                   </div>
+
+                  {/* FASE 2: BOTÃO ANÁLISE FINANCEIRA COMPLETA NA FRENTE 1 FINANCEIRO & CRÉDITO */}
+                  {risco.id === 1 && (
+                    <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-[#07132B]/5 border border-[#D4AF37]/40">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-mono font-bold text-[#D4AF37] uppercase tracking-wider block">
+                          Fase 2 • Sistema Externo Integrado
+                        </span>
+                        <p className="text-xs font-semibold text-[#07132B]">
+                          Auditoria detalhada de balanço, DRE, fluxo de caixa e capacidade de
+                          pagamento.
+                        </p>
+                      </div>
+                      <a
+                        href={URL_SISTEMA_ANALISE_FINANCEIRA}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-heading font-bold text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-sm transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+                      >
+                        Análise Financeira Completa
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -656,6 +680,16 @@ export default function Diagnostico360() {
                   Recuperação tributária imediata, saneamento da capacidade de pagamento mensal e
                   reestruturação do capital de giro para oxigenar o fluxo de caixa.
                 </p>
+                <div className="pt-2">
+                  <a
+                    href={URL_SISTEMA_ANALISE_FINANCEIRA}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center w-full px-4 py-2 rounded-xl font-heading font-bold text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-sm transition-all"
+                  >
+                    Análise Financeira Completa
+                  </a>
+                </div>
               </div>
               <div className="text-[11px] font-semibold text-[#D4AF37] bg-amber-50 p-2.5 rounded-lg border border-amber-200">
                 Prazo estimado: Primeiros 30 dias

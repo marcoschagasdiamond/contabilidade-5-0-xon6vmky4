@@ -15,6 +15,7 @@ import { registrarDiagnosticoUsado } from '@/services/freemium'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
 import {
   SETE_RISCOS_360,
   normalizarAvaliacoesRetrocompativeis,
@@ -382,6 +383,16 @@ export default function DiagnosticoAutoavaliacao() {
                       >
                         {scoreMedio.toFixed(1)} / 3.0 • {statusFrente.label}
                       </span>
+                      {risco.id === 1 && (
+                        <a
+                          href={URL_SISTEMA_ANALISE_FINANCEIRA}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center px-3 py-1 rounded-lg font-heading font-bold text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-sm transition-all"
+                        >
+                          Análise Financeira Completa
+                        </a>
+                      )}
                     </div>
                   </div>
 
@@ -498,22 +509,41 @@ export default function DiagnosticoAutoavaliacao() {
 
             <p className="text-sm text-slate-200 leading-relaxed">{perfilGlobal.desc}</p>
 
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
-              <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
-                Plano de Ação 30-60-90:
-              </span>
-              <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300">
-                <li className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
-                  <span className="w-2 h-2 rounded-full bg-[#D4AF37] shrink-0" />
-                  <span>1. 30 Dias: Liquidez, Crédito & Caixa</span>
+            <div className="p-4 sm:p-5 rounded-xl bg-white/5 border border-white/10 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
+                  Plano de Ação 30-60-90:
+                </span>
+                <span className="text-[11px] text-slate-300">
+                  Frente 1 (Financeiro & Crédito) vinculada ao Marco 30 Dias
+                </span>
+              </div>
+              <ul className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-300">
+                <li className="flex flex-col justify-between gap-2.5 p-3 rounded-lg bg-white/5 border border-white/10">
+                  <div className="flex items-start gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#D4AF37] shrink-0 mt-1" />
+                    <span className="font-medium">1. 30 Dias: Liquidez, Crédito & Caixa</span>
+                  </div>
+                  <a
+                    href={URL_SISTEMA_ANALISE_FINANCEIRA}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center w-full px-3 py-1.5 rounded-lg font-heading font-bold text-[11px] text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-sm transition-all text-center"
+                  >
+                    Análise Financeira Completa
+                  </a>
                 </li>
-                <li className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
-                  <span className="w-2 h-2 rounded-full bg-[#2ECC71] shrink-0" />
-                  <span>2. 60 Dias: Societário, Risco Hub & Fechamento</span>
+                <li className="flex items-start gap-2 p-3 rounded-lg bg-white/5 border border-white/10">
+                  <span className="w-2 h-2 rounded-full bg-[#2ECC71] shrink-0 mt-1" />
+                  <span className="font-medium">
+                    2. 60 Dias: Societário, Risco Hub & Fechamento
+                  </span>
                 </li>
-                <li className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
-                  <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-                  <span>3. 90 Dias: Transição Tributária, POPs & Cultura</span>
+                <li className="flex items-start gap-2 p-3 rounded-lg bg-white/5 border border-white/10">
+                  <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0 mt-1" />
+                  <span className="font-medium">
+                    3. 90 Dias: Transição Tributária, POPs & Cultura
+                  </span>
                 </li>
               </ul>
             </div>

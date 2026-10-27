@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { TermoPPLI, formatarTextoComPPLI } from '@/components/diagnosticos/TermoPPLI'
+import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
 import {
   ArrowRight,
   ChevronLeft,
@@ -298,17 +299,32 @@ export default function Diagnostico360Servico() {
               {frentesMatriz.map((frente, fIdx) => (
                 <div
                   key={fIdx}
-                  className="p-4 rounded-xl bg-white/[0.04] border border-white/10 hover:border-[#2ECC71]/40 transition-colors"
+                  className="p-4 rounded-xl bg-white/[0.04] border border-white/10 hover:border-[#2ECC71]/40 transition-colors flex flex-col justify-between"
                 >
-                  <div className="text-[11px] font-bold text-[#2ECC71] uppercase tracking-wider mb-1">
-                    Dimensão 0{fIdx + 1}
+                  <div>
+                    <div className="text-[11px] font-bold text-[#2ECC71] uppercase tracking-wider mb-1">
+                      Dimensão 0{fIdx + 1}
+                    </div>
+                    <h4 className="font-heading font-bold text-base text-white mb-1">
+                      {frente.nome}
+                    </h4>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      {formatarTextoComPPLI(frente.foco)}
+                    </p>
                   </div>
-                  <h4 className="font-heading font-bold text-base text-white mb-1">
-                    {frente.nome}
-                  </h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    {formatarTextoComPPLI(frente.foco)}
-                  </p>
+
+                  {fIdx === 0 && (
+                    <div className="pt-3 mt-3 border-t border-white/10">
+                      <a
+                        href={URL_SISTEMA_ANALISE_FINANCEIRA}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center w-full px-3 py-2 rounded-lg font-heading font-bold text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-sm transition-all text-center"
+                      >
+                        Análise Financeira Completa
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
               <div className="p-4 rounded-xl bg-[#2ECC71]/10 border border-[#2ECC71]/30 flex flex-col justify-center">
@@ -549,6 +565,16 @@ export default function Diagnostico360Servico() {
                   Recuperação tributária imediata, estancamento de passivos e otimização da
                   capacidade de pagamento mensal para captação bancária e limites de crédito.
                 </p>
+                <div className="pt-3 mt-3 border-t border-amber-200">
+                  <a
+                    href={URL_SISTEMA_ANALISE_FINANCEIRA}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center w-full px-3 py-2 rounded-lg font-heading font-bold text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-sm transition-all"
+                  >
+                    Análise Financeira Completa
+                  </a>
+                </div>
               </div>
 
               <div className="p-5 rounded-xl bg-emerald-50/60 border border-emerald-200/80">
