@@ -42,8 +42,10 @@ import {
   salvarDadosEmpresa,
   existeDadosEmpresaSalvos,
   DadosEmpresaPerfil,
+  DADOS_EMPRESA_PADRAO,
   STORAGE_EVENT,
 } from '@/types/dadosEmpresa'
+import { useAuth } from '@/context/AuthContext'
 import type {
   ParametrosSimulacaoCalculadora,
   ResultadosSimulacaoCalculadora,
@@ -350,10 +352,15 @@ interface CalculadoraContextType {
 const CalculadoraContext = createContext<CalculadoraContextType | undefined>(undefined)
 
 export function CalculadoraProvider({ children }: { children: React.ReactNode }) {
-  // Carrega perfil inicial de Dados da Empresa
-  const perfilInicial = useMemo(() => carregarDadosEmpresa(), [])
+  const { isAuthenticated } = useAuth()
+
+  // Se deslogado, inicia rigorosamente com o perfil padrão/neutro (sem dados em cache de sessões anteriores)
+  const perfilInicial = useMemo(
+    () => (isAuthenticated ? carregarDadosEmpresa() : DADOS_EMPRESA_PADRAO),
+    [isAuthenticated],
+  )
   const [origemDadosEmpresa, setOrigemDadosEmpresa] = useState<boolean>(() =>
-    existeDadosEmpresaSalvos(),
+    isAuthenticated ? existeDadosEmpresaSalvos() : false,
   )
 
   // Módulo 1: Configurações Gerais
@@ -913,16 +920,20 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   // Listener para sincronização automática se o usuário salvar dados em outra aba ou na página /dados-empresa
   React.useEffect(() => {
     const handleSync = () => {
+      if (!isAuthenticated) {
+        setOrigemDadosEmpresa(false)
+        return
+      }
       const p = carregarDadosEmpresa()
       setOrigemDadosEmpresa(existeDadosEmpresaSalvos())
     }
     window.addEventListener(STORAGE_EVENT, handleSync)
     return () => window.removeEventListener(STORAGE_EVENT, handleSync)
-  }, [])
+  }, [isAuthenticated])
 
   // Função para obter o snapshot dos parâmetros de entrada atuais
   const obterSnapshotParametros = (): ParametrosSimulacaoCalculadora => {
-    const perfil = carregarDadosEmpresa()
+    const perfil = isAuthenticated ? carregarDadosEmpresa() : DADOS_EMPRESA_PADRAO
     return {
       config,
       anoTransicao: config.anoTransicao,
@@ -957,9 +968,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       periodoDashboard,
       regimeAtualFiltro,
       anoTransicaoDashboard,
-      empresa: perfil.nomeEmpresa,
-      cnpj: perfil.cnpj,
-      nomeContato: perfil.nomeContato,
+      empresa: isAuthenticated ? perfil.nomeEmpresa : '',
+      cnpj: isAuthenticated ? perfil.cnpj : '',
+      nomeContato: isAuthenticated ? perfil.nomeContato : '',
       configuracoesDiagnostico: {
         regimeAtual: perfil.regimeAtual || config.regimeAtualEmpresa || regimeAtualFiltro,
         segmento: perfil.segmento,
@@ -1120,7 +1131,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   // Função para restaurar os dados da empresa especificamente para um módulo
   const restaurarDadosEmpresaNoModulo = (modulo: 2 | 3 | 4 | 5) => {
-    const p = carregarDadosEmpresa()
+    const p = isAuthenticated ? carregarDadosEmpresa() : DADOS_EMPRESA_PADRAO
     if (modulo === 2) {
       setValorOperacao(p.faturamentoMensal || 50000)
       setPercentualComprasVendasSimples(p.percentualComprasVendas ?? 40)

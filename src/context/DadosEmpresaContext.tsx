@@ -29,15 +29,25 @@ const DadosEmpresaContext = createContext<DadosEmpresaContextType | undefined>(u
 
 export function DadosEmpresaProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuth()
-  const [dadosEmpresa, setDadosEmpresa] = useState<DadosEmpresaPerfil>(() => carregarDadosEmpresa())
-  const [temDadosSalvos, setTemDadosSalvos] = useState<boolean>(() => existeDadosEmpresaSalvos())
+  const [dadosEmpresa, setDadosEmpresa] = useState<DadosEmpresaPerfil>(() =>
+    isAuthenticated ? carregarDadosEmpresa() : DADOS_EMPRESA_PADRAO,
+  )
+  const [temDadosSalvos, setTemDadosSalvos] = useState<boolean>(() =>
+    isAuthenticated ? existeDadosEmpresaSalvos() : false,
+  )
   const [salvoNoBanco, setSalvoNoBanco] = useState(false)
   const [isSalvando, setIsSalvando] = useState(false)
 
   const sincronizar = useCallback(() => {
+    if (!isAuthenticated) {
+      setDadosEmpresa(DADOS_EMPRESA_PADRAO)
+      setTemDadosSalvos(false)
+      setSalvoNoBanco(false)
+      return
+    }
     setDadosEmpresa(carregarDadosEmpresa())
     setTemDadosSalvos(existeDadosEmpresaSalvos())
-  }, [])
+  }, [isAuthenticated])
 
   // Ao autenticar: busca dados do banco ou migra localStorage para o banco se ainda não existir
   useEffect(() => {
@@ -46,6 +56,8 @@ export function DadosEmpresaProvider({ children }: { children: React.ReactNode }
     async function sincronizarComBanco() {
       if (!isAuthenticated || !user?.id) {
         setSalvoNoBanco(false)
+        setDadosEmpresa(DADOS_EMPRESA_PADRAO)
+        setTemDadosSalvos(false)
         return
       }
 

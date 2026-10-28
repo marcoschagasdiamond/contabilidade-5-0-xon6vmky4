@@ -64,11 +64,12 @@ import SubpageSplitPayment from './pages/reforma/SubpageSplitPayment'
 import SubpageReformaNaPratica from './pages/reforma/SubpageReformaNaPratica'
 import SubpageGlossarioFontes from './pages/reforma/SubpageGlossarioFontes'
 
-// Rota protegida genérica (exige usuário logado)
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+// Guarda de rota autenticada (exige usuário logado e não renderiza nada do conteúdo antes da validação)
+function RotaAutenticada({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
   const location = useLocation()
 
+  // Evita falso deslogado durante hidratação/inicialização do AuthStore
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -77,11 +78,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     )
   }
 
+  // Sem sessão autenticada, redireciona para /login sem renderizar os dados filhos em cache
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
   return <>{children}</>
+}
+
+// Rota protegida genérica (exige usuário logado)
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  return <RotaAutenticada>{children}</RotaAutenticada>
 }
 
 // Rota protegida exclusiva para Analista / Admin (bloqueia perfil Empresário)
@@ -213,7 +220,14 @@ const App = () => (
                 <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
                 <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
                 <Route path="/recuperador-creditos" element={<RecuperadorCreditos />} />
-                <Route path="/dados-empresa" element={<DadosEmpresa />} />
+                <Route
+                  path="/dados-empresa"
+                  element={
+                    <RotaAutenticada>
+                      <DadosEmpresa />
+                    </RotaAutenticada>
+                  }
+                />
                 <Route path="/planos" element={<Planos />} />
                 <Route path="/reforma-tributaria/visao-geral" element={<SubpageVisaoGeral />} />
                 <Route path="/reforma-tributaria/calendario" element={<SubpageCalendario />} />
@@ -273,20 +287,77 @@ const App = () => (
                 />{' '}
                 {/* Hub e Trilha dos Diagnósticos Tributários */}
                 <Route path="/diagnosticos" element={<DiagnosticosHub />} />
-                <Route path="/diagnosticos/configuracoes" element={<DiagnosticoConfiguracoes />} />
-                <Route path="/diagnostico-configuracoes" element={<DiagnosticoConfiguracoes />} />
-                <Route path="/diagnostico-360" element={<Diagnostico360 />} />
-                <Route path="/diagnostico-autoavaliacao" element={<DiagnosticoAutoavaliacao />} />
-                <Route path="/diagnostico-transicao" element={<DiagnosticoTransicao />} />
-                <Route path="/diagnostico-regimes" element={<DiagnosticoRegimes />} />
-                <Route path="/diagnostico" element={<Diagnostico />} />
+                <Route
+                  path="/diagnosticos/configuracoes"
+                  element={
+                    <RotaAutenticada>
+                      <DiagnosticoConfiguracoes />
+                    </RotaAutenticada>
+                  }
+                />
+                <Route
+                  path="/diagnostico-configuracoes"
+                  element={
+                    <RotaAutenticada>
+                      <DiagnosticoConfiguracoes />
+                    </RotaAutenticada>
+                  }
+                />
+                <Route
+                  path="/diagnostico-360"
+                  element={
+                    <RotaAutenticada>
+                      <Diagnostico360 />
+                    </RotaAutenticada>
+                  }
+                />
+                <Route
+                  path="/diagnostico-autoavaliacao"
+                  element={
+                    <RotaAutenticada>
+                      <DiagnosticoAutoavaliacao />
+                    </RotaAutenticada>
+                  }
+                />
+                <Route
+                  path="/diagnostico-transicao"
+                  element={
+                    <RotaAutenticada>
+                      <DiagnosticoTransicao />
+                    </RotaAutenticada>
+                  }
+                />
+                <Route
+                  path="/diagnostico-regimes"
+                  element={
+                    <RotaAutenticada>
+                      <DiagnosticoRegimes />
+                    </RotaAutenticada>
+                  }
+                />
+                <Route
+                  path="/diagnostico"
+                  element={
+                    <RotaAutenticada>
+                      <Diagnostico />
+                    </RotaAutenticada>
+                  }
+                />
                 <Route
                   path="/diagnostico/relatorio"
-                  element={<DiagnosticoRelatorioConsolidado />}
+                  element={
+                    <RotaAutenticada>
+                      <DiagnosticoRelatorioConsolidado />
+                    </RotaAutenticada>
+                  }
                 />
                 <Route
                   path="/diagnostico-relatorio"
-                  element={<DiagnosticoRelatorioConsolidado />}
+                  element={
+                    <RotaAutenticada>
+                      <DiagnosticoRelatorioConsolidado />
+                    </RotaAutenticada>
+                  }
                 />
                 <Route path="/blog" element={<Blog />} />{' '}
                 <Route path="/blog/:slug" element={<BlogPost />} />

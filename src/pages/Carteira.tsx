@@ -60,7 +60,7 @@ export default function Carteira() {
   const navigate = useNavigate()
   const { clienteAtivoId, selecionarClienteAtivo, limparClienteAtivo, recarregarClientes } =
     useClienteAtivo()
-  const { isContador, isAdmin } = useAuth()
+  const { isContador, isAdmin, isAuthenticated, isLoading: authLoading } = useAuth()
 
   // Usuário que tem acesso via AnalistaRoute é Analista/Admin, podendo excluir
   const podeExcluir = isContador || isAdmin
@@ -95,8 +95,19 @@ export default function Carteira() {
   const [ordenacao, setOrdenacao] = useState<OrdenacaoCampo>('atividade')
   const [ordemDesc, setOrdemDesc] = useState<boolean>(true)
 
-  // Carrega todos os dados das coleções existentes
+  // Carrega todos os dados das coleções existentes apenas se houver sessão validada
   const carregarDadosCarteira = async () => {
+    if (!isAuthenticated) {
+      setClientes([])
+      setSimulacoes([])
+      setRecuperadorSims([])
+      setDiagnosticos([])
+      setConversas([])
+      setRelatorios([])
+      setCarregando(false)
+      return
+    }
+
     try {
       setCarregando(true)
       const [listaClientes, listaSims, listaRecup, listaDiags, listaConvs, listaRelats] =
@@ -123,8 +134,10 @@ export default function Carteira() {
   }
 
   useEffect(() => {
-    carregarDadosCarteira()
-  }, [])
+    if (!authLoading) {
+      carregarDadosCarteira()
+    }
+  }, [authLoading, isAuthenticated])
 
   // Agrega dados por cliente
   const consolidados = useMemo<ClienteCarteiraConsolidado[]>(() => {
@@ -852,10 +865,10 @@ export default function Carteira() {
         </div>
 
         {/* TABELA CONSOLIDADA DA CARTEIRA */}
-        {carregando ? (
+        {authLoading || carregando ? (
           <div className="py-20 text-center text-slate-500 text-sm bg-white rounded-2xl border border-slate-200">
             <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            Carregando painel consolidado da carteira...
+            Validando sessão e carregando painel consolidado da carteira...
           </div>
         ) : clientesFiltrados.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3 shadow-sm">

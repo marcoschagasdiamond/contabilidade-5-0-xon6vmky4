@@ -5,6 +5,64 @@ import type { RecordModel } from 'pocketbase'
 export type PerfilUsuario = 'contador' | 'empresario'
 export type NivelAcesso = 'master' | 'admin' | 'analista' | 'empresario'
 
+/**
+ * Remove do localStorage todas as chaves de cache e dados de sessão/cliente,
+ * prevenindo vazamento de dados pós-logout para usuários deslogados.
+ */
+export function limparEstadoLocalSessao(): void {
+  if (typeof window === 'undefined') return
+  try {
+    const chavesParaRemover = [
+      'contabilidade5_dados_empresa',
+      'contabilidade50_dados_empresa_v1',
+      'contabilidade50_cliente_ativo_id_v1',
+      'contabilidade50_simulacoes_v1',
+      'contabilidade50_simulacoes_calculadora_v1',
+      'c50_simulacoes_recuperador_v1',
+      'contabilidade50_simulacoes_recuperador_v1',
+      'contabilidade50_responsavel_tecnico',
+      'contabilidade50_responsavel_tecnico_v1',
+      'c50_simulacoes_usadas',
+      'c50_diagnosticos_usados',
+      'contabilidade50_aviso_migracao_dispensado',
+      'contabilidade50_carteira_clientes_v1',
+      'contabilidade50_conversas_assistente_local_v1',
+      'contabilidade50_historico_relatorios_local',
+      'c50_master_usuarios',
+    ]
+
+    chavesParaRemover.forEach((chave) => {
+      try {
+        localStorage.removeItem(chave)
+      } catch (err) {
+        console.warn(`Erro ao remover chave ${chave} do localStorage:`, err)
+      }
+    })
+
+    // Remove preventivamente qualquer chave remanescente iniciada com contabilidade5 ou c50
+    const totalKeys = localStorage.length
+    const chavesGerais: string[] = []
+    for (let i = 0; i < totalKeys; i++) {
+      const k = localStorage.key(i)
+      if (k && (k.startsWith('contabilidade5') || k.startsWith('c50_'))) {
+        chavesGerais.push(k)
+      }
+    }
+    chavesGerais.forEach((k) => {
+      try {
+        localStorage.removeItem(k)
+      } catch {
+        /* intentionally ignored */
+      }
+    })
+
+    // Dispara evento para sincronizar componentes ouvintes
+    window.dispatchEvent(new CustomEvent('contabilidade5_dados_empresa_updated', { detail: null }))
+  } catch (err) {
+    console.error('Erro ao executar limparEstadoLocalSessao:', err)
+  }
+}
+
 interface AuthContextType {
   user: RecordModel | null
   token: string | null
@@ -101,6 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const logout = () => {
+    limparEstadoLocalSessao()
     pb.authStore.clear()
     setUser(null)
     setToken(null)
