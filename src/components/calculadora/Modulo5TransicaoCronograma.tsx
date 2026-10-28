@@ -36,7 +36,18 @@ import {
   Legend,
 } from 'recharts'
 
-export default function Modulo5TransicaoCronograma() {
+import {
+  PainelProximosPassosCalculadora,
+  ModuloCalculadoraId,
+} from '@/components/calculadora/PainelProximosPassosCalculadora'
+
+export interface Modulo5TransicaoCronogramaProps {
+  onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
+}
+
+export default function Modulo5TransicaoCronograma({
+  onNavegarModulo,
+}: Modulo5TransicaoCronogramaProps = {}) {
   const {
     faturamentoAnualProjetado,
     setFaturamentoAnualProjetado,
@@ -611,6 +622,11 @@ export default function Modulo5TransicaoCronograma() {
           </div>
         </CardContent>
       </Card>
+
+      {/* PAINEL PRÓXIMOS PASSOS (ORIENTAÇÃO DO NOVO USUÁRIO) */}
+      {onNavegarModulo && (
+        <PainelProximosPassosCalculadora moduloAtual="modulo5" onNavegarModulo={onNavegarModulo} />
+      )}
     </div>
   )
 }

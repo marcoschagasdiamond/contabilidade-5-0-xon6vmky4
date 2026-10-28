@@ -41,7 +41,16 @@ import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { ModalCliente } from '@/components/clientes/ModalCliente'
 import { Badge } from '@/components/ui/badge'
 
-export default function Modulo1Configuracoes() {
+import {
+  PainelProximosPassosCalculadora,
+  ModuloCalculadoraId,
+} from '@/components/calculadora/PainelProximosPassosCalculadora'
+
+export interface Modulo1ConfiguracoesProps {
+  onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
+}
+
+export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1ConfiguracoesProps = {}) {
   const { config, updateConfig, resetConfig, aplicarAnoTransicao, aplicarPresetSetor } =
     useCalculadoraIbsCbs()
   const {
@@ -60,6 +69,27 @@ export default function Modulo1Configuracoes() {
     if (!isNaN(parsed)) {
       updateConfig({ [field]: parsed })
     }
+  }
+
+  // Validação dos campos essenciais do Módulo 1:
+  // - Faturamento mensal > 0
+  // - Ano da transição definido
+  // - Regime atual da empresa definido
+  const temFaturamento = (config.faturamentoMensal ?? 0) > 0
+  const temAnoTransicao = !!config.anoTransicao
+  const temRegimeAtual = !!config.regimeAtualEmpresa
+
+  const configuracoesPreenchidas = temFaturamento && temAnoTransicao && temRegimeAtual
+
+  const camposFaltantes: string[] = []
+  if (!temFaturamento) {
+    camposFaltantes.push('Faturamento Mensal (deve ser maior que zero)')
+  }
+  if (!temAnoTransicao) {
+    camposFaltantes.push('Ano da Transição (selecione o ano ou o sistema atual)')
+  }
+  if (!temRegimeAtual) {
+    camposFaltantes.push('Regime Atual da Empresa (Lucro Real, Presumido ou Simples Nacional)')
   }
 
   // Ano atual da transição (ou padrão 2033 pleno)
@@ -1507,6 +1537,16 @@ export default function Modulo1Configuracoes() {
           </CardContent>
         </Card>
       </div>
+
+      {/* PAINEL PRÓXIMOS PASSOS (ORIENTAÇÃO DO NOVO USUÁRIO) */}
+      {onNavegarModulo && (
+        <PainelProximosPassosCalculadora
+          moduloAtual="modulo1"
+          onNavegarModulo={onNavegarModulo}
+          configuracoesPreenchidas={configuracoesPreenchidas}
+          camposFaltantes={camposFaltantes}
+        />
+      )}
 
       {/* Modal de Cadastro de Novo Cliente */}
       <ModalCliente

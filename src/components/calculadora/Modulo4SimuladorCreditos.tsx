@@ -26,7 +26,18 @@ import {
 import { obterInfoRegimeOperacao } from '@/types/calculadoraIbsCbs'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
-export default function Modulo4SimuladorCreditos() {
+import {
+  PainelProximosPassosCalculadora,
+  ModuloCalculadoraId,
+} from '@/components/calculadora/PainelProximosPassosCalculadora'
+
+export interface Modulo4SimuladorCreditosProps {
+  onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
+}
+
+export default function Modulo4SimuladorCreditos({
+  onNavegarModulo,
+}: Modulo4SimuladorCreditosProps = {}) {
   const {
     despesasCreditos,
     updateDespesaCredito,
@@ -607,6 +618,11 @@ export default function Modulo4SimuladorCreditos() {
           </ul>
         </div>
       </div>
+
+      {/* PAINEL PRÓXIMOS PASSOS (ORIENTAÇÃO DO NOVO USUÁRIO) */}
+      {onNavegarModulo && (
+        <PainelProximosPassosCalculadora moduloAtual="modulo4" onNavegarModulo={onNavegarModulo} />
+      )}
     </div>
   )
 }

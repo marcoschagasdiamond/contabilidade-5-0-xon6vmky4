@@ -24,7 +24,18 @@ import { Calculator, RotateCcw, Sparkles, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 
-export default function Modulo2CalculadoraSimples() {
+import {
+  PainelProximosPassosCalculadora,
+  ModuloCalculadoraId,
+} from '@/components/calculadora/PainelProximosPassosCalculadora'
+
+export interface Modulo2CalculadoraSimplesProps {
+  onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
+}
+
+export default function Modulo2CalculadoraSimples({
+  onNavegarModulo,
+}: Modulo2CalculadoraSimplesProps = {}) {
   const {
     valorOperacao,
     setValorOperacao,
@@ -586,6 +597,11 @@ export default function Modulo2CalculadoraSimples() {
           </div>
         )
       })()}
+
+      {/* PAINEL PRÓXIMOS PASSOS (ORIENTAÇÃO DO NOVO USUÁRIO) */}
+      {onNavegarModulo && (
+        <PainelProximosPassosCalculadora moduloAtual="modulo2" onNavegarModulo={onNavegarModulo} />
+      )}
     </div>
   )
 }

@@ -73,14 +73,21 @@ import {
 
 const CORES_PIZZA = ['#07132B', '#D4AF37', '#10B981', '#3B82F6', '#6366F1', '#EC4899', '#8B5CF6']
 
+import {
+  PainelProximosPassosCalculadora,
+  ModuloCalculadoraId,
+} from '@/components/calculadora/PainelProximosPassosCalculadora'
+
 interface Modulo6DashboardProps {
   simulacoesComparar?: SimulacaoCalculadora[]
   onAbrirPdfComparativo?: () => void
+  onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
 }
 
 export default function Modulo6Dashboard({
   simulacoesComparar = [],
   onAbrirPdfComparativo,
+  onNavegarModulo,
 }: Modulo6DashboardProps) {
   const {
     config,
@@ -1927,6 +1934,11 @@ export default function Modulo6Dashboard({
       {/* QUADRO DO ASSISTENTE DE ANÁLISE — CALCULADORA IBS/CBS (AGENTE NATIVO SKIP CLOUD) */}
       {/* Posicionado ao final da página do Dashboard — após Conclusão Analítica e Split Payment, como última seção */}
       <QuadroAssistenteAnalise abertoInicial={false} />
+
+      {/* PAINEL PRÓXIMOS PASSOS (ORIENTAÇÃO DO NOVO USUÁRIO) */}
+      {onNavegarModulo && (
+        <PainelProximosPassosCalculadora moduloAtual="modulo6" onNavegarModulo={onNavegarModulo} />
+      )}
 
       {/* Modal Salvar Simulação invocado a partir do Dashboard */}
       <ModalSalvarSimulacao

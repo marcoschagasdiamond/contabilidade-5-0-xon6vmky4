@@ -69,7 +69,18 @@ import { Button } from '@/components/ui/button'
 import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
 import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
 
-export default function Modulo3ComparativoRegimes() {
+import {
+  PainelProximosPassosCalculadora,
+  ModuloCalculadoraId,
+} from '@/components/calculadora/PainelProximosPassosCalculadora'
+
+export interface Modulo3ComparativoRegimesProps {
+  onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
+}
+
+export default function Modulo3ComparativoRegimes({
+  onNavegarModulo,
+}: Modulo3ComparativoRegimesProps = {}) {
   const {
     config,
     faturamentoMensal,
@@ -1541,6 +1552,11 @@ export default function Modulo3ComparativoRegimes() {
           </div>
         </CardContent>
       </Card>
+
+      {/* PAINEL PRÓXIMOS PASSOS (ORIENTAÇÃO DO NOVO USUÁRIO) */}
+      {onNavegarModulo && (
+        <PainelProximosPassosCalculadora moduloAtual="modulo3" onNavegarModulo={onNavegarModulo} />
+      )}
     </div>
   )
 }

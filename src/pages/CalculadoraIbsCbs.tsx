@@ -567,15 +567,26 @@ function CalculadoraConteudo() {
 
           {/* ÁREA DE CONTEÚDO DO MÓDULO SELECIONADO */}
           <main className="flex-1 w-full min-w-0">
-            {moduloAtivo === 'modulo1' && <Modulo1Configuracoes />}
-            {moduloAtivo === 'modulo2' && <Modulo2CalculadoraSimples />}
-            {moduloAtivo === 'modulo3' && <Modulo3ComparativoRegimes />}
-            {moduloAtivo === 'modulo4' && <Modulo4SimuladorCreditos />}
-            {moduloAtivo === 'modulo5' && <Modulo5TransicaoCronograma />}
+            {moduloAtivo === 'modulo1' && (
+              <Modulo1Configuracoes onNavegarModulo={(id) => setModuloAtivo(id)} />
+            )}
+            {moduloAtivo === 'modulo2' && (
+              <Modulo2CalculadoraSimples onNavegarModulo={(id) => setModuloAtivo(id)} />
+            )}
+            {moduloAtivo === 'modulo3' && (
+              <Modulo3ComparativoRegimes onNavegarModulo={(id) => setModuloAtivo(id)} />
+            )}
+            {moduloAtivo === 'modulo4' && (
+              <Modulo4SimuladorCreditos onNavegarModulo={(id) => setModuloAtivo(id)} />
+            )}
+            {moduloAtivo === 'modulo5' && (
+              <Modulo5TransicaoCronograma onNavegarModulo={(id) => setModuloAtivo(id)} />
+            )}
             {moduloAtivo === 'modulo6' && (
               <Modulo6Dashboard
                 simulacoesComparar={simulacoesParaComparar}
                 onAbrirPdfComparativo={() => setModalPdfComparativoAberto(true)}
+                onNavegarModulo={(id) => setModuloAtivo(id)}
               />
             )}
 
