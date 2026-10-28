@@ -4,7 +4,6 @@ import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
-import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import {
   getDiagnosticos,
   getDiagnosticosPorCliente,
@@ -1809,7 +1808,36 @@ export default function DiagnosticoRelatorioConsolidado() {
         )}
       </div>
 
-      <DiamondFooterCTA />
+      {/* QUADRO: FAZER OUTRO DIAGNÓSTICO (DIAMOND GROUP: NAVY #07132B, DOURADO #D4AF37, SEM ÍCONES NO BOTÃO) */}
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 my-16">
+        <div className="relative rounded-2xl bg-gradient-to-br from-[#07132B] via-[#0E2442] to-[#14345C] text-white p-8 sm:p-12 border border-[#D4AF37]/30 shadow-2xl overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/15 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="max-w-2xl text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 mb-3 uppercase tracking-wider">
+                DIAGNOSTICADOR EXECUTIVO DIAMOND
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-heading font-extrabold text-white leading-tight">
+                Fazer Outro Diagnóstico
+              </h3>
+              <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
+                Inicie uma nova análise diagnóstica completa 360°, avalie os 7 riscos estratégicos
+                ou simule novos cenários para a sua empresa.
+              </p>
+            </div>
+
+            <div className="shrink-0 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <Link
+                to="/diagnostico-360"
+                className="inline-flex items-center justify-center px-7 py-4 rounded-xl font-bold text-sm sm:text-base text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-lg shadow-[#D4AF37]/20 transition-all hover:scale-105 cursor-pointer text-center"
+              >
+                Fazer Outro Diagnóstico
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
