@@ -217,14 +217,17 @@ export default function Modulo1Configuracoes() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {/* Seletor 1: Ano da Transição (Ano atual + 2026–2033) — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="seletorAnoTransicao" className="text-xs font-bold text-[#07132B]">
+            <div className="min-w-0 w-full space-y-2">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
+                <Label
+                  htmlFor="seletorAnoTransicao"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                >
                   Ano da Transição
                 </Label>
-                <span className="text-[11px] font-medium text-slate-500">
+                <span className="text-[11px] font-medium text-slate-500 break-words">
                   Sistema atual ou transição LC 214
                 </span>
               </div>
@@ -273,12 +276,15 @@ export default function Modulo1Configuracoes() {
             </div>
 
             {/* Seletor 2: Regime Aplicado (Preset por Setor) — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="seletorPresetSetor" className="text-xs font-bold text-[#07132B]">
+            <div className="min-w-0 w-full space-y-2">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
+                <Label
+                  htmlFor="seletorPresetSetor"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                >
                   Regime Aplicado (Preset por Setor)
                 </Label>
-                <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded shrink-0">
                   Aplica reduções
                 </span>
               </div>
@@ -381,15 +387,18 @@ export default function Modulo1Configuracoes() {
             </div>
 
             {/* Seletor 3: O que Vende (Ramo Principal) — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="tipoAtividadeM1" className="text-xs font-bold text-[#07132B]">
+            <div className="min-w-0 w-full space-y-2">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
+                <Label
+                  htmlFor="tipoAtividadeM1"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                >
                   O que Vende (Ramo Principal)
                 </Label>
                 {config.etiquetasOrigem?.tipoAtividade ? (
                   <BadgeOrigemPropagada origem="dados-empresa" />
                 ) : (
-                  <span className="text-[10px] text-slate-500 font-medium">
+                  <span className="text-[10px] text-slate-500 font-medium break-words">
                     Propaga aos Módulos 3, 5 e Dashboard
                   </span>
                 )}
@@ -897,17 +906,20 @@ export default function Modulo1Configuracoes() {
           </div>
 
           {/* Parâmetros Operacionais Base para Propagação Automática aos Módulos 2, 3, 5 e Dashboard */}
-          <div className="pt-2 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="pt-2 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {/* Regime Atual da Empresa */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="regimeAtualEmpresaM1" className="text-xs font-bold text-[#07132B]">
+            <div className="min-w-0 w-full space-y-1.5">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
+                <Label
+                  htmlFor="regimeAtualEmpresaM1"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                >
                   Regime Atual da Empresa
                 </Label>
                 {config.etiquetasOrigem?.regimeAtualEmpresa ? (
                   <BadgeOrigemPropagada origem="dados-empresa" />
                 ) : (
-                  <span className="text-[10px] text-slate-500 font-medium">
+                  <span className="text-[10px] text-slate-500 font-medium break-words">
                     Propaga ao Dashboard e Split
                   </span>
                 )}
@@ -942,19 +954,22 @@ export default function Modulo1Configuracoes() {
             </div>
 
             {/* Faturamento Mensal */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="fatMensalM1" className="text-xs font-bold text-[#07132B]">
+            <div className="min-w-0 w-full space-y-1.5">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
+                <Label
+                  htmlFor="fatMensalM1"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                >
                   Faturamento Mensal (R$)
                 </Label>
-                <span className="text-[10px] text-slate-500 font-medium">
+                <span className="text-[10px] text-slate-500 font-medium break-words">
                   Propaga aos Módulos 2, 3 e 5
                 </span>
               </div>
               <Input
                 id="fatMensalM1"
                 type="text"
-                value={(config.faturamentoMensal ?? 200000).toLocaleString('pt-BR', {
+                value={(config.faturamentoMensal ?? 0).toLocaleString('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
                 })}
@@ -971,12 +986,15 @@ export default function Modulo1Configuracoes() {
             </div>
 
             {/* % de Compras sobre Vendas */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="pctComprasM1" className="text-xs font-bold text-[#07132B]">
+            <div className="min-w-0 w-full space-y-1.5">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
+                <Label
+                  htmlFor="pctComprasM1"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                >
                   % de Compras sobre Vendas
                 </Label>
-                <span className="text-[10px] text-slate-500 font-medium">
+                <span className="text-[10px] text-slate-500 font-medium break-words">
                   Propaga aos Módulos 2 e 3
                 </span>
               </div>
@@ -986,7 +1004,7 @@ export default function Modulo1Configuracoes() {
                   type="number"
                   min="0"
                   max="100"
-                  value={config.percentualComprasVendas ?? 40}
+                  value={config.percentualComprasVendas ?? 0}
                   onChange={(e) => {
                     const v = Number(e.target.value)
                     updateConfig({ percentualComprasVendas: v })

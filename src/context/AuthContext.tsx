@@ -15,6 +15,7 @@ export function limparEstadoLocalSessao(): void {
     const chavesParaRemover = [
       'contabilidade5_dados_empresa',
       'contabilidade50_dados_empresa_v1',
+      'contabilidade50_rascunho_dados_empresa',
       'contabilidade50_cliente_ativo_id_v1',
       'contabilidade50_simulacoes_v1',
       'contabilidade50_simulacoes_calculadora_v1',

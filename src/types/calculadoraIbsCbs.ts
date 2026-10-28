@@ -1249,8 +1249,8 @@ export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {
   anoTransicao: 2033,
   presetSetor: 'padrao',
   regimeAtualEmpresa: 'Lucro Presumido',
-  faturamentoMensal: 200000,
-  percentualComprasVendas: 40,
+  faturamentoMensal: 0,
+  percentualComprasVendas: 0,
   tipoAtividade: 'servico',
   subatividadeServico: 'servico_comum',
   subatividadeIndustria: 'industria_comum',
@@ -1292,14 +1292,14 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'materia_prima',
     nome: 'Matéria-prima',
-    valorMensal: 100000,
+    valorMensal: 0,
     aliquotaAntiga: 27.25, // PIS 1.65 + COFINS 7.6 + ICMS 18
     descricaoAntigo: 'Crédito pleno no Lucro Real (PIS 1,65% + COFINS 7,6% + ICMS 18%)',
   },
   {
     id: 'mercadorias_revenda',
     nome: 'Mercadorias para revenda (comércio)',
-    valorMensal: 80000,
+    valorMensal: 0,
     aliquotaAntiga: 27.25, // PIS 1.65 + COFINS 7.6 + ICMS 18
     descricaoAntigo:
       'Crédito pleno no Lucro Real (PIS/COFINS 9,25% + ICMS ~18%); restrito no Simples Nacional e Lucro Presumido',
@@ -1307,7 +1307,7 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'maquinas_equipamentos',
     nome: 'Máquinas e equipamentos (CAPEX)',
-    valorMensal: 35000,
+    valorMensal: 0,
     aliquotaAntiga: 9.25,
     descricaoAntigo:
       'Crédito restrito e fracionado em 48 meses (CIAP/PIS/COFINS) no Lucro Real; sem crédito no Simples e Presumido',
@@ -1315,14 +1315,14 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'energia_eletrica',
     nome: 'Energia elétrica',
-    valorMensal: 15000,
+    valorMensal: 0,
     aliquotaAntiga: 9.25, // PIS/COFINS não-cumulativo (ICMS produtivo condicionado)
     descricaoAntigo: 'Crédito de PIS/COFINS (9,25%) no Lucro Real; ICMS com restrição setorial',
   },
   {
     id: 'combustiveis_lubrificantes',
     nome: 'Combustíveis e lubrificantes de frota',
-    valorMensal: 15000,
+    valorMensal: 0,
     aliquotaAntiga: 18.0,
     descricaoAntigo:
       'ICMS monofásico e PIS/COFINS restrito a frotas estritamente produtivas no Lucro Real; vedado para uso administrativo',
@@ -1330,21 +1330,21 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'frete_transporte',
     nome: 'Frete e Transporte de insumos',
-    valorMensal: 30000,
+    valorMensal: 0,
     aliquotaAntiga: 21.25, // ICMS 12% + PIS/COFINS 9.25%
     descricaoAntigo: 'Crédito de PIS/COFINS (9,25%) e ICMS interestadual (~12%) no Lucro Real',
   },
   {
     id: 'aluguel',
     nome: 'Aluguel de imóveis/galpões',
-    valorMensal: 25000,
+    valorMensal: 0,
     aliquotaAntiga: 9.25, // PIS/COFINS Lucro Real; Presumido = 0
     descricaoAntigo: 'PIS/COFINS 9,25% apenas Lucro Real de PJ; sem crédito no Presumido/Simples',
   },
   {
     id: 'leasing_veiculos_equipamentos',
     nome: 'Arrendamento/leasing de veículos e equipamentos',
-    valorMensal: 14000,
+    valorMensal: 0,
     aliquotaAntiga: 9.25,
     descricaoAntigo:
       'Crédito de PIS/COFINS (9,25%) no Lucro Real para bens de capital; sem crédito de ISS e ICMS',
@@ -1352,14 +1352,14 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'manutencao',
     nome: 'Manutenção de máquinas e instalações',
-    valorMensal: 18000,
+    valorMensal: 0,
     aliquotaAntiga: 9.25,
     descricaoAntigo: 'PIS/COFINS 9,25% para bens de produção no Lucro Real; sem crédito de ISS',
   },
   {
     id: 'servicos_limpeza',
     nome: 'Serviços de limpeza e segurança',
-    valorMensal: 12000,
+    valorMensal: 0,
     aliquotaAntiga: 9.25,
     descricaoAntigo:
       'Permite crédito de PIS/COFINS (9,25%) no Lucro Real como insumo de mão de obra',
@@ -1367,7 +1367,7 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'servicos_ti',
     nome: 'Serviços de TI e Software',
-    valorMensal: 20000,
+    valorMensal: 0,
     aliquotaAntiga: 0, // Tradicionalmente vedado/litigioso sem crédito ICMS/ISS
     descricaoAntigo:
       'Geralmente sem crédito no sistema antigo (ISS não gera crédito, PIS/COFINS restrito)',
@@ -1375,14 +1375,14 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'consultorias',
     nome: 'Consultorias e serviços profissionais',
-    valorMensal: 15000,
+    valorMensal: 0,
     aliquotaAntiga: 0,
     descricaoAntigo: 'Serviços tributados por ISS: zero crédito tributário no sistema atual',
   },
   {
     id: 'marketing_publicidade',
     nome: 'Marketing e publicidade',
-    valorMensal: 12000,
+    valorMensal: 0,
     aliquotaAntiga: 0,
     descricaoAntigo:
       'Serviço tributado sob ISS: sem crédito no sistema antigo e histórico de litígio em PIS/COFINS',
@@ -1390,7 +1390,7 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'royalties_licenciamento',
     nome: 'Royalties e licenciamento',
-    valorMensal: 8000,
+    valorMensal: 0,
     aliquotaAntiga: 0,
     descricaoAntigo:
       'Vedação expressa de apropriação de créditos de PIS/COFINS (Leis 10.637 e 10.833) e sem crédito de ISS',
@@ -1398,7 +1398,7 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'seguros',
     nome: 'Seguros',
-    valorMensal: 6000,
+    valorMensal: 0,
     aliquotaAntiga: 0,
     descricaoAntigo:
       'Operação financeira sujeita a IOF: vedação legal absoluta de aproveitamento de créditos no regime anterior',
@@ -1406,7 +1406,7 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'viagens_hospedagem',
     nome: 'Viagens/hospedagem/diárias',
-    valorMensal: 7000,
+    valorMensal: 0,
     aliquotaAntiga: 0,
     descricaoAntigo:
       'Despesas de representação e viagem: vedadas de crédito no regime anterior (enquadramento em uso/consumo)',
@@ -1414,7 +1414,7 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'tarifas_bancarias',
     nome: 'Tarifas bancárias',
-    valorMensal: 3500,
+    valorMensal: 0,
     aliquotaAntiga: 0,
     descricaoAntigo:
       'Serviços do setor financeiro sujeitos a ISS: sem geração de créditos tributários no sistema anterior',
@@ -1425,7 +1425,7 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'agua_esgoto_gas',
     nome: 'Água/esgoto/gás',
-    valorMensal: 4000,
+    valorMensal: 0,
     aliquotaAntiga: 0,
     descricaoAntigo:
       'Uso e consumo geral: vedação expressa de créditos de ICMS e PIS/COFINS no sistema antigo',
@@ -1433,7 +1433,7 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'telefonia_internet',
     nome: 'Telefonia e Internet',
-    valorMensal: 6000,
+    valorMensal: 0,
     aliquotaAntiga: 0,
     descricaoAntigo:
       'Sem crédito para a maioria dos setores no sistema antigo (vedação de uso/consumo)',
@@ -1441,7 +1441,7 @@ export const CATEGORIAS_CREDITO_PADRAO: CategoriaDespesaCredito[] = [
   {
     id: 'material_escritorio',
     nome: 'Material de escritório e expediente',
-    valorMensal: 5000,
+    valorMensal: 0,
     aliquotaAntiga: 0,
     descricaoAntigo: 'Uso e consumo: Vedado crédito no sistema antigo (ICMS e PIS/COFINS)',
   },

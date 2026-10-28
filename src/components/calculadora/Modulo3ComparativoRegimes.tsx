@@ -223,11 +223,14 @@ export default function Modulo3ComparativoRegimes() {
             <span className="text-xs text-slate-500">Atualização em tempo real</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {/* Campo: Faturamento Mensal */}
-            <div className="space-y-2">
+            <div className="min-w-0 w-full space-y-2">
               <div className="flex items-center justify-between gap-1 flex-wrap">
-                <Label htmlFor="fatMensal" className="text-sm font-bold text-[#07132B]">
+                <Label
+                  htmlFor="fatMensal"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                >
                   Faturamento Mensal (R$)
                 </Label>
                 {origensPropagadas?.modulo3Faturamento && (
@@ -244,15 +247,18 @@ export default function Modulo3ComparativoRegimes() {
                 onChange={handleFaturamentoChange}
                 className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm"
               />
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-slate-500 block break-words">
                 Receita bruta operacional estimada por mês.
               </span>
             </div>
 
             {/* Campo: O que vende (Ramo Principal) */}
-            <div className="space-y-2">
+            <div className="min-w-0 w-full space-y-2">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <Label htmlFor="tipoAtividade" className="text-sm font-bold text-[#07132B]">
+                <Label
+                  htmlFor="tipoAtividade"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                >
                   O que Vende (Ramo Principal)
                 </Label>
                 {origensPropagadas?.modulo3TipoAtividade && (
@@ -277,17 +283,20 @@ export default function Modulo3ComparativoRegimes() {
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-slate-500 block break-words">
                 Determina tributos incidentes (ISS, IPI, ICMS, IS), anexo do Simples e tratamento no
                 IBS/CBS.
               </span>
             </div>
 
             {/* Campo: % Compras sobre Vendas */}
-            <div className="space-y-2">
+            <div className="min-w-0 w-full space-y-2">
               <div className="flex justify-between items-center gap-1 flex-wrap">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <Label htmlFor="pctComprasComp" className="text-sm font-bold text-[#07132B]">
+                  <Label
+                    htmlFor="pctComprasComp"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                  >
                     % de Compras sobre Vendas
                   </Label>
                   {origensPropagadas?.modulo3PercentualCompras && (
@@ -310,7 +319,7 @@ export default function Modulo3ComparativoRegimes() {
                 />
                 <span className="absolute right-4 top-3 text-slate-400 font-bold">%</span>
               </div>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-slate-500 block break-words">
                 Base de compras diretas para apropriação de créditos.
               </span>
             </div>
@@ -324,12 +333,14 @@ export default function Modulo3ComparativoRegimes() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <Label
                     htmlFor="subServico"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-2"
                   >
-                    <Tag className="w-4 h-4 text-[#D4AF37]" />
-                    Subatividade de Serviço (Refina Presunção IRPJ/CSLL e Reduções IBS/CBS)
+                    <Tag className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                    <span>
+                      Subatividade de Serviço (Refina Presunção IRPJ/CSLL e Reduções IBS/CBS)
+                    </span>
                   </Label>
-                  <span className="text-[11px] text-blue-700 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-blue-200">
+                  <span className="text-[11px] text-blue-700 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-blue-200 shrink-0">
                     5 perfis regulatórios disponíveis
                   </span>
                 </div>
@@ -376,12 +387,12 @@ export default function Modulo3ComparativoRegimes() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <Label
                     htmlFor="subIndustria"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-2"
                   >
-                    <Tag className="w-4 h-4 text-[#D4AF37]" />
-                    Subatividade Industrial (Ajusta IPI e Imposto Seletivo)
+                    <Tag className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                    <span>Subatividade Industrial (Ajusta IPI e Imposto Seletivo)</span>
                   </Label>
-                  <span className="text-[11px] text-amber-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-amber-200">
+                  <span className="text-[11px] text-amber-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-amber-200 shrink-0">
                     Impacta Lucro Real, Presumido e IVA Dual
                   </span>
                 </div>
@@ -462,12 +473,12 @@ export default function Modulo3ComparativoRegimes() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <Label
                     htmlFor="subComercio"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-2"
                   >
-                    <Tag className="w-4 h-4 text-[#D4AF37]" />
-                    Subatividade de Comércio (ICMS Próprio vs ICMS-ST / Atacado)
+                    <Tag className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                    <span>Subatividade de Comércio (ICMS Próprio vs ICMS-ST / Atacado)</span>
                   </Label>
-                  <span className="text-[11px] text-emerald-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  <span className="text-[11px] text-emerald-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-emerald-200 shrink-0">
                     Ajusta presunção de 8% e alíquotas de saída
                   </span>
                 </div>
@@ -513,12 +524,14 @@ export default function Modulo3ComparativoRegimes() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <Label
                     htmlFor="subAgro"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-2"
                   >
-                    <Tag className="w-4 h-4 text-[#D4AF37]" />
-                    Subatividade Agropecuária (Reduções IBS/CBS e Enquadramento Simples)
+                    <Tag className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                    <span>
+                      Subatividade Agropecuária (Reduções IBS/CBS e Enquadramento Simples)
+                    </span>
                   </Label>
-                  <span className="text-[11px] text-lime-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-lime-200">
+                  <span className="text-[11px] text-lime-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-lime-200 shrink-0">
                     4 perfis regulatórios rurais
                   </span>
                 </div>
@@ -564,12 +577,12 @@ export default function Modulo3ComparativoRegimes() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <Label
                     htmlFor="subConstrucao"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-2"
                   >
-                    <Tag className="w-4 h-4 text-[#D4AF37]" />
-                    Subatividade de Construção Civil e Engenharia
+                    <Tag className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                    <span>Subatividade de Construção Civil e Engenharia</span>
                   </Label>
-                  <span className="text-[11px] text-orange-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-orange-200">
+                  <span className="text-[11px] text-orange-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-orange-200 shrink-0">
                     Anexo IV vs III (Fator R)
                   </span>
                 </div>
@@ -613,12 +626,12 @@ export default function Modulo3ComparativoRegimes() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <Label
                     htmlFor="subLocacao"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-2"
                   >
-                    <Tag className="w-4 h-4 text-[#D4AF37]" />
-                    Subatividade de Aluguel e Locação de Bens
+                    <Tag className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                    <span>Subatividade de Aluguel e Locação de Bens</span>
                   </Label>
-                  <span className="text-[11px] text-sky-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-sky-200">
+                  <span className="text-[11px] text-sky-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-sky-200 shrink-0">
                     Anexo III sem ISS (Súmula 31)
                   </span>
                 </div>
@@ -662,12 +675,12 @@ export default function Modulo3ComparativoRegimes() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <Label
                     htmlFor="subFoodService"
-                    className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-2"
                   >
-                    <Tag className="w-4 h-4 text-[#D4AF37]" />
-                    Subatividade de Bares, Restaurantes e Food Service
+                    <Tag className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                    <span>Subatividade de Bares, Restaurantes e Food Service</span>
                   </Label>
-                  <span className="text-[11px] text-red-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-red-200">
+                  <span className="text-[11px] text-red-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-red-200 shrink-0">
                     Anexo I + Imposto Seletivo & Créditos Delivery
                   </span>
                 </div>
@@ -743,12 +756,12 @@ export default function Modulo3ComparativoRegimes() {
             {/* 1.8 Seletor Ramo Misto: Proporção + Subatividades das duas partes */}
             {tipoAtividade === 'misto' && (
               <div className="bg-amber-50/70 border border-amber-200 p-5 rounded-xl space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-bold text-amber-950 flex items-center gap-2">
-                    <Tag className="w-4 h-4 text-[#D4AF37]" />
-                    Atividade Mista: Calibração das Duas Partes Proporcionais
+                <div className="flex justify-between items-center gap-2 flex-wrap">
+                  <Label className="text-xs sm:text-sm font-medium break-words leading-snug text-amber-950 flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                    <span>Atividade Mista: Calibração das Duas Partes Proporcionais</span>
                   </Label>
-                  <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded">
+                  <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded shrink-0">
                     {proporcaoServicoMisto}% Serviço | {100 - proporcaoServicoMisto}% Comércio
                   </span>
                 </div>
@@ -762,8 +775,8 @@ export default function Modulo3ComparativoRegimes() {
                   className="py-1"
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div className="space-y-1.5 bg-white p-3.5 rounded-lg border border-amber-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div className="min-w-0 w-full space-y-1.5 bg-white p-3.5 rounded-lg border border-amber-200">
                     <Label className="text-xs font-bold text-slate-800">
                       Subatividade para a parte de Serviço ({proporcaoServicoMisto}%):
                     </Label>
@@ -784,7 +797,7 @@ export default function Modulo3ComparativoRegimes() {
                     </Select>
                   </div>
 
-                  <div className="space-y-1.5 bg-white p-3.5 rounded-lg border border-amber-200">
+                  <div className="min-w-0 w-full space-y-1.5 bg-white p-3.5 rounded-lg border border-amber-200">
                     <Label className="text-xs font-bold text-slate-800">
                       Subatividade para a parte de Comércio ({100 - proporcaoServicoMisto}%):
                     </Label>
@@ -822,20 +835,20 @@ export default function Modulo3ComparativoRegimes() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {/* Novo Campo 1: Folha de Pagamento Mensal */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="min-w-0 w-full space-y-2">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
                 <Label
                   htmlFor="folhaPagamento"
-                  className="text-xs font-bold text-[#07132B] flex items-center gap-1"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-1"
                 >
-                  <Users className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  Folha Mensal (R$)
+                  <Users className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                  <span>Folha Mensal (R$)</span>
                 </Label>
                 {dadosAdicionais && (
                   <span
-                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold shrink-0 ${
                       dadosAdicionais.fatorRQualificaAnexoIII
                         ? 'bg-emerald-100 text-emerald-800'
                         : 'bg-amber-100 text-amber-800'
@@ -855,22 +868,22 @@ export default function Modulo3ComparativoRegimes() {
                 onChange={handleFolhaChange}
                 className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 shadow-sm"
               />
-              <span className="text-[11px] text-slate-500 block leading-tight">
+              <span className="text-[11px] text-slate-500 block leading-tight break-words">
                 Salários e pró-labore. Define Fator R (≥28% vai p/ Anexo III).
               </span>
             </div>
 
             {/* Novo Campo 2: Margem de Lucro Estimada (%) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="min-w-0 w-full space-y-2">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
                 <Label
                   htmlFor="margemLucro"
-                  className="text-xs font-bold text-[#07132B] flex items-center gap-1"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-1"
                 >
-                  <LineChart className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  Margem de Lucro (%)
+                  <LineChart className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                  <span>Margem de Lucro (%)</span>
                 </Label>
-                <span className="text-xs font-mono font-bold text-[#D4AF37] bg-[#07132B] px-1.5 py-0.2 rounded">
+                <span className="text-xs font-mono font-bold text-[#D4AF37] bg-[#07132B] px-1.5 py-0.2 rounded shrink-0">
                   {margemLucroEstimada}%
                 </span>
               </div>
@@ -887,20 +900,20 @@ export default function Modulo3ComparativoRegimes() {
                 />
                 <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">%</span>
               </div>
-              <span className="text-[11px] text-slate-500 block leading-tight">
+              <span className="text-[11px] text-slate-500 block leading-tight break-words">
                 Base de cálculo do Lucro Real sobre o lucro líquido contábil.
               </span>
             </div>
 
             {/* Novo Campo 3: Despesas com Créditos Mensais (R$) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="min-w-0 w-full space-y-2">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
                 <Label
                   htmlFor="despesasCreditos"
-                  className="text-xs font-bold text-[#07132B] flex items-center gap-1"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-1"
                 >
-                  <Receipt className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  Despesas c/ Crédito (R$)
+                  <Receipt className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                  <span>Despesas c/ Crédito (R$)</span>
                 </Label>
               </div>
               <Input
@@ -913,21 +926,22 @@ export default function Modulo3ComparativoRegimes() {
                 onChange={handleDespesasCreditoChange}
                 className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 shadow-sm"
               />
-              <span className="text-[11px] text-slate-500 block leading-tight">
+              <span className="text-[11px] text-slate-500 block leading-tight break-words">
                 Energia, aluguel, TI: gera crédito no LR e pleno no IBS/CBS.
               </span>
             </div>
 
             {/* Novo Campo 4: % de Exportação */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="min-w-0 w-full space-y-2">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
                 <Label
                   htmlFor="pctExportacao"
-                  className="text-xs font-bold text-[#07132B] flex items-center gap-1"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-1"
                 >
-                  <Globe2 className="w-3.5 h-3.5 text-[#D4AF37]" />% de Exportação
+                  <Globe2 className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                  <span>% de Exportação</span>
                 </Label>
-                <span className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded">
+                <span className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded shrink-0">
                   {percentualExportacao}%
                 </span>
               </div>
@@ -943,27 +957,27 @@ export default function Modulo3ComparativoRegimes() {
                 />
                 <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">%</span>
               </div>
-              <span className="text-[11px] text-slate-500 block leading-tight">
+              <span className="text-[11px] text-slate-500 block leading-tight break-words">
                 Receita de exportação imune nos 4 regimes mantendo créditos.
               </span>
             </div>
 
             {/* Novo Campo 5: UF de Origem */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="min-w-0 w-full space-y-2">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
                 <Label
                   htmlFor="ufOrigem"
-                  className="text-xs font-bold text-[#07132B] flex items-center gap-1"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] flex items-center gap-1"
                 >
-                  <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  UF de Origem
+                  <MapPin className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                  <span>UF de Origem</span>
                 </Label>
                 {ufOrigem ? (
-                  <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                  <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 shrink-0">
                     {dadosAdicionais?.aliquotaIcmsAplicada}%
                   </span>
                 ) : (
-                  <span className="text-[10px] text-slate-400">Padrão Módulo 1</span>
+                  <span className="text-[10px] text-slate-400 shrink-0">Padrão Módulo 1</span>
                 )}
               </div>
               <Select
@@ -988,7 +1002,7 @@ export default function Modulo3ComparativoRegimes() {
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-[11px] text-slate-500 block leading-tight">
+              <span className="text-[11px] text-slate-500 block leading-tight break-words">
                 Ajusta ICMS estadual conforme tabela padrão de cada UF.
               </span>
             </div>

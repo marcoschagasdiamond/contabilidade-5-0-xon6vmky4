@@ -131,11 +131,14 @@ export default function Modulo2CalculadoraSimples() {
       </div>
 
       {/* Painel de Entradas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 bg-slate-50 border border-slate-200/80 p-6 rounded-2xl shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 border border-slate-200/80 p-4 sm:p-6 rounded-2xl shadow-sm">
         {/* Campo 1: Valor da Operação */}
-        <div className="space-y-2">
+        <div className="min-w-0 w-full space-y-2">
           <div className="flex items-center justify-between gap-1 flex-wrap">
-            <Label htmlFor="valorOperacao" className="text-sm font-bold text-[#07132B]">
+            <Label
+              htmlFor="valorOperacao"
+              className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+            >
               Valor da Operação (R$)
             </Label>
             {origensPropagadas?.modulo2ValorOperacao && (
@@ -155,15 +158,18 @@ export default function Modulo2CalculadoraSimples() {
               placeholder="R$ 0,00"
             />
           </div>
-          <span className="text-[11px] text-slate-500">
+          <span className="text-[11px] text-slate-500 block break-words">
             Base tributável da operação comercial ou prestação.
           </span>
         </div>
 
         {/* Campo 2: Ano da Transição (Ano atual + 2026–2033) — SEM ÍCONES */}
-        <div className="space-y-2">
+        <div className="min-w-0 w-full space-y-2">
           <div className="flex items-center justify-between gap-1 flex-wrap">
-            <Label htmlFor="anoOperacao" className="text-sm font-bold text-[#07132B]">
+            <Label
+              htmlFor="anoOperacao"
+              className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+            >
               Ano da Transição
             </Label>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -217,9 +223,12 @@ export default function Modulo2CalculadoraSimples() {
         </div>
 
         {/* Campo 3: Regime Aplicado (Preset por Setor) — SEM ÍCONES */}
-        <div className="space-y-2">
+        <div className="min-w-0 w-full space-y-2">
           <div className="flex items-center justify-between gap-1 flex-wrap">
-            <Label htmlFor="regimeOperacao" className="text-sm font-bold text-[#07132B]">
+            <Label
+              htmlFor="regimeOperacao"
+              className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+            >
               Regime Aplicado (Preset por Setor)
             </Label>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -315,10 +324,13 @@ export default function Modulo2CalculadoraSimples() {
         </div>
 
         {/* Campo 4: % de Compras sobre Vendas */}
-        <div className="space-y-2">
+        <div className="min-w-0 w-full space-y-2">
           <div className="flex justify-between items-center gap-1 flex-wrap">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <Label htmlFor="percentualCompras" className="text-sm font-bold text-[#07132B]">
+              <Label
+                htmlFor="percentualCompras"
+                className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+              >
                 % de Compras sobre Vendas
               </Label>
               {origensPropagadas?.modulo2PercentualCompras && (
@@ -341,7 +353,7 @@ export default function Modulo2CalculadoraSimples() {
             />
             <span className="absolute right-4 top-3 text-slate-400 font-bold">%</span>
           </div>
-          <span className="text-[11px] text-slate-500">
+          <span className="text-[11px] text-slate-500 block break-words">
             Insumos com crédito amplo apropriado na operação.
           </span>
         </div>

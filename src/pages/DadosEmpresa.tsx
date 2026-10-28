@@ -78,7 +78,23 @@ export default function DadosEmpresa() {
     useDadosEmpresa()
 
   // Estado local do formulário
-  const [formData, setFormData] = useState<DadosEmpresaPerfil>(dadosEmpresa)
+  const CHAVE_RASCUNHO = 'contabilidade50_rascunho_dados_empresa'
+  const [formData, setFormData] = useState<DadosEmpresaPerfil>(() => {
+    // Restaura rascunho salvo caso os campos principais estejam vazios
+    if (typeof window !== 'undefined') {
+      try {
+        const salvo = localStorage.getItem(CHAVE_RASCUNHO)
+        if (salvo) {
+          const rascunho = JSON.parse(salvo)
+          return { ...dadosEmpresa, ...rascunho }
+        }
+      } catch (err) {
+        console.warn('Erro ao restaurar rascunho de dados da empresa:', err)
+      }
+    }
+    return dadosEmpresa
+  })
+
   const [searchParams] = useSearchParams()
   const destinoParam = searchParams.get('destino') || ''
   const destinoFinal =
@@ -92,8 +108,31 @@ export default function DadosEmpresa() {
 
   // Sincroniza quando os dados do contexto mudarem
   useEffect(() => {
-    setFormData(dadosEmpresa)
+    setFormData((prev) => {
+      // Se já temos valores preenchidos no formulário pelo usuário ou rascunho, preserva
+      const temPreenchimentoLocal = Boolean(
+        prev.nomeEmpresa?.trim() ||
+        prev.cnpj?.trim() ||
+        prev.nomeContato?.trim() ||
+        prev.email?.trim(),
+      )
+      if (temPreenchimentoLocal) return prev
+      return dadosEmpresa
+    })
   }, [dadosEmpresa])
+
+  // Auto-save com debounce de 600ms no localStorage dedicado
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(CHAVE_RASCUNHO, JSON.stringify(formData))
+      } catch (err) {
+        console.warn('Erro ao salvar rascunho no localStorage:', err)
+      }
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [formData])
 
   // Handlers monetários
   const handleFaturamentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,6 +238,11 @@ export default function DadosEmpresa() {
     salvar(formData)
       .then(() => {
         setSalvoComSucesso(true)
+        try {
+          localStorage.removeItem(CHAVE_RASCUNHO)
+        } catch {
+          /* ignore */
+        }
         if (destinoFinal) {
           setTimeout(() => {
             navigate(destinoFinal)
@@ -210,6 +254,11 @@ export default function DadosEmpresa() {
       .catch((err) => {
         console.error('Erro ao salvar dados da empresa:', err)
         setSalvoComSucesso(true)
+        try {
+          localStorage.removeItem(CHAVE_RASCUNHO)
+        } catch {
+          /* ignore */
+        }
         if (destinoFinal) {
           setTimeout(() => {
             navigate(destinoFinal)
@@ -221,6 +270,11 @@ export default function DadosEmpresa() {
   const handleRestaurar = () => {
     if (window.confirm('Deseja restaurar os valores padrão sugeridos pela Contabilidade 5.0?')) {
       restaurarPadrao()
+      try {
+        localStorage.removeItem(CHAVE_RASCUNHO)
+      } catch {
+        /* ignore */
+      }
       setFormData(DADOS_EMPRESA_PADRAO)
       setSalvoComSucesso(true)
       setTimeout(() => setSalvoComSucesso(false), 3000)
@@ -803,7 +857,7 @@ export default function DadosEmpresa() {
                       </span>
                     </div>
                     <Select
-                      value={formData.ufOrigem}
+                      value={formData.ufOrigem || undefined}
                       onValueChange={(val) => {
                         // Se a cidade selecionada não pertencer à nova UF, limpa o campo de cidade
                         setFormData((prev) => {
@@ -853,7 +907,7 @@ export default function DadosEmpresa() {
                       </span>
                     </div>
                     <Select
-                      value={formData.cidade}
+                      value={formData.cidade || undefined}
                       onValueChange={(val) => {
                         setFormData((prev) => ({ ...prev, cidade: val }))
                         if (errors.cidade) setErrors((prev) => ({ ...prev, cidade: '' }))
@@ -1035,7 +1089,7 @@ export default function DadosEmpresa() {
                       <span className="text-[11px] text-slate-400">Como tributa hoje</span>
                     </div>
                     <Select
-                      value={formData.regimeAtual}
+                      value={formData.regimeAtual || undefined}
                       onValueChange={(val) =>
                         setFormData((prev) => ({ ...prev, regimeAtual: val }))
                       }
@@ -1075,7 +1129,7 @@ export default function DadosEmpresa() {
                       <span className="text-[11px] text-slate-400">Equipe</span>
                     </div>
                     <Select
-                      value={formData.funcionarios}
+                      value={formData.funcionarios || undefined}
                       onValueChange={(val) =>
                         setFormData((prev) => ({ ...prev, funcionarios: val }))
                       }

@@ -727,7 +727,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   // Módulo 2: Calculadora Simples (inicializado a partir dos Dados da Empresa / Módulo 1)
   const [valorOperacao, setValorOperacaoState] = useState<number>(
-    () => config.faturamentoMensal || perfilInicial.faturamentoMensal || 50000,
+    () => config.faturamentoMensal || perfilInicial.faturamentoMensal || 0,
   )
   const [regimeOperacao, setRegimeOperacaoState] = useState<RegimeDiferenciadoTipo>(() =>
     config.presetSetor && config.presetSetor !== 'nenhum' ? config.presetSetor : 'padrao',
@@ -759,7 +759,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   // Módulo 3: Comparativo por Regime (inicializado a partir dos Dados da Empresa / Módulo 1)
   const [faturamentoMensal, setFaturamentoMensalState] = useState<number>(
-    () => config.faturamentoMensal || perfilInicial.faturamentoMensal || 200000,
+    () => config.faturamentoMensal || perfilInicial.faturamentoMensal || 0,
   )
   const setFaturamentoMensal = (v: number) => {
     setEditadoLocalmente((prev) => ({
@@ -808,7 +808,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   )
   const [percentualComprasVendasComparativo, setPercentualComprasVendasComparativoState] =
     useState<number>(
-      () => config.percentualComprasVendas ?? perfilInicial.percentualComprasVendas ?? 40,
+      () => config.percentualComprasVendas ?? perfilInicial.percentualComprasVendas ?? 0,
     )
   const setPercentualComprasVendasComparativo = (p: number) => {
     setEditadoLocalmente((prev) => ({
@@ -820,13 +820,13 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   }
   // Campos refinados do Módulo 3
   const [folhaPagamentoMensal, setFolhaPagamentoMensal] = useState<number>(
-    () => perfilInicial.folhaPagamentoMensal || 50000,
+    () => perfilInicial.folhaPagamentoMensal || 0,
   )
   const [margemLucroEstimada, setMargemLucroEstimada] = useState<number>(
     () => perfilInicial.margemLucroEstimada ?? 20,
   ) // %
   const [despesasComCreditosMensais, setDespesasComCreditosMensais] = useState<number>(
-    () => perfilInicial.despesasComCreditosMensais || 30000,
+    () => perfilInicial.despesasComCreditosMensais || 0,
   )
   const [percentualExportacao, setPercentualExportacao] = useState<number>(
     () => perfilInicial.percentualExportacao ?? 0,
@@ -835,7 +835,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   // Módulo 4: Simulador de Créditos (proporcionaliza categorias quando houver perfil)
   const gerarCategoriasIniciais = (): CategoriaDespesaCredito[] => {
-    const despesaPerfil = perfilInicial.despesasComCreditosMensais || 30000
+    const despesaPerfil = perfilInicial.despesasComCreditosMensais || 0
+    if (!despesaPerfil) {
+      return CATEGORIAS_CREDITO_PADRAO
+    }
     // Soma total dos valores mensais padrão das 18 categorias
     const somaPadrao = CATEGORIAS_CREDITO_PADRAO.reduce((acc, c) => acc + c.valorMensal, 0) || 1
     const proporcao = despesaPerfil / somaPadrao
@@ -862,7 +865,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   // Módulo 5: Transição (faturamento anual = faturamentoMensal * 12)
   const [faturamentoAnualProjetado, setFaturamentoAnualProjetadoState] = useState<number>(
-    () => (config.faturamentoMensal || perfilInicial.faturamentoMensal || 200000) * 12,
+    () => (config.faturamentoMensal || perfilInicial.faturamentoMensal || 0) * 12,
   )
   const setFaturamentoAnualProjetado = (v: number) => {
     setEditadoLocalmente((prev) => ({ ...prev, modulo5Faturamento: true }))
@@ -882,8 +885,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   }
   // Etapa 5: Valor do estoque na virada (padrão estimado em ~1 a 2 meses de compras da empresa)
   const [valorEstoqueVirada, setValorEstoqueVirada] = useState<number>(() => {
-    const fat = perfilInicial.faturamentoMensal || 200000
-    const pct = (perfilInicial.percentualComprasVendas ?? 40) / 100
+    const fat = perfilInicial.faturamentoMensal || 0
+    const pct = (perfilInicial.percentualComprasVendas ?? 0) / 100
     // Estimativa inicial: 1,5 meses de compras
     return Math.round(fat * pct * 1.5)
   })
@@ -1136,7 +1139,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       setValorOperacao(p.faturamentoMensal || 50000)
       setPercentualComprasVendasSimples(p.percentualComprasVendas ?? 40)
     } else if (modulo === 3) {
-      setFaturamentoMensal(p.faturamentoMensal || 200000)
+      setFaturamentoMensal(p.faturamentoMensal || 0)
       setTipoAtividade(normalizarTipoAtividade(p.tipoAtividade))
       setSubatividadeServico(p.subatividadeServico || 'servico_comum')
       setSubatividadeIndustria(p.subatividadeIndustria || 'industria_comum')
@@ -1148,24 +1151,28 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       if ((p as any).subatividadeFoodService)
         setSubatividadeFoodService((p as any).subatividadeFoodService)
       setProporcaoServicoMisto(p.proporcaoServicoMisto ?? 50)
-      setPercentualComprasVendasComparativo(p.percentualComprasVendas ?? 40)
-      setFolhaPagamentoMensal(p.folhaPagamentoMensal || 50000)
+      setPercentualComprasVendasComparativo(p.percentualComprasVendas ?? 0)
+      setFolhaPagamentoMensal(p.folhaPagamentoMensal || 0)
       setMargemLucroEstimada(p.margemLucroEstimada ?? 20)
-      setDespesasComCreditosMensais(p.despesasComCreditosMensais || 30000)
+      setDespesasComCreditosMensais(p.despesasComCreditosMensais || 0)
       setPercentualExportacao(p.percentualExportacao ?? 0)
       setUfOrigem(p.ufOrigem || 'SP')
     } else if (modulo === 4) {
-      const despesaPerfil = p.despesasComCreditosMensais || 30000
-      const somaPadrao = CATEGORIAS_CREDITO_PADRAO.reduce((acc, c) => acc + c.valorMensal, 0) || 1
-      const proporcao = despesaPerfil / somaPadrao
-      setDespesasCreditos(
-        CATEGORIAS_CREDITO_PADRAO.map((item) => ({
-          ...item,
-          valorMensal: Math.round(item.valorMensal * proporcao),
-        })),
-      )
+      const despesaPerfil = p.despesasComCreditosMensais || 0
+      if (!despesaPerfil) {
+        setDespesasCreditos(CATEGORIAS_CREDITO_PADRAO)
+      } else {
+        const somaPadrao = CATEGORIAS_CREDITO_PADRAO.reduce((acc, c) => acc + c.valorMensal, 0) || 1
+        const proporcao = despesaPerfil / somaPadrao
+        setDespesasCreditos(
+          CATEGORIAS_CREDITO_PADRAO.map((item) => ({
+            ...item,
+            valorMensal: Math.round(item.valorMensal * proporcao),
+          })),
+        )
+      }
     } else if (modulo === 5) {
-      setFaturamentoAnualProjetado(p.faturamentoMensal ? p.faturamentoMensal * 12 : 2400000)
+      setFaturamentoAnualProjetado(p.faturamentoMensal ? p.faturamentoMensal * 12 : 0)
       setSetorTransicao(normalizarTipoAtividade(p.tipoAtividade))
     }
   }

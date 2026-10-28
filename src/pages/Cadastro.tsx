@@ -16,8 +16,36 @@ import { useAuth, type PerfilUsuario } from '@/context/AuthContext'
 import { validarTokenConvite, aceitarConviteCliente } from '@/services/planos'
 
 export default function Cadastro() {
-  const [nome, setNome] = useState('')
-  const [email, setEmail] = useState('')
+  const CHAVE_RASCUNHO = 'contabilidade50_rascunho_dados_empresa'
+
+  const [nome, setNome] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const salvo = localStorage.getItem(CHAVE_RASCUNHO)
+        if (salvo) {
+          const parsed = JSON.parse(salvo)
+          return parsed.nomeContato || ''
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    return ''
+  })
+  const [email, setEmail] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const salvo = localStorage.getItem(CHAVE_RASCUNHO)
+        if (salvo) {
+          const parsed = JSON.parse(salvo)
+          return parsed.email || ''
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    return ''
+  })
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [perfil, setPerfil] = useState<PerfilUsuario>('contador')
@@ -41,6 +69,26 @@ export default function Cadastro() {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
+
+  // Auto-save rascunho com debounce (nomeContato e email)
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return
+    const timer = setTimeout(() => {
+      try {
+        const salvo = localStorage.getItem(CHAVE_RASCUNHO)
+        const parsed = salvo ? JSON.parse(salvo) : {}
+        if (nome || email) {
+          localStorage.setItem(
+            CHAVE_RASCUNHO,
+            JSON.stringify({ ...parsed, nomeContato: nome, email: email }),
+          )
+        }
+      } catch (err) {
+        console.warn('Erro ao salvar rascunho de cadastro:', err)
+      }
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [nome, email])
 
   const tokenConvite = searchParams.get('convite')
   const emailParam = searchParams.get('email')
@@ -123,6 +171,13 @@ export default function Cadastro() {
       }
 
       await signup(nome, email, password, passwordConfirm, perfilFinal)
+
+      // Limpa rascunho ao submeter com sucesso
+      try {
+        localStorage.removeItem(CHAVE_RASCUNHO)
+      } catch {
+        /* ignore */
+      }
 
       // Se cadastrou via convite, chama aceitarConviteCliente para atualizar status, vínculos e nível
       if (tokenConvite) {
