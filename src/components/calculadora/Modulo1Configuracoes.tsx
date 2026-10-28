@@ -145,7 +145,7 @@ export default function Modulo1Configuracoes() {
                 />
                 <Label
                   htmlFor="seletorClienteSimulacaoM1"
-                  className="text-xs font-bold text-slate-200 uppercase tracking-wider cursor-pointer"
+                  className="text-xs sm:text-sm font-bold break-words leading-snug text-slate-200 uppercase tracking-wider cursor-pointer"
                 >
                   Cliente desta Simulação
                 </Label>
@@ -217,7 +217,7 @@ export default function Modulo1Configuracoes() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {/* Seletor 1: Ano da Transição (Ano atual + 2026–2033) — SEM ÍCONES NAS OPÇÕES (REGRA DO PROJETO) */}
             <div className="min-w-0 w-full space-y-2">
               <div className="flex items-center justify-between gap-1 flex-wrap">
@@ -439,7 +439,10 @@ export default function Modulo1Configuracoes() {
             {config.tipoAtividade === 'servico' && (
               <div className="bg-gradient-to-r from-blue-50/70 to-indigo-50/50 border border-blue-200/80 p-4 sm:p-5 rounded-xl space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <Label htmlFor="subServicoM1" className="text-xs font-bold text-[#07132B]">
+                  <Label
+                    htmlFor="subServicoM1"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                  >
                     Subatividade de Serviço (Refina Presunção IRPJ/CSLL e Reduções IBS/CBS)
                   </Label>
                   <span className="text-[11px] text-blue-700 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-blue-200">
@@ -488,7 +491,10 @@ export default function Modulo1Configuracoes() {
             {config.tipoAtividade === 'industria' && (
               <div className="bg-gradient-to-r from-amber-50/70 to-orange-50/50 border border-amber-200/80 p-4 sm:p-5 rounded-xl space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <Label htmlFor="subIndustriaM1" className="text-xs font-bold text-[#07132B]">
+                  <Label
+                    htmlFor="subIndustriaM1"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                  >
                     Subatividade Industrial (Ajusta IPI e Imposto Seletivo)
                   </Label>
                   <span className="text-[11px] text-amber-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-amber-200">
@@ -569,7 +575,10 @@ export default function Modulo1Configuracoes() {
             {config.tipoAtividade === 'comercio' && (
               <div className="bg-gradient-to-r from-emerald-50/70 to-teal-50/50 border border-emerald-200/80 p-4 sm:p-5 rounded-xl space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <Label htmlFor="subComercioM1" className="text-xs font-bold text-[#07132B]">
+                  <Label
+                    htmlFor="subComercioM1"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                  >
                     Subatividade de Comércio (ICMS Próprio vs ICMS-ST / Atacado)
                   </Label>
                   <span className="text-[11px] text-emerald-800 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -617,7 +626,10 @@ export default function Modulo1Configuracoes() {
             {config.tipoAtividade === 'agronegocio' && (
               <div className="bg-gradient-to-r from-lime-50/70 to-emerald-50/50 border border-lime-200/80 p-4 sm:p-5 rounded-xl space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <Label htmlFor="subAgroM1" className="text-xs font-bold text-[#07132B]">
+                  <Label
+                    htmlFor="subAgroM1"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                  >
                     Subatividade Agropecuária (Reduções IBS/CBS e Enquadramento Simples)
                   </Label>
                   <span className="text-[11px] text-lime-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-lime-200">
@@ -665,7 +677,10 @@ export default function Modulo1Configuracoes() {
             {config.tipoAtividade === 'construcao_civil' && (
               <div className="bg-gradient-to-r from-orange-50/70 to-amber-50/50 border border-orange-200/80 p-4 sm:p-5 rounded-xl space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <Label htmlFor="subConstrucaoM1" className="text-xs font-bold text-[#07132B]">
+                  <Label
+                    htmlFor="subConstrucaoM1"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                  >
                     Subatividade de Construção Civil e Engenharia
                   </Label>
                   <span className="text-[11px] text-orange-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-orange-200">
@@ -711,7 +726,10 @@ export default function Modulo1Configuracoes() {
             {config.tipoAtividade === 'locacao_bens' && (
               <div className="bg-gradient-to-r from-sky-50/70 to-blue-50/50 border border-sky-200/80 p-4 sm:p-5 rounded-xl space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <Label htmlFor="subLocacaoM1" className="text-xs font-bold text-[#07132B]">
+                  <Label
+                    htmlFor="subLocacaoM1"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                  >
                     Subatividade de Aluguel e Locação de Bens
                   </Label>
                   <span className="text-[11px] text-sky-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-sky-200">
@@ -757,7 +775,10 @@ export default function Modulo1Configuracoes() {
             {config.tipoAtividade === 'food_service' && (
               <div className="bg-gradient-to-r from-red-50/70 to-rose-50/50 border border-red-200/80 p-4 sm:p-5 rounded-xl space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <Label htmlFor="subFoodServiceM1" className="text-xs font-bold text-[#07132B]">
+                  <Label
+                    htmlFor="subFoodServiceM1"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                  >
                     Subatividade de Bares, Restaurantes e Food Service
                   </Label>
                   <span className="text-[11px] text-red-900 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-red-200">
@@ -834,11 +855,11 @@ export default function Modulo1Configuracoes() {
             {/* 8. Ramo Misto */}
             {config.tipoAtividade === 'misto' && (
               <div className="bg-amber-50/70 border border-amber-200 p-4 sm:p-5 rounded-xl space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label className="text-xs font-bold text-amber-950">
+                <div className="flex justify-between items-center gap-2 flex-wrap">
+                  <Label className="text-xs sm:text-sm font-medium break-words leading-snug text-amber-950">
                     Atividade Mista: Calibração das Duas Partes Proporcionais
                   </Label>
-                  <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded">
+                  <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded shrink-0">
                     {config.proporcaoServicoMisto ?? 50}% Serviço |{' '}
                     {100 - (config.proporcaoServicoMisto ?? 50)}% Comércio
                   </span>
@@ -853,9 +874,9 @@ export default function Modulo1Configuracoes() {
                   className="py-1"
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                  <div className="space-y-1.5 bg-white p-3 rounded-lg border border-amber-200">
-                    <Label className="text-xs font-bold text-slate-800">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <div className="min-w-0 w-full space-y-1.5 bg-white p-3 rounded-lg border border-amber-200">
+                    <Label className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-800">
                       Subatividade para a parte de Serviço ({config.proporcaoServicoMisto ?? 50}%):
                     </Label>
                     <Select
@@ -877,8 +898,8 @@ export default function Modulo1Configuracoes() {
                     </Select>
                   </div>
 
-                  <div className="space-y-1.5 bg-white p-3 rounded-lg border border-amber-200">
-                    <Label className="text-xs font-bold text-slate-800">
+                  <div className="min-w-0 w-full space-y-1.5 bg-white p-3 rounded-lg border border-amber-200">
+                    <Label className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-800">
                       Subatividade para a parte de Comércio (
                       {100 - (config.proporcaoServicoMisto ?? 50)}%):
                     </Label>
@@ -906,7 +927,7 @@ export default function Modulo1Configuracoes() {
           </div>
 
           {/* Parâmetros Operacionais Base para Propagação Automática aos Módulos 2, 3, 5 e Dashboard */}
-          <div className="pt-2 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="pt-2 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {/* Regime Atual da Empresa */}
             <div className="min-w-0 w-full space-y-1.5">
               <div className="flex items-center justify-between gap-1 flex-wrap">
@@ -1055,9 +1076,12 @@ export default function Modulo1Configuracoes() {
           </CardHeader>
           <CardContent className="pt-5 space-y-4">
             {/* Campo CBS Padrão */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <Label htmlFor="cbsPadrao" className="text-sm font-semibold text-slate-700">
+            <div className="min-w-0 w-full">
+              <div className="flex justify-between items-center mb-1.5 flex-wrap gap-1">
+                <Label
+                  htmlFor="cbsPadrao"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-700"
+                >
                   CBS Padrão (Federal)
                 </Label>
                 <div className="flex items-center gap-1.5">
@@ -1088,9 +1112,12 @@ export default function Modulo1Configuracoes() {
             </div>
 
             {/* Campo IBS Padrão */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <Label htmlFor="ibsPadrao" className="text-sm font-semibold text-slate-700">
+            <div className="min-w-0 w-full">
+              <div className="flex justify-between items-center mb-1.5 flex-wrap gap-1">
+                <Label
+                  htmlFor="ibsPadrao"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-700"
+                >
                   IBS Padrão (Estados/Municípios)
                 </Label>
                 <div className="flex items-center gap-1.5">
@@ -1121,9 +1148,12 @@ export default function Modulo1Configuracoes() {
             </div>
 
             {/* Campo Total IVA Dual */}
-            <div className="pt-2 border-t border-slate-100">
-              <div className="flex justify-between items-center mb-1.5">
-                <Label htmlFor="totalIvaDual" className="text-sm font-bold text-[#07132B]">
+            <div className="pt-2 border-t border-slate-100 min-w-0 w-full">
+              <div className="flex justify-between items-center mb-1.5 flex-wrap gap-1">
+                <Label
+                  htmlFor="totalIvaDual"
+                  className="text-xs sm:text-sm font-bold break-words leading-snug text-[#07132B]"
+                >
                   Total IVA Dual (CBS + IBS)
                 </Label>
                 <div className="flex items-center gap-1.5">
@@ -1184,11 +1214,11 @@ export default function Modulo1Configuracoes() {
           </CardHeader>
           <CardContent className="pt-5 space-y-4">
             {/* Faixa -60% */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
+            <div className="min-w-0 w-full">
+              <div className="flex justify-between items-center mb-1.5 flex-wrap gap-1">
                 <Label
                   htmlFor="saudeEducacaoAliquota"
-                  className="text-sm font-semibold text-slate-700"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-700"
                 >
                   Faixa com Redução de 60%
                 </Label>
@@ -1228,11 +1258,11 @@ export default function Modulo1Configuracoes() {
             </div>
 
             {/* Faixa -30% */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
+            <div className="min-w-0 w-full">
+              <div className="flex justify-between items-center mb-1.5 flex-wrap gap-1">
                 <Label
                   htmlFor="transporteAliquota"
-                  className="text-sm font-semibold text-slate-700"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-700"
                 >
                   Faixa com Redução de 30%
                 </Label>
@@ -1270,11 +1300,11 @@ export default function Modulo1Configuracoes() {
             </div>
 
             {/* Faixa Alíquota Zero */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
+            <div className="min-w-0 w-full">
+              <div className="flex justify-between items-center mb-1.5 flex-wrap gap-1">
                 <Label
                   htmlFor="cestaBasicaIsencao"
-                  className="text-sm font-semibold text-slate-700"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-700"
                 >
                   Faixa com Alíquota Zero (0%)
                 </Label>
@@ -1337,8 +1367,11 @@ export default function Modulo1Configuracoes() {
                 Lucro Real (Não-cumulativo)
               </span>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <Label htmlFor="lucroRealPis" className="text-[11px] text-slate-600">
+                <div className="min-w-0 w-full">
+                  <Label
+                    htmlFor="lucroRealPis"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-600"
+                  >
                     PIS:
                   </Label>
                   <div className="relative mt-1">
@@ -1353,8 +1386,11 @@ export default function Modulo1Configuracoes() {
                     <span className="absolute right-2 top-2 text-[10px] text-slate-400">%</span>
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="lucroRealCofins" className="text-[11px] text-slate-600">
+                <div className="min-w-0 w-full">
+                  <Label
+                    htmlFor="lucroRealCofins"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-600"
+                  >
                     COFINS:
                   </Label>
                   <div className="relative mt-1">
@@ -1371,8 +1407,11 @@ export default function Modulo1Configuracoes() {
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs pt-1">
-                <div>
-                  <Label htmlFor="lucroRealIpi" className="text-[10px] text-slate-600">
+                <div className="min-w-0 w-full">
+                  <Label
+                    htmlFor="lucroRealIpi"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-600"
+                  >
                     IPI:
                   </Label>
                   <Input
@@ -1384,8 +1423,11 @@ export default function Modulo1Configuracoes() {
                     className="h-7 text-xs font-mono"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="lucroRealIcms" className="text-[10px] text-slate-600">
+                <div className="min-w-0 w-full">
+                  <Label
+                    htmlFor="lucroRealIcms"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-600"
+                  >
                     ICMS:
                   </Label>
                   <Input
@@ -1397,8 +1439,11 @@ export default function Modulo1Configuracoes() {
                     className="h-7 text-xs font-mono"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="lucroRealIss" className="text-[10px] text-slate-600">
+                <div className="min-w-0 w-full">
+                  <Label
+                    htmlFor="lucroRealIss"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-600"
+                  >
                     ISS:
                   </Label>
                   <Input
@@ -1419,8 +1464,11 @@ export default function Modulo1Configuracoes() {
                 Lucro Presumido (Cumulativo)
               </span>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <Label htmlFor="lucroPresumidoPis" className="text-[11px] text-slate-600">
+                <div className="min-w-0 w-full">
+                  <Label
+                    htmlFor="lucroPresumidoPis"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-600"
+                  >
                     PIS:
                   </Label>
                   <div className="relative mt-1">
@@ -1435,8 +1483,11 @@ export default function Modulo1Configuracoes() {
                     <span className="absolute right-2 top-2 text-[10px] text-slate-400">%</span>
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="lucroPresumidoCofins" className="text-[11px] text-slate-600">
+                <div className="min-w-0 w-full">
+                  <Label
+                    htmlFor="lucroPresumidoCofins"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-600"
+                  >
                     COFINS:
                   </Label>
                   <div className="relative mt-1">

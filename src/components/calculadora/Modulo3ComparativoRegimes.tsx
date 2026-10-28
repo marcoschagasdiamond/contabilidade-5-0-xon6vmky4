@@ -223,7 +223,7 @@ export default function Modulo3ComparativoRegimes() {
             <span className="text-xs text-slate-500">Atualização em tempo real</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {/* Campo: Faturamento Mensal */}
             <div className="min-w-0 w-full space-y-2">
               <div className="flex items-center justify-between gap-1 flex-wrap">
@@ -777,7 +777,7 @@ export default function Modulo3ComparativoRegimes() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                   <div className="min-w-0 w-full space-y-1.5 bg-white p-3.5 rounded-lg border border-amber-200">
-                    <Label className="text-xs font-bold text-slate-800">
+                    <Label className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-800">
                       Subatividade para a parte de Serviço ({proporcaoServicoMisto}%):
                     </Label>
                     <Select
@@ -798,7 +798,7 @@ export default function Modulo3ComparativoRegimes() {
                   </div>
 
                   <div className="min-w-0 w-full space-y-1.5 bg-white p-3.5 rounded-lg border border-amber-200">
-                    <Label className="text-xs font-bold text-slate-800">
+                    <Label className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-800">
                       Subatividade para a parte de Comércio ({100 - proporcaoServicoMisto}%):
                     </Label>
                     <Select
@@ -835,7 +835,7 @@ export default function Modulo3ComparativoRegimes() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {/* Novo Campo 1: Folha de Pagamento Mensal */}
             <div className="min-w-0 w-full space-y-2">
               <div className="flex items-center justify-between gap-1 flex-wrap">
