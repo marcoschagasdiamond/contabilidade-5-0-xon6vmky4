@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-28T23:10:44.264Z",
+  "generatedAt": "2026-10-28T23:44:57.421Z",
   "collections": [
     {
       "name": "users",
@@ -1490,6 +1490,261 @@
         "CREATE INDEX idx_crm_tarefas_status ON crm_tarefas (status)",
         "CREATE INDEX idx_crm_tarefas_prazo ON crm_tarefas (prazo)",
         "CREATE INDEX idx_crm_tarefas_created ON crm_tarefas (created DESC)"
+      ]
+    },
+    {
+      "name": "anuncios_creditos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')",
+        "delete": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "operacao",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["venda", "compra"]
+        },
+        {
+          "name": "tipo_credito",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "Precatório Federal",
+            "Precatório Estadual",
+            "Precatório Municipal",
+            "RPV",
+            "Crédito de IBS/CBS",
+            "Crédito de PIS/Cofins",
+            "Crédito de ICMS de incentivos",
+            "Crédito judicial contra o Fisco",
+            "Dívida ativa securitizada"
+          ]
+        },
+        {
+          "name": "esfera",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["federal", "estadual", "municipal"]
+        },
+        {
+          "name": "uf",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "municipio",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_nominal",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "desagio_percentual",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "situacao",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["protocolado", "expedido", "divida_ativa", "reconhecido_judicialmente"]
+        },
+        {
+          "name": "finalidade",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "compensar_debitos",
+            "investimento",
+            "compra_imoveis_publicos",
+            "quitar_parcelamentos"
+          ]
+        },
+        {
+          "name": "observacoes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["ativo", "pausado", "negociado", "cancelado"]
+        },
+        {
+          "name": "contato_nome",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "contato_documento",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "contato_email",
+          "type": "email",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "contato_telefone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_anuncios_user ON anuncios_creditos (user_id)",
+        "CREATE INDEX idx_anuncios_operacao ON anuncios_creditos (operacao)",
+        "CREATE INDEX idx_anuncios_esfera ON anuncios_creditos (esfera)",
+        "CREATE INDEX idx_anuncios_status ON anuncios_creditos (status)",
+        "CREATE INDEX idx_anuncios_created ON anuncios_creditos (created DESC)"
+      ]
+    },
+    {
+      "name": "pedidos_informacao_creditos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (solicitante_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')",
+        "view": "@request.auth.id != '' && (solicitante_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (solicitante_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')",
+        "delete": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')"
+      },
+      "fields": [
+        {
+          "name": "anuncio_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "anuncios_creditos"
+        },
+        {
+          "name": "solicitante_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "solicitante_nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "solicitante_email",
+          "type": "email",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "solicitante_telefone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "mensagem",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "resposta_admin",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "respondido_por",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "respondido_em",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["pendente", "respondido", "arquivado"]
+        },
+        {
+          "name": "visualizado_pelo_solicitante",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_pedidos_anuncio ON pedidos_informacao_creditos (anuncio_id)",
+        "CREATE INDEX idx_pedidos_solicitante ON pedidos_informacao_creditos (solicitante_id)",
+        "CREATE INDEX idx_pedidos_status ON pedidos_informacao_creditos (status)",
+        "CREATE INDEX idx_pedidos_created ON pedidos_informacao_creditos (created DESC)"
       ]
     }
   ]

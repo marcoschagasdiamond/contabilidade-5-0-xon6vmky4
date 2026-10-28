@@ -24,6 +24,8 @@ import BpoContabil from './pages/BpoContabil'
 import BackOffice50 from './pages/BackOffice50'
 import GestaoRecebiveis from './pages/GestaoRecebiveis'
 import Diagnostico360Servico from './pages/Diagnostico360Servico'
+import NegociacaoCreditosPrecatorios from './pages/NegociacaoCreditosPrecatorios'
+import MercadoCreditos from './pages/MercadoCreditos'
 import Blog from './pages/Blog'
 import BlogPost from './pages/BlogPost'
 import Contato from './pages/Contato'
@@ -217,6 +219,15 @@ const App = () => (
                   path="/gestao-recebiveis"
                   element={<Navigate to="/servicos/gestao-recebiveis" replace />}
                 />
+                <Route
+                  path="/servicos/negociacao-creditos-precatorios"
+                  element={<NegociacaoCreditosPrecatorios />}
+                />
+                <Route
+                  path="/negociacao-creditos-precatorios"
+                  element={<Navigate to="/servicos/negociacao-creditos-precatorios" replace />}
+                />
+                <Route path="/mercado-creditos" element={<MercadoCreditos />} />
                 <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
                 <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
                 <Route path="/recuperador-creditos" element={<RecuperadorCreditos />} />

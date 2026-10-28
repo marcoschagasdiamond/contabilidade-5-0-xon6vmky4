@@ -240,6 +240,25 @@ export default function Servicos() {
         'https://img.usecurling.com/p/700/500?q=executive%20accounting%20firm%20partnership%20office&color=blue',
       reverse: false,
     },
+    {
+      id: 'negociacao-creditos-precatorios',
+      category: 'Mercado de Créditos & Ativos Judiciais',
+      title: 'Negociação de Créditos Tributários, Direitos Creditórios e Precatórios',
+      subtitle:
+        'Ativos federais, estaduais e municipais com due diligence pericial e segurança jurídica.',
+      description:
+        'Intermediação institucional para compra e venda de precatórios, RPVs e saldos credores homologados (IBS/CBS, PIS/Cofins, ICMS incentivos e dívida ativa securitizada). Permitimos que empresas compensem passivos tributários com deságio atrativo e credores obtenham liquidez imediata à vista.',
+      features: [
+        'Ativos em todas as esferas: Federal (TRFs), Estadual (TJs) e Municipal',
+        'Due diligence pericial e checagem de trânsito em julgado e penhoras',
+        'Conformidade estrita: vedação a créditos previdenciários (art. 114, Lei 8.213)',
+        'Cessionário ciente de que não herda superpreferência constitucional',
+        'Cessão lavrada por escritura pública, habilitação judicial e sigilo total',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=legal%20financial%20documents%20court%20credits&color=blue',
+      reverse: true,
+    },
   ]
 
   return (
@@ -471,6 +490,15 @@ export default function Servicos() {
                       >
                         <Sparkles className="w-4 h-4 text-[#07132B]" />
                         Ver Página Completa & Pilares 5.0
+                      </Link>
+                    )}
+
+                    {service.id === 'negociacao-creditos-precatorios' && (
+                      <Link
+                        to="/servicos/negociacao-creditos-precatorios"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] border border-[#D4AF37] transition-all duration-200 hover:-translate-y-0.5 shadow-sm font-bold"
+                      >
+                        <span>Ver Página Completa & Pilares 5.0</span>
                       </Link>
                     )}
                   </div>

@@ -109,6 +109,15 @@ export default function Index() {
       badge: 'Parceria Estratégica',
       isDiamondSpecial: true,
     },
+    {
+      icon: null,
+      title: 'Negociação de Créditos Tributários, Direitos Creditórios e Precatórios',
+      description:
+        'Intermediação segura e institucional de precatórios federais, estaduais e municipais, RPVs e créditos fiscais homologados. Conectamos empresas para compensação tributária e liquidez com auditoria pericial e due diligence.',
+      link: '/servicos/negociacao-creditos-precatorios',
+      badge: 'Mercado de Créditos',
+      isDiamondSpecial: true,
+    },
   ]
 
   const scrollToSection = (id: string) => {
