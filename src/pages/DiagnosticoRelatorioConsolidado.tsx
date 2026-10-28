@@ -20,6 +20,13 @@ import {
   exportarPdfRelatorioConsolidado,
   type DadosRelatorioConsolidado,
 } from '@/lib/pdfRelatoriosDiagnosticos'
+import { gerarRelatorioDiagnosticoPDF } from '@/lib/pdfRelatorio'
+import {
+  executarDiagnosticoTributario,
+  type DadosEntradaDiagnostico,
+  type SegmentoEmpresa,
+} from '@/lib/regimes'
+import { useToast } from '@/hooks/use-toast'
 import {
   listarHistoricoRelatoriosPorCliente,
   registrarVersaoRelatorio,
@@ -31,6 +38,7 @@ export default function DiagnosticoRelatorioConsolidado() {
   const [searchParams] = useSearchParams()
   const abaUrl = searchParams.get('aba') || 'consolidado'
 
+  const { toast } = useToast()
   const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
   const { dadosEmpresa, temDadosSalvos } = useDadosEmpresa()
 
@@ -164,6 +172,136 @@ export default function DiagnosticoRelatorioConsolidado() {
 
   const handleBaixarRegimes = () => {
     exportarPdfEtapaRegimes(diagRegimes, nomeClienteExibir, nomeEmpresaExibir)
+  }
+
+  const [gerandoParecerEnquadramento, setGerandoParecerEnquadramento] = useState(false)
+
+  const handleBaixarParecerEnquadramento = () => {
+    if (!diagEnquadramento) return
+
+    setGerandoParecerEnquadramento(true)
+    try {
+      const cfg = diagEnquadramento.configuracoes_diagnostico_json || {}
+      const detRef = diagEnquadramento.detalhes_reforma_json || {}
+
+      const nomeContatoFinal =
+        cfg.nome_contato ||
+        dadosEmpresa?.nomeContato ||
+        diagEnquadramento.nome ||
+        nomeClienteExibir ||
+        'Não informado'
+
+      const emailFinal = dadosEmpresa?.email || diagEnquadramento.email || ''
+      const telefoneFinal = dadosEmpresa?.telefone || diagEnquadramento.telefone || ''
+      const empresaFinal =
+        cfg.razao_social ||
+        dadosEmpresa?.nomeEmpresa ||
+        diagEnquadramento.empresa ||
+        nomeEmpresaExibir
+
+      const cnpjFinal = cfg.cnpj || dadosEmpresa?.cnpj || diagEnquadramento.cnpj || ''
+      const segmentoFinal = (cfg.segmento ||
+        dadosEmpresa?.segmento ||
+        diagEnquadramento.segmento ||
+        'Serviços') as SegmentoEmpresa
+
+      const rbt12Final =
+        diagEnquadramento.rbt12 ||
+        (dadosEmpresa?.faturamentoMensal ? dadosEmpresa.faturamentoMensal * 12 : 600000)
+
+      const folha12Final =
+        diagEnquadramento.folha12 ||
+        (dadosEmpresa?.folhaPagamentoMensal ? dadosEmpresa.folhaPagamentoMensal * 12 : 120000)
+
+      const folhaMensalFinal =
+        diagEnquadramento.folha_pagamento ||
+        dadosEmpresa?.folhaPagamentoMensal ||
+        Math.round(folha12Final / 12)
+
+      const despesasCreditosFinal =
+        diagEnquadramento.despesas_creditos || dadosEmpresa?.despesasComCreditosMensais || 0
+
+      const percentualExportacaoFinal =
+        diagEnquadramento.percentual_exportacao ?? dadosEmpresa?.percentualExportacao ?? 0
+
+      const ufOrigemFinal =
+        diagEnquadramento.uf_origem || cfg.uf_origem || dadosEmpresa?.ufOrigem || 'SP'
+
+      const margemLucroFinal =
+        diagEnquadramento.margem_lucro ?? dadosEmpresa?.margemLucroEstimada ?? 25
+
+      const funcionariosFinal =
+        diagEnquadramento.funcionarios || cfg.funcionarios || dadosEmpresa?.funcionarios || '1–5'
+
+      const emissaoNfFinal =
+        diagEnquadramento.emissao_nf || cfg.emissao_nf || dadosEmpresa?.emissaoNf || 'B2B'
+
+      const atividadeMistaFinal =
+        diagEnquadramento.atividade_mista ??
+        cfg.atividade_mista ??
+        (typeof dadosEmpresa?.atividadeMista === 'boolean'
+          ? dadosEmpresa.atividadeMista
+          : dadosEmpresa?.tipoAtividade === 'misto')
+
+      const regimeAtualFinal =
+        diagEnquadramento.regime_atual ||
+        cfg.regime_atual ||
+        dadosEmpresa?.regimeAtual ||
+        'Simples Nacional'
+
+      const cidadeFinal =
+        diagEnquadramento.cidade || cfg.cidade || dadosEmpresa?.cidade || 'São Paulo - SP'
+
+      const anoBaseFinal =
+        diagEnquadramento.ano_base ||
+        detRef.anoBase ||
+        cfg.ano_base_transicao ||
+        dadosEmpresa?.anoBaseTransicao ||
+        2026
+
+      const inputDiagnostico: DadosEntradaDiagnostico = {
+        nome: nomeContatoFinal,
+        email: emailFinal,
+        telefone: telefoneFinal,
+        empresa: empresaFinal,
+        cnpj: cnpjFinal,
+        segmento: segmentoFinal,
+        rbt12: rbt12Final,
+        folha12: folha12Final,
+        folhaMensal: folhaMensalFinal,
+        despesasCreditosMensais: despesasCreditosFinal,
+        percentualExportacao: percentualExportacaoFinal,
+        ufOrigem: ufOrigemFinal,
+        margemLucro: margemLucroFinal,
+        funcionarios: funcionariosFinal,
+        emissaoNf: emissaoNfFinal,
+        atividadeMista: atividadeMistaFinal,
+        regimeAtual: regimeAtualFinal,
+        cidade: cidadeFinal,
+        anoBase: anoBaseFinal,
+      }
+
+      const resultado = executarDiagnosticoTributario(inputDiagnostico)
+
+      gerarRelatorioDiagnosticoPDF({
+        dados: inputDiagnostico,
+        resultado,
+      })
+
+      toast({
+        title: 'Parecer gerado com sucesso',
+        description: 'O PDF do parecer completo foi baixado no seu navegador.',
+      })
+    } catch (err) {
+      console.error('Erro ao gerar parecer completo em PDF:', err)
+      toast({
+        title: 'Erro ao gerar parecer',
+        description: 'Ocorreu um problema ao gerar o PDF. Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setGerandoParecerEnquadramento(false)
+    }
   }
 
   // Snapshot manual da versão atual
@@ -1325,9 +1463,9 @@ export default function DiagnosticoRelatorioConsolidado() {
                 <div className="flex items-center gap-3">
                   <Link
                     to="/diagnostico"
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0c1f44] transition-colors"
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0c1f44] transition-colors border border-[#D4AF37]/30"
                   >
-                    Abrir no Simulador →
+                    Refazer Enquadramento no Simulador
                   </Link>
                 </div>
               </div>
@@ -1403,7 +1541,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                     to="/diagnostico"
                     className="px-4 py-2 rounded-xl text-xs font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0c1f44] transition-all self-start sm:self-auto"
                   >
-                    Calcular Enquadramento →
+                    Concluir Enquadramento
                   </Link>
                 </div>
               )}
@@ -1753,11 +1891,23 @@ export default function DiagnosticoRelatorioConsolidado() {
                 </h2>
               </div>
               <div className="flex items-center gap-3">
+                {Boolean(diagEnquadramento) && (
+                  <button
+                    type="button"
+                    onClick={handleBaixarParecerEnquadramento}
+                    disabled={gerandoParecerEnquadramento}
+                    className="px-5 py-2.5 rounded-xl font-heading font-black text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all disabled:opacity-60 cursor-pointer"
+                  >
+                    {gerandoParecerEnquadramento
+                      ? 'Gerando Parecer...'
+                      : 'Baixar Parecer Completo (PDF)'}
+                  </button>
+                )}
                 <Link
                   to="/diagnostico"
-                  className="px-5 py-2.5 rounded-xl font-heading font-black text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all"
+                  className="px-4 py-2.5 rounded-xl font-heading font-bold text-xs bg-slate-100 text-[#07132B] hover:bg-slate-200 border border-slate-300 transition-colors"
                 >
-                  Abrir Simulador e Baixar Parecer Completo →
+                  Refazer Enquadramento no Simulador
                 </Link>
               </div>
             </div>
@@ -1800,7 +1950,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                   to="/diagnostico"
                   className="px-5 py-2.5 rounded-xl font-bold text-xs bg-[#07132B] text-[#D4AF37]"
                 >
-                  Abrir Simulador
+                  Concluir Enquadramento
                 </Link>
               </div>
             )}
