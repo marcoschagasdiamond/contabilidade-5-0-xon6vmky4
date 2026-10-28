@@ -64,6 +64,20 @@ export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange
     })
   }
 
+  // Permite atualizar o Faturamento Mensal de Referência e automaticamente recalcular a projeção dos 60 meses
+  const handleAtualizarFaturamentoMensal = (novoFatMensal: number) => {
+    const fatAnual = novoFatMensal > 0 ? novoFatMensal * 12 : 0
+    const novosAnos = configuracoes.anosFaturamento.map((item) => ({
+      ...item,
+      faturamento: fatAnual,
+    }))
+    onChange({
+      ...configuracoes,
+      faturamentoMensal: novoFatMensal,
+      anosFaturamento: novosAnos,
+    })
+  }
+
   const faturamentoTotal60Meses = configuracoes.anosFaturamento.reduce(
     (acc, curr) => acc + (curr.faturamento || 0),
     0,
@@ -71,6 +85,19 @@ export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange
 
   return (
     <div className="space-y-6">
+      {/* BANNER DISCRETO DE PRÉ-PREENCHIMENTO (PADRÃO DIAMOND GROUP NAVY #07132B + DOURADO #D4AF37, SEM ÍCONES) */}
+      {configuracoes.avisoOrigem && (
+        <div className="p-3.5 rounded-2xl bg-[#07132B] text-white border border-[#D4AF37]/40 flex flex-wrap items-center justify-between gap-3 text-xs shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-[#D4AF37] shrink-0" />
+            <span className="font-semibold text-slate-100">{configuracoes.avisoOrigem}</span>
+          </div>
+          <span className="text-[11px] font-bold text-[#D4AF37] uppercase tracking-wide bg-[#D4AF37]/10 px-2.5 py-1 rounded-lg border border-[#D4AF37]/20">
+            Campos editáveis pelo usuário
+          </span>
+        </div>
+      )}
+
       {/* CARD 1: PERFIL DO CLIENTE & REGIME ATUAL */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -83,9 +110,11 @@ export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange
               meses.
             </p>
           </div>
-          <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/30">
-            Regime Atual: {configuracoes.regimeAtual}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/30">
+              Regime Atual: {configuracoes.regimeAtual}
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-5 text-xs">
@@ -210,6 +239,65 @@ export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange
               Padrão ~26,8% (20% INSS + 5,8% Terceiros/Sistema S + 1% RAT)
             </span>
           </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">
+              % Compras sobre Vendas (Insumos)
+            </label>
+            <input
+              type="number"
+              step="1"
+              min={0}
+              max={100}
+              value={configuracoes.percentualComprasVendas ?? 0}
+              onChange={(e) =>
+                onChange({
+                  ...configuracoes,
+                  percentualComprasVendas: parseFloat(e.target.value) || 0,
+                })
+              }
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+            />
+            <span className="text-[10px] text-slate-400 mt-1 block">
+              Utilizado na correlação de créditos de insumos PIS/COFINS e IBS/CBS.
+            </span>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">
+              Faturamento Mensal de Referência
+            </label>
+            <input
+              type="text"
+              value={formatarMoeda(configuracoes.faturamentoMensal ?? 0)}
+              onChange={(e) => handleAtualizarFaturamentoMensal(parseInputMoeda(e.target.value))}
+              placeholder="R$ 0,00"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+            />
+            <span className="text-[10px] text-slate-400 mt-1 block">
+              Propaga automaticamente para os anos (Faturamento Anual = Mensal × 12).
+            </span>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">
+              Ano da Transição (Calculadora)
+            </label>
+            <input
+              type="text"
+              value={configuracoes.anoTransicao ? String(configuracoes.anoTransicao) : '2033'}
+              onChange={(e) =>
+                onChange({
+                  ...configuracoes,
+                  anoTransicao: e.target.value,
+                })
+              }
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+            />
+            <span className="text-[10px] text-slate-400 mt-1 block">
+              Mapeado da transição tributária EC 132/2023.
+            </span>
+          </div>
         </div>
       </div>
 
@@ -221,17 +309,38 @@ export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange
               Faturamento Declarado por Ano (60 Meses)
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Valores anuais que compõem a base tributável para teses de PIS e COFINS com correção
-              SELIC.
+              Valores anuais derivados dos dados informados (Faturamento Mensal × 12). Você pode
+              editar cada ano individualmente. Sem dados anteriores, inicia zerado.
             </p>
           </div>
-          <div className="text-right">
-            <span className="text-[11px] text-slate-400 uppercase font-bold block">
-              Faturamento Acumulado (5 Anos)
-            </span>
-            <span className="text-sm font-bold text-[#07132B] font-mono">
-              {formatarMoeda(faturamentoTotal60Meses)}
-            </span>
+          <div className="text-right flex items-center gap-4">
+            <div>
+              <span className="text-[11px] text-slate-400 uppercase font-bold block">
+                Faturamento Acumulado (5 Anos)
+              </span>
+              <span className="text-sm font-bold text-[#07132B] font-mono">
+                {formatarMoeda(faturamentoTotal60Meses)}
+              </span>
+            </div>
+            {faturamentoTotal60Meses > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const zerados = configuracoes.anosFaturamento.map((item) => ({
+                    ...item,
+                    faturamento: 0,
+                  }))
+                  onChange({
+                    ...configuracoes,
+                    faturamentoMensal: 0,
+                    anosFaturamento: zerados,
+                  })
+                }}
+                className="text-[11px] text-slate-400 hover:text-rose-600 underline font-semibold transition-colors"
+              >
+                Zerar Anos
+              </button>
+            )}
           </div>
         </div>
 

@@ -4,6 +4,10 @@ import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/hooks/use-toast'
+import { carregarDadosEmpresa, existeDadosEmpresaSalvos } from '@/types/dadosEmpresa'
+import { carregarSimulacoesLocais } from '@/services/simulacoesCalculadora'
+import { derivarAnosFaturamentoDeMensal } from '@/lib/recuperadorCreditosCalculo'
+import type { Cliente } from '@/types/cliente'
 import { ModalGerarPdf, type ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
 import {
   TESES_RECUPERADOR,
@@ -82,8 +86,150 @@ export default function RecuperadorCreditos() {
   const { clienteAtivo } = useClienteAtivo()
   const { toast } = useToast()
 
+  // Função pura que deriva o estado inicial do Recuperador seguindo as prioridades:
+  // 1) Empresa Ativa da Carteira
+  // 2) Configurações da Calculadora IBS/CBS / Dados da Empresa salvos
+  // 3) Zerado/vazio
+  const derivarConfiguracoesIniciais = React.useCallback(
+    (cliente: Cliente | null): ConfiguracoesRecuperador => {
+      // 1. Prioridade 1: Empresa Ativa na Carteira
+      if (cliente) {
+        // Busca possíveis simulações vinculadas ao cliente para obter métricas financeiras se houver
+        let fatMensalCliente = 0
+        let pctComprasCliente = 0
+        let anoTransicaoCliente: string | number = 2033
+        let regimeAplicadoCliente = 'Padrão / Sem Redução'
+        let folhaMensalCliente = 0
+
+        try {
+          const simsLocais = carregarSimulacoesLocais()
+          const simDoCliente = simsLocais.find((s) => s.cliente_id === cliente.id)
+          if (simDoCliente && simDoCliente.parametros) {
+            fatMensalCliente =
+              simDoCliente.parametros.faturamentoMensal ||
+              simDoCliente.faturamento_mensal ||
+              simDoCliente.parametros.config?.faturamentoMensal ||
+              0
+            pctComprasCliente =
+              simDoCliente.parametros.percentualComprasVendasComparativo ??
+              simDoCliente.parametros.percentualComprasVendasSimples ??
+              simDoCliente.parametros.config?.percentualComprasVendas ??
+              0
+            anoTransicaoCliente =
+              simDoCliente.parametros.config?.anoTransicao ||
+              simDoCliente.parametros.anoTransicao ||
+              2033
+            regimeAplicadoCliente =
+              simDoCliente.parametros.config?.presetSetor ||
+              simDoCliente.parametros.regimeOperacao ||
+              'Padrão / Sem Redução'
+          }
+        } catch {
+          /* ignore */
+        }
+
+        // Se ainda não achou nas simulações daquele cliente, tenta dados de empresa
+        if (fatMensalCliente === 0 && existeDadosEmpresaSalvos()) {
+          const dadosEmp = carregarDadosEmpresa()
+          if (
+            dadosEmp.nomeEmpresa &&
+            (dadosEmp.nomeEmpresa.toLowerCase() === cliente.nome.toLowerCase() ||
+              dadosEmp.cnpj === cliente.cnpj_cpf)
+          ) {
+            fatMensalCliente = dadosEmp.faturamentoMensal || 0
+            pctComprasCliente = dadosEmp.percentualComprasVendas || 0
+            folhaMensalCliente = dadosEmp.folhaPagamentoMensal || 0
+            anoTransicaoCliente = dadosEmp.anoBaseTransicao || 2033
+          }
+        }
+
+        const regimeNormalizado: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional' =
+          cliente.regime_atual === 'Lucro Real' ||
+          cliente.regime_atual === 'Lucro Presumido' ||
+          cliente.regime_atual === 'Simples Nacional'
+            ? cliente.regime_atual
+            : 'Lucro Presumido'
+
+        const anosFat = derivarAnosFaturamentoDeMensal(fatMensalCliente)
+
+        return {
+          ...CONFIGURACOES_PADRAO,
+          clienteId: cliente.id,
+          empresa: cliente.nome || '',
+          cnpj: cliente.cnpj_cpf || '',
+          uf: cliente.uf || 'SP',
+          segmento: cliente.segmento || 'Comércio',
+          regimeAtual: regimeNormalizado,
+          aliquotaPisCofinsPadrao: regimeNormalizado === 'Lucro Real' ? 9.25 : 3.65,
+          faturamentoMensal: fatMensalCliente,
+          percentualComprasVendas: pctComprasCliente,
+          anosFaturamento: anosFat,
+          massaSalarialMensal: folhaMensalCliente,
+          anoTransicao: anoTransicaoCliente,
+          regimeAplicado: regimeAplicadoCliente,
+          origemPreenchimento: 'empresa_ativa',
+          avisoOrigem: `Pré-preenchido com dados da Empresa Ativa na Carteira: ${cliente.nome}`,
+        }
+      }
+
+      // 2. Prioridade 2: Configurações da Calculadora IBS/CBS / Dados da Empresa salvos
+      if (existeDadosEmpresaSalvos()) {
+        const dadosEmp = carregarDadosEmpresa()
+        let regNormalizado: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional' =
+          'Lucro Presumido'
+        if (dadosEmp.regimeAtual?.includes('Real')) regNormalizado = 'Lucro Real'
+        else if (dadosEmp.regimeAtual?.includes('Simples')) regNormalizado = 'Simples Nacional'
+
+        const fatMensal = dadosEmp.faturamentoMensal || 0
+        const anosFat = derivarAnosFaturamentoDeMensal(fatMensal)
+
+        return {
+          ...CONFIGURACOES_PADRAO,
+          clienteId: null,
+          empresa: dadosEmp.nomeEmpresa || '',
+          cnpj: dadosEmp.cnpj || '',
+          uf: dadosEmp.ufOrigem || 'SP',
+          segmento: dadosEmp.segmento || 'Comércio',
+          regimeAtual: regNormalizado,
+          aliquotaPisCofinsPadrao: regNormalizado === 'Lucro Real' ? 9.25 : 3.65,
+          faturamentoMensal: fatMensal,
+          percentualComprasVendas: dadosEmp.percentualComprasVendas || 0,
+          anosFaturamento: anosFat,
+          massaSalarialMensal: dadosEmp.folhaPagamentoMensal || 0,
+          anoTransicao: dadosEmp.anoBaseTransicao || 2033,
+          regimeAplicado: 'Padrão / Sem Redução',
+          origemPreenchimento: 'calculadora_ibs_cbs',
+          avisoOrigem: 'Pré-preenchido com dados salvos nas Configurações da Calculadora IBS/CBS',
+        }
+      }
+
+      // 3. Sem histórico nem empresa ativa: todos os campos zerados/vazios
+      return {
+        ...CONFIGURACOES_PADRAO,
+        clienteId: null,
+        empresa: '',
+        cnpj: '',
+        regimeAtual: 'Lucro Presumido',
+        segmento: '',
+        uf: 'SP',
+        anosFaturamento: derivarAnosFaturamentoDeMensal(0),
+        numeroMedioEmpregados: 0,
+        percentualRotatividadeAnual: 0,
+        massaSalarialMensal: 0,
+        faturamentoMensal: 0,
+        percentualComprasVendas: 0,
+        anoTransicao: 2033,
+        regimeAplicado: 'Padrão / Sem Redução',
+        origemPreenchimento: 'manual',
+      }
+    },
+    [],
+  )
+
   const [moduloAtivo, setModuloAtivo] = useState<ModuloRecuperadorId>('dashboard')
-  const [configuracoes, setConfiguracoes] = useState<ConfiguracoesRecuperador>(CONFIGURACOES_PADRAO)
+  const [configuracoes, setConfiguracoes] = useState<ConfiguracoesRecuperador>(() =>
+    derivarConfiguracoesIniciais(clienteAtivo),
+  )
   const [tesesSelecionadas, setTesesSelecionadas] =
     useState<Record<string, TeseSelecaoUsuario>>(gerarSelecaoTesesPadrao())
   const [cenarioSelecionado, setCenarioSelecionado] = useState<'integral' | 'conservador'>(
@@ -98,25 +244,43 @@ export default function RecuperadorCreditos() {
   // Simulações salvas
   const [simulacoes, setSimulacoes] = useState<SimulacaoRecuperador[]>([])
 
-  // Se o cliente ativo mudar, sincroniza empresa/CNPJ/regime
+  // Se o cliente ativo mudar, sincroniza empresa/CNPJ/regime/faturamento com prioridade da Empresa Ativa
   useEffect(() => {
     if (clienteAtivo) {
-      setConfiguracoes((prev) => ({
-        ...prev,
-        clienteId: clienteAtivo.id,
-        empresa: clienteAtivo.nome || prev.empresa,
-        cnpj: clienteAtivo.cnpj_cpf || prev.cnpj,
-        uf: clienteAtivo.uf || prev.uf,
-        segmento: clienteAtivo.segmento || prev.segmento,
-        regimeAtual:
-          clienteAtivo.regime_atual === 'Lucro Real' ||
-          clienteAtivo.regime_atual === 'Lucro Presumido' ||
-          clienteAtivo.regime_atual === 'Simples Nacional'
-            ? clienteAtivo.regime_atual
-            : prev.regimeAtual,
-      }))
+      const novasConfigs = derivarConfiguracoesIniciais(clienteAtivo)
+      setConfiguracoes((prev) => {
+        // Preserva valores ajustados manualmente se o cliente for o mesmo
+        if (prev.clienteId === clienteAtivo.id) {
+          return {
+            ...novasConfigs,
+            ...prev,
+            clienteId: clienteAtivo.id,
+            empresa: clienteAtivo.nome || prev.empresa,
+            cnpj: clienteAtivo.cnpj_cpf || prev.cnpj,
+            uf: clienteAtivo.uf || prev.uf,
+            segmento: clienteAtivo.segmento || prev.segmento,
+            regimeAtual:
+              clienteAtivo.regime_atual === 'Lucro Real' ||
+              clienteAtivo.regime_atual === 'Lucro Presumido' ||
+              clienteAtivo.regime_atual === 'Simples Nacional'
+                ? clienteAtivo.regime_atual
+                : prev.regimeAtual,
+            origemPreenchimento: 'empresa_ativa',
+            avisoOrigem: `Pré-preenchido com dados da Empresa Ativa na Carteira: ${clienteAtivo.nome}`,
+          }
+        }
+        return novasConfigs
+      })
+    } else {
+      // Quando cliente ativo for desmarcado, se houver configs da calculadora preenche com elas, senão mantém
+      setConfiguracoes((prev) => {
+        if (prev.origemPreenchimento === 'empresa_ativa') {
+          return derivarConfiguracoesIniciais(null)
+        }
+        return prev
+      })
     }
-  }, [clienteAtivo])
+  }, [clienteAtivo, derivarConfiguracoesIniciais])
 
   // Recarrega simulações salvas
   const recarregarSimulacoes = async () => {

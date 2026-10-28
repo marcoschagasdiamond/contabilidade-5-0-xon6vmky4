@@ -20,12 +20,26 @@ export const FATORES_SELIC_ESTIMADOS: Record<number, number> = {
 }
 
 export const ANOS_60_MESES_PADRAO: FaturamentoAno[] = [
-  { ano: 2021, faturamento: 12000000, fatorSelicAcumulado: FATORES_SELIC_ESTIMADOS[2021] },
-  { ano: 2022, faturamento: 13500000, fatorSelicAcumulado: FATORES_SELIC_ESTIMADOS[2022] },
-  { ano: 2023, faturamento: 15000000, fatorSelicAcumulado: FATORES_SELIC_ESTIMADOS[2023] },
-  { ano: 2024, faturamento: 16800000, fatorSelicAcumulado: FATORES_SELIC_ESTIMADOS[2024] },
-  { ano: 2025, faturamento: 18000000, fatorSelicAcumulado: FATORES_SELIC_ESTIMADOS[2025] },
+  { ano: 2021, faturamento: 0, fatorSelicAcumulado: FATORES_SELIC_ESTIMADOS[2021] },
+  { ano: 2022, faturamento: 0, fatorSelicAcumulado: FATORES_SELIC_ESTIMADOS[2022] },
+  { ano: 2023, faturamento: 0, fatorSelicAcumulado: FATORES_SELIC_ESTIMADOS[2023] },
+  { ano: 2024, faturamento: 0, fatorSelicAcumulado: FATORES_SELIC_ESTIMADOS[2024] },
+  { ano: 2025, faturamento: 0, fatorSelicAcumulado: FATORES_SELIC_ESTIMADOS[2025] },
 ]
+
+/**
+ * Deriva a série histórica de 60 meses a partir do faturamento mensal (ou anual).
+ * Sem histórico anterior, inicia zerado (faturamento: 0 em todos os anos).
+ * Nunca gera números fictícios genéricos.
+ */
+export function derivarAnosFaturamentoDeMensal(faturamentoMensal?: number): FaturamentoAno[] {
+  const fatAnual = faturamentoMensal && faturamentoMensal > 0 ? faturamentoMensal * 12 : 0
+  return [2021, 2022, 2023, 2024, 2025].map((ano) => ({
+    ano,
+    faturamento: fatAnual,
+    fatorSelicAcumulado: FATORES_SELIC_ESTIMADOS[ano] || 1.1,
+  }))
+}
 
 export const TESES_RECUPERADOR: TeseRecuperacaoDefinicao[] = [
   // ==========================================
@@ -205,14 +219,19 @@ export const CONFIGURACOES_PADRAO: ConfiguracoesRecuperador = {
   empresa: '',
   cnpj: '',
   regimeAtual: 'Lucro Presumido',
-  segmento: 'Comércio',
+  segmento: '',
   uf: 'SP',
   anosFaturamento: ANOS_60_MESES_PADRAO,
-  numeroMedioEmpregados: 45,
-  percentualRotatividadeAnual: 22,
-  massaSalarialMensal: 180000,
+  numeroMedioEmpregados: 0,
+  percentualRotatividadeAnual: 0,
+  massaSalarialMensal: 0,
   aliquotaPatronalComposta: 26.8, // 20% INSS + 5.8% terceiros + 1% RAT
   aliquotaPisCofinsPadrao: 3.65, // Presumido padrão (ou 9.25% se Real)
+  faturamentoMensal: 0,
+  percentualComprasVendas: 0,
+  anoTransicao: 2033,
+  regimeAplicado: 'Padrão / Sem Redução',
+  origemPreenchimento: 'manual',
 }
 
 /**

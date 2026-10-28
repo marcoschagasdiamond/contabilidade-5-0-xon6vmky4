@@ -36,6 +36,13 @@ export interface ConfiguracoesRecuperador {
   massaSalarialMensal: number
   aliquotaPatronalComposta: number // ~26.8% (20% patronal + 5.8% terceiros + RAT)
   aliquotaPisCofinsPadrao: number // 9.25% no Real, 3.65% no Presumido
+  // Parâmetros integrados da Carteira e da Calculadora IBS/CBS
+  faturamentoMensal?: number
+  percentualComprasVendas?: number
+  anoTransicao?: string | number
+  regimeAplicado?: string
+  origemPreenchimento?: 'empresa_ativa' | 'calculadora_ibs_cbs' | 'dados_empresa' | 'manual'
+  avisoOrigem?: string
 }
 
 export interface TeseSelecaoUsuario {
