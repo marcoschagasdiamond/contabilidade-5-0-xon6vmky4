@@ -30,13 +30,20 @@ import {
   PainelProximosPassosCalculadora,
   ModuloCalculadoraId,
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
+import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
 
 export interface Modulo4SimuladorCreditosProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
+  onSalvarSimulacao?: () => void
+  onBaixarPdf?: () => void
+  gerandoPdf?: boolean
 }
 
 export default function Modulo4SimuladorCreditos({
   onNavegarModulo,
+  onSalvarSimulacao,
+  onBaixarPdf,
+  gerandoPdf = false,
 }: Modulo4SimuladorCreditosProps = {}) {
   const {
     despesasCreditos,
@@ -618,6 +625,15 @@ export default function Modulo4SimuladorCreditos({
           </ul>
         </div>
       </div>
+
+      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR E BAIXAR PDF) */}
+      {onSalvarSimulacao && onBaixarPdf && (
+        <BarraAcoesSimulacao
+          onSalvar={onSalvarSimulacao}
+          onBaixarPdf={onBaixarPdf}
+          gerandoPdf={gerandoPdf}
+        />
+      )}
 
       {/* PAINEL PRÓXIMOS PASSOS (ORIENTAÇÃO DO NOVO USUÁRIO) */}
       {onNavegarModulo && (

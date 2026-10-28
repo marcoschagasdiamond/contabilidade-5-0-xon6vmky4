@@ -40,13 +40,20 @@ import {
   PainelProximosPassosCalculadora,
   ModuloCalculadoraId,
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
+import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
 
 export interface Modulo5TransicaoCronogramaProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
+  onSalvarSimulacao?: () => void
+  onBaixarPdf?: () => void
+  gerandoPdf?: boolean
 }
 
 export default function Modulo5TransicaoCronograma({
   onNavegarModulo,
+  onSalvarSimulacao,
+  onBaixarPdf,
+  gerandoPdf = false,
 }: Modulo5TransicaoCronogramaProps = {}) {
   const {
     faturamentoAnualProjetado,
@@ -622,6 +629,15 @@ export default function Modulo5TransicaoCronograma({
           </div>
         </CardContent>
       </Card>
+
+      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR E BAIXAR PDF) */}
+      {onSalvarSimulacao && onBaixarPdf && (
+        <BarraAcoesSimulacao
+          onSalvar={onSalvarSimulacao}
+          onBaixarPdf={onBaixarPdf}
+          gerandoPdf={gerandoPdf}
+        />
+      )}
 
       {/* PAINEL PRÓXIMOS PASSOS (ORIENTAÇÃO DO NOVO USUÁRIO) */}
       {onNavegarModulo && (

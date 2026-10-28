@@ -73,13 +73,20 @@ import {
   PainelProximosPassosCalculadora,
   ModuloCalculadoraId,
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
+import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
 
 export interface Modulo3ComparativoRegimesProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
+  onSalvarSimulacao?: () => void
+  onBaixarPdf?: () => void
+  gerandoPdf?: boolean
 }
 
 export default function Modulo3ComparativoRegimes({
   onNavegarModulo,
+  onSalvarSimulacao,
+  onBaixarPdf,
+  gerandoPdf = false,
 }: Modulo3ComparativoRegimesProps = {}) {
   const {
     config,
@@ -1552,6 +1559,15 @@ export default function Modulo3ComparativoRegimes({
           </div>
         </CardContent>
       </Card>
+
+      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR E BAIXAR PDF) */}
+      {onSalvarSimulacao && onBaixarPdf && (
+        <BarraAcoesSimulacao
+          onSalvar={onSalvarSimulacao}
+          onBaixarPdf={onBaixarPdf}
+          gerandoPdf={gerandoPdf}
+        />
+      )}
 
       {/* PAINEL PRÓXIMOS PASSOS (ORIENTAÇÃO DO NOVO USUÁRIO) */}
       {onNavegarModulo && (

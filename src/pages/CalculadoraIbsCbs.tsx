@@ -571,22 +571,45 @@ function CalculadoraConteudo() {
               <Modulo1Configuracoes onNavegarModulo={(id) => setModuloAtivo(id)} />
             )}
             {moduloAtivo === 'modulo2' && (
-              <Modulo2CalculadoraSimples onNavegarModulo={(id) => setModuloAtivo(id)} />
+              <Modulo2CalculadoraSimples
+                onNavegarModulo={(id) => setModuloAtivo(id)}
+                onSalvarSimulacao={handleTentarSalvarSimulacao}
+                onBaixarPdf={handleBaixarPdfAtual}
+                gerandoPdf={gerandoPdf}
+              />
             )}
             {moduloAtivo === 'modulo3' && (
-              <Modulo3ComparativoRegimes onNavegarModulo={(id) => setModuloAtivo(id)} />
+              <Modulo3ComparativoRegimes
+                onNavegarModulo={(id) => setModuloAtivo(id)}
+                onSalvarSimulacao={handleTentarSalvarSimulacao}
+                onBaixarPdf={handleBaixarPdfAtual}
+                gerandoPdf={gerandoPdf}
+              />
             )}
             {moduloAtivo === 'modulo4' && (
-              <Modulo4SimuladorCreditos onNavegarModulo={(id) => setModuloAtivo(id)} />
+              <Modulo4SimuladorCreditos
+                onNavegarModulo={(id) => setModuloAtivo(id)}
+                onSalvarSimulacao={handleTentarSalvarSimulacao}
+                onBaixarPdf={handleBaixarPdfAtual}
+                gerandoPdf={gerandoPdf}
+              />
             )}
             {moduloAtivo === 'modulo5' && (
-              <Modulo5TransicaoCronograma onNavegarModulo={(id) => setModuloAtivo(id)} />
+              <Modulo5TransicaoCronograma
+                onNavegarModulo={(id) => setModuloAtivo(id)}
+                onSalvarSimulacao={handleTentarSalvarSimulacao}
+                onBaixarPdf={handleBaixarPdfAtual}
+                gerandoPdf={gerandoPdf}
+              />
             )}
             {moduloAtivo === 'modulo6' && (
               <Modulo6Dashboard
                 simulacoesComparar={simulacoesParaComparar}
                 onAbrirPdfComparativo={() => setModalPdfComparativoAberto(true)}
                 onNavegarModulo={(id) => setModuloAtivo(id)}
+                onSalvarSimulacao={handleTentarSalvarSimulacao}
+                onBaixarPdf={handleBaixarPdfAtual}
+                gerandoPdf={gerandoPdf}
               />
             )}
 

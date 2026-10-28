@@ -77,17 +77,24 @@ import {
   PainelProximosPassosCalculadora,
   ModuloCalculadoraId,
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
+import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
 
 interface Modulo6DashboardProps {
   simulacoesComparar?: SimulacaoCalculadora[]
   onAbrirPdfComparativo?: () => void
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
+  onSalvarSimulacao?: () => void
+  onBaixarPdf?: () => void
+  gerandoPdf?: boolean
 }
 
 export default function Modulo6Dashboard({
   simulacoesComparar = [],
   onAbrirPdfComparativo,
   onNavegarModulo,
+  onSalvarSimulacao,
+  onBaixarPdf,
+  gerandoPdf: gerandoPdfProp,
 }: Modulo6DashboardProps) {
   const {
     config,
@@ -1934,6 +1941,15 @@ export default function Modulo6Dashboard({
       {/* QUADRO DO ASSISTENTE DE ANÁLISE — CALCULADORA IBS/CBS (AGENTE NATIVO SKIP CLOUD) */}
       {/* Posicionado ao final da página do Dashboard — após Conclusão Analítica e Split Payment, como última seção */}
       <QuadroAssistenteAnalise abertoInicial={false} />
+
+      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR E BAIXAR PDF) */}
+      {/* No Dashboard Executivo: duplicação no fim + barra fixa (sticky no rodapé) em telas pequenas para acompanhar a rolagem */}
+      <BarraAcoesSimulacao
+        onSalvar={onSalvarSimulacao ?? (() => setModalSalvarAberto(true))}
+        onBaixarPdf={onBaixarPdf ?? handleAbrirModalPdfDashboard}
+        gerandoPdf={gerandoPdfProp ?? gerandoPdf}
+        stickyMobile={true}
+      />
 
       {/* PAINEL PRÓXIMOS PASSOS (ORIENTAÇÃO DO NOVO USUÁRIO) */}
       {onNavegarModulo && (
