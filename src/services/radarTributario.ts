@@ -258,6 +258,8 @@ export async function obterLegislacaoContextual(
     // Fallback local se backend estiver offline
     const seg = (perfil.segmento || '').toLowerCase()
     const reg = (perfil.regimeTributario || perfil.regimeAtual || '').toLowerCase()
+    const isSimples = reg.includes('simples')
+    const isReal = reg.includes('real')
     const isIndustria = seg.includes('indústria') || seg.includes('industria')
     const isServico = seg.includes('serviço') || seg.includes('servico')
 
@@ -265,16 +267,50 @@ export async function obterLegislacaoContextual(
       if (item.categoria === 'jurisprudencia') return false
       if (item.tributo === 'IPI' && !isIndustria) return false
       if (item.tributo === 'ISS' && !isServico && !perfil.atividadeMista) return false
+
+      // Regras de regime:
+      // Se for Lucro Real: não mostrar legislação exclusiva do Simples Nacional
+      if (
+        isReal &&
+        (item.id === 'lc-123-2006-simples' || item.id === 'lc-214-2025-simples-nacional')
+      ) {
+        return false
+      }
+      // Se for Simples Nacional: leis exclusivas de Lucro Real/Presumido (PIS/Cofins não-cumulativo, IRPJ/CSLL Lucro Real) não se aplicam diretamente
+      if (isSimples) {
+        if (
+          item.id === 'lei-10637-2002-pis' ||
+          item.id === 'lei-10833-2003-cofins' ||
+          item.id === 'lei-12973-2014-irpj' ||
+          item.id === 'decreto-7212-2010-ripi' ||
+          item.id === 'lei-4502-1964-ipi'
+        ) {
+          return false
+        }
+      }
+
       return true
     })
 
     const direitoRecuperacaoCredito = CATALOGO_LEGISLACAO_FALLBACK.filter((item) => {
       if (item.categoria !== 'jurisprudencia' && item.natureza !== 'recuperacao_credito')
         return false
+      // Teses de PIS/Cofins e IPI (não-cumulativo) NUNCA aparecem para Simples Nacional
+      if (isSimples) {
+        if (
+          item.id === 'juris-stf-re-592616-tema-118' ||
+          item.id === 'juris-stf-re-574706-tema-69' ||
+          item.id === 'juris-stj-tema-1182-resp-1945110' ||
+          item.id === 'juris-stj-tema-77-resp-1075508' ||
+          item.tributo === 'PIS/Cofins' ||
+          item.tributo === 'IPI'
+        ) {
+          return false
+        }
+      }
       if (item.id === 'juris-stj-tema-77-resp-1075508' && !isIndustria) return false
       if (item.id === 'juris-stf-re-592616-tema-118' && !isServico && !perfil.atividadeMista)
         return false
-      if (reg.includes('simples') && item.id.includes('tema-1182')) return false
       return true
     })
 
@@ -421,6 +457,13 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Dispõe sobre as diretrizes orçamentárias e financeiras da partilha e compensação federal da CBS durante o exercício de transição de 2027 perante os fundos federativos.',
     linkOficial: 'https://www.congressonacional.leg.br/materias/materias-orcamentarias/pln-24-2026',
     destaque: true,
+    etiquetas: {
+      tributos: ['CBS'],
+      segmentos: ['Todos'],
+      regimes: ['Todos'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
   {
     id: 'tcu-acordao-cbs-2027',
@@ -436,6 +479,59 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
     linkOficial:
       'https://pesquisa.apps.tcu.gov.br/#/documento/acordao-completo/2341%252F2026/SESSAO%2520PLENARIA',
     destaque: true,
+    etiquetas: {
+      tributos: ['CBS'],
+      segmentos: ['Todos'],
+      regimes: ['Todos'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
+  },
+  {
+    id: 'lc-123-2006-simples',
+    titulo: 'Lei Complementar nº 123/2006 (Estatuto Nacional da MPE)',
+    tipo: 'Lei Complementar',
+    numero: '123',
+    ano: 2006,
+    orgao: 'Presidência da República / Congresso Nacional',
+    tributo: 'Geral',
+    dataPublicacao: '14/12/2006',
+    ementa:
+      'Institui o Estatuto Nacional da Microempresa e da Empresa de Pequeno Porte (Simples Nacional), estabelecendo regime único de arrecadação, tributação simplificada e tratamento jurídico diferenciado.',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp123.htm',
+    destaque: true,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    etiquetas: {
+      tributos: ['Geral', 'Simples Nacional', 'IBS', 'CBS'],
+      segmentos: ['Todos'],
+      regimes: ['Simples Nacional'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
+  },
+  {
+    id: 'lc-214-2025-simples-nacional',
+    titulo: 'LC 214/2025 — Regras do Simples Nacional na Transição (IBS/CBS no DAS)',
+    tipo: 'Lei Complementar',
+    numero: '214 (Simples)',
+    ano: 2025,
+    orgao: 'Presidência da República / Congresso Nacional',
+    tributo: 'Geral',
+    dataPublicacao: '15/01/2025',
+    ementa:
+      'Regras de permanência das micro e pequenas empresas no Simples Nacional durante a transição da Reforma Tributária: manutenção do regime único com recolhimento de CBS e IBS dentro do DAS ou opção pelo recolhimento por fora com transferência integral de créditos.',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm',
+    destaque: true,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    etiquetas: {
+      tributos: ['IBS', 'CBS', 'Simples Nacional'],
+      segmentos: ['Todos'],
+      regimes: ['Simples Nacional'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
   {
     id: 'senado-resolucao-cbs-ibs',

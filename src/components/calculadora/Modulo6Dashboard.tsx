@@ -773,8 +773,8 @@ export default function Modulo6Dashboard({
         </div>
       </div>
 
-      {/* Banner Oficial do Radar Tributário: Alíquota Vigente / Proposta e Fonte */}
-      {parametroCbsAtivo && (
+      {/* Banner Oficial do Radar Tributário: Alíquota Vigente / Proposta e Fonte (visível apenas com análise ativa) */}
+      {faturamentoMensal > 0 && parametroCbsAtivo && (
         <div className="rounded-xl border border-[#D4AF37]/50 bg-gradient-to-r from-[#07132B] via-[#0B1E45] to-[#07132B] p-4 text-white shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-full bg-[#D4AF37]/10 blur-2xl pointer-events-none" />
           <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -809,25 +809,27 @@ export default function Modulo6Dashboard({
         </div>
       )}
 
-      {/* Rasante de Legislação Contextual: normas e teses aplicáveis ao perfil e enquadramento simulado */}
-      <QuadroLegislacaoContextualCalculadora
-        segmentoSimulado={
-          tipoAtividade === 'industria'
-            ? 'Indústria'
-            : tipoAtividade === 'comercio'
-              ? 'Comércio'
-              : tipoAtividade === 'servico'
-                ? 'Serviços'
-                : tipoAtividade === 'agronegocio'
-                  ? 'Agro'
-                  : tipoAtividade === 'construcao_civil'
-                    ? 'Construção Civil'
-                    : undefined
-        }
-        regimeSimulado={regimeAtualFiltro}
-        ramoSimulado={tipoAtividade}
-        faturamentoMensalSimulado={faturamentoMensal}
-      />
+      {/* Rasante de Legislação Contextual: normas e teses aplicáveis ao perfil e enquadramento simulado (visível apenas com análise ativa) */}
+      {faturamentoMensal > 0 && (
+        <QuadroLegislacaoContextualCalculadora
+          segmentoSimulado={
+            tipoAtividade === 'industria'
+              ? 'Indústria'
+              : tipoAtividade === 'comercio'
+                ? 'Comércio'
+                : tipoAtividade === 'servico'
+                  ? 'Serviços'
+                  : tipoAtividade === 'agronegocio'
+                    ? 'Agro'
+                    : tipoAtividade === 'construcao_civil'
+                      ? 'Construção Civil'
+                      : undefined
+          }
+          regimeSimulado={regimeAtualFiltro}
+          ramoSimulado={tipoAtividade}
+          faturamentoMensalSimulado={faturamentoMensal}
+        />
+      )}
 
       {/* Barra de Filtros Globais Conforme Especificação - Fixo (sticky) logo abaixo da navbar */}
       <Card className="border-slate-200/80 bg-slate-50/95 backdrop-blur-md shadow-md sticky top-16 sm:top-[68px] z-20 transition-all">
