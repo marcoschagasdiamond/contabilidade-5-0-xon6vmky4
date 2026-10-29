@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-28T23:44:57.421Z",
+  "generatedAt": "2026-10-29T12:02:59.309Z",
   "collections": [
     {
       "name": "users",
@@ -1745,6 +1745,175 @@
         "CREATE INDEX idx_pedidos_solicitante ON pedidos_informacao_creditos (solicitante_id)",
         "CREATE INDEX idx_pedidos_status ON pedidos_informacao_creditos (status)",
         "CREATE INDEX idx_pedidos_created ON pedidos_informacao_creditos (created DESC)"
+      ]
+    },
+    {
+      "name": "parametros_tributarios",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')",
+        "delete": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')"
+      },
+      "fields": [
+        {
+          "name": "ano",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tributo",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["CBS", "IBS"]
+        },
+        {
+          "name": "aliquota",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "situacao",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["proposta", "fixada"]
+        },
+        {
+          "name": "fonte",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "data",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "detalhes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_param_tributo_ano ON parametros_tributarios (tributo, ano)",
+        "CREATE INDEX idx_param_created ON parametros_tributarios (created DESC)"
+      ]
+    },
+    {
+      "name": "notificacoes_tributarias",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin')"
+      },
+      "fields": [
+        {
+          "name": "titulo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "mensagem",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["aliquota_nova", "legislacao_nova", "alerta_senado"]
+        },
+        {
+          "name": "tributo",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["CBS", "IBS"]
+        },
+        {
+          "name": "ano",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "aliquota",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "fonte",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "lida",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "destinatario_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_notif_created ON notificacoes_tributarias (created DESC)",
+        "CREATE INDEX idx_notif_tipo ON notificacoes_tributarias (tipo)"
       ]
     }
   ]

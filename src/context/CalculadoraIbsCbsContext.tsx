@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo } from 'react'
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react'
 import {
   ConfiguracoesGerais,
   CONFIGURACOES_PADRAO,
@@ -50,6 +50,12 @@ import type {
   ParametrosSimulacaoCalculadora,
   ResultadosSimulacaoCalculadora,
 } from '@/types/simulacaoCalculadora'
+import {
+  listarParametrosTributarios,
+  listarNotificacoesTributarias,
+  ParametroTributario,
+  NotificacaoTributaria,
+} from '@/services/radarTributario'
 
 interface CalculadoraContextType {
   // Módulo 1 - Configurações Gerais
@@ -347,6 +353,14 @@ interface CalculadoraContextType {
     economiaAnualProjetada: number
     regimeRecomendado: string
   }
+
+  // Radar Tributário (Alíquotas oficiais salvas na coleção parametros_tributarios)
+  parametrosRadar: ParametroTributario[]
+  parametroCbsAtivo: ParametroTributario | null
+  parametroIbsAtivo: ParametroTributario | null
+  notificacoesRadar: NotificacaoTributaria[]
+  carregandoRadar: boolean
+  recarregarParametrosRadar: () => Promise<void>
 }
 
 const CalculadoraContext = createContext<CalculadoraContextType | undefined>(undefined)
@@ -362,6 +376,45 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const [origemDadosEmpresa, setOrigemDadosEmpresa] = useState<boolean>(() =>
     isAuthenticated ? existeDadosEmpresaSalvos() : false,
   )
+
+  // Radar Tributário: Alíquotas e Notificações lidas da coleção parametros_tributarios
+  const [parametrosRadar, setParametrosRadar] = useState<ParametroTributario[]>([])
+  const [notificacoesRadar, setNotificacoesRadar] = useState<NotificacaoTributaria[]>([])
+  const [carregandoRadar, setCarregandoRadar] = useState<boolean>(true)
+
+  const recarregarParametrosRadar = async () => {
+    try {
+      setCarregandoRadar(true)
+      const [params, notifs] = await Promise.all([
+        listarParametrosTributarios(),
+        listarNotificacoesTributarias(),
+      ])
+      setParametrosRadar(params)
+      setNotificacoesRadar(notifs)
+    } catch (err) {
+      console.warn('[Radar Context] Erro ao carregar parâmetros tributários:', err)
+    } finally {
+      setCarregandoRadar(false)
+    }
+  }
+
+  useEffect(() => {
+    recarregarParametrosRadar()
+  }, [])
+
+  // Parâmetros mais relevantes do Radar para o ano ativo (ex: 2027 CBS de 11,3468%)
+  const parametroCbsAtivo = useMemo(() => {
+    if (!parametrosRadar || parametrosRadar.length === 0) return null
+    // Prioriza o ano selecionado no Dashboard / Módulo 1; se não houver, busca 2027
+    const cbsAno = parametrosRadar.find((p) => p.tributo === 'CBS' && p.ano === 2027)
+    return cbsAno || parametrosRadar.find((p) => p.tributo === 'CBS') || null
+  }, [parametrosRadar])
+
+  const parametroIbsAtivo = useMemo(() => {
+    if (!parametrosRadar || parametrosRadar.length === 0) return null
+    const ibsAno = parametrosRadar.find((p) => p.tributo === 'IBS' && p.ano === 2027)
+    return ibsAno || parametrosRadar.find((p) => p.tributo === 'IBS') || null
+  }, [parametrosRadar])
 
   // Módulo 1: Configurações Gerais
   const [config, setConfig] = useState<ConfiguracoesGerais>(() => {
@@ -559,11 +612,22 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const dadosAno = CRONOGRAMA_FASES_TRANSICAO[ano]
     if (!dadosAno) return
 
+    // Se tiver alíquota oficial na coleção parametros_tributarios para o ano selecionado, integra como valor oficial/proposto
+    let cbsDinamica = dadosAno.aliquotaCbs
+    let etiquetaCbsDinamica = dadosAno.etiquetaOrigem
+    if (typeof ano === 'number' && parametrosRadar.length > 0) {
+      const paramCbs = parametrosRadar.find((p) => p.ano === ano && p.tributo === 'CBS')
+      if (paramCbs && paramCbs.aliquota) {
+        cbsDinamica = paramCbs.aliquota
+        etiquetaCbsDinamica = `${paramCbs.fonte} (${paramCbs.situacao}) · fase ${ano}`
+      }
+    }
+
     setConfig((prev) => {
-      const cbs = dadosAno.aliquotaCbs
+      const cbs = cbsDinamica
       const ibs = dadosAno.aliquotaIbs
-      const total = dadosAno.totalIvaDual
-      const etiquetaFase = dadosAno.etiquetaOrigem
+      const total = Number((cbs + ibs).toFixed(2))
+      const etiquetaFase = etiquetaCbsDinamica
 
       // Se for ano atual (pré-reforma), alíquotas de IBS/CBS são 0%
       let saudeAliq = Number((total * 0.4).toFixed(2)) // redução 60%
@@ -2528,6 +2592,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         resultadoSplitPayment,
         resultadoEstoque,
         resultadoDashboard,
+
+        // Radar Tributário
+        parametrosRadar,
+        parametroCbsAtivo,
+        parametroIbsAtivo,
+        notificacoesRadar,
+        carregandoRadar,
+        recarregarParametrosRadar,
       }}
     >
       {children}

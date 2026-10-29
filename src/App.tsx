@@ -55,6 +55,7 @@ import Planos from './pages/Planos'
 import NotFound from './pages/NotFound'
 
 // Reforma Tributária (Diamond Group)
+import Legislacao from './pages/Legislacao'
 import ReformaTributariaHub from './pages/reforma/ReformaTributariaHub'
 import SubpageVisaoGeral from './pages/reforma/SubpageVisaoGeral'
 import SubpageCalendario from './pages/reforma/SubpageCalendario'
@@ -229,6 +230,7 @@ const App = () => (
                 />
                 <Route path="/mercado-creditos" element={<MercadoCreditos />} />
                 <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
+                <Route path="/legislacao" element={<Legislacao />} />
                 <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
                 <Route path="/recuperador-creditos" element={<RecuperadorCreditos />} />
                 <Route

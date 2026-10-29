@@ -133,6 +133,8 @@ export default function Modulo6Dashboard({
     subatividadeFoodService,
     obterSnapshotParametros,
     obterSnapshotResultados,
+    parametroCbsAtivo,
+    parametrosRadar,
   } = useCalculadoraIbsCbs()
 
   const { clienteAtivo } = useClienteAtivo()
@@ -754,6 +756,42 @@ export default function Modulo6Dashboard({
           </div>
         </div>
       </div>
+
+      {/* Banner Oficial do Radar Tributário: Alíquota Vigente / Proposta e Fonte */}
+      {parametroCbsAtivo && (
+        <div className="rounded-xl border border-[#D4AF37]/50 bg-gradient-to-r from-[#07132B] via-[#0B1E45] to-[#07132B] p-4 text-white shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-full bg-[#D4AF37]/10 blur-2xl pointer-events-none" />
+          <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#D4AF37] text-[#07132B]">
+                  Radar Tributário • Parâmetro Oficial
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-white/10 text-[#D4AF37] border border-[#D4AF37]/40">
+                  {parametroCbsAtivo.tributo} {parametroCbsAtivo.ano}:{' '}
+                  {parametroCbsAtivo.aliquota.toFixed(4)}% (
+                  {parametroCbsAtivo.situacao === 'proposta' ? 'Proposta' : 'Fixada'})
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-200 font-medium leading-snug">
+                {parametroCbsAtivo.detalhes ||
+                  `Alíquota de referência da ${parametroCbsAtivo.tributo} aprovada para ${parametroCbsAtivo.ano}.`}
+              </p>
+              <p className="text-[11px] text-slate-400 font-mono">
+                Fonte oficial: <span className="text-[#D4AF37]">{parametroCbsAtivo.fonte}</span>
+              </p>
+            </div>
+            <div className="shrink-0 flex items-center gap-2">
+              <a
+                href="/legislacao"
+                className="inline-flex items-center justify-center text-xs font-bold px-3 py-1.5 rounded-lg bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 text-[#D4AF37] border border-[#D4AF37]/50 transition-colors"
+              >
+                Consultar Legislação
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Barra de Filtros Globais Conforme Especificação - Fixo (sticky) logo abaixo da navbar */}
       <Card className="border-slate-200/80 bg-slate-50/95 backdrop-blur-md shadow-md sticky top-16 sm:top-[68px] z-20 transition-all">
