@@ -1052,7 +1052,9 @@ export default function Modulo6Dashboard({
               <CardContent className="p-5 space-y-1.5">
                 <div className="flex items-center justify-between text-xs text-slate-500">
                   <span className="font-semibold uppercase tracking-wider">
-                    Alíquota Efetiva Atual
+                    {regimeAtualFiltro === 'Simples Nacional'
+                      ? 'DAS Atual'
+                      : 'Alíquota Efetiva Atual'}
                   </span>
                   <span className="font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[10px]">
                     {regimeAtualFiltro}
@@ -1062,28 +1064,33 @@ export default function Modulo6Dashboard({
                   {formatarPorcentagem(aliquotaEfetivaAtual)}
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  Carga efetiva nominal suportada no regime vigente
+                  {regimeAtualFiltro === 'Simples Nacional'
+                    ? 'Alíquota efetiva atual da guia DAS tradicional'
+                    : 'Carga efetiva nominal suportada no regime vigente'}
                 </p>
               </CardContent>
             </Card>
 
-            {/* KPI 2: Alíquota Efetiva Nova */}
+            {/* KPI 2: Alíquota Efetiva Nova / Cenário da Transição */}
             <Card className="border-[#D4AF37]/50 bg-gradient-to-br from-amber-50/40 to-white shadow hover:shadow-md transition-all">
               <CardContent className="p-5 space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold uppercase tracking-wider text-amber-900">
-                    Alíquota Efetiva Nova
+                    {regimeAtualFiltro === 'Simples Nacional'
+                      ? 'Cenário da Transição'
+                      : 'Alíquota Efetiva Nova'}
                   </span>
                   <span className="font-mono text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded text-[10px] font-bold">
-                    IBS / CBS
+                    {regimeAtualFiltro === 'Simples Nacional' ? 'CBS no DAS + IBS' : 'IBS / CBS'}
                   </span>
                 </div>
                 <p className="text-3xl font-mono font-extrabold text-[#07132B]">
                   {formatarPorcentagem(aliquotaEfetivaNova)}
                 </p>
                 <p className="text-[11px] text-slate-500">
-                  Considerando débitos com abatimento de compras (
-                  {percentualComprasVendasComparativo}%)
+                  {regimeAtualFiltro === 'Simples Nacional'
+                    ? 'CBS no DAS a partir de 2027 e IBS por fora com créditos'
+                    : `Considerando débitos com abatimento de compras (${percentualComprasVendasComparativo}%)`}
                 </p>
               </CardContent>
             </Card>

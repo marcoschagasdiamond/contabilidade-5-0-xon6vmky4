@@ -1153,6 +1153,134 @@ export default function Modulo3ComparativoRegimes({
         </div>
       </div>
 
+      {/* RAMO DO SIMPLES NACIONAL NA REFORMA (LC 214/2025): Exibição do cenário Simples Nacional */}
+      {config.regimeAtualEmpresa === 'Simples Nacional' && resultadoComparativo.simplesReforma && (
+        <Card className="border-2 border-[#D4AF37]/50 shadow-xl overflow-hidden bg-white">
+          <div className="p-4 bg-gradient-to-r from-[#07132B] via-slate-900 to-[#07132B] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" />
+                <h3 className="font-heading font-bold text-lg text-white">
+                  Simples Nacional na Transição da Reforma Tributária (LC 214/2025)
+                </h3>
+              </div>
+              <p className="text-xs text-slate-300 mt-1">
+                Comparativo direto entre o modelo vigente e o cronograma da transição (CBS no DAS a
+                partir de 2027 e IBS por fora).
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge className="bg-[#D4AF37] text-[#07132B] font-bold text-xs">
+                Ano da transição: {config.anoTransicao || '2033'}
+              </Badge>
+              <Badge variant="outline" className="text-white border-white/40 text-xs">
+                Regime Aplicado: Simples Nacional
+              </Badge>
+            </div>
+          </div>
+
+          <div className="p-5 space-y-4">
+            {/* Mensagem descritiva da fase */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 leading-relaxed">
+              <strong>Fase Legal:</strong> {resultadoComparativo.simplesReforma.descricaoFase}
+            </div>
+
+            {/* Grid de 3 Cards de KPIs do Simples */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                  {resultadoComparativo.simplesReforma.rotuloCenarioAtual}
+                </span>
+                <p className="text-2xl font-mono font-extrabold text-slate-800">
+                  {formatarMoeda(resultadoComparativo.simplesReforma.dasAtualTotal)}
+                  <span className="text-xs font-normal text-slate-500 ml-1">/mês</span>
+                </p>
+                <span className="text-xs text-slate-600 block">
+                  Alíquota Efetiva:{' '}
+                  <strong>
+                    {formatarPorcentagem(resultadoComparativo.simplesReforma.aliquotaEfetivaAtual)}
+                  </strong>
+                </span>
+              </div>
+
+              <div className="p-4 rounded-xl border border-[#D4AF37]/40 bg-[#D4AF37]/5 space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#07132B] block">
+                  {resultadoComparativo.simplesReforma.rotuloCbs} (LC 214/2025)
+                </span>
+                <p className="text-2xl font-mono font-extrabold text-[#07132B]">
+                  {formatarMoeda(resultadoComparativo.simplesReforma.cbsNoDas)}
+                  <span className="text-xs font-normal text-slate-500 ml-1">/mês</span>
+                </p>
+                <span className="text-xs text-slate-600 block">
+                  Fatia CBS no DAS:{' '}
+                  <strong>
+                    {formatarPorcentagem(
+                      resultadoComparativo.simplesReforma.aliquotaEfetivaCbsNoDas,
+                    )}
+                  </strong>
+                </span>
+              </div>
+
+              <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50 space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900 block">
+                  {resultadoComparativo.simplesReforma.rotuloIbs}
+                </span>
+                <p className="text-2xl font-mono font-extrabold text-blue-900">
+                  {formatarMoeda(resultadoComparativo.simplesReforma.ibsPorFora)}
+                  <span className="text-xs font-normal text-slate-500 ml-1">/mês</span>
+                </p>
+                <span className="text-xs text-slate-600 block">
+                  Carga IBS por fora:{' '}
+                  <strong>
+                    {formatarPorcentagem(
+                      resultadoComparativo.simplesReforma.aliquotaEfetivaIbsPorFora,
+                    )}
+                  </strong>
+                </span>
+              </div>
+            </div>
+
+            {/* Resumo da Transição vs DAS Atual */}
+            <div className="p-4 rounded-xl border border-slate-300 bg-gradient-to-r from-slate-100 to-amber-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-slate-700 block">
+                  Total Cenario da Transição (DAS Ajustado + IBS por fora)
+                </span>
+                <p className="text-xl font-mono font-extrabold text-[#07132B]">
+                  {formatarMoeda(resultadoComparativo.simplesReforma.cenarioTransicaoTotal)}
+                  <span className="text-xs font-normal text-slate-600 ml-1">
+                    (
+                    {formatarPorcentagem(
+                      resultadoComparativo.simplesReforma.aliquotaEfetivaTransicao,
+                    )}{' '}
+                    efetiva)
+                  </span>
+                </p>
+              </div>
+
+              <div className="text-left sm:text-right">
+                <span className="text-xs font-bold text-slate-700 block">
+                  Variação frente ao DAS Atual
+                </span>
+                <p
+                  className={`text-lg font-mono font-extrabold ${
+                    resultadoComparativo.simplesReforma.diferencaMensal <= 0
+                      ? 'text-emerald-700'
+                      : 'text-amber-800'
+                  }`}
+                >
+                  {resultadoComparativo.simplesReforma.diferencaMensal <= 0 ? '-' : '+'}
+                  {formatarMoeda(Math.abs(resultadoComparativo.simplesReforma.diferencaMensal))}
+                  <span className="text-xs ml-1 font-semibold">
+                    ({formatarPorcentagem(resultadoComparativo.simplesReforma.variacaoPercentual)})
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Tabela Comparativa com as 4 Colunas Conforme Especificação */}
       <Card className="border-slate-200 shadow-lg overflow-hidden">
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">

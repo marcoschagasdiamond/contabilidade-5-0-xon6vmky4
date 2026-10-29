@@ -195,9 +195,17 @@ export function construirConclusaoAnalitica(
   } else if (eh2026) {
     vereditoTexto = `Para o ano da transição 2026, o regime recomendado é o ${regimeRecomendado}. Conforme estabelece o art. 348 da LC 214/2025 (fase de teste piloto), a CBS (0,90%) e o IBS (0,10%) operam com carga zero/compensável integralmente contra tributos federais e sem recolhimento cumulativo, ficando o IBS/CBS fora da disputa de escolha de regime neste ano. O resultado reflete a melhor opção entre os regimes vigentes (Simples Nacional, Lucro Presumido e Lucro Real).`
   } else if (temEconomia) {
-    vereditoTexto = `Para o ano da transição ${anoSelecionado}, o regime recomendado é o ${regimeRecomendado}. A projeção técnica aponta uma economia anual estimada em ${economiaAnualStr} (${economiaMensalStr} por competência mensal) em comparação ao regime atual (${regimeAtualFiltro}), reduzindo a alíquota efetiva para ${formatarPorcentagem(aliquotaEfetivaNova)}.`
+    if (regimeAtualFiltro === 'Simples Nacional') {
+      vereditoTexto = `Para o ano da transição ${anoSelecionado}, o cenário recomendado é o ${regimeRecomendado}. A projeção técnica da LC 214/2025 para optantes do Simples aponta uma economia anual estimada em ${economiaAnualStr} (${economiaMensalStr} por competência mensal) em comparação ao DAS atual, passando a alíquota efetiva total para ${formatarPorcentagem(aliquotaEfetivaNova)}.`
+    } else {
+      vereditoTexto = `Para o ano da transição ${anoSelecionado}, o regime recomendado é o ${regimeRecomendado}. A projeção técnica aponta uma economia anual estimada em ${economiaAnualStr} (${economiaMensalStr} por competência mensal) em comparação ao regime atual (${regimeAtualFiltro}), reduzindo a alíquota efetiva para ${formatarPorcentagem(aliquotaEfetivaNova)}.`
+    }
   } else {
-    vereditoTexto = `Para o ano da transição ${anoSelecionado}, o regime recomendado é o ${regimeRecomendado}. Em relação ao regime atual (${regimeAtualFiltro}), a projeção aponta alíquota efetiva de ${formatarPorcentagem(aliquotaEfetivaNova)} com resultado financeiro classificado como "Sem economia neste cenário", demandando reestruturação de créditos ou revisão das margens de compras antes de eventual migração.`
+    if (regimeAtualFiltro === 'Simples Nacional') {
+      vereditoTexto = `Para o ano da transição ${anoSelecionado}, o cenário recomendado é o ${regimeRecomendado}. A apuração aponta que o DAS atual permanece vantajoso ou equivalente frente à transição do Simples sob a LC 214/2025 (alíquota efetiva de ${formatarPorcentagem(aliquotaEfetivaNova)}), mantendo a simplificação da guia única unificada.`
+    } else {
+      vereditoTexto = `Para o ano da transição ${anoSelecionado}, o regime recomendado é o ${regimeRecomendado}. Em relação ao regime atual (${regimeAtualFiltro}), a projeção aponta alíquota efetiva de ${formatarPorcentagem(aliquotaEfetivaNova)} com resultado financeiro classificado como "Sem economia neste cenário", demandando reestruturação de créditos ou revisão das margens de compras antes de eventual migração.`
+    }
   }
 
   const fatores = derivarFatoresExplicativos(input)

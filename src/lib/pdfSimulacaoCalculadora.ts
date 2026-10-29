@@ -749,6 +749,44 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     currentY += 7.5
   })
 
+  // Se o regime da empresa for Simples Nacional e houver dados da Reforma:
+  const simplesRef = resultados.resultadoComparativo.simplesReforma
+  if (
+    simplesRef &&
+    (parametros.regimeAtualEmpresa === 'Simples Nacional' ||
+      parametros.regimeAtualFiltro === 'Simples Nacional')
+  ) {
+    currentY += 3
+    verificarQuebraPagina(20)
+    doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
+    doc.setDrawColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+    doc.roundedRect(margin, currentY, contentWidth, 16, 1.5, 1.5, 'FD')
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7.2)
+    doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.text(
+      'DETALHAMENTO DO SIMPLES NACIONAL NA TRANSIÇÃO (LC 214/2025):',
+      margin + 3,
+      currentY + 4.5,
+    )
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(6.8)
+    doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+    doc.text(
+      `DAS atual: ${formatarMoeda(simplesRef.dasAtualTotal)} (${simplesRef.aliquotaEfetivaAtual.toFixed(2)}%)  |  CBS no DAS: ${formatarMoeda(simplesRef.cbsNoDas)} (${simplesRef.aliquotaEfetivaCbsNoDas.toFixed(2)}%)  |  IBS por fora: ${formatarMoeda(simplesRef.ibsPorFora)} (${simplesRef.aliquotaEfetivaIbsPorFora.toFixed(2)}%)  |  Cenário Transição: ${formatarMoeda(simplesRef.cenarioTransicaoTotal)} (${simplesRef.aliquotaEfetivaTransicao.toFixed(2)}%)`,
+      margin + 3,
+      currentY + 9,
+    )
+    doc.setFont('helvetica', 'italic')
+    doc.setFontSize(6)
+    doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+    doc.text(simplesRef.descricaoFase, margin + 3, currentY + 13.5)
+
+    currentY += 18
+  }
+
   currentY += 2
 
   // Nota orientativa curta no rodapé do Bloco 3 (Comparativo dos 4 Regimes)

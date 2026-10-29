@@ -131,6 +131,27 @@ export interface ResultadosSimulacaoCalculadora {
       creditos: number
       impostoSeletivo: number
     }
+    // Ramo do Simples Nacional na Reforma Tributária (LC 214/2025)
+    simplesReforma?: {
+      dasAtualTotal: number
+      aliquotaEfetivaAtual: number
+      cbsNoDas: number
+      aliquotaEfetivaCbsNoDas: number
+      ibsPorFora: number
+      aliquotaEfetivaIbsPorFora: number
+      dasBaseRemanescente: number
+      cenarioTransicaoTotal: number
+      aliquotaEfetivaTransicao: number
+      diferencaMensal: number
+      economiaMensal: number
+      economiaAnual: number
+      variacaoPercentual: number
+      rotuloCenarioAtual: string
+      rotuloCbs: string
+      rotuloIbs: string
+      descricaoFase: string
+      ano?: string | number
+    }
     regimeMaisVantajoso: string
     piorCenario: string
     economiaVersusPior: number

@@ -38,6 +38,11 @@ import {
 export { TEXTO_FASE_TESTE_2026, isAno2026, isAno2026OuAtual }
 import { TABELAS_SIMPLES } from '@/lib/regimes'
 import {
+  calcularIbsCbsSimplesNacional,
+  type ResultadoCalculoSimplesReforma,
+  type AnoBaseSimulacao,
+} from '@/lib/reformaTributaria'
+import {
   carregarDadosEmpresa,
   salvarDadosEmpresa,
   existeDadosEmpresaSalvos,
@@ -254,6 +259,27 @@ interface CalculadoraContextType {
       aliquotaEfetiva: number
       detalheImpostos: string
       reducaoAplicadaPercentual: number
+    }
+    // Ramo do Simples Nacional na Reforma Tributária (LC 214/2025)
+    simplesReforma?: {
+      dasAtualTotal: number
+      aliquotaEfetivaAtual: number
+      cbsNoDas: number
+      aliquotaEfetivaCbsNoDas: number
+      ibsPorFora: number
+      aliquotaEfetivaIbsPorFora: number
+      dasBaseRemanescente: number
+      cenarioTransicaoTotal: number
+      aliquotaEfetivaTransicao: number
+      diferencaMensal: number
+      economiaMensal: number
+      economiaAnual: number
+      variacaoPercentual: number
+      rotuloCenarioAtual: string
+      rotuloCbs: string
+      rotuloIbs: string
+      descricaoFase: string
+      ano?: string | number
     }
     regimeMaisVantajoso: string
     piorCenario: string
@@ -1972,11 +1998,71 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         : [{ nome: 'IBS/CBS', total: ibsCbsTotalEfetivo, aliq: ibsCbsAliqEfetiva }]),
     ]
 
+    // Ramo do Simples Nacional na Reforma Tributária (LC 214/2025):
+    // Quando o regime da empresa for Simples Nacional ou para comparação dedicada:
+    // Deriva fator de redução setorial se o preset ou atividade possuir desoneração
+    let fatorReducaoSetorialSimples = 1.0
+    if (config.presetSetor && config.presetSetor !== 'nenhum') {
+      const presetInfo = PRESETS_SETORES_LC214[config.presetSetor]
+      if (presetInfo) {
+        fatorReducaoSetorialSimples = Math.max(0, 1 - (presetInfo.reducaoPercentual || 0) / 100)
+      }
+    } else if (reducaoIbsCbsPct > 0) {
+      fatorReducaoSetorialSimples = Math.max(0, 1 - reducaoIbsCbsPct / 100)
+    }
+
+    const simplesReformaCalculado = calcularIbsCbsSimplesNacional({
+      faturamentoMensal: faturamentoBruto,
+      aliquotaEfetivaAtualSimples: snAliqEfetivaSobreTotal,
+      ano: (config.anoTransicao as AnoBaseSimulacao | 'atual') || 2033,
+      fatorReducaoSetorial: fatorReducaoSetorialSimples,
+      percentualExportacao,
+    })
+
+    const isRegimeSimplesSelecionado = config.regimeAtualEmpresa === 'Simples Nacional'
+
     const cenariosOrdenados = [...cenarios].sort((a, b) => a.total - b.total)
     const melhor = cenariosOrdenados[0]
     const pior = cenariosOrdenados[cenariosOrdenados.length - 1]
     const economia = Math.max(0, pior.total - melhor.total)
     const economiaPct = pior.total > 0 ? (economia / pior.total) * 100 : 0
+
+    // Se o regime atual for Simples Nacional, o melhor cenário e pior cenário do comparativo
+    // podem contrapor o DAS atual versus o cenário da transição do Simples
+    let regimeMaisVantajosoFinal = melhor.nome
+    let piorCenarioFinal = pior.nome
+    let economiaFinal = economia
+    let economiaPctFinal = economiaPct
+
+    if (isRegimeSimplesSelecionado) {
+      if (ehAno2026OuAtualComparativo) {
+        regimeMaisVantajosoFinal = 'Simples Nacional (DAS atual)'
+        piorCenarioFinal = 'Simples Nacional'
+        economiaFinal = 0
+        economiaPctFinal = 0
+      } else {
+        const transicaoMenorQueDas =
+          simplesReformaCalculado.cenarioTransicaoTotal < simplesReformaCalculado.dasAtualTotal
+        if (transicaoMenorQueDas) {
+          regimeMaisVantajosoFinal = 'Simples na Reforma (Transição)'
+          piorCenarioFinal = 'DAS Atual'
+          economiaFinal = simplesReformaCalculado.economiaMensal
+          economiaPctFinal = Math.abs(simplesReformaCalculado.variacaoPercentual)
+        } else if (
+          simplesReformaCalculado.cenarioTransicaoTotal > simplesReformaCalculado.dasAtualTotal
+        ) {
+          regimeMaisVantajosoFinal = 'DAS Atual (Mais Econômico)'
+          piorCenarioFinal = 'Simples na Reforma (Transição)'
+          economiaFinal = simplesReformaCalculado.diferencaMensal
+          economiaPctFinal = simplesReformaCalculado.variacaoPercentual
+        } else {
+          regimeMaisVantajosoFinal = 'Simples Nacional (Equivalente)'
+          piorCenarioFinal = 'Simples Nacional'
+          economiaFinal = 0
+          economiaPctFinal = 0
+        }
+      }
+    }
 
     return {
       lucroReal: {
@@ -2027,10 +2113,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
             ? `CBS (${aliquotaCbsEfetivaSaida.toFixed(2)}%) + IBS (${aliquotaIbsEfetivaSaida.toFixed(2)}%) com redução de ${reducaoIbsCbsPct}%${temImpostoSeletivo ? ` + IS (${aliqIsEfetiva}%)` : ''}`
             : `CBS ${config.cbsPadrao}% + IBS ${config.ibsPadrao}%${temImpostoSeletivo ? ` + IS (${aliqIsEfetiva}%)` : ''} (Crédito amplo)`,
       },
-      regimeMaisVantajoso: melhor.nome,
-      piorCenario: pior.nome,
-      economiaVersusPior: economia,
-      economiaPercentual: economiaPct,
+      simplesReforma: simplesReformaCalculado,
+      regimeMaisVantajoso: regimeMaisVantajosoFinal,
+      piorCenario: piorCenarioFinal,
+      economiaVersusPior: economiaFinal,
+      economiaPercentual: economiaPctFinal,
       dadosAdicionais: {
         fatorR,
         fatorRPercent,
@@ -2447,25 +2534,57 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       cargaAtualMensal = resultadoComparativo.simplesNacional.totalEfetivo
     }
 
-    // Regra central 2026 (art. 348 LC 214/2025): CBS 0,9% + IBS 0,1% é compensável integralmente com PIS/COFINS,
-    // sem ônus real líquido. A carga IBS/CBS exibida é zero/compensável.
-    const aliqNova = is2026OuAtual ? 0 : resultadoComparativo.ibsCbs.aliquotaEfetiva
-    const cargaNovaMensal = is2026OuAtual ? 0 : resultadoComparativo.ibsCbs.totalEfetivo
+    // Se o regime atual for Simples Nacional, o novo cenário é a Transição do Simples
+    // (com CBS no DAS e IBS por fora) calculada pelo novo ramo do Simples
+    let aliqNova = 0
+    let cargaNovaMensal = 0
+    let economiaMensal = 0
+    let economiaAnual = 0
+    let regimeRec = ''
 
-    // Em 2026 e atual, não há economia fantasma para o novo sistema (a comparação real vale a partir de 2027)
-    const economiaMensal = is2026OuAtual ? 0 : cargaAtualMensal - cargaNovaMensal
-    const economiaAnual = economiaMensal * 12
+    if (regimeAtualFiltro === 'Simples Nacional') {
+      const sr = resultadoComparativo.simplesReforma
+      if (is2026OuAtual) {
+        aliqNova = aliqAtual
+        cargaNovaMensal = cargaAtualMensal
+        economiaMensal = 0
+        economiaAnual = 0
+        regimeRec = 'Simples Nacional (DAS atual)'
+      } else if (sr) {
+        aliqNova = sr.aliquotaEfetivaTransicao
+        cargaNovaMensal = sr.cenarioTransicaoTotal
+        economiaMensal = sr.economiaMensal
+        economiaAnual = sr.economiaAnual
+        regimeRec =
+          sr.cenarioTransicaoTotal < sr.dasAtualTotal
+            ? 'Simples na Reforma (Transição)'
+            : 'DAS Atual (Mais Econômico)'
+      } else {
+        aliqNova = aliqAtual
+        cargaNovaMensal = cargaAtualMensal
+        regimeRec = 'Simples Nacional'
+      }
+    } else {
+      // Regra central 2026 (art. 348 LC 214/2025): CBS 0,9% + IBS 0,1% é compensável integralmente com PIS/COFINS,
+      // sem ônus real líquido. A carga IBS/CBS exibida é zero/compensável.
+      aliqNova = is2026OuAtual ? 0 : resultadoComparativo.ibsCbs.aliquotaEfetiva
+      cargaNovaMensal = is2026OuAtual ? 0 : resultadoComparativo.ibsCbs.totalEfetivo
 
-    // Regime recomendado: para 2026 e atual, IBS/CBS NÃO concorre (disputa sai apenas entre Real, Presumido e Simples)
-    const cenariosTradicionais = [
-      { nome: 'Lucro Real', total: resultadoComparativo.lucroReal.totalEfetivo },
-      { nome: 'Lucro Presumido', total: resultadoComparativo.lucroPresumido.totalEfetivo },
-      { nome: 'Simples Nacional', total: resultadoComparativo.simplesNacional.totalEfetivo },
-    ].sort((a, b) => a.total - b.total)
+      // Em 2026 e atual, não há economia fantasma para o novo sistema (a comparação real vale a partir de 2027)
+      economiaMensal = is2026OuAtual ? 0 : cargaAtualMensal - cargaNovaMensal
+      economiaAnual = economiaMensal * 12
 
-    const regimeRec = is2026OuAtual
-      ? cenariosTradicionais[0]?.nome || 'Simples Nacional'
-      : resultadoComparativo.regimeMaisVantajoso
+      // Regime recomendado: para 2026 e atual, IBS/CBS NÃO concorre (disputa sai apenas entre Real, Presumido e Simples)
+      const cenariosTradicionais = [
+        { nome: 'Lucro Real', total: resultadoComparativo.lucroReal.totalEfetivo },
+        { nome: 'Lucro Presumido', total: resultadoComparativo.lucroPresumido.totalEfetivo },
+        { nome: 'Simples Nacional', total: resultadoComparativo.simplesNacional.totalEfetivo },
+      ].sort((a, b) => a.total - b.total)
+
+      regimeRec = is2026OuAtual
+        ? cenariosTradicionais[0]?.nome || 'Simples Nacional'
+        : resultadoComparativo.regimeMaisVantajoso
+    }
 
     return {
       aliquotaEfetivaAtual: aliqAtual,
@@ -2508,6 +2627,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
           creditos: resultadoComparativo.ibsCbs.creditos,
           impostoSeletivo: resultadoComparativo.ibsCbs.impostoSeletivo,
         },
+        simplesReforma: resultadoComparativo.simplesReforma,
         regimeMaisVantajoso: resultadoComparativo.regimeMaisVantajoso,
         piorCenario: resultadoComparativo.piorCenario,
         economiaVersusPior: resultadoComparativo.economiaVersusPior,

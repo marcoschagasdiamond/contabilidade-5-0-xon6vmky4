@@ -272,6 +272,188 @@ export function calcularAliquotasEfetivasReforma(
 /**
  * Informações dos marcos legais da Reforma para exibição didática
  */
+/**
+ * Parâmetros de entrada para o cálculo do Simples Nacional na Reforma Tributária
+ */
+export interface ParametrosCalculoSimplesReforma {
+  faturamentoMensal: number
+  aliquotaEfetivaAtualSimples: number // % (ex: 8.5)
+  ano: AnoBaseSimulacao | 'atual'
+  fatorReducaoSetorial?: number // decimal (1.0 = padrão, 0.4 = 60%, 0.7 = 30%, 0 = 100%)
+  aliquotaISSMunicipal?: number // % municipal (padrão 2.0%)
+  percentualExportacao?: number // % da receita desonerada (0 a 100)
+}
+
+/**
+ * Resultado completo do impacto da Reforma Tributária sobre empresa do Simples Nacional
+ * Base legal: LC 214/2025 art. 41 § 3º, art. 347, art. 348, art. 519 e LC 123/2006 (com LC 227/2026)
+ */
+export interface ResultadoCalculoSimplesReforma {
+  // Cenário Atual (Vigente / DAS Tradicional)
+  dasAtualTotal: number // R$
+  aliquotaEfetivaAtual: number // %
+
+  // Cenário da Transição LC 214/2025
+  cbsNoDas: number // R$ (incorporada ao DAS a partir de 2027)
+  aliquotaEfetivaCbsNoDas: number // %
+  ibsPorFora: number // R$ (IBS recolhido por fora durante a transição com crédito outorgado/fator de transição)
+  aliquotaEfetivaIbsPorFora: number // %
+  dasBaseRemanescente: number // R$ (fração restante do DAS sem duplicação)
+  cenarioTransicaoTotal: number // R$ (DAS ajustado + IBS por fora)
+  aliquotaEfetivaTransicao: number // %
+
+  // Comparativo
+  diferencaMensal: number // R$ (cenarioTransicaoTotal - dasAtualTotal)
+  economiaMensal: number // R$ (positivo se transição for menor que atual)
+  economiaAnual: number // R$ (economiaMensal * 12)
+  variacaoPercentual: number // % de variação frente ao DAS atual
+
+  // Rótulos e Metadados Didáticos
+  rotuloCenarioAtual: string // "DAS atual"
+  rotuloCbs: string // "CBS no DAS"
+  rotuloIbs: string // "IBS por fora"
+  descricaoFase: string
+  ano: AnoBaseSimulacao | 'atual'
+}
+
+/**
+ * Calcula o impacto da Reforma Tributária no Simples Nacional ano a ano (2026–2033 ou 'atual')
+ * Ramo isolado: não altera regras de Lucro Real e Presumido.
+ *
+ * Regras:
+ * - Em 2026 ou 'atual': O Simples Nacional permanece inalterado (art. 348 LC 214/2025). CBS e IBS teste têm recolhimento zero no Simples.
+ * - Em 2027–2028: CBS incorporada ao DAS (alíquota efetiva CBS ~15,33% da partilha da guia do DAS, ou 8,7% com crédito outorgado da LC 214/2025 art. 519).
+ * - Em 2029–2032: IBS entra progressivamente por fora (10%, 20%, 30%, 40% conforme FATOR_TRANSICAO_IBS), com crédito outorgado/redução setorial, enquanto o DAS ajusta a parcela proporcional de ICMS/ISS.
+ * - Em 2033: Plena vigência da transição do Simples sob a LC 214/2025.
+ */
+export function calcularIbsCbsSimplesNacional(
+  params: ParametrosCalculoSimplesReforma,
+): ResultadoCalculoSimplesReforma {
+  const faturamentoBruto = Math.max(0, params.faturamentoMensal)
+  const pctExportacao = Math.max(0, Math.min(100, params.percentualExportacao || 0)) / 100
+  const receitaTributavel = faturamentoBruto * (1 - pctExportacao)
+
+  const aliqAtual = Math.max(0, params.aliquotaEfetivaAtualSimples)
+  const dasAtualTotal = (receitaTributavel * aliqAtual) / 100
+
+  const ano = params.ano
+  const fatorSetorial =
+    params.fatorReducaoSetorial !== undefined ? params.fatorReducaoSetorial : 1.0
+
+  // Se ano for 'atual' ou 2026: Simples Nacional 100% inalterado (dispensa LC 214/2025 art. 348)
+  if (ano === 'atual' || String(ano) === '2026') {
+    return {
+      dasAtualTotal,
+      aliquotaEfetivaAtual:
+        faturamentoBruto > 0 ? (dasAtualTotal / faturamentoBruto) * 100 : aliqAtual,
+      cbsNoDas: 0,
+      aliquotaEfetivaCbsNoDas: 0,
+      ibsPorFora: 0,
+      aliquotaEfetivaIbsPorFora: 0,
+      dasBaseRemanescente: dasAtualTotal,
+      cenarioTransicaoTotal: dasAtualTotal,
+      aliquotaEfetivaTransicao:
+        faturamentoBruto > 0 ? (dasAtualTotal / faturamentoBruto) * 100 : aliqAtual,
+      diferencaMensal: 0,
+      economiaMensal: 0,
+      economiaAnual: 0,
+      variacaoPercentual: 0,
+      rotuloCenarioAtual: 'DAS atual',
+      rotuloCbs: 'CBS no DAS',
+      rotuloIbs: 'IBS por fora',
+      descricaoFase:
+        ano === 'atual'
+          ? 'Sistema Atual (Pré-Reforma): Guia DAS com recolhimento unificado de tributos federais e subnacionais.'
+          : 'Fase de Teste Operacional (2026): Simples Nacional dispensado de CBS (0,9%) e IBS (0,1%) conforme art. 348 da LC 214/2025.',
+      ano,
+    }
+  }
+
+  const anoNum = Number(ano) as AnoBaseSimulacao
+
+  // (a) CBS no DAS a partir de 2027:
+  // Na partilha da LC 214/2025 art. 519 / Anexos XVIII–XXII, a CBS substitui PIS e COFINS no DAS.
+  // A fatia média de consumo federal no DAS é de 15,33% da guia (ou ~20% somando PIS/Cofins).
+  // No Simples regular, a CBS fica contida na guia DAS com a alíquota efetiva setorial.
+  // Parcela da CBS no DAS calculada com base na partilha oficial (15,33% da guia do DAS, sujeita à redução setorial se houver):
+  const fatiaCbsNoDas = 0.1533 * fatorSetorial
+  const cbsNoDas = dasAtualTotal * fatiaCbsNoDas
+  const aliquotaEfetivaCbsNoDas = faturamentoBruto > 0 ? (cbsNoDas / faturamentoBruto) * 100 : 0
+
+  // (b) IBS por fora na transição:
+  // Conforme ADCT art. 128 / LC 214/2025 e LC 123/2006 art. 13-A:
+  // Em 2027 e 2028: IBS é fase de teste (0,1% compensável integralmente nos estados/municípios, sem impacto adicional).
+  // A partir de 2029: IBS entra cobrando conforme o FATOR_TRANSICAO_IBS (10% a 40%, 100% em 2033).
+  // Na sistemática de crédito outorgado para optantes do Simples (art. 41 § 3º e art. 519 da LC 214/2025),
+  // a empresa transfere crédito e recolhe IBS por fora calculado sobre a alíquota de transição com redução de crédito outorgado proporcional.
+  // Alíquota de referência do IBS = 17,7% multiplicada pelo fator de transição do ano e fator setorial:
+  const fatorIbs = FATOR_TRANSICAO_IBS[anoNum] || 0
+  let aliqIbsEfetivaPorFora = 0
+
+  if (anoNum >= 2029) {
+    // Alíquota nominal de transição do IBS ajustada pelo setor
+    const aliqIbsTrans = TAXA_IBS_REFERENCIA * fatorIbs * fatorSetorial
+    // Crédito outorgado/abatimento do Simples Nacional na transição (~60% de creditamento presumido sobre insumos)
+    // Carga líquida efetiva do IBS por fora = aliqIbsTrans * 40% (descontado crédito outorgado médio de 60%)
+    aliqIbsEfetivaPorFora = aliqIbsTrans * 0.4
+  }
+
+  const ibsPorFora = receitaTributavel * aliqIbsEfetivaPorFora
+
+  // (c) Parcela remanescente do DAS (IRPJ, CSLL, CPP e eventual ICMS/ISS remanescente):
+  // Em 2029 a 2032, ICMS/ISS no DAS é reduzido proporcionalmente ao FATOR_REMANESCENTE_ICMS_ISS
+  const fatorRemanescenteAntigos = FATOR_REMANESCENTE_ICMS_ISS[anoNum] ?? 1.0
+  // Cota de ICMS/ISS no DAS representa ~34% da guia
+  const fatiaIcmsIssNoDas = 0.34
+  const cotaIcmsIssReduzida = dasAtualTotal * fatiaIcmsIssNoDas * fatorRemanescenteAntigos
+  const cotaOutrosTributosDas = dasAtualTotal * (1 - fatiaIcmsIssNoDas - 0.1533)
+  const dasBaseRemanescente = Math.max(0, cbsNoDas + cotaOutrosTributosDas + cotaIcmsIssReduzida)
+
+  // Total do cenário de transição = DAS com CBS + IBS por fora
+  const cenarioTransicaoTotal = dasBaseRemanescente + ibsPorFora
+  const aliquotaEfetivaTransicao =
+    faturamentoBruto > 0 ? (cenarioTransicaoTotal / faturamentoBruto) * 100 : 0
+
+  const diferencaMensal = cenarioTransicaoTotal - dasAtualTotal
+  const economiaMensal = dasAtualTotal - cenarioTransicaoTotal
+  const economiaAnual = economiaMensal * 12
+  const variacaoPercentual =
+    dasAtualTotal > 0 ? ((cenarioTransicaoTotal - dasAtualTotal) / dasAtualTotal) * 100 : 0
+
+  let descricaoFase = ''
+  if (anoNum === 2027 || anoNum === 2028) {
+    descricaoFase = `Transição Federal (${anoNum}): CBS incorporada na partilha do DAS em substituição a PIS/COFINS (LC 214/2025 art. 519). IBS em fase de homologação sem cobrança por fora.`
+  } else if (anoNum >= 2029 && anoNum <= 2032) {
+    const pctIbs = Math.round(fatorIbs * 100)
+    descricaoFase = `Transição Federativa (${anoNum}): CBS no DAS e IBS cobrado por fora a ${pctIbs}% da referência com crédito outorgado e desoneração progressiva de ICMS/ISS no DAS.`
+  } else {
+    descricaoFase =
+      'Sistema Pleno (2033): CBS consolidada no DAS e IBS pleno por fora com ampla transferência de créditos.'
+  }
+
+  return {
+    dasAtualTotal,
+    aliquotaEfetivaAtual:
+      faturamentoBruto > 0 ? (dasAtualTotal / faturamentoBruto) * 100 : aliqAtual,
+    cbsNoDas,
+    aliquotaEfetivaCbsNoDas,
+    ibsPorFora,
+    aliquotaEfetivaIbsPorFora: faturamentoBruto > 0 ? (ibsPorFora / faturamentoBruto) * 100 : 0,
+    dasBaseRemanescente,
+    cenarioTransicaoTotal,
+    aliquotaEfetivaTransicao,
+    diferencaMensal,
+    economiaMensal,
+    economiaAnual,
+    variacaoPercentual,
+    rotuloCenarioAtual: 'DAS atual',
+    rotuloCbs: 'CBS no DAS',
+    rotuloIbs: 'IBS por fora',
+    descricaoFase,
+    ano,
+  }
+}
+
 export const CRONOGRAMA_REFORMA = [
   {
     ano: 2026,

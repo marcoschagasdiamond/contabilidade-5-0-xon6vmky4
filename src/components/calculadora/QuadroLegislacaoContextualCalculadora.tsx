@@ -26,9 +26,9 @@ export function QuadroLegislacaoContextualCalculadora({
   const [abaAtiva, setAbaAtiva] = useState<'mudancas' | 'recuperacao'>('mudancas')
   const [resposta, setResposta] = useState<RespostaLegislacaoContextual | null>(null)
 
-  // Segmento, regime e ramo: mescla simulação com dados da empresa
-  const segmento = segmentoSimulado || dadosEmpresa.segmento || ''
+  // Segmento, regime e ramo: se regimeSimulado for informado (ex: Simples Nacional selecionado no Módulo 1), ele tem precedência
   const regime = regimeSimulado || dadosEmpresa.regimeAtual || ''
+  const segmento = segmentoSimulado || dadosEmpresa.segmento || ''
   const ramo = ramoSimulado || ''
   const perfilNf = dadosEmpresa.emissaoNf || ''
   const atividadeMista = dadosEmpresa.atividadeMista || false
