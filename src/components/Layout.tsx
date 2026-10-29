@@ -31,9 +31,7 @@ export default function Layout() {
   const [modalMigrarAberto, setModalMigrarAberto] = useState(false)
   const [isMobileUserSectionOpen, setIsMobileUserSectionOpen] = useState(true)
   const [notificacoesRadar, setNotificacoesRadar] = useState<NotificacaoTributaria[]>([])
-  const [isNotifOpen, setIsNotifOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
-  const notifMenuRef = useRef<HTMLDivElement>(null)
   const userMenuTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const location = useLocation()
@@ -134,23 +132,15 @@ export default function Layout() {
 
   const naoLidas = notificacoesRadar.filter((n) => !n.lida).length
 
-  const handleMarcarLida = async (id: string) => {
-    await marcarNotificacaoComoLida(id)
-    setNotificacoesRadar((prev) => prev.map((n) => (n.id === id ? { ...n, lida: true } : n)))
-  }
-
-  // Close desktop dropdown and notif popover when clicking outside
+  // Close desktop dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false)
       }
-      if (notifMenuRef.current && !notifMenuRef.current.contains(event.target as Node)) {
-        setIsNotifOpen(false)
-      }
     }
 
-    if (isUserMenuOpen || isNotifOpen) {
+    if (isUserMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside)
     }
 
@@ -160,7 +150,7 @@ export default function Layout() {
         clearTimeout(userMenuTimeoutRef.current)
       }
     }
-  }, [isUserMenuOpen, isNotifOpen])
+  }, [isUserMenuOpen])
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault()
@@ -322,99 +312,6 @@ export default function Layout() {
 
           {/* CTA BUTTON & AUTH / USER DROPDOWN (DESKTOP) */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
-            {/* Notificação In-App Radar Tributário (Sino de Notificações, Padrão Diamond Group, sem ícones) */}
-            <div ref={notifMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className={`relative px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                  isNotifOpen
-                    ? 'bg-[#07132B] border-[#D4AF37] text-[#D4AF37]'
-                    : 'bg-white/10 hover:bg-white/15 text-slate-200 border-white/10'
-                }`}
-                title="Notificações do Radar Tributário"
-              >
-                <span>Notificações</span>
-                {naoLidas > 0 && (
-                  <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold bg-[#D4AF37] text-[#07132B]">
-                    {naoLidas}
-                  </span>
-                )}
-              </button>
-
-              {/* Popover de Notificações */}
-              {isNotifOpen && (
-                <div className="absolute right-0 top-full pt-2 w-80 sm:w-96 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="rounded-2xl bg-[#07132B] border border-[#D4AF37]/50 shadow-[0_12px_40px_rgba(0,0,0,0.8)] p-4 text-white">
-                    <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
-                      <span className="font-heading font-bold text-xs uppercase tracking-wider text-[#D4AF37]">
-                        Notificações • Radar Tributário
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        {notificacoesRadar.length} aviso(s)
-                      </span>
-                    </div>
-
-                    <div className="max-h-72 overflow-y-auto divide-y divide-white/10 py-2 space-y-2">
-                      {notificacoesRadar.length === 0 ? (
-                        <p className="text-xs text-slate-400 py-3 text-center">
-                          Nenhum alerta tributário no momento.
-                        </p>
-                      ) : (
-                        notificacoesRadar.map((notif) => (
-                          <div
-                            key={notif.id}
-                            className={`pt-2 pb-2 text-xs space-y-1 ${
-                              notif.lida ? 'opacity-70' : 'bg-white/5 p-2 rounded-lg'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-1">
-                              <span className="font-bold text-slate-100 leading-snug">
-                                {notif.titulo}
-                              </span>
-                              {!notif.lida && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleMarcarLida(notif.id)}
-                                  className="text-[10px] text-[#D4AF37] hover:underline shrink-0"
-                                >
-                                  Marcar lida
-                                </button>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-slate-300 leading-normal">
-                              {notif.mensagem}
-                            </p>
-                            {notif.fonte && (
-                              <p className="text-[10px] text-[#D4AF37] font-mono">
-                                Fonte: {notif.fonte}
-                              </p>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
-                      <Link
-                        to="/calculadora-ibs-cbs"
-                        onClick={() => setIsNotifOpen(false)}
-                        className="text-[#D4AF37] hover:underline font-semibold"
-                      >
-                        Ver na Calculadora
-                      </Link>
-                      <Link
-                        to="/legislacao"
-                        onClick={() => setIsNotifOpen(false)}
-                        className="text-slate-300 hover:text-white"
-                      >
-                        Consultar Legislação
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
             {isAuthenticated ? (
               /* MENU DO USUÁRIO SUSPENSO (DROPDOWN) - PADRÃO VISUAL DIAMOND GROUP, SEM ÍCONES */
               <div

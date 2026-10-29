@@ -6,6 +6,9 @@ import {
   dispararVarreduraRadar,
   listarParametrosTributarios,
   ParametroTributario,
+  listarNotificacoesTributarias,
+  marcarNotificacaoComoLida,
+  NotificacaoTributaria,
 } from '@/services/radarTributario'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -33,6 +36,8 @@ export default function Legislacao() {
   const [sincronizando, setSincronizando] = useState(false)
   const [parametrosRadar, setParametrosRadar] = useState<ParametroTributario[]>([])
   const [carregandoParametros, setCarregandoParametros] = useState(true)
+  const [notificacoesRadar, setNotificacoesRadar] = useState<NotificacaoTributaria[]>([])
+  const [carregandoNotificacoes, setCarregandoNotificacoes] = useState(true)
 
   const carregarParametros = async () => {
     try {
@@ -46,8 +51,34 @@ export default function Legislacao() {
     }
   }
 
+  const carregarNotificacoesEMarcarLidas = async () => {
+    try {
+      setCarregandoNotificacoes(true)
+      const notifs = await listarNotificacoesTributarias()
+      setNotificacoesRadar(notifs || [])
+
+      // Marca como lidas todas as não lidas ao abrir a página
+      const naoLidas = (notifs || []).filter((n) => !n.lida)
+      if (naoLidas.length > 0) {
+        // Marca imediatamente no estado local
+        setNotificacoesRadar((prev) => prev.map((n) => ({ ...n, lida: true })))
+        // Atualiza persistência no backend de forma assíncrona
+        naoLidas.forEach((n) => {
+          marcarNotificacaoComoLida(n.id).catch((err) => {
+            console.warn('[Legislacao] Erro ao marcar notificação como lida:', err)
+          })
+        })
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar notificações do Radar na Legislação:', err)
+    } finally {
+      setCarregandoNotificacoes(false)
+    }
+  }
+
   useEffect(() => {
     carregarParametros()
+    carregarNotificacoesEMarcarLidas()
   }, [])
 
   const carregarDados = async () => {
@@ -85,6 +116,7 @@ export default function Legislacao() {
         })
         carregarDados()
         carregarParametros()
+        carregarNotificacoesEMarcarLidas()
       } else {
         toast({
           title: 'Aviso de Sincronização',
@@ -476,6 +508,114 @@ export default function Legislacao() {
                     </div>
                   )
                 })()}
+              </div>
+
+              {/* SEÇÃO INTERNA EM GRANDE DESTAQUE: ALERTAS E NOTIFICAÇÕES DO RADAR TRIBUTÁRIO */}
+              <div className="pt-2 border-t border-[#D4AF37]/30 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#D4AF37] animate-pulse" />
+                    <h3 className="font-heading font-bold text-base sm:text-lg text-white">
+                      Alertas Recentes do Radar Tributário
+                    </h3>
+                  </div>
+                  <span className="text-xs font-mono text-[#D4AF37]">
+                    {carregandoNotificacoes
+                      ? 'Consultando avisos...'
+                      : `${notificacoesRadar.length} alerta(s) registrado(s)`}
+                  </span>
+                </div>
+
+                {carregandoNotificacoes ? (
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center text-xs text-slate-400 font-mono">
+                    Carregando avisos do Radar...
+                  </div>
+                ) : notificacoesRadar.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center text-xs text-slate-400 font-mono">
+                    Nenhum alerta tributário pendente. Acompanhamento automático ativo às
+                    segundas-feiras.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {notificacoesRadar.map((notif) => {
+                      const dataFormatada = notif.created
+                        ? new Date(notif.created).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })
+                        : ''
+
+                      return (
+                        <div
+                          key={notif.id}
+                          className="rounded-xl bg-white/[0.07] hover:bg-white/[0.10] border border-[#D4AF37]/40 p-4 sm:p-5 flex flex-col justify-between space-y-3 shadow-md transition-all"
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {notif.tributo && (
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#D4AF37] text-[#07132B]">
+                                    {notif.tributo}
+                                    {notif.ano ? ` • ${notif.ano}` : ''}
+                                  </span>
+                                )}
+                                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white/10 text-slate-200 border border-white/20">
+                                  {notif.tipo === 'aliquota_nova'
+                                    ? 'Nova Alíquota Detectada'
+                                    : notif.tipo === 'alerta_senado'
+                                      ? 'Alerta do Senado'
+                                      : 'Legislação Nova'}
+                                </span>
+                              </div>
+
+                              {dataFormatada && (
+                                <span className="text-[11px] font-mono text-slate-400">
+                                  {dataFormatada}
+                                </span>
+                              )}
+                            </div>
+
+                            <h4 className="font-heading font-bold text-sm sm:text-base text-white leading-snug">
+                              {notif.titulo}
+                            </h4>
+
+                            {typeof notif.aliquota === 'number' && (
+                              <div className="inline-flex items-baseline gap-1.5 px-2.5 py-1 rounded-lg bg-[#07132B] border border-[#D4AF37]/40">
+                                <span className="text-xs text-slate-400 font-mono">
+                                  Alíquota apurada:
+                                </span>
+                                <span className="text-base font-mono font-extrabold text-[#D4AF37]">
+                                  {notif.aliquota.toFixed(4)}%
+                                </span>
+                              </div>
+                            )}
+
+                            <p className="text-xs text-slate-200 leading-relaxed font-normal">
+                              {notif.mensagem}
+                            </p>
+                          </div>
+
+                          <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                            {notif.fonte ? (
+                              <span className="text-[11px] text-[#D4AF37] font-mono font-medium">
+                                Fonte: {notif.fonte}
+                              </span>
+                            ) : (
+                              <span />
+                            )}
+                            <Link
+                              to="/calculadora-ibs-cbs"
+                              className="inline-flex items-center text-[11px] font-bold text-[#D4AF37] hover:underline"
+                            >
+                              Aplicar na Calculadora →
+                            </Link>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Rodapé informativo do Radar */}
