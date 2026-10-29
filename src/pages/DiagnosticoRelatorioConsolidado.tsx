@@ -12,6 +12,7 @@ import {
 import { formatarCNPJ } from '@/lib/cnpj'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
+import { QuadroMudancasPerfilConsolidado } from '@/components/diagnosticos/QuadroMudancasPerfilConsolidado'
 import {
   exportarPdfEtapaConfiguracoes,
   exportarPdfEtapaAutoavaliacao,
@@ -985,6 +986,15 @@ export default function DiagnosticoRelatorioConsolidado() {
                 </button>
               </div>
             </div>
+
+            {/* QUADRO: MUDANÇAS PARA O SEU PERFIL (LEGISLAÇÃO CONTEXTUAL & RADAR) */}
+            <QuadroMudancasPerfilConsolidado
+              segmento={dadosEmpresa.segmento}
+              regimeAtual={dadosEmpresa.regimeAtual}
+              perfilNf={dadosEmpresa.emissaoNf}
+              atividadeMista={dadosEmpresa.atividadeMista}
+              temDadosSalvos={temDadosSalvos}
+            />
 
             {/* SEÇÃO 1: CONFIGURAÇÕES */}
             <div className="bg-white rounded-[24px] p-6 sm:p-8 border border-slate-200 shadow-md space-y-5">

@@ -578,9 +578,34 @@ export default function RecuperadorCreditos() {
                 resultados={resultadosAtuais}
                 cenarioSelecionado={cenarioSelecionado}
                 segmento={configuracoes.segmento}
+                regimeAtual={configuracoes.regimeAtual}
                 onChangeCenario={setCenarioSelecionado}
                 onGerarPdf={() => setModalPdfAberto(true)}
                 onSalvarAnalise={() => setModalSalvarAberto(true)}
+                onSelecionarTese={(teseId) => {
+                  if (teseId.startsWith('tese_pis_')) {
+                    setModuloAtivo('pis_cofins')
+                  } else if (teseId.startsWith('tese_folha_')) {
+                    setModuloAtivo('folha')
+                  }
+                  setTesesSelecionadas((prev) => {
+                    const existente = prev[teseId]
+                    if (existente) {
+                      return {
+                        ...prev,
+                        [teseId]: { ...existente, ativa: true },
+                      }
+                    }
+                    return {
+                      ...prev,
+                      [teseId]: {
+                        teseId,
+                        ativa: true,
+                        farol: 'verde',
+                      },
+                    }
+                  })
+                }}
               />
             )}
 

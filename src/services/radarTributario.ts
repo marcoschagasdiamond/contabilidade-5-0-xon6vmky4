@@ -31,6 +31,14 @@ export interface NotificacaoTributaria {
   updated?: string
 }
 
+export interface EtiquetasAplicabilidade {
+  tributos?: string[]
+  segmentos?: string[]
+  regimes?: string[]
+  operacoes?: string[]
+  ramos?: string[]
+}
+
 export interface ItemLegislacao {
   id: string
   titulo: string
@@ -44,8 +52,43 @@ export interface ItemLegislacao {
   linkOficial: string
   destaque: boolean
   categoria?: 'legislacao' | 'jurisprudencia'
+  natureza?: 'mudanca_impacto' | 'recuperacao_credito'
   teseRecuperadorId?: string
   dataJulgamento?: string
+  etiquetas?: EtiquetasAplicabilidade
+}
+
+export interface PerfilEmpresaFiltro {
+  segmento?: string
+  regimeTributario?: string
+  regimeAtual?: string
+  perfilNf?: string
+  emissaoNf?: string
+  atividadeMista?: boolean
+  ramo?: string
+  tipoAtividade?: string
+  faturamentoMensal?: number
+}
+
+export interface RespostaLegislacaoContextual {
+  perfilPreenchido: boolean
+  aviso?: string
+  perfil?: PerfilEmpresaFiltro
+  resumo?: {
+    totalMudancas: number
+    totalRecuperacao: number
+    totalAlertasRadar: number
+  }
+  mudancasQueImpactam: ItemLegislacao[]
+  direitoRecuperacaoCredito: ItemLegislacao[]
+  alertasRadar: Array<{
+    id: string
+    titulo: string
+    descricao: string
+    tributo?: string
+    impacto?: string
+    data_hora?: string
+  }>
 }
 
 export interface FiltrosLegislacao {
@@ -167,6 +210,93 @@ export async function pesquisarLegislacao(filtros: FiltrosLegislacao = {}): Prom
     return {
       total: CATALOGO_LEGISLACAO_FALLBACK.length,
       itens: CATALOGO_LEGISLACAO_FALLBACK,
+    }
+  }
+}
+
+/**
+ * Consulta o Rasante de Legislação Contextual para o perfil de empresa informado
+ */
+export async function obterLegislacaoContextual(
+  perfil: PerfilEmpresaFiltro,
+): Promise<RespostaLegislacaoContextual> {
+  const temPerfil = Boolean(
+    (perfil.segmento && perfil.segmento.trim()) ||
+    (perfil.regimeTributario && perfil.regimeTributario.trim()) ||
+    (perfil.regimeAtual && perfil.regimeAtual.trim()) ||
+    (perfil.ramo && perfil.ramo.trim()) ||
+    (perfil.tipoAtividade && perfil.tipoAtividade.trim()),
+  )
+
+  if (!temPerfil) {
+    return {
+      perfilPreenchido: false,
+      aviso:
+        'Perfil da empresa não preenchido. Preencha os Dados da Empresa para visualizar a legislação aplicável.',
+      mudancasQueImpactam: [],
+      direitoRecuperacaoCredito: [],
+      alertasRadar: [],
+    }
+  }
+
+  try {
+    const res = await pb.send<RespostaLegislacaoContextual>(
+      '/backend/v1/c50/legislacao/contextual',
+      {
+        method: 'POST',
+        body: JSON.stringify(perfil),
+        headers: { 'Content-Type': 'application/json' },
+      },
+    )
+    return res
+  } catch (err) {
+    console.warn(
+      '[Radar] Erro ao buscar legislação contextual via backend, usando fallback local:',
+      err,
+    )
+
+    // Fallback local se backend estiver offline
+    const seg = (perfil.segmento || '').toLowerCase()
+    const reg = (perfil.regimeTributario || perfil.regimeAtual || '').toLowerCase()
+    const isIndustria = seg.includes('indústria') || seg.includes('industria')
+    const isServico = seg.includes('serviço') || seg.includes('servico')
+
+    const mudancasQueImpactam = CATALOGO_LEGISLACAO_FALLBACK.filter((item) => {
+      if (item.categoria === 'jurisprudencia') return false
+      if (item.tributo === 'IPI' && !isIndustria) return false
+      if (item.tributo === 'ISS' && !isServico && !perfil.atividadeMista) return false
+      return true
+    })
+
+    const direitoRecuperacaoCredito = CATALOGO_LEGISLACAO_FALLBACK.filter((item) => {
+      if (item.categoria !== 'jurisprudencia' && item.natureza !== 'recuperacao_credito')
+        return false
+      if (item.id === 'juris-stj-tema-77-resp-1075508' && !isIndustria) return false
+      if (item.id === 'juris-stf-re-592616-tema-118' && !isServico && !perfil.atividadeMista)
+        return false
+      if (reg.includes('simples') && item.id.includes('tema-1182')) return false
+      return true
+    })
+
+    return {
+      perfilPreenchido: true,
+      perfil,
+      resumo: {
+        totalMudancas: mudancasQueImpactam.length,
+        totalRecuperacao: direitoRecuperacaoCredito.length,
+        totalAlertasRadar: 2,
+      },
+      mudancasQueImpactam,
+      direitoRecuperacaoCredito,
+      alertasRadar: [
+        {
+          id: 'radar-aliquota-cbs-2027',
+          titulo: 'Alíquota de Referência CBS fixada em 11,35%',
+          descricao: 'TCU aprovou relatório de alíquota da CBS para 2027. Impacto na apuração.',
+          tributo: 'CBS',
+          impacto: 'alto',
+        },
+      ],
     }
   }
 }

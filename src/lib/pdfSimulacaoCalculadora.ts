@@ -1017,15 +1017,68 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
 
   currentY += 38
 
+  // ==========================================
+  // SEÇÃO: LEGISLAÇÃO APLICÁVEL AO CENÁRIO
+  // ==========================================
+  verificarQuebraPagina(48)
+
+  doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.rect(margin, currentY, contentWidth, 6.5, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8.5)
+  doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+  doc.text('LEGISLAÇÃO & TESES APLICÁVEIS AO CENÁRIO SIMULADO', margin + 4, currentY + 4.5)
+
+  currentY += 8.5
+
+  // Box com normas específicas do perfil e enquadramento
+  doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
+  doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+  doc.roundedRect(margin, currentY, contentWidth, 32, 2, 2, 'FD')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(7.5)
+  doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+  doc.text('Normas Regimentais e Jurisprudência Vinculante Direta:', margin + 4, currentY + 5)
+
+  // Normas contextualizadas com base no ramo / atividade simulada
+  const isIndustria = parametros.tipoAtividade === 'industria'
+  const isServico = parametros.tipoAtividade === 'servico'
+  const leisPerfil = [
+    '• EC nº 132/2023 & LC nº 214/2025: Instituição do IBS/CBS e regras de transição não cumulativa.',
+    isIndustria
+      ? '• STJ Tema 77 (REsp 1.075.508) & RIPI Dec. 7.212/2010: Direito ao crédito de IPI na entrada de insumos desonerados.'
+      : isServico
+        ? '• STF RE 592.616 (Tema 118 RG): Exclusão definitiva do ISS destacado da base de cálculo do PIS/Cofins.'
+        : '• STF RE 574.706 (Tema 69 RG): Exclusão do ICMS destacado da base de cálculo do PIS/Cofins.',
+    '• Lei nº 12.973/2014 & RIR Dec. 9.580/2018: Regime de IRPJ/CSLL e convergência contábil de apuração.',
+    isIndustria || parametros.tipoAtividade === 'comercio'
+      ? '• STJ Tema 1182 (REsp 1.945.110/RN): Exclusão de créditos presumidos e benefícios de ICMS do PIS/Cofins e IRPJ.'
+      : '• LC nº 116/2003 & LC nº 175/2020: Padrão nacional do ISSQN e transição para o IBS municipal.',
+  ]
+
+  let leiY = currentY + 10
+  leisPerfil.forEach((lei) => {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(6.8)
+    doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+    const linhas = doc.splitTextToSize(lei, contentWidth - 8)
+    doc.text(linhas, margin + 4, leiY)
+    leiY += 4.8
+  })
+
+  currentY += 36
+
   // Box Observações do Analista
+  verificarQuebraPagina(42)
   doc.setFillColor(255, 255, 255)
   doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-  doc.roundedRect(margin, currentY, contentWidth, 36, 2, 2, 'D')
+  doc.roundedRect(margin, currentY, contentWidth, 32, 2, 2, 'D')
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8.5)
   doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
-  doc.text('NOTAS & OBSERVAÇÕES ESPECÍFICAS DO ANALISTA', margin + 5, currentY + 6)
+  doc.text('NOTAS & OBSERVAÇÕES ESPECÍFICAS DO ANALISTA', margin + 5, currentY + 5.5)
 
   const textoObs =
     observacoesContador ||
@@ -1036,9 +1089,9 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFontSize(7.5)
   doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
   const linhasObs = doc.splitTextToSize(textoObs, contentWidth - 10)
-  doc.text(linhasObs, margin + 5, currentY + 12)
+  doc.text(linhasObs, margin + 5, currentY + 11.5)
 
-  currentY += 44
+  currentY += 38
 
   // Bloco de Assinatura
   const cidadeEmpresa = parametros.ufOrigem

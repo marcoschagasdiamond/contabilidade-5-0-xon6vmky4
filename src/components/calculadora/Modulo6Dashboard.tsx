@@ -59,6 +59,7 @@ import {
 } from 'lucide-react'
 import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
 import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
+import { QuadroLegislacaoContextualCalculadora } from '@/components/calculadora/QuadroLegislacaoContextualCalculadora'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import { construirConclusaoAnalitica } from '@/lib/conclusaoAnalitica'
 import {
@@ -792,6 +793,26 @@ export default function Modulo6Dashboard({
           </div>
         </div>
       )}
+
+      {/* Rasante de Legislação Contextual: normas e teses aplicáveis ao perfil e enquadramento simulado */}
+      <QuadroLegislacaoContextualCalculadora
+        segmentoSimulado={
+          tipoAtividade === 'industria'
+            ? 'Indústria'
+            : tipoAtividade === 'comercio'
+              ? 'Comércio'
+              : tipoAtividade === 'servico'
+                ? 'Serviços'
+                : tipoAtividade === 'agronegocio'
+                  ? 'Agro'
+                  : tipoAtividade === 'construcao_civil'
+                    ? 'Construção Civil'
+                    : undefined
+        }
+        regimeSimulado={regimeAtualFiltro}
+        ramoSimulado={tipoAtividade}
+        faturamentoMensalSimulado={faturamentoMensal}
+      />
 
       {/* Barra de Filtros Globais Conforme Especificação - Fixo (sticky) logo abaixo da navbar */}
       <Card className="border-slate-200/80 bg-slate-50/95 backdrop-blur-md shadow-md sticky top-16 sm:top-[68px] z-20 transition-all">

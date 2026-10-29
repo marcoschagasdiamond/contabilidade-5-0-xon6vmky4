@@ -2,22 +2,28 @@ import React from 'react'
 import type { ResultadosRecuperador } from '@/types/recuperadorCreditos'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 
+import { QuadroTesesContextuaisRecuperador } from './QuadroTesesContextuaisRecuperador'
+
 interface Props {
   resultados: ResultadosRecuperador
   cenarioSelecionado: 'integral' | 'conservador'
   segmento?: string
+  regimeAtual?: string
   onChangeCenario: (cenario: 'integral' | 'conservador') => void
   onGerarPdf: () => void
   onSalvarAnalise: () => void
+  onSelecionarTese?: (teseId: string) => void
 }
 
 export default function ModuloDashboardRecuperador({
   resultados,
   cenarioSelecionado,
   segmento,
+  regimeAtual,
   onChangeCenario,
   onGerarPdf,
   onSalvarAnalise,
+  onSelecionarTese,
 }: Props) {
   const valorExibir =
     cenarioSelecionado === 'integral'
@@ -146,6 +152,15 @@ export default function ModuloDashboardRecuperador({
 
       {/* CARDS DE DISTRIBUIÇÃO: POR TRIBUTO & POR FAROL */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* QUADRO DE TESES EXCLUSIVAS DO PERFIL */}
+        <div className="md:col-span-2">
+          <QuadroTesesContextuaisRecuperador
+            segmentoSelecionado={segmento}
+            regimeSelecionado={regimeAtual}
+            onSelecionarTese={onSelecionarTese}
+          />
+        </div>
+
         {/* DISTRIBUIÇÃO POR TRIBUTO */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <h3 className="text-sm font-bold text-[#07132B] uppercase tracking-wide pb-3 border-b border-slate-100">
