@@ -262,6 +262,15 @@ export default function Admin() {
     true,
   )
 
+  // Inscrição em tempo real na coleção 'anuncios_creditos' para manter /admin atualizado
+  useRealtime(
+    'anuncios_creditos',
+    () => {
+      fetchCreditosAdmin()
+    },
+    true,
+  )
+
   const handleDeleteLeadConfirm = async () => {
     if (!leadToDelete) return
     setIsDeletingLead(true)

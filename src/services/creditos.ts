@@ -2,6 +2,7 @@ import pb from '@/lib/pocketbase/client'
 import type {
   AnuncioCredito,
   NovoAnuncioInput,
+  EditarAnuncioInput,
   PedidoInformacaoCredito,
   NovoPedidoInformacaoInput,
 } from '@/types/creditos'
@@ -79,6 +80,16 @@ export async function atualizarStatusAnuncio(
   return pb.collection('anuncios_creditos').update<AnuncioCredito>(anuncioId, {
     status: novoStatus,
   })
+}
+
+/**
+ * Atualizar dados do anúncio (PATCH)
+ */
+export async function atualizarAnuncioCredito(
+  anuncioId: string,
+  dados: EditarAnuncioInput,
+): Promise<AnuncioCredito> {
+  return pb.collection('anuncios_creditos').update<AnuncioCredito>(anuncioId, dados)
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   arquivarPedidoInformacao,
 } from '@/services/creditos'
 import { ModalExcluirAnuncioCredito } from '@/components/admin/ModalExcluirAnuncioCredito'
+import { ModalEditarAnuncioCredito } from '@/components/admin/ModalEditarAnuncioCredito'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 
 interface AbaMercadoCreditosAdminProps {
@@ -33,6 +34,7 @@ export function AbaMercadoCreditosAdmin({
   const [pedidoRespondendo, setPedidoRespondendo] = useState<PedidoInformacaoCredito | null>(null)
   const [respostaTexto, setRespostaTexto] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [anuncioParaEditar, setAnuncioParaEditar] = useState<AnuncioCredito | null>(null)
   const [anuncioParaExcluir, setAnuncioParaExcluir] = useState<AnuncioCredito | null>(null)
 
   const ehMasterOuAdmin = isMaster || nivelAcesso === 'master' || nivelAcesso === 'admin'
@@ -258,16 +260,26 @@ export function AbaMercadoCreditosAdmin({
                         </button>
                       )}
 
-                      {/* Ação Excluir Anúncio na fila de pedidos: visível apenas para Master e Admin */}
+                      {/* Ações Editar e Excluir Anúncio na fila de pedidos: visíveis apenas para Master e Admin */}
                       {ehMasterOuAdmin && anuncio && (
-                        <button
-                          type="button"
-                          onClick={() => setAnuncioParaExcluir(anuncio)}
-                          className="px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
-                          title="Excluir este anúncio do Mercado de Créditos"
-                        >
-                          Excluir anúncio
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setAnuncioParaEditar(anuncio)}
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] transition-all shadow-sm"
+                            title="Editar este anúncio do Mercado de Créditos"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAnuncioParaExcluir(anuncio)}
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+                            title="Excluir este anúncio do Mercado de Créditos"
+                          >
+                            Excluir anúncio
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -380,14 +392,24 @@ export function AbaMercadoCreditosAdmin({
 
                     <td className="py-3 px-4 text-right">
                       {ehMasterOuAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => setAnuncioParaExcluir(item)}
-                          className="text-red-600 hover:text-red-800 font-bold px-2.5 py-1.5 rounded-lg hover:bg-red-50 text-xs border border-transparent hover:border-red-200 transition-all"
-                          title="Excluir este anúncio do Mercado de Créditos"
-                        >
-                          Excluir anúncio
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setAnuncioParaEditar(item)}
+                            className="text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] font-bold px-2.5 py-1.5 rounded-lg text-xs transition-all shadow-sm"
+                            title="Editar dados deste anúncio do Mercado de Créditos"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAnuncioParaExcluir(item)}
+                            className="text-red-600 hover:text-red-800 font-bold px-2.5 py-1.5 rounded-lg hover:bg-red-50 text-xs border border-transparent hover:border-red-200 transition-all"
+                            title="Excluir este anúncio do Mercado de Créditos"
+                          >
+                            Excluir anúncio
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -468,6 +490,23 @@ export function AbaMercadoCreditosAdmin({
           </div>
         </div>
       )}
+
+      {/* MODAL DE EDIÇÃO DE ANÚNCIO (PADRÃO DIAMOND GROUP) */}
+      <ModalEditarAnuncioCredito
+        open={!!anuncioParaEditar}
+        onOpenChange={(aberto) => {
+          if (!aberto) setAnuncioParaEditar(null)
+        }}
+        anuncio={anuncioParaEditar}
+        onSucesso={(msg) => {
+          onFeedback({ tipo: 'sucesso', mensagem: msg })
+          setAnuncioParaEditar(null)
+          onAtualizar()
+        }}
+        onErro={(msg) => {
+          onFeedback({ tipo: 'erro', mensagem: msg })
+        }}
+      />
 
       {/* MODAL DE CONFIRMAÇÃO PARA EXCLUSÃO DE ANÚNCIO (PADRÃO DIAMOND GROUP) */}
       <ModalExcluirAnuncioCredito

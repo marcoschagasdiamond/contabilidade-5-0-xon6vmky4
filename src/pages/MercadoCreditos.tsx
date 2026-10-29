@@ -11,6 +11,7 @@ import {
   listarMeusPedidosUsuario,
   marcarPedidoVisualizado,
 } from '@/services/creditos'
+import { useRealtime } from '@/hooks/use-realtime'
 import { ModalCriarAnuncioCredito } from '@/components/creditos/ModalCriarAnuncioCredito'
 import { ModalPedirMaisInformacoes } from '@/components/creditos/ModalPedirMaisInformacoes'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
@@ -57,6 +58,15 @@ export default function MercadoCreditos() {
   useEffect(() => {
     carregarDados()
   }, [isAuthenticated, isAdmin, user?.id])
+
+  // Inscrição em tempo real na coleção 'anuncios_creditos' para refletir edições imediatamente
+  useRealtime(
+    'anuncios_creditos',
+    () => {
+      carregarDados()
+    },
+    isAuthenticated,
+  )
 
   const handleMarcarVisualizado = async (pedidoId: string) => {
     try {

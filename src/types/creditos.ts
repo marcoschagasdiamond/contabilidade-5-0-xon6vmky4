@@ -78,6 +78,24 @@ export interface NovoAnuncioInput {
   contato_telefone: string
 }
 
+export interface EditarAnuncioInput {
+  operacao?: OperacaoCredito
+  tipo_credito?: TipoCredito
+  esfera?: EsferaCredito
+  uf?: string
+  municipio?: string
+  valor_nominal?: number
+  desagio_percentual?: number
+  situacao?: SituacaoCreditoVenda
+  finalidade?: FinalidadeCreditoCompra
+  observacoes?: string
+  status?: StatusAnuncio
+  contato_nome?: string
+  contato_documento?: string
+  contato_email?: string
+  contato_telefone?: string
+}
+
 export interface PedidoInformacaoCredito {
   id: string
   anuncio_id: string
