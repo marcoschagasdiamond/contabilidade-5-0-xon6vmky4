@@ -217,7 +217,7 @@ export default function Layout() {
             </div>
           </Link>
 
-          {/* DESKTOP NAV: Início, Serviços, Calculadora IBS/CBS, Recuperador, Diagnóstico, Reforma Tributária, Legislação */}
+          {/* DESKTOP NAV: Início, Serviços, Reforma Tributária, Calculadora IBS/CBS, Recuperador, Diagnóstico, Legislação */}
           <nav className="hidden lg:flex items-center gap-5 xl:gap-6">
             <Link
               to="/"
@@ -238,6 +238,16 @@ export default function Layout() {
               }`}
             >
               Serviços
+            </Link>
+            <Link
+              to="/reforma-tributaria"
+              className={`nav-link-hover text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/reforma-tributaria')
+                  ? 'text-[#2ECC71] font-semibold active'
+                  : 'text-slate-200 hover:text-white'
+              }`}
+            >
+              Reforma Tributária
             </Link>
             <a
               href="/calculadora-ibs-cbs"
@@ -272,16 +282,6 @@ export default function Layout() {
             >
               Diagnóstico
             </a>
-            <Link
-              to="/reforma-tributaria"
-              className={`nav-link-hover text-sm font-medium transition-colors ${
-                location.pathname.startsWith('/reforma-tributaria')
-                  ? 'text-[#2ECC71] font-semibold active'
-                  : 'text-slate-200 hover:text-white'
-              }`}
-            >
-              Reforma Tributária
-            </Link>
             <Link
               to="/legislacao"
               className={`nav-link-hover text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${
@@ -604,7 +604,7 @@ export default function Layout() {
                 </div>
               )}
 
-              {/* Links Principais Mobile: Início, Serviços, Calculadora IBS/CBS, Recuperador, Diagnóstico, Reforma Tributária, Legislação */}
+              {/* Links Principais Mobile: Início, Serviços, Reforma Tributária, Calculadora IBS/CBS, Recuperador, Diagnóstico, Legislação */}
               <div className="flex flex-col gap-3 mt-6">
                 <Link
                   to="/"
@@ -627,6 +627,17 @@ export default function Layout() {
                   }`}
                 >
                   Serviços
+                </Link>
+                <Link
+                  to="/reforma-tributaria"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-base font-medium py-2 border-b border-white/5 ${
+                    location.pathname.startsWith('/reforma-tributaria')
+                      ? 'text-[#2ECC71] font-bold'
+                      : 'text-slate-200 hover:text-[#2ECC71]'
+                  }`}
+                >
+                  Reforma Tributária
                 </Link>
                 <a
                   href="/calculadora-ibs-cbs"
@@ -661,17 +672,6 @@ export default function Layout() {
                 >
                   Diagnóstico
                 </a>
-                <Link
-                  to="/reforma-tributaria"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`text-base font-medium py-2 border-b border-white/5 ${
-                    location.pathname.startsWith('/reforma-tributaria')
-                      ? 'text-[#2ECC71] font-bold'
-                      : 'text-slate-200 hover:text-[#2ECC71]'
-                  }`}
-                >
-                  Reforma Tributária
-                </Link>
                 <Link
                   to="/legislacao"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -827,15 +827,6 @@ export default function Layout() {
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    to="/legislacao"
-                    className="text-slate-400 hover:text-[#D4AF37] transition-colors flex items-center gap-1.5 font-medium"
-                  >
-                    <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37]" />
-                    Legislação da Reforma
-                  </Link>
-                </li>
-                <li>
                   <a
                     href="/calculadora-ibs-cbs"
                     onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
@@ -844,6 +835,15 @@ export default function Layout() {
                     <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37]" />
                     Calculadora IBS/CBS
                   </a>
+                </li>
+                <li>
+                  <Link
+                    to="/legislacao"
+                    className="text-slate-400 hover:text-[#D4AF37] transition-colors flex items-center gap-1.5 font-medium"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    Legislação da Reforma
+                  </Link>
                 </li>
                 <li>
                   <a
