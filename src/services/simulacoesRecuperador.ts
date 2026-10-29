@@ -21,6 +21,8 @@ interface PbSimulacaoRecuperadorRecord extends RecordModel {
   total_recuperavel_conservador?: number
   total_pis_cofins?: number
   total_folha?: number
+  total_irpj_csll?: number
+  total_outros_tributos?: number
 }
 
 export function carregarSimulacoesRecuperadorLocais(): SimulacaoRecuperador[] {
@@ -65,6 +67,8 @@ export function salvarSimulacaoRecuperadorLocal(
     total_recuperavel_conservador: resultados.totalConservadorCorrigido,
     total_pis_cofins: resultados.totalPisCofinsCorrigido,
     total_folha: resultados.totalFolhaCorrigido,
+    total_irpj_csll: resultados.totalIrpjCsllCorrigido || 0,
+    total_outros_tributos: resultados.totalOutrosTributosCorrigido || 0,
     created: new Date().toISOString(),
     origem: 'local',
   }
@@ -109,6 +113,8 @@ function recordToSimulacao(rec: PbSimulacaoRecuperadorRecord): SimulacaoRecupera
     total_recuperavel_conservador: rec.total_recuperavel_conservador || 0,
     total_pis_cofins: rec.total_pis_cofins || 0,
     total_folha: rec.total_folha || 0,
+    total_irpj_csll: rec.total_irpj_csll || 0,
+    total_outros_tributos: rec.total_outros_tributos || 0,
     created: rec.created,
     updated: rec.updated,
     origem: 'nuvem',
@@ -143,6 +149,8 @@ export async function salvarSimulacaoRecuperador(dados: {
         total_recuperavel_conservador: dados.resultados.totalConservadorCorrigido,
         total_pis_cofins: dados.resultados.totalPisCofinsCorrigido,
         total_folha: dados.resultados.totalFolhaCorrigido,
+        total_irpj_csll: dados.resultados.totalIrpjCsllCorrigido || 0,
+        total_outros_tributos: dados.resultados.totalOutrosTributosCorrigido || 0,
       }
 
       const rec = await pb

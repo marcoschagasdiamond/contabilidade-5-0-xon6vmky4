@@ -37,12 +37,21 @@ import { AvisoOrientativo } from '@/components/common/AvisoOrientativo'
 import ModuloConfiguracoesRecuperador from '@/components/recuperador/ModuloConfiguracoesRecuperador'
 import BlocoPisCofinsRecuperador from '@/components/recuperador/BlocoPisCofinsRecuperador'
 import BlocoFolhaPrevidenciarioRecuperador from '@/components/recuperador/BlocoFolhaPrevidenciarioRecuperador'
+import { BlocoIrpjCsllRecuperador } from '@/components/recuperador/BlocoIrpjCsllRecuperador'
+import { BlocoOutrosTributosRecuperador } from '@/components/recuperador/BlocoOutrosTributosRecuperador'
 import ModuloApuracaoSelicRecuperador from '@/components/recuperador/ModuloApuracaoSelicRecuperador'
 import ModuloDashboardRecuperador from '@/components/recuperador/ModuloDashboardRecuperador'
 import { ModalSalvarRecuperador } from '@/components/recuperador/ModalSalvarRecuperador'
 import { ListaSimulacoesRecuperador } from '@/components/recuperador/ListaSimulacoesRecuperador'
 
-type ModuloRecuperadorId = 'configuracoes' | 'pis_cofins' | 'folha' | 'apuracao_selic' | 'dashboard'
+type ModuloRecuperadorId =
+  | 'configuracoes'
+  | 'pis_cofins'
+  | 'folha'
+  | 'irpj_csll'
+  | 'outros_tributos'
+  | 'apuracao_selic'
+  | 'dashboard'
 
 interface ModuloNav {
   id: ModuloRecuperadorId
@@ -71,14 +80,26 @@ const MODULOS_RECUPERADOR_NAV: ModuloNav[] = [
     subtitulo: 'INSS Indenizatório e RAT/FAP',
   },
   {
-    id: 'apuracao_selic',
+    id: 'irpj_csll',
     numero: '04',
+    titulo: 'IRPJ & CSLL',
+    subtitulo: 'Temas 1008/STJ, 962/STF e Subvenções',
+  },
+  {
+    id: 'outros_tributos',
+    numero: '05',
+    titulo: 'ICMS, ISS & ITCMD',
+    subtitulo: 'Energia Fabril, ST e Temas 918/851',
+  },
+  {
+    id: 'apuracao_selic',
+    numero: '06',
     titulo: 'Apuração SELIC',
     subtitulo: 'Correção Oficial Ano a Ano',
   },
   {
     id: 'dashboard',
-    numero: '05',
+    numero: '07',
     titulo: 'Dashboard Executivo',
     subtitulo: 'KPIs e Cenários Conservador × Integral',
   },
@@ -236,6 +257,8 @@ export default function RecuperadorCreditos() {
       moduloParam === 'configuracoes' ||
       moduloParam === 'pis_cofins' ||
       moduloParam === 'folha' ||
+      moduloParam === 'irpj_csll' ||
+      moduloParam === 'outros_tributos' ||
       moduloParam === 'apuracao_selic' ||
       moduloParam === 'dashboard'
     ) {
@@ -245,6 +268,14 @@ export default function RecuperadorCreditos() {
     if (teseParam) {
       if (teseParam.startsWith('tese_pis_')) return 'pis_cofins'
       if (teseParam.startsWith('tese_folha_')) return 'folha'
+      if (teseParam.startsWith('tese_irpj_')) return 'irpj_csll'
+      if (
+        teseParam.startsWith('tese_icms_') ||
+        teseParam.startsWith('tese_iss_') ||
+        teseParam.startsWith('tese_itcmd_')
+      ) {
+        return 'outros_tributos'
+      }
     }
     return 'dashboard'
   })
@@ -321,6 +352,8 @@ export default function RecuperadorCreditos() {
       moduloParam === 'configuracoes' ||
       moduloParam === 'pis_cofins' ||
       moduloParam === 'folha' ||
+      moduloParam === 'irpj_csll' ||
+      moduloParam === 'outros_tributos' ||
       moduloParam === 'apuracao_selic' ||
       moduloParam === 'dashboard'
     ) {
@@ -334,6 +367,14 @@ export default function RecuperadorCreditos() {
           setModuloAtivo('pis_cofins')
         } else if (teseParam.startsWith('tese_folha_')) {
           setModuloAtivo('folha')
+        } else if (teseParam.startsWith('tese_irpj_')) {
+          setModuloAtivo('irpj_csll')
+        } else if (
+          teseParam.startsWith('tese_icms_') ||
+          teseParam.startsWith('tese_iss_') ||
+          teseParam.startsWith('tese_itcmd_')
+        ) {
+          setModuloAtivo('outros_tributos')
         }
       }
       // Ativa a tese explicitamente caso estivesse inativa
@@ -525,6 +566,20 @@ export default function RecuperadorCreditos() {
                 {formatarMoeda(resultadosAtuais.totalFolhaCorrigido)}
               </strong>
             </span>
+            <span className="hidden lg:inline text-slate-500">|</span>
+            <span className="hidden lg:inline">
+              IRPJ/CSLL:{' '}
+              <strong className="text-white font-mono">
+                {formatarMoeda(resultadosAtuais.totalIrpjCsllCorrigido || 0)}
+              </strong>
+            </span>
+            <span className="hidden xl:inline text-slate-500">|</span>
+            <span className="hidden xl:inline">
+              ICMS/ISS/Outros:{' '}
+              <strong className="text-white font-mono">
+                {formatarMoeda(resultadosAtuais.totalOutrosTributosCorrigido || 0)}
+              </strong>
+            </span>
 
             {/* BOTÕES DE AÇÃO RÁPIDA: SALVAR E BAIXAR PDF */}
             <div className="flex items-center gap-2 ml-auto">
@@ -643,6 +698,24 @@ export default function RecuperadorCreditos() {
               />
             )}
 
+            {moduloAtivo === 'irpj_csll' && (
+              <BlocoIrpjCsllRecuperador
+                teses={tesesElegiveisSetor}
+                tesesConfiguradas={tesesSelecionadas}
+                onChangeTese={handleUpdateTese}
+                resultados={resultadosAtuais}
+              />
+            )}
+
+            {moduloAtivo === 'outros_tributos' && (
+              <BlocoOutrosTributosRecuperador
+                teses={tesesElegiveisSetor}
+                tesesConfiguradas={tesesSelecionadas}
+                onChangeTese={handleUpdateTese}
+                resultados={resultadosAtuais}
+              />
+            )}
+
             {moduloAtivo === 'apuracao_selic' && (
               <ModuloApuracaoSelicRecuperador
                 resultados={resultadosAtuais}
@@ -667,6 +740,14 @@ export default function RecuperadorCreditos() {
                     setModuloAtivo('pis_cofins')
                   } else if (teseId.startsWith('tese_folha_')) {
                     setModuloAtivo('folha')
+                  } else if (teseId.startsWith('tese_irpj_')) {
+                    setModuloAtivo('irpj_csll')
+                  } else if (
+                    teseId.startsWith('tese_icms_') ||
+                    teseId.startsWith('tese_iss_') ||
+                    teseId.startsWith('tese_itcmd_')
+                  ) {
+                    setModuloAtivo('outros_tributos')
                   }
                   setTesesSelecionadas((prev) => {
                     const existente = prev[teseId]

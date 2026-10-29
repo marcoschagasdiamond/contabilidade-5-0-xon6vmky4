@@ -254,6 +254,126 @@ export const TESES_RECUPERADOR: TeseRecuperacaoDefinicao[] = [
     percentualEstimadoPadrao: 0.85,
     regimesElegiveis: ['Lucro Real', 'Lucro Presumido'],
   },
+
+  // ==========================================
+  // BLOCO 3: IRPJ & CSLL (LUCRO REAL / PRESUMIDO)
+  // ==========================================
+  {
+    id: 'tese_irpj_csll_exclusao_icms_presumido',
+    modulo: 'irpj_csll',
+    codigo: 'IRPJ-01',
+    titulo: 'Exclusão do ICMS da Base de Cálculo do IRPJ e da CSLL (Lucro Presumido)',
+    fundamento: 'STJ - Tema Repetitivo 1.008 (REsp 1.767.631/SC e REsp 1.772.472/RS)',
+    descricao:
+      'Exclusão do ICMS destacado nas notas fiscais de saída da receita bruta operacional para cálculo da presunção do IRPJ e da CSLL no regime do Lucro Presumido, estendendo o raciocínio firmado no Tema 69/STF.',
+    riscoPadrao: 'amarelo',
+    justificativaRisco:
+      'Tema 1.008 em julgamento repetitivo no STJ com precedentes favoráveis na jurisprudência federal. Risco moderado.',
+    percentualEstimadoPadrao: 0.72, // Estimativa de impacto sobre faturamento (alíquotas de 15%+10% e 9% sobre presunção)
+    regimesElegiveis: ['Lucro Presumido'],
+  },
+  {
+    id: 'tese_irpj_csll_exclusao_iss_presumido',
+    modulo: 'irpj_csll',
+    codigo: 'IRPJ-02',
+    titulo: 'Exclusão do ISS da Base de Cálculo do IRPJ e da CSLL (Lucro Presumido)',
+    fundamento: 'STJ - Tema 1.008 correlato / REsp 1.839.814/PR e RE 592.616',
+    descricao:
+      'Exclusão do ISS municipal da receita bruta de serviços utilizada na base de apuração dos percentuais de presunção do IRPJ (32%) e da CSLL (32%) no Lucro Presumido.',
+    riscoPadrao: 'amarelo',
+    justificativaRisco:
+      'Simetria com o Tema 118 do STF e precedentes consolidados nas turmas de direito público do STJ. Risco moderado.',
+    percentualEstimadoPadrao: 0.48,
+    regimesElegiveis: ['Lucro Presumido'],
+  },
+  {
+    id: 'tese_irpj_csll_credito_presumido_icms',
+    modulo: 'irpj_csll',
+    codigo: 'IRPJ-03',
+    titulo: 'Não Incidência de IRPJ e CSLL sobre Créditos Presumidos de ICMS',
+    fundamento: 'STJ - EREsp 1.517.492/PR (1ª Seção) & art. 30 da Lei 12.973/2014',
+    descricao:
+      'Créditos presumidos de ICMS outorgados pelos Estados constituem incentivo ao desenvolvimento regional e não renda tributável, não sofrendo incidência de IRPJ e CSLL.',
+    riscoPadrao: 'verde',
+    justificativaRisco:
+      'Jurisprudência pacificada na 1ª Seção do STJ (EREsp 1.517.492/PR) transitada em julgado. Risco baixo.',
+    percentualEstimadoPadrao: 0.95,
+    regimesElegiveis: ['Lucro Real'],
+  },
+  {
+    id: 'tese_irpj_csll_selic_repeticao',
+    modulo: 'irpj_csll',
+    codigo: 'IRPJ-04',
+    titulo: 'Não Incidência de IRPJ e CSLL sobre Juros SELIC na Repetição de Indébito (Tema 962)',
+    fundamento: 'STF - RE 1.063.187 (Tema 962 RG)',
+    descricao:
+      'Inconstitucionalidade da cobrança de IRPJ e CSLL sobre juros equivalentes à taxa SELIC recebidos na repetição de indébito tributário e restituições em juízo ou via PER/DCOMP.',
+    riscoPadrao: 'verde',
+    justificativaRisco:
+      'Tese do Tema 962/STF com repercussão geral plenamente transitada em julgado. Risco mínimo.',
+    percentualEstimadoPadrao: 0.65,
+    regimesElegiveis: ['Lucro Real', 'Lucro Presumido'],
+  },
+
+  // ==========================================
+  // BLOCO 4: OUTROS TRIBUTOS (ICMS, ISS, ITCMD)
+  // ==========================================
+  {
+    id: 'tese_icms_energia_eletrica_comunicacao',
+    modulo: 'outros_tributos',
+    codigo: 'EST-01',
+    titulo: 'Crédito de ICMS sobre Energia Elétrica e Telecomunicações na Atividade Fabril',
+    fundamento: 'Lei Complementar 87/1996 art. 33, II e Tema 1.109 / STJ',
+    descricao:
+      'Direito ao creditamento de ICMS recolhido nas faturas de energia elétrica e serviços de telecomunicação consumidos nos processos de industrialização e telecomunicação corporativa.',
+    riscoPadrao: 'verde',
+    justificativaRisco:
+      'Previsão expressa no art. 33 da LC 87/96 condicionada a laudo técnico de consumo produtivo. Risco baixo.',
+    percentualEstimadoPadrao: 0.85,
+    regimesElegiveis: ['Lucro Real', 'Lucro Presumido'],
+  },
+  {
+    id: 'tese_icms_st_restituicao_base_efetiva',
+    modulo: 'outros_tributos',
+    codigo: 'EST-02',
+    titulo: 'Restituição da Diferença de ICMS-ST Pago a Maior (Tema 201/STF)',
+    fundamento: 'STF - RE 593.849 (Tema 201 RG)',
+    descricao:
+      'Direito à restituição do ICMS pago antecipadamente pelo regime de substituição tributária (ICMS-ST) quando a base de cálculo efetiva da operação a consumidor final for inferior à estimada pelo Fisco.',
+    riscoPadrao: 'verde',
+    justificativaRisco:
+      'Tema 201/STF julgado em sede de repercussão geral favorável ao contribuinte substituído. Risco baixo.',
+    percentualEstimadoPadrao: 0.9,
+    regimesElegiveis: ['Lucro Real', 'Lucro Presumido'],
+  },
+  {
+    id: 'tese_iss_sociedades_uniprofissionais',
+    modulo: 'outros_tributos',
+    codigo: 'MUN-01',
+    titulo: 'ISS Fixo de Sociedades Uniprofissionais (Decreto-Lei 406/1968)',
+    fundamento: 'STF - Tema 918 RG (RE 940.769) & STJ Súmula 663',
+    descricao:
+      'Enquadramento no regime de tributação de ISS em valor fixo anual por profissional habilitado (médicos, advogados, engenheiros, contadores), afastando a alíquota de 2% a 5% sobre faturamento.',
+    riscoPadrao: 'verde',
+    justificativaRisco:
+      'Recepção constitucional do art. 9º do Decreto-Lei 406/68 pelo Tema 918/STF. Risco baixo.',
+    percentualEstimadoPadrao: 1.25,
+    regimesElegiveis: ['Lucro Real', 'Lucro Presumido'],
+  },
+  {
+    id: 'tese_itcmd_planejamento_doacoes_exterior',
+    modulo: 'outros_tributos',
+    codigo: 'EST-03',
+    titulo: 'Inconstitucionalidade do ITCMD sobre Doações e Heranças no Exterior (Tema 851)',
+    fundamento: 'STF - RE 851.108 (Tema 851 RG)',
+    descricao:
+      'Impossibilidade de os Estados e DF exigirem ITCMD sobre heranças ou doações do exterior antes da edição de Lei Complementar Federal (CF/88 art. 155, § 1º, III). Restituição de pagamentos indevidos.',
+    riscoPadrao: 'verde',
+    justificativaRisco:
+      'Tema 851/STF com efeito erga omnes e repercussão geral vinculante transitada em julgado. Risco mínimo.',
+    percentualEstimadoPadrao: 0.8,
+    regimesElegiveis: ['Lucro Real', 'Lucro Presumido', 'Simples Nacional'],
+  },
 ]
 
 export const CONFIGURACOES_PADRAO: ConfiguracoesRecuperador = {
@@ -389,6 +509,36 @@ export function isTeseElegivelParaSegmento(teseId: string, segmento?: string): b
       // JCP na base do PIS/Cofins: visível para todos os setores (Lucro Real/Presumido)
       return true
 
+    // 3) Bloco IRPJ/CSLL
+    case 'tese_irpj_csll_exclusao_icms_presumido':
+      return ['Comércio', 'Indústria', 'Agro', 'Transporte', 'Bares e Restaurantes'].includes(
+        segmento,
+      )
+
+    case 'tese_irpj_csll_exclusao_iss_presumido':
+      return ['Serviços', 'Saúde', 'Educação', 'Tecnologia', 'Construção Civil'].includes(segmento)
+
+    case 'tese_irpj_csll_credito_presumido_icms':
+      return ['Comércio', 'Indústria', 'Agro', 'Transporte', 'Bares e Restaurantes'].includes(
+        segmento,
+      )
+
+    case 'tese_irpj_csll_selic_repeticao':
+      return true
+
+    // 4) Bloco Outros Tributos (ICMS, ISS, ITCMD)
+    case 'tese_icms_energia_eletrica_comunicacao':
+      return ['Indústria', 'Tecnologia'].includes(segmento)
+
+    case 'tese_icms_st_restituicao_base_efetiva':
+      return ['Comércio', 'Indústria', 'Bares e Restaurantes'].includes(segmento)
+
+    case 'tese_iss_sociedades_uniprofissionais':
+      return ['Serviços', 'Saúde'].includes(segmento)
+
+    case 'tese_itcmd_planejamento_doacoes_exterior':
+      return true
+
     default:
       return true
   }
@@ -444,6 +594,8 @@ export function calcularRecuperadorCreditos(
 
   let totalPisCofinsCorrigido = 0
   let totalFolhaCorrigido = 0
+  let totalIrpjCsllCorrigido = 0
+  let totalOutrosTributosCorrigido = 0
 
   let totalVerdeCorrigido = 0
   let totalAmareloCorrigido = 0
@@ -484,7 +636,11 @@ export function calcularRecuperadorCreditos(
       let baseCalculo = 0
       let aliquotaOuPercentual = pctBase
 
-      if (teseDef.modulo === 'pis_cofins') {
+      if (
+        teseDef.modulo === 'pis_cofins' ||
+        teseDef.modulo === 'irpj_csll' ||
+        teseDef.modulo === 'outros_tributos'
+      ) {
         baseCalculo = fAno.faturamento
       } else {
         // Folha: base proporcional ao faturamento anual ou direta da folha anual
@@ -540,8 +696,12 @@ export function calcularRecuperadorCreditos(
       // Por módulo de tributo
       if (teseDef.modulo === 'pis_cofins') {
         totalPisCofinsCorrigido += teseCorrigidoTotal
-      } else {
+      } else if (teseDef.modulo === 'folha') {
         totalFolhaCorrigido += teseCorrigidoTotal
+      } else if (teseDef.modulo === 'irpj_csll') {
+        totalIrpjCsllCorrigido += teseCorrigidoTotal
+      } else if (teseDef.modulo === 'outros_tributos') {
+        totalOutrosTributosCorrigido += teseCorrigidoTotal
       }
 
       // Por farol
@@ -584,6 +744,8 @@ export function calcularRecuperadorCreditos(
     totalConservadorCorrigido,
     totalPisCofinsCorrigido,
     totalFolhaCorrigido,
+    totalIrpjCsllCorrigido,
+    totalOutrosTributosCorrigido,
     totalVerdeCorrigido,
     totalAmareloCorrigido,
     totalVermelhoCorrigido,

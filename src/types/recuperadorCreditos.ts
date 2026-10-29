@@ -1,6 +1,6 @@
 export type FarolRisco = 'verde' | 'amarelo' | 'vermelho'
 
-export type ModuloTributo = 'pis_cofins' | 'folha'
+export type ModuloTributo = 'pis_cofins' | 'folha' | 'irpj_csll' | 'outros_tributos'
 
 export interface TeseRecuperacaoDefinicao {
   id: string
@@ -95,6 +95,8 @@ export interface ResultadosRecuperador {
   // Distribuição por Tributo
   totalPisCofinsCorrigido: number
   totalFolhaCorrigido: number
+  totalIrpjCsllCorrigido?: number
+  totalOutrosTributosCorrigido?: number
 
   // Distribuição por Farol
   totalVerdeCorrigido: number
@@ -126,6 +128,8 @@ export interface SimulacaoRecuperador {
   total_recuperavel_conservador: number
   total_pis_cofins: number
   total_folha: number
+  total_irpj_csll?: number
+  total_outros_tributos?: number
   created: string
   updated?: string
   origem: 'nuvem' | 'local'
