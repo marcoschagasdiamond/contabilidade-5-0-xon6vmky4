@@ -115,6 +115,23 @@ export default function Layout() {
     }
   }, [location.pathname])
 
+  // Quando o usuário abre /legislacao, zera os alertas não vistos marcando as notificações como lidas
+  useEffect(() => {
+    if (location.pathname.startsWith('/legislacao')) {
+      const naoLidasAtuais = notificacoesRadar.filter((n) => !n.lida)
+      if (naoLidasAtuais.length > 0) {
+        // Atualiza estado local imediatamente para zerar o badge
+        setNotificacoesRadar((prev) => prev.map((n) => ({ ...n, lida: true })))
+        // Persiste a leitura das notificações no backend
+        naoLidasAtuais.forEach((notif) => {
+          marcarNotificacaoComoLida(notif.id).catch((err) => {
+            console.warn('[Layout] Erro ao marcar notificação como lida na /legislacao:', err)
+          })
+        })
+      }
+    }
+  }, [location.pathname, notificacoesRadar])
+
   const naoLidas = notificacoesRadar.filter((n) => !n.lida).length
 
   const handleMarcarLida = async (id: string) => {
@@ -288,19 +305,24 @@ export default function Layout() {
             </Link>
             <Link
               to="/legislacao"
-              className={`nav-link-hover text-sm font-medium transition-colors ${
+              className={`nav-link-hover text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${
                 location.pathname.startsWith('/legislacao')
                   ? 'text-[#D4AF37] font-semibold active'
                   : 'text-slate-200 hover:text-[#D4AF37]'
               }`}
             >
-              Legislação
+              <span>Legislação</span>
+              {naoLidas > 0 && (
+                <span className="inline-flex items-center justify-center px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold bg-[#D4AF37] text-[#07132B]">
+                  {naoLidas}
+                </span>
+              )}
             </Link>
           </nav>
 
           {/* CTA BUTTON & AUTH / USER DROPDOWN (DESKTOP) */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
-            {/* Notificação In-App Radar Tributário (Padrão Diamond Group, sem ícones) */}
+            {/* Notificação In-App Radar Tributário (Sino de Notificações, Padrão Diamond Group, sem ícones) */}
             <div ref={notifMenuRef} className="relative">
               <button
                 type="button"
@@ -312,7 +334,7 @@ export default function Layout() {
                 }`}
                 title="Notificações do Radar Tributário"
               >
-                <span>Radar Alertas</span>
+                <span>Notificações</span>
                 {naoLidas > 0 && (
                   <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold bg-[#D4AF37] text-[#07132B]">
                     {naoLidas}
@@ -774,13 +796,18 @@ export default function Layout() {
                 <Link
                   to="/legislacao"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`text-base font-medium py-2 border-b border-white/5 ${
+                  className={`text-base font-medium py-2 border-b border-white/5 flex items-center justify-between ${
                     location.pathname.startsWith('/legislacao')
                       ? 'text-[#D4AF37] font-bold'
                       : 'text-slate-200 hover:text-[#D4AF37]'
                   }`}
                 >
-                  Legislação
+                  <span>Legislação</span>
+                  {naoLidas > 0 && (
+                    <span className="inline-flex items-center justify-center px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold bg-[#D4AF37] text-[#07132B]">
+                      {naoLidas}
+                    </span>
+                  )}
                 </Link>
               </div>
             </div>

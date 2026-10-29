@@ -4,6 +4,8 @@ import {
   pesquisarLegislacao,
   ItemLegislacao,
   dispararVarreduraRadar,
+  listarParametrosTributarios,
+  ParametroTributario,
 } from '@/services/radarTributario'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -29,6 +31,24 @@ export default function Legislacao() {
   const [itens, setItens] = useState<ItemLegislacao[]>([])
   const [carregando, setCarregando] = useState(true)
   const [sincronizando, setSincronizando] = useState(false)
+  const [parametrosRadar, setParametrosRadar] = useState<ParametroTributario[]>([])
+  const [carregandoParametros, setCarregandoParametros] = useState(true)
+
+  const carregarParametros = async () => {
+    try {
+      setCarregandoParametros(true)
+      const params = await listarParametrosTributarios()
+      setParametrosRadar(params || [])
+    } catch (err) {
+      console.warn('Erro ao carregar parâmetros tributários no Radar da Legislação:', err)
+    } finally {
+      setCarregandoParametros(false)
+    }
+  }
+
+  useEffect(() => {
+    carregarParametros()
+  }, [])
 
   const carregarDados = async () => {
     try {
@@ -64,6 +84,7 @@ export default function Legislacao() {
           description: `Fontes oficiais consultadas. ${res.novosEncontrados || 0} novo(s) parâmetro(s) processados.`,
         })
         carregarDados()
+        carregarParametros()
       } else {
         toast({
           title: 'Aviso de Sincronização',
@@ -261,6 +282,215 @@ export default function Legislacao() {
       </section>
 
       <main className="max-w-[1200px] mx-auto px-4 sm:px-6 mt-8 space-y-10">
+        {/* QUADRO DE GRANDE DESTAQUE: RADAR DE ALERTAS & ALÍQUOTAS CBS/IBS (Padrão Diamond Group, sem ícones) */}
+        <section aria-labelledby="titulo-radar-alertas">
+          <div className="rounded-2xl border-2 border-[#D4AF37] bg-gradient-to-br from-[#07132B] via-[#0A1A38] to-[#07132B] text-white p-6 sm:p-8 shadow-[0_12px_40px_rgba(7,19,43,0.55)] relative overflow-hidden">
+            {/* Efeitos de luz sutil no fundo */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[#D4AF37]/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#2ECC71]/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative space-y-6">
+              {/* Topo do Quadro: Tag e Título */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#D4AF37]/30">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-block px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider bg-[#D4AF37] text-[#07132B]">
+                      Radar de Alertas • Reforma Tributária
+                    </span>
+                    <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold bg-white/10 text-[#D4AF37] border border-[#D4AF37]/40">
+                      Monitoramento Oficial CBS & IBS
+                    </span>
+                  </div>
+                  <h2
+                    id="titulo-radar-alertas"
+                    className="text-xl sm:text-2xl lg:text-3xl font-heading font-extrabold tracking-tight text-white"
+                  >
+                    Alíquotas de Referência Vigentes e Propostas
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
+                    Parâmetros oficiais apurados pelos órgãos competentes (TCU, Senado Federal e
+                    Comitê Gestor) para o período de transição da EC 132/2023 e LC 214/2025.
+                  </p>
+                </div>
+
+                <div className="shrink-0 flex items-center gap-2">
+                  <Link
+                    to="/calculadora-ibs-cbs"
+                    className="inline-flex items-center justify-center text-xs font-bold px-4 py-2.5 rounded-xl bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    Simular na Calculadora IBS/CBS
+                  </Link>
+                </div>
+              </div>
+
+              {/* Cards das Alíquotas CBS e IBS */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                {/* CARD 1: CBS (Contribuição sobre Bens e Serviços - Federal) */}
+                {(() => {
+                  const paramCbs = parametrosRadar.find(
+                    (p) => p.tributo === 'CBS' && p.ano === 2027,
+                  ) ||
+                    parametrosRadar.find((p) => p.tributo === 'CBS') || {
+                      ano: 2027,
+                      tributo: 'CBS',
+                      aliquota: 11.3468,
+                      situacao: 'proposta' as const,
+                      fonte: 'TCU - Sessão Plenária de 28/10/2026 (Processo TC 018.945/2026-8)',
+                      data: '2026-10-28',
+                      detalhes:
+                        'O Tribunal de Contas da União (TCU) aprovou o cálculo da alíquota de referência da CBS em 11,3468% para 2027. O Senado Federal tem até 15/12/2026 para fixar por Resolução.',
+                    }
+
+                  const isFixada = paramCbs.situacao === 'fixada'
+                  const formatData = paramCbs.data
+                    ? new Date(paramCbs.data).toLocaleDateString('pt-BR')
+                    : '28/10/2026'
+
+                  return (
+                    <div className="rounded-xl bg-white/5 border border-[#D4AF37]/50 p-5 sm:p-6 space-y-4 hover:bg-white/[0.08] transition-all">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className="font-heading font-extrabold text-base sm:text-lg text-white">
+                            {paramCbs.tributo} • Ano {paramCbs.ano}
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-300">
+                            (Esfera Federal)
+                          </span>
+                        </div>
+                        <span
+                          className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
+                            isFixada
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+                              : 'bg-amber-500/20 text-[#D4AF37] border border-[#D4AF37]/40'
+                          }`}
+                        >
+                          Situação: {isFixada ? 'Fixada' : 'Proposta'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl sm:text-4xl lg:text-5xl font-mono font-extrabold text-[#D4AF37] tracking-tight">
+                            {paramCbs.aliquota.toFixed(4)}%
+                          </span>
+                          <span className="text-xs text-slate-400 font-mono">
+                            alíquota de referência
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-200 leading-relaxed font-medium pt-1">
+                          {paramCbs.detalhes ||
+                            `Alíquota de referência calculada para ${paramCbs.tributo} com vigência prevista a partir de ${paramCbs.ano}.`}
+                        </p>
+                      </div>
+
+                      <div className="pt-3 border-t border-white/10 space-y-1.5 text-xs text-slate-300">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                          <span className="text-slate-400 font-medium">Fonte Oficial:</span>
+                          <span className="font-mono text-[#D4AF37] text-right font-semibold">
+                            {paramCbs.fonte}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-slate-400 font-medium">Data do Parâmetro:</span>
+                          <span className="font-mono text-slate-200 font-semibold">
+                            {formatData}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* CARD 2: IBS (Imposto sobre Bens e Serviços - Estados e Municípios) */}
+                {(() => {
+                  const paramIbs = parametrosRadar.find(
+                    (p) => p.tributo === 'IBS' && p.ano === 2027,
+                  ) ||
+                    parametrosRadar.find((p) => p.tributo === 'IBS') || {
+                      ano: 2027,
+                      tributo: 'IBS',
+                      aliquota: 0.1,
+                      situacao: 'fixada' as const,
+                      fonte: 'LC 214/2025 art. 348 e ADCT art. 128 (Senado / Comitê Gestor)',
+                      data: '2025-01-15',
+                      detalhes:
+                        'Alíquota de teste compensável estadual e municipal de 0,10% (0,05% Estados e 0,05% Municípios) para o ano de 2027, com compensação na CBS ou recolhimento oficial.',
+                    }
+
+                  const isFixada = paramIbs.situacao === 'fixada'
+                  const formatData = paramIbs.data
+                    ? new Date(paramIbs.data).toLocaleDateString('pt-BR')
+                    : '15/01/2025'
+
+                  return (
+                    <div className="rounded-xl bg-white/5 border border-[#D4AF37]/50 p-5 sm:p-6 space-y-4 hover:bg-white/[0.08] transition-all">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className="font-heading font-extrabold text-base sm:text-lg text-white">
+                            {paramIbs.tributo} • Ano {paramIbs.ano}
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-300">
+                            (Estados & Municípios)
+                          </span>
+                        </div>
+                        <span
+                          className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
+                            isFixada
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+                              : 'bg-amber-500/20 text-[#D4AF37] border border-[#D4AF37]/40'
+                          }`}
+                        >
+                          Situação: {isFixada ? 'Fixada' : 'Proposta'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl sm:text-4xl lg:text-5xl font-mono font-extrabold text-[#D4AF37] tracking-tight">
+                            {paramIbs.aliquota.toFixed(2)}%
+                          </span>
+                          <span className="text-xs text-slate-400 font-mono">
+                            alíquota de teste compensável
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-200 leading-relaxed font-medium pt-1">
+                          {paramIbs.detalhes ||
+                            `Alíquota oficial de teste de ${paramIbs.tributo} para ${paramIbs.ano}, nos termos da Lei Complementar nº 214/2025.`}
+                        </p>
+                      </div>
+
+                      <div className="pt-3 border-t border-white/10 space-y-1.5 text-xs text-slate-300">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                          <span className="text-slate-400 font-medium">Fonte Oficial:</span>
+                          <span className="font-mono text-[#D4AF37] text-right font-semibold">
+                            {paramIbs.fonte}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-slate-400 font-medium">Data do Parâmetro:</span>
+                          <span className="font-mono text-slate-200 font-semibold">
+                            {formatData}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* Rodapé informativo do Radar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-white/10 text-[11px] text-slate-400 font-mono">
+                <span>
+                  Sincronização: monitoramento semanal automático integrado com TCU, Senado e LexML.
+                </span>
+                <span className="text-[#D4AF37]">
+                  Parâmetros refletidos automaticamente na Calculadora IBS/CBS.
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* BARRA DE BUSCA E FILTROS */}
         <Card className="border-slate-200 shadow-md bg-white">
           <CardHeader className="pb-3 border-b border-slate-100">

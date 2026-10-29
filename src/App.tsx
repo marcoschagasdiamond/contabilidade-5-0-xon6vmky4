@@ -231,6 +231,11 @@ const App = () => (
                 <Route path="/mercado-creditos" element={<MercadoCreditos />} />
                 <Route path="/reforma-tributaria" element={<ReformaTributariaHub />} />
                 <Route path="/legislacao" element={<Legislacao />} />
+                {/* Redirecionamentos da rota antiga Radar de Alertas para /legislacao */}
+                <Route path="/radar-alertas" element={<Navigate to="/legislacao" replace />} />
+                <Route path="/radar" element={<Navigate to="/legislacao" replace />} />
+                <Route path="/radar-de-alertas" element={<Navigate to="/legislacao" replace />} />
+                <Route path="/alertas" element={<Navigate to="/legislacao" replace />} />
                 <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
                 <Route path="/recuperador-creditos" element={<RecuperadorCreditos />} />
                 <Route
