@@ -3,9 +3,12 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import {
   AVISO_LEGAL_CREDITOS,
+  TIPOS_CREDITO_LISTA,
   type AnuncioCredito,
   type PedidoInformacaoCredito,
+  type TipoCredito,
 } from '@/types/creditos'
+import { LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
 import {
   listarAnunciosMercado,
   listarMeusPedidosUsuario,
@@ -26,6 +29,11 @@ export default function MercadoCreditos() {
   const [filtroEsfera, setFiltroEsfera] = useState<'todas' | 'federal' | 'estadual' | 'municipal'>(
     'todas',
   )
+  const [filtroTipoCredito, setFiltroTipoCredito] = useState<string>('todos')
+  const [filtroUf, setFiltroUf] = useState<string>('todas')
+  const [valorMinimo, setValorMinimo] = useState<string>('')
+  const [valorMaximo, setValorMaximo] = useState<string>('')
+  const [ordenacao, setOrdenacao] = useState<'recentes' | 'maior_valor' | 'menor_valor'>('recentes')
   const [buscaTexto, setBuscaTexto] = useState('')
 
   const [modalCriarAberto, setModalCriarAberto] = useState(false)
@@ -79,27 +87,81 @@ export default function MercadoCreditos() {
     }
   }
 
-  // Filtragem dos anúncios
-  const anunciosFiltrados = anuncios.filter((item) => {
-    if (filtroOperacao !== 'todos' && item.operacao !== filtroOperacao) {
-      return false
-    }
-    if (filtroEsfera !== 'todas' && item.esfera !== filtroEsfera) {
-      return false
-    }
-    if (buscaTexto.trim()) {
-      const q = buscaTexto.toLowerCase()
-      const matchTipo = item.tipo_credito?.toLowerCase().includes(q)
-      const matchObs = item.observacoes?.toLowerCase().includes(q)
-      const matchUf = item.uf?.toLowerCase().includes(q)
-      const matchMun = item.municipio?.toLowerCase().includes(q)
-      const matchFin = item.finalidade?.toLowerCase().includes(q)
-      if (!matchTipo && !matchObs && !matchUf && !matchMun && !matchFin) {
+  const temFiltroAtivo =
+    filtroOperacao !== 'todos' ||
+    filtroEsfera !== 'todas' ||
+    filtroTipoCredito !== 'todos' ||
+    filtroUf !== 'todas' ||
+    valorMinimo.trim() !== '' ||
+    valorMaximo.trim() !== '' ||
+    ordenacao !== 'recentes' ||
+    buscaTexto.trim() !== ''
+
+  const limparFiltros = () => {
+    setFiltroOperacao('todos')
+    setFiltroEsfera('todas')
+    setFiltroTipoCredito('todos')
+    setFiltroUf('todas')
+    setValorMinimo('')
+    setValorMaximo('')
+    setOrdenacao('recentes')
+    setBuscaTexto('')
+  }
+
+  // Filtragem e ordenação combinada (E lógico)
+  const anunciosFiltrados = anuncios
+    .filter((item) => {
+      if (filtroOperacao !== 'todos' && item.operacao !== filtroOperacao) {
         return false
       }
-    }
-    return true
-  })
+      if (filtroEsfera !== 'todas' && item.esfera !== filtroEsfera) {
+        return false
+      }
+      if (filtroTipoCredito !== 'todos') {
+        if (item.tipo_credito !== filtroTipoCredito) {
+          return false
+        }
+      }
+      if (filtroUf !== 'todas') {
+        if (!item.uf || item.uf.toUpperCase() !== filtroUf.toUpperCase()) {
+          return false
+        }
+      }
+      if (valorMinimo.trim() !== '') {
+        const min = Number(valorMinimo.replace(/\./g, '').replace(',', '.'))
+        if (!Number.isNaN(min) && item.valor_nominal < min) {
+          return false
+        }
+      }
+      if (valorMaximo.trim() !== '') {
+        const max = Number(valorMaximo.replace(/\./g, '').replace(',', '.'))
+        if (!Number.isNaN(max) && item.valor_nominal > max) {
+          return false
+        }
+      }
+      if (buscaTexto.trim()) {
+        const q = buscaTexto.toLowerCase()
+        const matchTipo = item.tipo_credito?.toLowerCase().includes(q)
+        const matchObs = item.observacoes?.toLowerCase().includes(q)
+        const matchUf = item.uf?.toLowerCase().includes(q)
+        const matchMun = item.municipio?.toLowerCase().includes(q)
+        const matchFin = item.finalidade?.toLowerCase().includes(q)
+        if (!matchTipo && !matchObs && !matchUf && !matchMun && !matchFin) {
+          return false
+        }
+      }
+      return true
+    })
+    .sort((a, b) => {
+      if (ordenacao === 'maior_valor') {
+        return (b.valor_nominal || 0) - (a.valor_nominal || 0)
+      }
+      if (ordenacao === 'menor_valor') {
+        return (a.valor_nominal || 0) - (b.valor_nominal || 0)
+      }
+      // Padrão: mais recentes primeiro (por created desc)
+      return new Date(b.created).getTime() - new Date(a.created).getTime()
+    })
 
   // Se deslogado: Vitrine SEM anúncios e SEM dados sensíveis — apenas CTA para entrar/cadastrar
   if (!isAuthenticated) {
@@ -280,64 +342,183 @@ export default function MercadoCreditos() {
           {AVISO_LEGAL_CREDITOS}
         </div>
 
-        {/* BARRA DE FILTROS & BUSCA */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 mr-1">Operação:</span>
-            <button
-              type="button"
-              onClick={() => setFiltroOperacao('todos')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                filtroOperacao === 'todos'
-                  ? 'bg-[#07132B] text-[#D4AF37]'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              Todos ({anuncios.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFiltroOperacao('venda')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                filtroOperacao === 'venda'
-                  ? 'bg-emerald-800 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              Venda ({anuncios.filter((a) => a.operacao === 'venda').length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFiltroOperacao('compra')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                filtroOperacao === 'compra'
-                  ? 'bg-amber-800 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              Compra ({anuncios.filter((a) => a.operacao === 'compra').length})
-            </button>
+        {/* PAINEL DE FILTROS DIAMOND GROUP */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200 shadow-sm mb-6 space-y-4">
+          {/* Linha Superior: Operação e Busca Geral */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-4 border-b border-slate-100">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-slate-500 mr-1">Operação:</span>
+              <button
+                type="button"
+                onClick={() => setFiltroOperacao('todos')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                  filtroOperacao === 'todos'
+                    ? 'bg-[#07132B] text-[#D4AF37]'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                Todos ({anuncios.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroOperacao('venda')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                  filtroOperacao === 'venda'
+                    ? 'bg-emerald-800 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                Venda ({anuncios.filter((a) => a.operacao === 'venda').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroOperacao('compra')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                  filtroOperacao === 'compra'
+                    ? 'bg-amber-800 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                Compra ({anuncios.filter((a) => a.operacao === 'compra').length})
+              </button>
+            </div>
+
+            <div className="w-full lg:w-72">
+              <input
+                type="text"
+                placeholder="Buscar por termos, município..."
+                value={buscaTexto}
+                onChange={(e) => setBuscaTexto(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 bg-white focus:outline-none focus:border-[#D4AF37]"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <select
-              value={filtroEsfera}
-              onChange={(e) => setFiltroEsfera(e.target.value as any)}
-              className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white"
-            >
-              <option value="todas">Todas as Esferas</option>
-              <option value="federal">Federal</option>
-              <option value="estadual">Estadual</option>
-              <option value="municipal">Municipal</option>
-            </select>
+          {/* Grid de Filtros: Tipo de Crédito, Estado/UF, Faixa de Valor (Mín/Máx) e Ordenação */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
+            {/* 1. Tipo de crédito */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                Tipo de Crédito
+              </label>
+              <select
+                value={filtroTipoCredito}
+                onChange={(e) => setFiltroTipoCredito(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:border-[#D4AF37]"
+              >
+                <option value="todos">Todos os tipos</option>
+                {TIPOS_CREDITO_LISTA.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <input
-              type="text"
-              placeholder="Buscar por tipo, UF, observações..."
-              value={buscaTexto}
-              onChange={(e) => setBuscaTexto(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 w-full sm:w-56"
-            />
+            {/* 2. Estado / UF */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                Estado / UF
+              </label>
+              <select
+                value={filtroUf}
+                onChange={(e) => setFiltroUf(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:border-[#D4AF37]"
+              >
+                <option value="todas">Todos os estados</option>
+                {LISTA_UFS_ICMS.map((item) => (
+                  <option key={item.uf} value={item.uf}>
+                    {item.uf} — {item.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 3. Faixa de Valor: Valor Mínimo */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                Valor Mínimo (R$)
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Ex: 50.000"
+                value={valorMinimo}
+                onChange={(e) => setValorMinimo(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 bg-white focus:outline-none focus:border-[#D4AF37]"
+              ></input>
+            </div>
+
+            {/* 3. Faixa de Valor: Valor Máximo */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                Valor Máximo (R$)
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Ex: 1.000.000"
+                value={valorMaximo}
+                onChange={(e) => setValorMaximo(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 bg-white focus:outline-none focus:border-[#D4AF37]"
+              ></input>
+            </div>
+
+            {/* 4. Ordenação */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                Ordenação
+              </label>
+              <select
+                value={ordenacao}
+                onChange={(e) =>
+                  setOrdenacao(e.target.value as 'recentes' | 'maior_valor' | 'menor_valor')
+                }
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white focus:outline-none focus:border-[#D4AF37]"
+              >
+                <option value="recentes">Mais recentes primeiro</option>
+                <option value="maior_valor">Maior valor primeiro</option>
+                <option value="menor_valor">Menor valor primeiro</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Barra de Status do Filtro & Ações */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-800">
+                {anunciosFiltrados.length === 1
+                  ? '1 anúncio encontrado'
+                  : `${anunciosFiltrados.length} anúncios encontrados`}
+              </span>
+              {anuncios.length > 0 && anunciosFiltrados.length !== anuncios.length && (
+                <span className="text-slate-500">(de um total de {anuncios.length})</span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                value={filtroEsfera}
+                onChange={(e) => setFiltroEsfera(e.target.value as any)}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-700 bg-white"
+                title="Filtrar por esfera governamental"
+              >
+                <option value="todas">Todas as Esferas</option>
+                <option value="federal">Federal</option>
+                <option value="estadual">Estadual</option>
+                <option value="municipal">Municipal</option>
+              </select>
+
+              {temFiltroAtivo && (
+                <button
+                  type="button"
+                  onClick={limparFiltros}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-colors cursor-pointer"
+                >
+                  Limpar filtros
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -350,18 +531,33 @@ export default function MercadoCreditos() {
         ) : anunciosFiltrados.length === 0 ? (
           <div className="p-12 rounded-2xl bg-white border border-slate-200 text-center">
             <p className="text-sm font-semibold text-slate-700 mb-2">
-              Nenhum anúncio encontrado com os filtros selecionados.
+              {temFiltroAtivo
+                ? 'Nenhum anúncio atende aos filtros selecionados.'
+                : 'Nenhum anúncio publicado no momento.'}
             </p>
-            <p className="text-xs text-slate-500 mb-4">
-              Seja o primeiro a publicar um crédito para venda ou interesse de compra!
+            <p className="text-xs text-slate-500 mb-5">
+              {temFiltroAtivo
+                ? 'Tente ajustar os critérios de tipo de crédito, estado ou faixa de valor.'
+                : 'Seja o primeiro a publicar um crédito para venda ou interesse de compra!'}
             </p>
-            <button
-              type="button"
-              onClick={() => setModalCriarAberto(true)}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] transition-all"
-            >
-              Publicar Primeiro Anúncio
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {temFiltroAtivo && (
+                <button
+                  type="button"
+                  onClick={limparFiltros}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-all cursor-pointer"
+                >
+                  Limpar filtros
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setModalCriarAberto(true)}
+                className="px-5 py-2 rounded-xl text-xs font-bold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] transition-all cursor-pointer"
+              >
+                Publicar Anúncio
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
