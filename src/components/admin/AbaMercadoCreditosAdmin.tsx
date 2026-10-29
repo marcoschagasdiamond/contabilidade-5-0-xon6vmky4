@@ -2,10 +2,10 @@ import React, { useState } from 'react'
 import type { AnuncioCredito, PedidoInformacaoCredito } from '@/types/creditos'
 import {
   atualizarStatusAnuncio,
-  excluirAnuncioCredito,
   responderPedidoInformacao,
   arquivarPedidoInformacao,
 } from '@/services/creditos'
+import { ModalExcluirAnuncioCredito } from '@/components/admin/ModalExcluirAnuncioCredito'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 
 interface AbaMercadoCreditosAdminProps {
@@ -13,6 +13,8 @@ interface AbaMercadoCreditosAdminProps {
   pedidos: PedidoInformacaoCredito[]
   isLoading: boolean
   adminId: string
+  nivelAcesso?: string
+  isMaster?: boolean
   onAtualizar: () => void
   onFeedback: (fb: { tipo: 'sucesso' | 'erro'; mensagem: string } | null) => void
 }
@@ -22,6 +24,8 @@ export function AbaMercadoCreditosAdmin({
   pedidos,
   isLoading,
   adminId,
+  nivelAcesso = 'admin',
+  isMaster = false,
   onAtualizar,
   onFeedback,
 }: AbaMercadoCreditosAdminProps) {
@@ -29,6 +33,9 @@ export function AbaMercadoCreditosAdmin({
   const [pedidoRespondendo, setPedidoRespondendo] = useState<PedidoInformacaoCredito | null>(null)
   const [respostaTexto, setRespostaTexto] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [anuncioParaExcluir, setAnuncioParaExcluir] = useState<AnuncioCredito | null>(null)
+
+  const ehMasterOuAdmin = isMaster || nivelAcesso === 'master' || nivelAcesso === 'admin'
 
   const pedidosPendentes = pedidos.filter((p) => p.status === 'pendente')
 
@@ -78,18 +85,6 @@ export function AbaMercadoCreditosAdmin({
       onAtualizar()
     } catch (err: any) {
       onFeedback({ tipo: 'erro', mensagem: 'Falha ao atualizar status do anúncio.' })
-    }
-  }
-
-  const handleExcluirAnuncio = async (anuncioId: string) => {
-    if (!confirm('Deseja realmente excluir este anúncio do mercado de créditos?')) return
-
-    try {
-      await excluirAnuncioCredito(anuncioId)
-      onFeedback({ tipo: 'sucesso', mensagem: 'Anúncio excluído com sucesso.' })
-      onAtualizar()
-    } catch (err: any) {
-      onFeedback({ tipo: 'erro', mensagem: 'Falha ao excluir anúncio.' })
     }
   }
 
@@ -262,6 +257,18 @@ export function AbaMercadoCreditosAdmin({
                           Arquivar
                         </button>
                       )}
+
+                      {/* Ação Excluir Anúncio na fila de pedidos: visível apenas para Master e Admin */}
+                      {ehMasterOuAdmin && anuncio && (
+                        <button
+                          type="button"
+                          onClick={() => setAnuncioParaExcluir(anuncio)}
+                          className="px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+                          title="Excluir este anúncio do Mercado de Créditos"
+                        >
+                          Excluir anúncio
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
@@ -372,13 +379,16 @@ export function AbaMercadoCreditosAdmin({
                     </td>
 
                     <td className="py-3 px-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleExcluirAnuncio(item.id)}
-                        className="text-red-600 hover:text-red-800 font-bold px-2 py-1 rounded hover:bg-red-50 text-xs"
-                      >
-                        Excluir
-                      </button>
+                      {ehMasterOuAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => setAnuncioParaExcluir(item)}
+                          className="text-red-600 hover:text-red-800 font-bold px-2.5 py-1.5 rounded-lg hover:bg-red-50 text-xs border border-transparent hover:border-red-200 transition-all"
+                          title="Excluir este anúncio do Mercado de Créditos"
+                        >
+                          Excluir anúncio
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -458,6 +468,23 @@ export function AbaMercadoCreditosAdmin({
           </div>
         </div>
       )}
+
+      {/* MODAL DE CONFIRMAÇÃO PARA EXCLUSÃO DE ANÚNCIO (PADRÃO DIAMOND GROUP) */}
+      <ModalExcluirAnuncioCredito
+        open={!!anuncioParaExcluir}
+        onOpenChange={(aberto) => {
+          if (!aberto) setAnuncioParaExcluir(null)
+        }}
+        anuncio={anuncioParaExcluir}
+        onSucesso={(msg) => {
+          onFeedback({ tipo: 'sucesso', mensagem: msg })
+          setAnuncioParaExcluir(null)
+          onAtualizar()
+        }}
+        onErro={(msg) => {
+          onFeedback({ tipo: 'erro', mensagem: msg })
+        }}
+      />
     </div>
   )
 }

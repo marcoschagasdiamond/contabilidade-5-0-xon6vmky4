@@ -972,6 +972,8 @@ export default function Admin() {
             pedidos={pedidosCreditosAdmin}
             isLoading={isLoadingCreditosAdmin}
             adminId={user?.id || ''}
+            nivelAcesso={isMaster ? 'master' : (user as any)?.nivel_acesso || 'admin'}
+            isMaster={isMaster}
             onAtualizar={() => {
               fetchCreditosAdmin()
             }}
