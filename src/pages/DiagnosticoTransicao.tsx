@@ -6,7 +6,11 @@ import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
 import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 import { ConteudoModulo7Diagnostico } from '@/components/reforma/Modulo7DiagnosticoReforma'
-import { createDiagnostico, getDiagnosticoPorId } from '@/services/diagnosticos'
+import {
+  createDiagnostico,
+  getDiagnosticoPorId,
+  excluirDiagnosticoTransicao,
+} from '@/services/diagnosticos'
 import { registrarSnapshotSeClienteAtivo } from '@/services/historicoRelatorios'
 import pb from '@/lib/pocketbase/client'
 import { registrarDiagnosticoUsado } from '@/services/freemium'
@@ -45,31 +49,99 @@ export default function DiagnosticoTransicao() {
     }
   }, [authLoading, temDadosSalvos, navigate])
 
-  // Se houver ?id= na URL, carrega o diagnóstico salvo e restaura as configuracoes_diagnostico_json
+  // Identificador do diagnóstico de transição carregado/salvo
+  const [diagnosticoTransicaoId, setDiagnosticoTransicaoId] = useState<string | null>(
+    idCarregamento,
+  )
+  // Estado para armazenar respostas salvas previamente (se houver no backend ou ?id=)
+  const [respostasIniciaisSalvas, setRespostasIniciaisSalvas] = useState<Record<
+    string,
+    string
+  > | null>(null)
+  const [proporcaoInicialSalva, setProporcaoInicialSalva] = useState<number | null>(null)
+  const [subatvServicoInicialSalva, setSubatvServicoInicialSalva] = useState<any>(null)
+  const [subatvComercioInicialSalva, setSubatvComercioInicialSalva] = useState<any>(null)
+  const [diagnosticoCarregadoDoBackend, setDiagnosticoCarregadoDoBackend] = useState(false)
+
+  // Se houver ?id= na URL ou cliente ativo, carrega o diagnóstico de transição salvo no backend
   useEffect(() => {
-    if (idCarregamento) {
-      getDiagnosticoPorId(idCarregamento).then((diag) => {
-        if (diag && diag.configuracoes_diagnostico_json) {
-          const cfg = diag.configuracoes_diagnostico_json
-          salvarDadosContext({
-            nomeEmpresa: cfg.razao_social || diag.empresa || dadosEmpresa.nomeEmpresa,
-            cnpj: cfg.cnpj || diag.cnpj || dadosEmpresa.cnpj,
-            nomeContato: cfg.nome_contato || diag.nome || dadosEmpresa.nomeContato,
-            regimeAtual: (cfg.regime_atual as any) || dadosEmpresa.regimeAtual,
-            segmento: (cfg.segmento as any) || diag.segmento || dadosEmpresa.segmento,
-            atividadeMista: cfg.atividade_mista ?? dadosEmpresa.atividadeMista,
-            proporcaoServicoMisto:
-              cfg.proporcao_servico_misto ?? dadosEmpresa.proporcaoServicoMisto,
-            anoBaseTransicao: (cfg.ano_base_transicao as any) || dadosEmpresa.anoBaseTransicao,
-            ufOrigem: cfg.uf_origem || dadosEmpresa.ufOrigem,
-            cidade: cfg.cidade || dadosEmpresa.cidade,
-            funcionarios: cfg.funcionarios || dadosEmpresa.funcionarios,
-            emissaoNf: cfg.emissao_nf || dadosEmpresa.emissaoNf,
-          })
+    let cancelado = false
+
+    async function carregarTransicaoSalva() {
+      try {
+        let diag: any = null
+        if (idCarregamento) {
+          diag = await getDiagnosticoPorId(idCarregamento)
+          if (diag?.id) setDiagnosticoTransicaoId(diag.id)
+        } else {
+          // Busca o último diagnóstico de transição salvo para o cliente ativo ou usuário autenticado
+          const authUserId = pb.authStore.record?.id
+          const filter = clienteAtivoId
+            ? `cliente_id = "${clienteAtivoId}" && tipo_diagnostico = "transicao"`
+            : authUserId
+              ? `user_id = "${authUserId}" && tipo_diagnostico = "transicao"`
+              : ''
+          if (filter) {
+            const res = await pb.collection('diagnosticos').getList(1, 1, {
+              filter,
+              sort: '-created',
+            })
+            if (res.items.length > 0) {
+              diag = res.items[0]
+              setDiagnosticoTransicaoId(diag.id)
+            }
+          }
         }
-      })
+
+        if (cancelado) return
+
+        if (diag) {
+          const extra = (diag.dados_extra_json as any) || {}
+          if (extra.respostas && Object.keys(extra.respostas).length > 0) {
+            setRespostasIniciaisSalvas(extra.respostas)
+          }
+          if (extra.detalhesAtividadeMista) {
+            if (typeof extra.detalhesAtividadeMista.proporcaoServico === 'number') {
+              setProporcaoInicialSalva(extra.detalhesAtividadeMista.proporcaoServico)
+            }
+            if (extra.detalhesAtividadeMista.subatividadeServico) {
+              setSubatvServicoInicialSalva(extra.detalhesAtividadeMista.subatividadeServico)
+            }
+            if (extra.detalhesAtividadeMista.subatividadeComercio) {
+              setSubatvComercioInicialSalva(extra.detalhesAtividadeMista.subatividadeComercio)
+            }
+          }
+          if (diag.configuracoes_diagnostico_json && idCarregamento) {
+            const cfg = diag.configuracoes_diagnostico_json
+            salvarDadosContext({
+              nomeEmpresa: cfg.razao_social || diag.empresa || dadosEmpresa.nomeEmpresa,
+              cnpj: cfg.cnpj || diag.cnpj || dadosEmpresa.cnpj,
+              nomeContato: cfg.nome_contato || diag.nome || dadosEmpresa.nomeContato,
+              regimeAtual: (cfg.regime_atual as any) || dadosEmpresa.regimeAtual,
+              segmento: (cfg.segmento as any) || diag.segmento || dadosEmpresa.segmento,
+              atividadeMista: cfg.atividade_mista ?? dadosEmpresa.atividadeMista,
+              proporcaoServicoMisto:
+                cfg.proporcao_servico_misto ?? dadosEmpresa.proporcaoServicoMisto,
+              anoBaseTransicao: (cfg.ano_base_transicao as any) || dadosEmpresa.anoBaseTransicao,
+              ufOrigem: cfg.uf_origem || dadosEmpresa.ufOrigem,
+              cidade: cfg.cidade || dadosEmpresa.cidade,
+              funcionarios: cfg.funcionarios || dadosEmpresa.funcionarios,
+              emissaoNf: cfg.emissao_nf || dadosEmpresa.emissaoNf,
+            })
+          }
+          setDiagnosticoCarregadoDoBackend(true)
+        }
+      } catch (err) {
+        console.warn('Diagnóstico de transição salvo não encontrado:', err)
+      }
     }
-  }, [idCarregamento])
+
+    carregarTransicaoSalva()
+
+    return () => {
+      cancelado = true
+    }
+  }, [idCarregamento, clienteAtivoId])
 
   const [salvando, setSalvando] = useState(false)
   const [salvoFeedback, setSalvoFeedback] = useState(false)
@@ -79,6 +151,36 @@ export default function DiagnosticoTransicao() {
     // Permite ao usuário resetar as respostas locais para o padrão da empresa
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('contabilidade5_dados_empresa_updated'))
+    }
+  }
+
+  // Função de LIMPAR COMPLETO:
+  // Zera os DOIS blocos (Bloco A e Bloco B), inputs, laudo executivo e remove o registro salvo no backend
+  const handleLimparCompleto = async () => {
+    const authUserId = pb.authStore.record?.id || undefined
+
+    // 1. Zera referências em memória/estado local da página
+    setRespostasIniciaisSalvas(null)
+    setProporcaoInicialSalva(null)
+    setSubatvServicoInicialSalva(null)
+    setSubatvComercioInicialSalva(null)
+    setDiagnosticoCarregadoDoBackend(false)
+
+    // Se estiver em URL com ?id=, remove o parâmetro para não recarregar no refresh
+    if (idCarregamento) {
+      navigate('/diagnostico-transicao', { replace: true })
+    }
+
+    // 2. Remove o preenchimento salvo do backend (PocketBase)
+    try {
+      await excluirDiagnosticoTransicao({
+        diagnosticoId: diagnosticoTransicaoId || undefined,
+        clienteId: clienteAtivoId || undefined,
+        userId: authUserId,
+      })
+      setDiagnosticoTransicaoId(null)
+    } catch (err) {
+      console.warn('Erro ao excluir transição do backend no Limpar:', err)
     }
   }
 
@@ -107,7 +209,7 @@ export default function DiagnosticoTransicao() {
       const fatAnual = (dadosEmpresa.faturamentoMensal || 100000) * 12
       const folhaAnual = (dadosEmpresa.folhaPagamentoMensal || 10000) * 12
 
-      await createDiagnostico({
+      const salvoRecord = await createDiagnostico({
         user_id: authUserId,
         cliente_id: clienteAtivoId || undefined,
         tipo_diagnostico: 'transicao',
@@ -153,6 +255,10 @@ export default function DiagnosticoTransicao() {
           detalhesAtividadeMista: payload.detalhesAtividadeMista,
         },
       })
+
+      if (salvoRecord?.id) {
+        setDiagnosticoTransicaoId(salvoRecord.id)
+      }
 
       await registrarDiagnosticoUsado(authUserId)
       await recarregarUsuario()
@@ -244,8 +350,15 @@ export default function DiagnosticoTransicao() {
         <ConteudoModulo7Diagnostico
           modo="trilha"
           dadosEmpresa={dadosEmpresa}
-          temDadosSalvos={temDadosSalvos}
+          temDadosSalvos={
+            temDadosSalvos && !diagnosticoCarregadoDoBackend && !respostasIniciaisSalvas
+          }
+          respostasIniciais={respostasIniciaisSalvas || undefined}
+          proporcaoInicial={proporcaoInicialSalva ?? undefined}
+          subatividadeServicoInicial={subatvServicoInicialSalva}
+          subatividadeComercioInicial={subatvComercioInicialSalva}
           onRestaurarDados={handleRestaurar}
+          onLimparCompleto={handleLimparCompleto}
           onSalvarDiagnostico={handleSalvarDiagnosticoTransicao}
           salvando={salvando}
           salvoFeedback={salvoFeedback}

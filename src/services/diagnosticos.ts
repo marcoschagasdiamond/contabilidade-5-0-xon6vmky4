@@ -158,6 +158,59 @@ export type EtapaDiagnosticoIdentificador =
  * - 'regimes': exclui registros com tipo_diagnostico 'regimes'.
  * - 'enquadramento': exclui registros com tipo_diagnostico 'enquadramento' ou sem tipo_diagnostico definido.
  */
+/**
+ * Exclui todos os diagnósticos de Transição Fiscal (tipo_diagnostico = 'transicao')
+ * por clienteId, userId e/ou diagnosticoId específico.
+ */
+export async function excluirDiagnosticoTransicao(params: {
+  clienteId?: string | null
+  userId?: string | null
+  diagnosticoId?: string | null
+}): Promise<{ success: boolean; totalRemovidos: number }> {
+  let totalRemovidos = 0
+
+  // 1. Se foi informado um diagnosticoId específico
+  if (params.diagnosticoId) {
+    try {
+      await pb.collection('diagnosticos').delete(params.diagnosticoId)
+      totalRemovidos++
+    } catch (err) {
+      console.warn(`Erro ao excluir diagnóstico por id ${params.diagnosticoId}:`, err)
+    }
+  }
+
+  // 2. Se foi informado clienteId
+  if (params.clienteId) {
+    try {
+      const res = await excluirEtapaDiagnosticoPorCliente(params.clienteId, 'transicao')
+      totalRemovidos += res.totalRemovidos
+    } catch (err) {
+      console.warn(`Erro ao excluir etapa transicao do cliente ${params.clienteId}:`, err)
+    }
+  }
+
+  // 3. Se foi informado userId (e/ou sem clienteId)
+  if (params.userId) {
+    try {
+      const lista = await pb.collection('diagnosticos').getFullList<DiagnosticoRecord>({
+        filter: `user_id = "${params.userId}" && tipo_diagnostico = "transicao"`,
+      })
+      for (const d of lista) {
+        try {
+          await pb.collection('diagnosticos').delete(d.id)
+          totalRemovidos++
+        } catch (e) {
+          console.warn(`Erro ao excluir diagnóstico de transição ${d.id}:`, e)
+        }
+      }
+    } catch (err) {
+      console.warn(`Erro ao listar transição do user ${params.userId}:`, err)
+    }
+  }
+
+  return { success: true, totalRemovidos }
+}
+
 export async function excluirEtapaDiagnosticoPorCliente(
   clienteId: string,
   etapa: EtapaDiagnosticoIdentificador,

@@ -37,7 +37,13 @@ export interface Modulo7DiagnosticoReformaProps {
   // Dados da Empresa para auto-preenchimento opcional
   dadosEmpresa?: DadosEmpresaPerfil
   temDadosSalvos?: boolean
+  respostasIniciais?: Record<string, string>
+  proporcaoInicial?: number
+  subatividadeServicoInicial?: SubatividadeServico
+  subatividadeComercioInicial?: SubatividadeComercio
   onRestaurarDados?: () => void
+  // Callback opcional de limpeza completa (quando acionado o botão Limpar)
+  onLimparCompleto?: () => void | Promise<void>
   // Callback opcional de salvamento no banco de dados (usado na trilha)
   onSalvarDiagnostico?: (payload: {
     totalScore: number
@@ -186,7 +192,12 @@ export function ConteudoModulo7Diagnostico({
   modo = 'reforma',
   dadosEmpresa,
   temDadosSalvos,
+  respostasIniciais,
+  proporcaoInicial,
+  subatividadeServicoInicial,
+  subatividadeComercioInicial,
   onRestaurarDados,
+  onLimparCompleto,
   onSalvarDiagnostico,
   salvando = false,
   salvoFeedback = false,
@@ -196,26 +207,68 @@ export function ConteudoModulo7Diagnostico({
     return dadosEmpresa ? mapearDadosEmpresaParaRespostasModulo7(dadosEmpresa) : {}
   }, [dadosEmpresa])
 
+  // Flag que sinaliza quando o usuário clicou explicitamente em 'Limpar'
+  const [foiLimpoManualmente, setFoiLimpoManualmente] = useState(false)
+
   // Rastreia se o campo específico foi alterado localmente pelo usuário
   const [camposEditadosLocalmente, setCamposEditadosLocalmente] = useState<Record<string, boolean>>(
     {},
   )
 
-  const [respostas, setRespostas] = useState<Record<string, string>>(respostasPreenchidas)
+  const [respostas, setRespostas] = useState<Record<string, string>>(() => {
+    if (respostasIniciais && Object.keys(respostasIniciais).length > 0) {
+      return respostasIniciais
+    }
+    return respostasPreenchidas
+  })
   const [laudoGerado, setLaudoGerado] = useState(false)
 
   // Estado complementar de proporção e subatividades quando a1_atividade === 'atividade_mista'
-  const [proporcaoServicoMisto, setProporcaoServicoMisto] = useState<number>(50)
-  const [subatividadeServicoMisto, setSubatividadeServicoMisto] =
-    useState<SubatividadeServico>('servico_comum')
-  const [subatividadeComercioMisto, setSubatividadeComercioMisto] =
-    useState<SubatividadeComercio>('varejo_comum')
+  const [proporcaoServicoMisto, setProporcaoServicoMisto] = useState<number>(() => {
+    if (proporcaoInicial !== undefined) return proporcaoInicial
+    if (dadosEmpresa?.proporcaoServicoMisto !== undefined) return dadosEmpresa.proporcaoServicoMisto
+    return 50
+  })
+  const [subatividadeServicoMisto, setSubatividadeServicoMisto] = useState<SubatividadeServico>(
+    () => {
+      if (subatividadeServicoInicial) return subatividadeServicoInicial
+      if (dadosEmpresa?.subatividadeServico) return dadosEmpresa.subatividadeServico
+      return 'servico_comum'
+    },
+  )
+  const [subatividadeComercioMisto, setSubatividadeComercioMisto] = useState<SubatividadeComercio>(
+    () => {
+      if (subatividadeComercioInicial) return subatividadeComercioInicial
+      if (dadosEmpresa?.subatividadeComercio) return dadosEmpresa.subatividadeComercio
+      return 'varejo_comum'
+    },
+  )
 
-  // Quando os dados da empresa forem carregados inicialmente, se o usuário não alterou manualmente
+  // Se respostas salvas no backend forem carregadas após a montagem
   useEffect(() => {
+    if (foiLimpoManualmente) return
+    if (respostasIniciais && Object.keys(respostasIniciais).length > 0) {
+      setRespostas(respostasIniciais)
+      if (proporcaoInicial !== undefined) setProporcaoServicoMisto(proporcaoInicial)
+      if (subatividadeServicoInicial) setSubatividadeServicoMisto(subatividadeServicoInicial)
+      if (subatividadeComercioInicial) setSubatividadeComercioMisto(subatividadeComercioInicial)
+    }
+  }, [
+    respostasIniciais,
+    proporcaoInicial,
+    subatividadeServicoInicial,
+    subatividadeComercioInicial,
+    foiLimpoManualmente,
+  ])
+
+  // Quando os dados da empresa forem carregados inicialmente, se o usuário não alterou manualmente nem limpou
+  useEffect(() => {
+    if (foiLimpoManualmente) return
+    if (respostasIniciais && Object.keys(respostasIniciais).length > 0) return
+
     if (dadosEmpresa && Object.keys(respostasPreenchidas).length > 0) {
       setRespostas((prev) => {
-        // Preserva o que já foi respondido e preenche as que estavam vazias
+        // Se estiver vazio ou preenchido automaticamente, sincroniza
         const mesclado = { ...respostasPreenchidas, ...prev }
         return mesclado
       })
@@ -231,7 +284,7 @@ export function ConteudoModulo7Diagnostico({
         }
       }
     }
-  }, [respostasPreenchidas, dadosEmpresa])
+  }, [respostasPreenchidas, dadosEmpresa, foiLimpoManualmente, respostasIniciais])
 
   const handleSelect = (id: string, valor: string) => {
     setCamposEditadosLocalmente((prev) => ({ ...prev, [id]: true }))
@@ -329,19 +382,43 @@ export function ConteudoModulo7Diagnostico({
     },
   ]
 
-  const reiniciar = () => {
-    if (modo === 'trilha' && dadosEmpresa) {
-      setRespostas(mapearDadosEmpresaParaRespostasModulo7(dadosEmpresa))
+  // Restaura respostas a partir dos dados da empresa cadastrada
+  const restaurarDadosEmpresa = () => {
+    setFoiLimpoManualmente(false)
+    setRespostas(mapearDadosEmpresaParaRespostasModulo7(dadosEmpresa))
+    setCamposEditadosLocalmente({})
+    if (dadosEmpresa?.proporcaoServicoMisto !== undefined) {
+      setProporcaoServicoMisto(dadosEmpresa.proporcaoServicoMisto)
     } else {
-      setRespostas({})
+      setProporcaoServicoMisto(50)
     }
+    if (dadosEmpresa?.subatividadeServico) {
+      setSubatividadeServicoMisto(dadosEmpresa.subatividadeServico)
+    } else {
+      setSubatividadeServicoMisto('servico_comum')
+    }
+    if (dadosEmpresa?.subatividadeComercio) {
+      setSubatividadeComercioMisto(dadosEmpresa.subatividadeComercio)
+    } else {
+      setSubatividadeComercioMisto('varejo_comum')
+    }
+    setLaudoGerado(false)
+    if (onRestaurarDados) {
+      onRestaurarDados()
+    }
+  }
+
+  // Limpa completamente os DOIS blocos (Bloco A e Bloco B), além de laudo e dados salvos no backend
+  const limparTudo = async () => {
+    setFoiLimpoManualmente(true)
+    setRespostas({})
     setCamposEditadosLocalmente({})
     setProporcaoServicoMisto(50)
     setSubatividadeServicoMisto('servico_comum')
     setSubatividadeComercioMisto('varejo_comum')
     setLaudoGerado(false)
-    if (onRestaurarDados) {
-      onRestaurarDados()
+    if (onLimparCompleto) {
+      await onLimparCompleto()
     }
   }
 
@@ -394,7 +471,7 @@ export function ConteudoModulo7Diagnostico({
               type="button"
               variant="outline"
               size="sm"
-              onClick={reiniciar}
+              onClick={restaurarDadosEmpresa}
               className="text-xs text-slate-700 hover:text-slate-900 border-slate-300 gap-1.5 h-9"
             >
               <RotateCcw className="w-3.5 h-3.5 text-[#D4AF37]" />
@@ -673,8 +750,9 @@ export function ConteudoModulo7Diagnostico({
             {Object.keys(respostas).length > 0 && (
               <button
                 type="button"
-                onClick={reiniciar}
+                onClick={limparTudo}
                 className="px-4 py-3 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                title="Limpar todos os campos dos Blocos A e B e laudo"
               >
                 Limpar
               </button>
