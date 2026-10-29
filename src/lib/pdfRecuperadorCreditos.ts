@@ -304,24 +304,24 @@ export function gerarParecerRecuperadorPDF(options: GerarPdfRecuperadorOptions):
   doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
   doc.text('DISTRIBUIÇÃO DOS CRÉDITOS APURADOS', margin + 4, currentY + 6)
 
-  doc.setFontSize(7.5)
+  doc.setFontSize(7)
   doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
   doc.setFont('helvetica', 'bold')
-  doc.text('Por Bloco de Tributo:', margin + 4, currentY + 13)
+  doc.text('Por Bloco de Tributo:', margin + 4, currentY + 11.5)
   doc.setFont('helvetica', 'normal')
   doc.text(
-    `PIS/COFINS: ${formatarMoeda(resultados.totalPisCofinsCorrigido)}  |  Folha & Previdenciário: ${formatarMoeda(resultados.totalFolhaCorrigido)}`,
-    margin + 36,
-    currentY + 13,
+    `PIS/COFINS: ${formatarMoeda(resultados.totalPisCofinsCorrigido)}  |  Folha/INSS: ${formatarMoeda(resultados.totalFolhaCorrigido)}  |  IRPJ/CSLL: ${formatarMoeda(resultados.totalIrpjCsllCorrigido || 0)}  |  ICMS/ISS/Outros: ${formatarMoeda(resultados.totalOutrosTributosCorrigido || 0)}`,
+    margin + 33,
+    currentY + 11.5,
   )
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Por Farol de Risco:', margin + 4, currentY + 17.5)
+  doc.text('Por Farol de Risco:', margin + 4, currentY + 16.5)
   doc.setFont('helvetica', 'normal')
   doc.text(
     `Verde (Baixo Risco): ${formatarMoeda(resultados.totalVerdeCorrigido)}  |  Amarelo (Risco Moderado): ${formatarMoeda(resultados.totalAmareloCorrigido)}  |  Vermelho (Alto Risco): ${formatarMoeda(resultados.totalVermelhoCorrigido)}`,
-    margin + 36,
-    currentY + 17.5,
+    margin + 33,
+    currentY + 16.5,
   )
 
   currentY += 26
@@ -443,6 +443,174 @@ export function gerarParecerRecuperadorPDF(options: GerarPdfRecuperadorOptions):
     currentY += 6
 
     tesesFolha.forEach((t, idx) => {
+      verificarQuebraPagina(7)
+
+      doc.setFillColor(
+        idx % 2 === 0 ? 255 : 248,
+        idx % 2 === 0 ? 255 : 250,
+        idx % 2 === 0 ? 255 : 252,
+      )
+      doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+      doc.rect(margin, currentY, contentWidth, 6.2, 'FD')
+
+      doc.setFont('helvetica', t.ativa ? 'bold' : 'normal')
+      doc.setFontSize(6.8)
+      doc.setTextColor(
+        t.ativa ? COR_TEXTO[0] : COR_MUTED[0],
+        t.ativa ? COR_TEXTO[1] : COR_MUTED[1],
+        t.ativa ? COR_TEXTO[2] : COR_MUTED[2],
+      )
+
+      const titTrunc = t.titulo.length > 52 ? t.titulo.slice(0, 50) + '...' : t.titulo
+      doc.text(titTrunc, margin + 3, currentY + 4.2)
+
+      // Farol
+      doc.setFont('helvetica', 'bold')
+      if (t.farol === 'verde') {
+        doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
+        doc.text('VERDE', margin + 98, currentY + 4.2)
+      } else if (t.farol === 'amarelo') {
+        doc.setTextColor(COR_AMBER[0], COR_AMBER[1], COR_AMBER[2])
+        doc.text('AMARELO', margin + 98, currentY + 4.2)
+      } else {
+        doc.setTextColor(COR_ROSE[0], COR_ROSE[1], COR_ROSE[2])
+        doc.text('VERMELHO', margin + 98, currentY + 4.2)
+      }
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(6.8)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      doc.text(formatarMoeda(t.valorOriginalTotal), margin + 116, currentY + 4.2)
+      doc.text(formatarMoeda(t.correcaoSelicTotal), margin + 140, currentY + 4.2)
+
+      doc.setFont('helvetica', 'bold')
+      doc.text(formatarMoeda(t.totalCorrigido), margin + 164, currentY + 4.2)
+
+      currentY += 6.2
+    })
+
+    currentY += 8
+  }
+
+  // ==========================================
+  // BLOCO 6: DETALHAMENTO DAS TESES DE IRPJ & CSLL
+  // ==========================================
+  const tesesIrpjCsll = resultados.resultadosTeses.filter((t) => t.modulo === 'irpj_csll')
+
+  if (tesesIrpjCsll.length > 0) {
+    verificarQuebraPagina(50)
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9.5)
+    doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.text(
+      `BLOCO 3 • CRÉDITOS DE IRPJ & CSLL (DIRETOS FEDERAIS - LUCRO REAL E PRESUMIDO)`,
+      margin,
+      currentY,
+    )
+
+    currentY += 4
+
+    // Tabela IRPJ/CSLL
+    doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.rect(margin, currentY, contentWidth, 6, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(6.8)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tese IRPJ/CSLL & Fundamento Vinculante', margin + 3, currentY + 4.2)
+    doc.text('Farol', margin + 98, currentY + 4.2)
+    doc.text('Valor Original', margin + 116, currentY + 4.2)
+    doc.text('Correção SELIC', margin + 140, currentY + 4.2)
+    doc.text('Total Corrigido', margin + 164, currentY + 4.2)
+
+    currentY += 6
+
+    tesesIrpjCsll.forEach((t, idx) => {
+      verificarQuebraPagina(7)
+
+      doc.setFillColor(
+        idx % 2 === 0 ? 255 : 248,
+        idx % 2 === 0 ? 255 : 250,
+        idx % 2 === 0 ? 255 : 252,
+      )
+      doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+      doc.rect(margin, currentY, contentWidth, 6.2, 'FD')
+
+      doc.setFont('helvetica', t.ativa ? 'bold' : 'normal')
+      doc.setFontSize(6.8)
+      doc.setTextColor(
+        t.ativa ? COR_TEXTO[0] : COR_MUTED[0],
+        t.ativa ? COR_TEXTO[1] : COR_MUTED[1],
+        t.ativa ? COR_TEXTO[2] : COR_MUTED[2],
+      )
+
+      const titTrunc = t.titulo.length > 52 ? t.titulo.slice(0, 50) + '...' : t.titulo
+      doc.text(titTrunc, margin + 3, currentY + 4.2)
+
+      // Farol
+      doc.setFont('helvetica', 'bold')
+      if (t.farol === 'verde') {
+        doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
+        doc.text('VERDE', margin + 98, currentY + 4.2)
+      } else if (t.farol === 'amarelo') {
+        doc.setTextColor(COR_AMBER[0], COR_AMBER[1], COR_AMBER[2])
+        doc.text('AMARELO', margin + 98, currentY + 4.2)
+      } else {
+        doc.setTextColor(COR_ROSE[0], COR_ROSE[1], COR_ROSE[2])
+        doc.text('VERMELHO', margin + 98, currentY + 4.2)
+      }
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(6.8)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      doc.text(formatarMoeda(t.valorOriginalTotal), margin + 116, currentY + 4.2)
+      doc.text(formatarMoeda(t.correcaoSelicTotal), margin + 140, currentY + 4.2)
+
+      doc.setFont('helvetica', 'bold')
+      doc.text(formatarMoeda(t.totalCorrigido), margin + 164, currentY + 4.2)
+
+      currentY += 6.2
+    })
+
+    currentY += 8
+  }
+
+  // ==========================================
+  // BLOCO 7: DETALHAMENTO DAS TESES DE ICMS, ISS & ITCMD
+  // ==========================================
+  const tesesOutrosTributos = resultados.resultadosTeses.filter(
+    (t) => t.modulo === 'outros_tributos',
+  )
+
+  if (tesesOutrosTributos.length > 0) {
+    verificarQuebraPagina(50)
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9.5)
+    doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.text(
+      `BLOCO 4 • CRÉDITOS DE ICMS, ISS & ITCMD (ESTADUAIS, MUNICIPAIS & PATRIMONIAIS)`,
+      margin,
+      currentY,
+    )
+
+    currentY += 4
+
+    // Tabela ICMS/ISS/ITCMD
+    doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.rect(margin, currentY, contentWidth, 6, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(6.8)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tese Estadual / Municipal & Fundamento', margin + 3, currentY + 4.2)
+    doc.text('Farol', margin + 98, currentY + 4.2)
+    doc.text('Valor Original', margin + 116, currentY + 4.2)
+    doc.text('Correção SELIC', margin + 140, currentY + 4.2)
+    doc.text('Total Corrigido', margin + 164, currentY + 4.2)
+
+    currentY += 6
+
+    tesesOutrosTributos.forEach((t, idx) => {
       verificarQuebraPagina(7)
 
       doc.setFillColor(

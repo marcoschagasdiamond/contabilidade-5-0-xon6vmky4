@@ -289,6 +289,72 @@ export default function ModuloDashboardRecuperador({
                     % do total
                   </span>
                 </div>
+
+                <div>
+                  <div className="flex justify-between font-bold text-slate-700 mb-1">
+                    <span>IRPJ & CSLL (Diretos Federais / Lucro Presumido e Real)</span>
+                    <span className="font-mono text-[#07132B]">
+                      {formatarMoeda(resultados.totalIrpjCsllCorrigido || 0)}
+                    </span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className="h-full bg-indigo-600 rounded-full"
+                      style={{
+                        width: `${
+                          resultados.totalIntegralCorrigido > 0
+                            ? ((resultados.totalIrpjCsllCorrigido || 0) /
+                                resultados.totalIntegralCorrigido) *
+                              100
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400 mt-0.5 block text-right font-mono">
+                    {resultados.totalIntegralCorrigido > 0
+                      ? (
+                          ((resultados.totalIrpjCsllCorrigido || 0) /
+                            resultados.totalIntegralCorrigido) *
+                          100
+                        ).toFixed(1)
+                      : 0}
+                    % do total
+                  </span>
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-bold text-slate-700 mb-1">
+                    <span>ICMS, ISS & ITCMD (Estaduais e Municipais)</span>
+                    <span className="font-mono text-[#07132B]">
+                      {formatarMoeda(resultados.totalOutrosTributosCorrigido || 0)}
+                    </span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className="h-full bg-cyan-600 rounded-full"
+                      style={{
+                        width: `${
+                          resultados.totalIntegralCorrigido > 0
+                            ? ((resultados.totalOutrosTributosCorrigido || 0) /
+                                resultados.totalIntegralCorrigido) *
+                              100
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400 mt-0.5 block text-right font-mono">
+                    {resultados.totalIntegralCorrigido > 0
+                      ? (
+                          ((resultados.totalOutrosTributosCorrigido || 0) /
+                            resultados.totalIntegralCorrigido) *
+                          100
+                        ).toFixed(1)
+                      : 0}
+                    % do total
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -406,7 +472,13 @@ export default function ModuloDashboardRecuperador({
                         </span>
                       </td>
                       <td className="py-2.5 px-3 font-semibold text-slate-600">
-                        {tese.modulo === 'pis_cofins' ? 'PIS/COFINS' : 'Folha/INSS'}
+                        {tese.modulo === 'pis_cofins'
+                          ? 'PIS/COFINS'
+                          : tese.modulo === 'folha'
+                            ? 'Folha/INSS'
+                            : tese.modulo === 'irpj_csll'
+                              ? 'IRPJ/CSLL'
+                              : 'ICMS/ISS/Outros'}
                       </td>
                       <td className="py-2.5 px-3 text-center">
                         <span

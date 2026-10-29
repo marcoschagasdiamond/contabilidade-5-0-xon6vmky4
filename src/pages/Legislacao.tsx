@@ -149,6 +149,11 @@ export default function Legislacao() {
       linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=118',
       teseRecuperadorId: 'tese_pis_iss_servicos',
       moduloAbaRecuperador: 'pis_cofins',
+      etiquetas: {
+        tributos: ['PIS/Cofins', 'ISS'],
+        segmentos: ['Serviços', 'Saúde', 'Educação', 'Tecnologia', 'Construção Civil'],
+        regimes: ['Lucro Real', 'Lucro Presumido'],
+      },
       ementa:
         'Recurso Extraordinário 592.616 (Tema 118 da Repercussão Geral): o ISSQN destacado na nota de prestação de serviços não compõe o faturamento nem a receita bruta da empresa prestadora, não podendo compor a base de cálculo da contribuição ao PIS/Pasep e da Cofins.',
       ano: 2026,
@@ -166,6 +171,11 @@ export default function Legislacao() {
       linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=69',
       teseRecuperadorId: 'tese_pis_icms_base',
       moduloAbaRecuperador: 'pis_cofins',
+      etiquetas: {
+        tributos: ['PIS/Cofins', 'ICMS'],
+        segmentos: ['Comércio', 'Indústria', 'Agro', 'Transporte', 'Bares e Restaurantes'],
+        regimes: ['Lucro Real', 'Lucro Presumido'],
+      },
       ementa:
         'Recurso Extraordinário 574.706 e RE 594.339 (Tema 69 RG): o valor arrecadado a título de ICMS não se incorpora ao patrimônio do contribuinte e não consubstancia faturamento, motivo pelo qual é inconstitucional a sua inclusão na base de incidência do PIS e da Cofins.',
       ano: 2021,
@@ -183,7 +193,12 @@ export default function Legislacao() {
       linkOficial:
         'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1182&cod_tema_final=1182',
       teseRecuperadorId: 'tese_pis_subvencao_icms',
-      moduloAbaRecuperador: 'icms',
+      moduloAbaRecuperador: 'pis_cofins',
+      etiquetas: {
+        tributos: ['ICMS', 'PIS/Cofins', 'IRPJ', 'CSLL'],
+        segmentos: ['Comércio', 'Indústria', 'Agro', 'Transporte', 'Bares e Restaurantes'],
+        regimes: ['Lucro Real'],
+      },
       ementa:
         'Tema Repetitivo 1.182 do Superior Tribunal de Justiça: impossibilidade de exigência de demonstração prévia de concessão de estímulo à implantação/expansão de empreendimento para fruição da exclusão de benefícios de ICMS das bases de tributos federais.',
       ano: 2023,
@@ -201,6 +216,11 @@ export default function Legislacao() {
         'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=77&cod_tema_final=77',
       teseRecuperadorId: 'tese_pis_insumos_presumido',
       moduloAbaRecuperador: 'pis_cofins',
+      etiquetas: {
+        tributos: ['IPI'],
+        segmentos: ['Indústria'],
+        regimes: ['Lucro Real', 'Lucro Presumido'],
+      },
       ementa:
         'Recurso Especial 1.075.508/SC julgado sob a sistemática do art. 543-C do CPC (Tema 77/STJ): é legítimo o creditamento de IPI na entrada de insumos aplicados em produtos desonerados ou à alíquota zero.',
       ano: 2009,
@@ -218,6 +238,19 @@ export default function Legislacao() {
       linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=959',
       teseRecuperadorId: 'tese_folha_icms_base_inss_tema_959',
       moduloAbaRecuperador: 'folha',
+      etiquetas: {
+        tributos: ['INSS', 'ICMS'],
+        segmentos: [
+          'Comércio',
+          'Indústria',
+          'Agro',
+          'Transporte',
+          'Bares e Restaurantes',
+          'Construção Civil',
+          'Tecnologia',
+        ],
+        regimes: ['Lucro Real', 'Lucro Presumido'],
+      },
       ementa:
         'Recurso Extraordinário 1.187.264/SP (Tema 959 RG): é inconstitucional a inclusão do Imposto sobre Circulação de Mercadorias e Serviços (ICMS) na base de cálculo da Contribuição Previdenciária sobre a Receita Bruta (CPRB).',
       ano: 2021,
@@ -236,6 +269,11 @@ export default function Legislacao() {
         'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1079&cod_tema_final=1079',
       teseRecuperadorId: 'tese_folha_salario_educacao_fapi',
       moduloAbaRecuperador: 'folha',
+      etiquetas: {
+        tributos: ['INSS'],
+        segmentos: ['Todos'],
+        regimes: ['Lucro Real', 'Lucro Presumido'],
+      },
       ementa:
         'Tema Repetitivo 1.079 do STJ e REsp 1.570.980: discussão sobre o limite de 20 salários mínimos aplicável à base de cálculo das contribuições parafiscais arrecadadas por conta de terceiros (Salário-Educação, FAPI e Sistema S).',
       ano: 2024,
@@ -253,9 +291,196 @@ export default function Legislacao() {
       linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=1023',
       teseRecuperadorId: 'tese_pis_juros_capital_proprio',
       moduloAbaRecuperador: 'pis_cofins',
+      etiquetas: {
+        tributos: ['PIS/Cofins'],
+        segmentos: ['Todos'],
+        regimes: ['Lucro Real', 'Lucro Presumido'],
+      },
       ementa:
         'Recurso Extraordinário 1.072.485 (Tema 1023 RG): análise constitucional da exigência de PIS e Cofins sobre receitas financeiras e patrimoniais decorrentes de Juros sobre Capital Próprio nos termos da Lei 9.249/1995.',
       ano: 2023,
+    },
+    // --- 4 NOVAS TESES DE IRPJ & CSLL ---
+    {
+      id: 'tese-stj-tema-1008-icms-irpj',
+      tributo: 'IRPJ/CSLL',
+      tribunal: 'STJ',
+      teseNumero: 'Tema 1.008 / STJ (REsp 1.767.631/SC)',
+      dataJulgamento: '18/05/2023',
+      resumo:
+        'Exclusão do ICMS da base do IRPJ e da CSLL no Lucro Presumido: o ICMS destacado nas notas fiscais não integra a receita bruta operacional utilizada no cálculo da presunção (8%, 16% ou 32%), estendendo a lógica pacificada na Tese do Século (Tema 69/STF).',
+      impactoEconomico:
+        'Empresas comerciais, industriais e de transporte tributadas pelo Lucro Presumido.',
+      linkOficial:
+        'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1008&cod_tema_final=1008',
+      teseRecuperadorId: 'tese_irpj_csll_exclusao_icms_presumido',
+      moduloAbaRecuperador: 'irpj_csll',
+      etiquetas: {
+        tributos: ['IRPJ', 'CSLL', 'ICMS'],
+        segmentos: ['Comércio', 'Indústria', 'Agro', 'Transporte', 'Bares e Restaurantes'],
+        regimes: ['Lucro Presumido'],
+      },
+      ementa:
+        'Recurso Especial 1.767.631/SC e 1.772.472/RS julgados sob a sistemática de recursos repetitivos (Tema 1.008 do STJ): o ICMS destacado nas notas fiscais não compõe a receita bruta operacional para cálculo da presunção do IRPJ e da CSLL.',
+      ano: 2023,
+    },
+    {
+      id: 'tese-stj-resp-1839814-iss-irpj',
+      tributo: 'IRPJ/CSLL',
+      tribunal: 'STJ',
+      teseNumero: 'REsp 1.839.814/PR / STJ (Exclusão do ISS da Presunção)',
+      dataJulgamento: '22/08/2023',
+      resumo:
+        'Exclusão do ISS da base de cálculo do IRPJ e da CSLL no Lucro Presumido: por simetria com o Tema 118/STF, o imposto municipal não constitui receita própria do prestador e deve ser excluído da presunção de 32%.',
+      impactoEconomico:
+        'Sociedades prestadoras de serviços, tecnologia, clínicas e engenharia no Lucro Presumido.',
+      linkOficial:
+        'https://processo.stj.jus.br/jurisprudencia/externo/informativo/?aplicacao=informativo&acao=pesquisar&livre=1839814',
+      teseRecuperadorId: 'tese_irpj_csll_exclusao_iss_presumido',
+      moduloAbaRecuperador: 'irpj_csll',
+      etiquetas: {
+        tributos: ['IRPJ', 'CSLL', 'ISS'],
+        segmentos: ['Serviços', 'Saúde', 'Educação', 'Tecnologia', 'Construção Civil'],
+        regimes: ['Lucro Presumido'],
+      },
+      ementa:
+        'REsp 1.839.814/PR: o ISS não integra a receita bruta de serviços utilizada para a aplicação dos percentuais de presunção do IRPJ e da CSLL no Lucro Presumido, consoante diretrizes do STF no RE 592.616.',
+      ano: 2023,
+    },
+    {
+      id: 'tese-stj-eresp-1517492-credito-presumido',
+      tributo: 'IRPJ/CSLL',
+      tribunal: 'STJ',
+      teseNumero: 'EREsp 1.517.492/PR (1ª Seção STJ) • Crédito Presumido de ICMS',
+      dataJulgamento: '01/02/2020',
+      resumo:
+        'Não incidência de IRPJ e CSLL sobre créditos presumidos de ICMS: incentivos fiscais outorgados pelos Estados constituem renúncia de receita estadual para fomento, sendo vedada sua tributação pela União (imunidade federativa e art. 30 da Lei 12.973/2014).',
+      impactoEconomico:
+        'Indústrias, atacadistas e agroindústrias tributadas pelo Lucro Real com incentivos estaduais.',
+      linkOficial:
+        'https://processo.stj.jus.br/jurisprudencia/externo/informativo/?aplicacao=informativo&acao=pesquisar&livre=1517492',
+      teseRecuperadorId: 'tese_irpj_csll_credito_presumido_icms',
+      moduloAbaRecuperador: 'irpj_csll',
+      etiquetas: {
+        tributos: ['IRPJ', 'CSLL', 'ICMS'],
+        segmentos: ['Comércio', 'Indústria', 'Agro', 'Transporte', 'Bares e Restaurantes'],
+        regimes: ['Lucro Real'],
+      },
+      ementa:
+        'EREsp 1.517.492/PR pacificado na 1ª Seção do STJ: a tributação de créditos presumidos de ICMS por IRPJ e CSLL viola o pacto federativo, inexistindo receita nova tributável.',
+      ano: 2020,
+    },
+    {
+      id: 'tese-stf-tema-962-re-1063187',
+      tributo: 'IRPJ/CSLL',
+      tribunal: 'STF',
+      teseNumero: 'Tema 962 / STF (RE 1.063.187 RG) • SELIC na Repetição',
+      dataJulgamento: '24/09/2021',
+      resumo:
+        'Não incidência de IRPJ e CSLL sobre taxa SELIC recebida na repetição de indébito tributário: os juros de mora têm natureza indenizatória contra danos emergentes e não representam acréscimo patrimonial.',
+      impactoEconomico:
+        'Todas as pessoas jurídicas no Lucro Real ou Lucro Presumido que recuperaram ou compensaram tributos via PER/DCOMP ou ação judicial.',
+      linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=962',
+      teseRecuperadorId: 'tese_irpj_csll_selic_repeticao',
+      moduloAbaRecuperador: 'irpj_csll',
+      etiquetas: {
+        tributos: ['IRPJ', 'CSLL'],
+        segmentos: ['Todos'],
+        regimes: ['Lucro Real', 'Lucro Presumido'],
+      },
+      ementa:
+        'Recurso Extraordinário 1.063.187/SC (Tema 962 RG): é inconstitucional a incidência do IRPJ e da CSLL sobre os valores atinentes à taxa SELIC recebidos em razão de repetição de indébito tributário.',
+      ano: 2021,
+    },
+    // --- 4 NOVAS TESES DE ICMS, ISS & ITCMD ---
+    {
+      id: 'tese-stj-tema-1109-icms-energia',
+      tributo: 'ICMS',
+      tribunal: 'STJ',
+      teseNumero: 'LC 87/96 art. 33 & Tema 1.109 / STJ • ICMS Energia Elétrica Fabril',
+      dataJulgamento: '15/12/2022',
+      resumo:
+        'Direito ao creditamento de ICMS sobre a energia elétrica e telecomunicações consumidas em processos industriais e produtivos fabris, comprovado mediante laudo técnico de rateio de consumo.',
+      impactoEconomico:
+        'Indústrias de transformação, plantas fabris, data centers e telecomunicação no Lucro Real/Presumido.',
+      linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp87.htm',
+      teseRecuperadorId: 'tese_icms_energia_eletrica_comunicacao',
+      moduloAbaRecuperador: 'outros_tributos',
+      etiquetas: {
+        tributos: ['ICMS'],
+        segmentos: ['Indústria', 'Tecnologia'],
+        regimes: ['Lucro Real', 'Lucro Presumido'],
+      },
+      ementa:
+        'Lei Complementar nº 87/1996 art. 33, II e jurisprudência vinculante do STJ (Tema 1.109): assegura o aproveitamento de créditos de ICMS na entrada de energia consumida no processo de industrialização.',
+      ano: 2022,
+    },
+    {
+      id: 'tese-stf-tema-201-re-593849',
+      tributo: 'ICMS',
+      tribunal: 'STF',
+      teseNumero: 'Tema 201 / STF (RE 593.849 RG) • ICMS-ST Pago a Maior',
+      dataJulgamento: '19/10/2016',
+      resumo:
+        'Restituição da diferença de ICMS recolhido antecipadamente por substituição tributária (ICMS-ST) quando a base de cálculo real praticada na venda ao consumidor final for menor que a margem presumida pelo Fisco.',
+      impactoEconomico:
+        'Comércio varejista, atacadista, distribuidores, farmácias, autopeças, alimentos e postos de combustível.',
+      linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=201',
+      teseRecuperadorId: 'tese_icms_st_restituicao_base_efetiva',
+      moduloAbaRecuperador: 'outros_tributos',
+      etiquetas: {
+        tributos: ['ICMS'],
+        segmentos: ['Comércio', 'Indústria', 'Bares e Restaurantes'],
+        regimes: ['Lucro Real', 'Lucro Presumido'],
+      },
+      ementa:
+        'Recurso Extraordinário 593.849/MG (Tema 201 RG): é devida a restituição da diferença do ICMS pago a mais no regime de substituição tributária para frente se a base de cálculo efetiva da operação for inferior à presumida.',
+      ano: 2016,
+    },
+    {
+      id: 'tese-stf-tema-918-iss-uniprofissional',
+      tributo: 'ISS',
+      tribunal: 'STF',
+      teseNumero: 'Tema 918 / STF (RE 940.769 RG) • ISS Sociedades Uniprofissionais',
+      dataJulgamento: '24/04/2019',
+      resumo:
+        'Enquadramento e manutenção do ISS fixo anual por profissional habilitado (médicos, advogados, engenheiros, contadores) com base no art. 9º do Decreto-Lei 406/1968, afastando a cobrança percentual de 2% a 5% sobre a receita bruta.',
+      impactoEconomico:
+        'Sociedades simples e uniprofissionais de prestação de serviços regulamentados (médicos, clínicas, advogados, contadores).',
+      linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=918',
+      teseRecuperadorId: 'tese_iss_sociedades_uniprofissionais',
+      moduloAbaRecuperador: 'outros_tributos',
+      etiquetas: {
+        tributos: ['ISS'],
+        segmentos: ['Serviços', 'Saúde'],
+        regimes: ['Lucro Real', 'Lucro Presumido'],
+      },
+      ementa:
+        'Recurso Extraordinário 940.769 (Tema 918 RG): é inconstitucional lei municipal que desconsidera o regime especial de recolhimento de ISS em valor fixo anual para sociedades uniprofissionais previsto no Decreto-Lei 406/1968.',
+      ano: 2019,
+    },
+    {
+      id: 'tese-stf-tema-851-re-851108',
+      tributo: 'ITCMD',
+      tribunal: 'STF',
+      teseNumero: 'Tema 851 / STF (RE 851.108 RG) • ITCMD Doações e Bens no Exterior',
+      dataJulgamento: '01/03/2021',
+      resumo:
+        'Inconstitucionalidade da cobrança de ITCMD pelos Estados sobre heranças ou doações do exterior antes da vigência de Lei Complementar Federal (CF/88 art. 155, § 1º, III). Restituição dos pagamentos indevidos dos últimos 5 anos com taxa SELIC.',
+      impactoEconomico:
+        'Famílias e sócios empresários com estruturas de holding, trusts, heranças ou doações patrimoniais transfronteiriças (aplicável a todos os regimes).',
+      linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=851',
+      teseRecuperadorId: 'tese_itcmd_planejamento_doacoes_exterior',
+      moduloAbaRecuperador: 'outros_tributos',
+      etiquetas: {
+        tributos: ['ITCMD'],
+        segmentos: ['Todos'],
+        regimes: ['Todos'],
+      },
+      ementa:
+        'Recurso Extraordinário 851.108/SP (Tema 851 RG): os Estados da Federação e o Distrito Federal não possuem competência legislativa plena para exigir ITCMD sobre bens situados no exterior ou quando o doador/de cujus tiver domicílio ou residência no exterior na ausência de lei complementar federal.',
+      ano: 2021,
+      alertaPrazo: 'Eficácia erga omnes pacificada',
     },
   ]
 
@@ -944,6 +1169,11 @@ export default function Legislacao() {
                         <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-100 text-slate-700 border border-slate-200">
                           {tese.tribunal}
                         </span>
+                        {tese.alertaPrazo && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-800 border border-amber-300">
+                            {tese.alertaPrazo}
+                          </span>
+                        )}
                       </div>
                       <span className="text-xs font-mono font-bold text-slate-500">
                         Julgamento: {tese.dataJulgamento}
@@ -959,6 +1189,38 @@ export default function Legislacao() {
                       </p>
                     </div>
 
+                    {tese.etiquetas && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {tese.etiquetas.regimes &&
+                          tese.etiquetas.regimes.map((reg, idx) => (
+                            <span
+                              key={`reg-${idx}`}
+                              className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            >
+                              Regime: {reg}
+                            </span>
+                          ))}
+                        {tese.etiquetas.segmentos &&
+                          tese.etiquetas.segmentos.slice(0, 3).map((seg, idx) => (
+                            <span
+                              key={`seg-${idx}`}
+                              className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-sky-50 text-sky-800 border border-sky-200"
+                            >
+                              {seg}
+                            </span>
+                          ))}
+                        {tese.etiquetas.tributos &&
+                          tese.etiquetas.tributos.map((trib, idx) => (
+                            <span
+                              key={`trib-${idx}`}
+                              className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-100 text-slate-700 border border-slate-200"
+                            >
+                              {trib}
+                            </span>
+                          ))}
+                      </div>
+                    )}
+
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
                       <span className="text-[10px] font-mono uppercase font-bold text-slate-500 block">
                         Resumo da Tese:
@@ -971,12 +1233,14 @@ export default function Legislacao() {
 
                   <div className="space-y-3 pt-3 border-t border-slate-100">
                     <div className="flex items-center justify-between text-xs flex-wrap gap-2">
-                      <Link
-                        to={`/recuperador-creditos?modulo=${encodeURIComponent(tese.moduloAbaRecuperador)}&tese=${encodeURIComponent(tese.teseRecuperadorId)}`}
-                        className="font-heading font-bold text-xs text-[#07132B] hover:text-[#D4AF37] bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50 transition-colors"
-                      >
-                        Recuperar este crédito →
-                      </Link>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          to={`/recuperador-creditos?aba=${encodeURIComponent(tese.moduloAbaRecuperador)}&modulo=${encodeURIComponent(tese.moduloAbaRecuperador)}&tese=${encodeURIComponent(tese.teseRecuperadorId)}`}
+                          className="font-heading font-bold text-xs text-[#07132B] hover:text-[#D4AF37] bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50 transition-colors"
+                        >
+                          Recuperar este crédito →
+                        </Link>
+                      </div>
 
                       <a
                         href={tese.linkOficial}

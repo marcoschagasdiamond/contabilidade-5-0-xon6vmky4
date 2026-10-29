@@ -252,17 +252,19 @@ export default function RecuperadorCreditos() {
   )
 
   const [moduloAtivo, setModuloAtivo] = useState<ModuloRecuperadorId>(() => {
+    const abaParam = searchParams.get('aba')
     const moduloParam = searchParams.get('modulo')
+    const paramEfetivo = abaParam || moduloParam
     if (
-      moduloParam === 'configuracoes' ||
-      moduloParam === 'pis_cofins' ||
-      moduloParam === 'folha' ||
-      moduloParam === 'irpj_csll' ||
-      moduloParam === 'outros_tributos' ||
-      moduloParam === 'apuracao_selic' ||
-      moduloParam === 'dashboard'
+      paramEfetivo === 'configuracoes' ||
+      paramEfetivo === 'pis_cofins' ||
+      paramEfetivo === 'folha' ||
+      paramEfetivo === 'irpj_csll' ||
+      paramEfetivo === 'outros_tributos' ||
+      paramEfetivo === 'apuracao_selic' ||
+      paramEfetivo === 'dashboard'
     ) {
-      return moduloParam
+      return paramEfetivo
     }
     const teseParam = searchParams.get('tese')
     if (teseParam) {
@@ -345,24 +347,26 @@ export default function RecuperadorCreditos() {
     recarregarSimulacoes()
   }, [user?.id])
 
-  // Trata deep link da tese vindo de /legislacao ou notificações (?modulo=...&tese=...)
+  // Trata deep link da tese vindo de /legislacao ou notificações (?aba=... ou ?modulo=...&tese=...)
   useEffect(() => {
+    const abaParam = searchParams.get('aba')
     const moduloParam = searchParams.get('modulo')
+    const paramEfetivo = abaParam || moduloParam
     if (
-      moduloParam === 'configuracoes' ||
-      moduloParam === 'pis_cofins' ||
-      moduloParam === 'folha' ||
-      moduloParam === 'irpj_csll' ||
-      moduloParam === 'outros_tributos' ||
-      moduloParam === 'apuracao_selic' ||
-      moduloParam === 'dashboard'
+      paramEfetivo === 'configuracoes' ||
+      paramEfetivo === 'pis_cofins' ||
+      paramEfetivo === 'folha' ||
+      paramEfetivo === 'irpj_csll' ||
+      paramEfetivo === 'outros_tributos' ||
+      paramEfetivo === 'apuracao_selic' ||
+      paramEfetivo === 'dashboard'
     ) {
-      setModuloAtivo(moduloParam)
+      setModuloAtivo(paramEfetivo)
     }
 
     const teseParam = searchParams.get('tese')
     if (teseParam) {
-      if (!moduloParam) {
+      if (!paramEfetivo) {
         if (teseParam.startsWith('tese_pis_')) {
           setModuloAtivo('pis_cofins')
         } else if (teseParam.startsWith('tese_folha_')) {

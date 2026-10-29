@@ -175,7 +175,7 @@ export function QuadroTesesContextuaisRecuperador({
                         }}
                         className="text-[11px] font-extrabold text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
                       >
-                        Calcular Tese
+                        Recuperar este crédito
                       </button>
                     )}
                     {tese.linkOficial && (
@@ -185,7 +185,7 @@ export function QuadroTesesContextuaisRecuperador({
                         rel="noreferrer"
                         className="text-[11px] font-bold text-[#D4AF37] hover:underline underline-offset-2"
                       >
-                        Acórdão
+                        Fonte Oficial
                       </a>
                     )}
                   </div>

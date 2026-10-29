@@ -751,5 +751,6 @@ export function calcularRecuperadorCreditos(
     totalVermelhoCorrigido,
     totaisPorAno,
     resultadosTeses,
+    porTese: resultadosTeses,
   }
 }

@@ -20,8 +20,10 @@ export function BlocoOutrosTributosRecuperador({
 }: BlocoOutrosTributosRecuperadorProps) {
   const tesesOutros = teses.filter((t) => t.modulo === 'outros_tributos')
 
+  const listaPorTese = resultados?.porTese ?? resultados?.resultadosTeses ?? []
+
   const totalBloco = tesesOutros.reduce((acc, t) => {
-    const res = resultados?.porTese.find((item) => item.teseId === t.id)
+    const res = listaPorTese.find((item) => item.teseId === t.id)
     return acc + (res?.totalCorrigido || 0)
   }, 0)
 
@@ -64,13 +66,14 @@ export function BlocoOutrosTributosRecuperador({
         {/* LISTAGEM DE TESES DO BLOCO */}
         <div className="mt-5 space-y-4">
           {tesesOutros.map((tese) => {
-            const selecao = tesesConfiguradas[tese.id] || {
+            const selecao: TeseSelecaoUsuario = tesesConfiguradas[tese.id] || {
+              teseId: tese.id,
               ativa: true,
               farol: tese.riscoPadrao,
             }
             const ativa = selecao.ativa ?? true
             const farol = selecao.farol || tese.riscoPadrao
-            const res = resultados?.porTese.find((item) => item.teseId === tese.id)
+            const res = listaPorTese.find((item) => item.teseId === tese.id)
 
             return (
               <div

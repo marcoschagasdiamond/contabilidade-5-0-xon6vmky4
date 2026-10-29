@@ -1078,7 +1078,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   // ==========================================
   // SEÇÃO: LEGISLAÇÃO APLICÁVEL AO CENÁRIO
   // ==========================================
-  verificarQuebraPagina(48)
+  verificarQuebraPagina(60)
 
   doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
   doc.rect(margin, currentY, contentWidth, 6.5, 'F')
@@ -1089,43 +1089,87 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
 
   currentY += 8.5
 
-  // Box com normas específicas do perfil e enquadramento
+  const isIndustria = parametros.tipoAtividade === 'industria'
+  const isServico = parametros.tipoAtividade === 'servico'
+  const regimeAtualStr = String(
+    parametros.regimeAtualEmpresa ||
+      parametros.regimeAtualFiltro ||
+      parametros.configuracoesDiagnostico?.regimeAtual ||
+      '',
+  ).toLowerCase()
+  const isSimples = regimeAtualStr.includes('simples')
+
+  // Teses elegíveis ao regime e segmento simulado
+  const tesesElegiveisPerfil: string[] = []
+
+  if (isSimples) {
+    tesesElegiveisPerfil.push(
+      '• LC nº 123/2006 (Estatuto Nacional da ME e EPP): Apuração em guia única (DAS) e vedações de créditos monofásicos e não cumulativos.',
+      '• STF Tema 851 (RE 851.108): Inconstitucionalidade da exigência de ITCMD sobre bens e doações no exterior.',
+    )
+  } else {
+    // Lucro Real ou Lucro Presumido
+    if (isServico) {
+      tesesElegiveisPerfil.push(
+        '• STF RE 592.616 (Tema 118 RG): Exclusão definitiva do ISS destacado da base de cálculo do PIS/Cofins.',
+        '• STJ REsp 1.839.814/PR: Exclusão do ISS da base de cálculo presumida do IRPJ e da CSLL.',
+      )
+    } else {
+      tesesElegiveisPerfil.push(
+        '• STF RE 574.706 (Tema 69 RG): Exclusão do ICMS destacado da base de cálculo do PIS e da Cofins.',
+        '• STJ Tema 1008 (REsp 1.767.631): Exclusão do ICMS da base presumida de IRPJ/CSLL no Lucro Presumido.',
+      )
+    }
+
+    if (isIndustria) {
+      tesesElegiveisPerfil.push(
+        '• STJ Tema 77 (REsp 1.075.508): Direito ao crédito de IPI na entrada de matérias-primas e insumos desonerados.',
+        '• STJ Tema 1109 (LC 87/96 art. 33): Aproveitamento de crédito de ICMS sobre energia elétrica na industrialização.',
+      )
+    }
+
+    tesesElegiveisPerfil.push(
+      '• STF Tema 959 (RE 1.187.264): Exclusão do ICMS da base do INSS/CPRB patronal.',
+      '• STF Tema 1023 (RE 1.072.485): Exclusão de Juros sobre Capital Próprio (JCP) da base de PIS/Cofins.',
+      '• STF/STJ Tema 1079: Restituição do Salário-Educação e FAPI com teto legal de 20 salários mínimos.',
+      '• STF Tema 962 (RE 1.063.187): Não incidência de IRPJ/CSLL sobre taxa SELIC na repetição de indébito.',
+    )
+  }
+
+  const leisPerfil = [
+    '• EC nº 132/2023 & LC nº 214/2025: Instituição do IBS/CBS e regras de transição não cumulativa.',
+    '• Lei nº 12.973/2014 & RIR Dec. 9.580/2018: Regime de apuração fiscal e convergência contábil.',
+    ...tesesElegiveisPerfil.slice(0, 5),
+  ]
+
+  // Calcula a altura dinâmica do box com base nas linhas formatadas
+  let totalLinhas = 0
+  leisPerfil.forEach((item) => {
+    const l = doc.splitTextToSize(item, contentWidth - 10)
+    totalLinhas += l.length
+  })
+  const boxHeight = Math.max(34, totalLinhas * 4.6 + 8)
+
   doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
   doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-  doc.roundedRect(margin, currentY, contentWidth, 32, 2, 2, 'FD')
+  doc.roundedRect(margin, currentY, contentWidth, boxHeight, 2, 2, 'FD')
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(7.5)
   doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
-  doc.text('Normas Regimentais e Jurisprudência Vinculante Direta:', margin + 4, currentY + 5)
+  doc.text('Normas Regimentais e Teses Judiciais Vinculantes Elegíveis:', margin + 4, currentY + 5)
 
-  // Normas contextualizadas com base no ramo / atividade simulada
-  const isIndustria = parametros.tipoAtividade === 'industria'
-  const isServico = parametros.tipoAtividade === 'servico'
-  const leisPerfil = [
-    '• EC nº 132/2023 & LC nº 214/2025: Instituição do IBS/CBS e regras de transição não cumulativa.',
-    isIndustria
-      ? '• STJ Tema 77 (REsp 1.075.508) & RIPI Dec. 7.212/2010: Direito ao crédito de IPI na entrada de insumos desonerados.'
-      : isServico
-        ? '• STF RE 592.616 (Tema 118 RG): Exclusão definitiva do ISS destacado da base de cálculo do PIS/Cofins.'
-        : '• STF RE 574.706 (Tema 69 RG): Exclusão do ICMS destacado da base de cálculo do PIS/Cofins.',
-    '• Lei nº 12.973/2014 & RIR Dec. 9.580/2018: Regime de IRPJ/CSLL e convergência contábil de apuração.',
-    isIndustria || parametros.tipoAtividade === 'comercio'
-      ? '• STJ Tema 1182 (REsp 1.945.110/RN): Exclusão de créditos presumidos e benefícios de ICMS do PIS/Cofins e IRPJ.'
-      : '• LC nº 116/2003 & LC nº 175/2020: Padrão nacional do ISSQN e transição para o IBS municipal.',
-  ]
-
-  let leiY = currentY + 10
+  let leiY = currentY + 9.5
   leisPerfil.forEach((lei) => {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(6.8)
     doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
     const linhas = doc.splitTextToSize(lei, contentWidth - 8)
     doc.text(linhas, margin + 4, leiY)
-    leiY += 4.8
+    leiY += linhas.length * 4.4
   })
 
-  currentY += 36
+  currentY += boxHeight + 4
 
   // Box Observações do Analista
   verificarQuebraPagina(42)

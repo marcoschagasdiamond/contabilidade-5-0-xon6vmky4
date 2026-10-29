@@ -54,6 +54,8 @@ export interface ItemLegislacao {
   categoria?: 'legislacao' | 'jurisprudencia'
   natureza?: 'mudanca_impacto' | 'recuperacao_credito'
   teseRecuperadorId?: string
+  moduloRecuperador?: 'pis_cofins' | 'folha' | 'irpj_csll' | 'outros_tributos'
+  moduloAbaRecuperador?: 'pis_cofins' | 'folha' | 'irpj_csll' | 'outros_tributos'
   dataJulgamento?: string
   etiquetas?: EtiquetasAplicabilidade
   prazoVigencia?: string
@@ -297,34 +299,55 @@ export async function obterLegislacaoContextual(
     const direitoRecuperacaoCredito = CATALOGO_LEGISLACAO_FALLBACK.filter((item) => {
       if (item.categoria !== 'jurisprudencia' && item.natureza !== 'recuperacao_credito')
         return false
-      // Teses de PIS/Cofins, IPI e teses exclusivas de Lucro Real/Presumido NUNCA aparecem para Simples Nacional.
-      // Teses com etiquetas.regimes que contenham ['Simples Nacional'] ou ['Todos'] aparecem.
+
+      // Blindagem estrita contra Simples Nacional:
+      // NENHUMA tese de PIS/Cofins, IPI, IRPJ ou CSLL pode aparecer para Simples Nacional.
       if (isSimples) {
+        const tributosEtiqueta = (item.etiquetas?.tributos || []).map((t) => t.toUpperCase())
+        const tributoPrincipal = (item.tributo || '').toUpperCase()
+        const idTese = item.id || ''
+
+        const isPisCofinsOuIpiOuIrpj =
+          tributoPrincipal.includes('PIS') ||
+          tributoPrincipal.includes('COFINS') ||
+          tributoPrincipal.includes('IPI') ||
+          tributoPrincipal.includes('IRPJ') ||
+          tributoPrincipal.includes('CSLL') ||
+          tributosEtiqueta.some(
+            (t) =>
+              t.includes('PIS') ||
+              t.includes('COFINS') ||
+              t.includes('IPI') ||
+              t.includes('IRPJ') ||
+              t.includes('CSLL'),
+          ) ||
+          idTese === 'juris-stf-re-592616-tema-118' ||
+          idTese === 'juris-stf-re-574706-tema-69' ||
+          idTese === 'juris-stj-tema-1182-resp-1945110' ||
+          idTese === 'juris-stj-tema-77-resp-1075508' ||
+          idTese === 'juris-stf-tema-959-re-1187264' ||
+          idTese === 'juris-stf-tema-1079-fapi-salario-educacao' ||
+          idTese === 'juris-stf-tema-1023-jcp-pis-cofins' ||
+          idTese === 'juris-stj-tema-1008-resp-1767631' ||
+          idTese === 'juris-stj-tema-1008-iss-irpj' ||
+          idTese === 'juris-stj-eresp-1517492-credito-presumido' ||
+          idTese === 'juris-stf-tema-962-re-1063187' ||
+          idTese === 'juris-stj-tema-1109-icms-energia' ||
+          idTese === 'juris-stf-tema-201-re-593849' ||
+          idTese === 'juris-stf-tema-918-iss-uniprofissional'
+
+        if (isPisCofinsOuIpiOuIrpj) {
+          return false
+        }
+
         const regimesTese = item.etiquetas?.regimes || []
         const permiteSimples =
           regimesTese.includes('Simples Nacional') || regimesTese.includes('Todos')
-        if (
-          !permiteSimples ||
-          item.tributo === 'PIS/Cofins' ||
-          item.tributo === 'IPI' ||
-          item.id === 'juris-stf-re-592616-tema-118' ||
-          item.id === 'juris-stf-re-574706-tema-69' ||
-          item.id === 'juris-stj-tema-1182-resp-1945110' ||
-          item.id === 'juris-stj-tema-77-resp-1075508' ||
-          item.id === 'juris-stf-tema-959-re-1187264' ||
-          item.id === 'juris-stf-tema-1079-fapi-salario-educacao' ||
-          item.id === 'juris-stf-tema-1023-jcp-pis-cofins' ||
-          item.id === 'juris-stj-tema-1008-resp-1767631' ||
-          item.id === 'juris-stj-tema-1008-iss-irpj' ||
-          item.id === 'juris-stj-eresp-1517492-credito-presumido' ||
-          item.id === 'juris-stf-tema-962-re-1063187' ||
-          item.id === 'juris-stj-tema-1109-icms-energia' ||
-          item.id === 'juris-stf-tema-201-re-593849' ||
-          item.id === 'juris-stf-tema-918-iss-uniprofissional'
-        ) {
+        if (!permiteSimples) {
           return false
         }
       }
+
       if (item.id === 'juris-stj-tema-77-resp-1075508' && !isIndustria) return false
       if (item.id === 'juris-stf-re-592616-tema-118' && !isServico && !perfil.atividadeMista)
         return false
@@ -465,6 +488,8 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
     categoria: 'jurisprudencia',
     natureza: 'recuperacao_credito',
     teseRecuperadorId: 'tese_folha_icms_base_inss_tema_959',
+    moduloRecuperador: 'folha',
+    moduloAbaRecuperador: 'folha',
     dataJulgamento: '24/02/2021',
     etiquetas: {
       tributos: ['INSS', 'ICMS'],
@@ -500,6 +525,8 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
     categoria: 'jurisprudencia',
     natureza: 'recuperacao_credito',
     teseRecuperadorId: 'tese_folha_salario_educacao_fapi',
+    moduloRecuperador: 'folha',
+    moduloAbaRecuperador: 'folha',
     dataJulgamento: '13/03/2024',
     etiquetas: {
       tributos: ['INSS'],
@@ -526,6 +553,8 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
     categoria: 'jurisprudencia',
     natureza: 'recuperacao_credito',
     teseRecuperadorId: 'tese_pis_juros_capital_proprio',
+    moduloRecuperador: 'pis_cofins',
+    moduloAbaRecuperador: 'pis_cofins',
     dataJulgamento: '18/08/2023',
     etiquetas: {
       tributos: ['PIS/Cofins'],

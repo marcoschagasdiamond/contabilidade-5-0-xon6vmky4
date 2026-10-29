@@ -536,6 +536,7 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         categoria: 'jurisprudencia',
         natureza: 'recuperacao_credito',
         teseRecuperadorId: 'tese_folha_icms_base_inss_tema_959',
+        moduloRecuperador: 'folha',
         dataJulgamento: '24/02/2021',
         etiquetas: {
           tributos: ['INSS', 'ICMS'],
@@ -571,6 +572,7 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         categoria: 'jurisprudencia',
         natureza: 'recuperacao_credito',
         teseRecuperadorId: 'tese_folha_salario_educacao_fapi',
+        moduloRecuperador: 'folha',
         dataJulgamento: '13/03/2024',
         etiquetas: {
           tributos: ['INSS'],
@@ -597,6 +599,7 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         categoria: 'jurisprudencia',
         natureza: 'recuperacao_credito',
         teseRecuperadorId: 'tese_pis_juros_capital_proprio',
+        moduloRecuperador: 'pis_cofins',
         dataJulgamento: '18/08/2023',
         etiquetas: {
           tributos: ['PIS/Cofins'],
@@ -1549,6 +1552,51 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
       const perfilOp = (perfil.perfilNf || perfil.emissaoNf || '').trim().toUpperCase()
       const perfilRamo = (perfil.ramo || perfil.tipoAtividade || '').trim().toLowerCase()
       const atividadeMista = !!perfil.atividadeMista
+      const isSimples = perfilReg.includes('simples')
+
+      // Blindagem estrita contra Simples Nacional:
+      // Nenhuma tese de PIS/Cofins, IPI, IRPJ ou CSLL pode aparecer para Simples Nacional.
+      if (
+        isSimples &&
+        (item.categoria === 'jurisprudencia' || item.natureza === 'recuperacao_credito')
+      ) {
+        const tributosEtiqueta = (et.tributos || []).map((t) => String(t).toUpperCase())
+        const tributoPrincipal = String(item.tributo || '').toUpperCase()
+        const idTese = String(item.id || '')
+
+        const isPisCofinsOuIpiOuIrpj =
+          tributoPrincipal.includes('PIS') ||
+          tributoPrincipal.includes('COFINS') ||
+          tributoPrincipal.includes('IPI') ||
+          tributoPrincipal.includes('IRPJ') ||
+          tributoPrincipal.includes('CSLL') ||
+          tributosEtiqueta.some(
+            (t) =>
+              t.includes('PIS') ||
+              t.includes('COFINS') ||
+              t.includes('IPI') ||
+              t.includes('IRPJ') ||
+              t.includes('CSLL'),
+          ) ||
+          idTese === 'juris-stf-re-592616-tema-118' ||
+          idTese === 'juris-stf-re-574706-tema-69' ||
+          idTese === 'juris-stj-tema-1182-resp-1945110' ||
+          idTese === 'juris-stj-tema-77-resp-1075508' ||
+          idTese === 'juris-stf-tema-959-re-1187264' ||
+          idTese === 'juris-stf-tema-1079-fapi-salario-educacao' ||
+          idTese === 'juris-stf-tema-1023-jcp-pis-cofins' ||
+          idTese === 'juris-stj-tema-1008-resp-1767631' ||
+          idTese === 'juris-stj-tema-1008-iss-irpj' ||
+          idTese === 'juris-stj-eresp-1517492-credito-presumido' ||
+          idTese === 'juris-stf-tema-962-re-1063187' ||
+          idTese === 'juris-stj-tema-1109-icms-energia' ||
+          idTese === 'juris-stf-tema-201-re-593849' ||
+          idTese === 'juris-stf-tema-918-iss-uniprofissional'
+
+        if (isPisCofinsOuIpiOuIrpj) {
+          return false
+        }
+      }
 
       // 1. Regime tributário
       if (!regs.includes('Todos')) {
@@ -1657,6 +1705,7 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         categoria: 'jurisprudencia',
         natureza: 'recuperacao_credito',
         teseRecuperadorId: 'tese_pis_iss_servicos',
+        moduloRecuperador: 'pis_cofins',
         dataJulgamento: '21/10/2026',
         etiquetas: {
           tributos: ['PIS/Cofins', 'ISS'],
@@ -1761,6 +1810,7 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         categoria: 'jurisprudencia',
         natureza: 'recuperacao_credito',
         teseRecuperadorId: 'tese_folha_icms_base_inss_tema_959',
+        moduloRecuperador: 'folha',
         dataJulgamento: '24/02/2021',
         etiquetas: {
           tributos: ['INSS', 'ICMS'],
@@ -1796,6 +1846,7 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         categoria: 'jurisprudencia',
         natureza: 'recuperacao_credito',
         teseRecuperadorId: 'tese_folha_salario_educacao_fapi',
+        moduloRecuperador: 'folha',
         dataJulgamento: '13/03/2024',
         etiquetas: {
           tributos: ['INSS'],
@@ -1822,6 +1873,7 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         categoria: 'jurisprudencia',
         natureza: 'recuperacao_credito',
         teseRecuperadorId: 'tese_pis_juros_capital_proprio',
+        moduloRecuperador: 'pis_cofins',
         dataJulgamento: '18/08/2023',
         etiquetas: {
           tributos: ['PIS/Cofins'],

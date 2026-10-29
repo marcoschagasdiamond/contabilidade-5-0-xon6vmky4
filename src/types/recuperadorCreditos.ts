@@ -80,6 +80,15 @@ export interface ResultadoTese {
   correcaoSelicTotal: number
   totalCorrigido: number
   apuracaoPorAno: ApuracaoAnoTese[]
+  teseRecuperadorId?: string
+  moduloRecuperador?: ModuloTributo
+  dataJulgamento?: string
+  linkOficial?: string
+  etiquetas?: {
+    tributos?: string[]
+    segmentos?: string[]
+    regimes?: string[]
+  }
 }
 
 export interface ResultadosRecuperador {
@@ -112,6 +121,8 @@ export interface ResultadosRecuperador {
   }[]
 
   resultadosTeses: ResultadoTese[]
+  /** Atalho/alias para resultadosTeses para compatibilidade e consumo direto pelos blocos de tributos */
+  porTese: ResultadoTese[]
 }
 
 export interface SimulacaoRecuperador {
