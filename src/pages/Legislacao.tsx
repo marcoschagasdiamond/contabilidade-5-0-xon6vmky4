@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
+import { CardExplicacaoLegislacao } from '@/components/legislacao/CardExplicacaoLegislacao'
+import { derivarChaveNorma } from '@/services/explicadorLegislacao'
 
 export default function Legislacao() {
   const { toast } = useToast()
@@ -407,18 +409,35 @@ export default function Legislacao() {
                   <p className="text-xs text-slate-600 leading-relaxed pt-1">{norma.ementa}</p>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="font-mono text-[11px] font-bold text-[#07132B]">
-                    Tributo: {norma.tributo}
-                  </span>
-                  <a
-                    href={norma.linkOficial}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-[#07132B] hover:text-[#D4AF37] underline decoration-1 underline-offset-2 transition-colors"
-                  >
-                    Acessar Texto Oficial →
-                  </a>
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-mono text-[11px] font-bold text-[#07132B]">
+                      Tributo: {norma.tributo}
+                    </span>
+                    <a
+                      href={norma.linkOficial}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-[#07132B] hover:text-[#D4AF37] underline decoration-1 underline-offset-2 transition-colors"
+                    >
+                      Acessar Texto Oficial →
+                    </a>
+                  </div>
+
+                  {/* Botão e Bloco "Gerar Explicação" — Reforma Tributária */}
+                  <CardExplicacaoLegislacao
+                    norma={{
+                      chave_norma: derivarChaveNorma(norma),
+                      titulo: norma.titulo,
+                      ementa: norma.ementa,
+                      tipo: norma.tipo,
+                      numero: norma.numero,
+                      ano: norma.ano,
+                      tributo: norma.tributo,
+                      orgao: norma.orgao,
+                      link_oficial: norma.linkOficial,
+                    }}
+                  />
                 </div>
               </div>
             ))}
@@ -483,16 +502,39 @@ export default function Legislacao() {
                   <p className="text-xs text-slate-600 leading-relaxed pt-1">{item.ementa}</p>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-[11px] font-medium text-slate-500">{item.orgao}</span>
-                  <a
-                    href={item.linkOficial}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-[#07132B] hover:text-[#D4AF37] underline decoration-1 underline-offset-2 transition-colors"
-                  >
-                    Texto Integral →
-                  </a>
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[11px] font-medium text-slate-500">{item.orgao}</span>
+                    <a
+                      href={item.linkOficial}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-[#07132B] hover:text-[#D4AF37] underline decoration-1 underline-offset-2 transition-colors"
+                    >
+                      Texto Integral →
+                    </a>
+                  </div>
+
+                  {/* Botão e Bloco "Gerar Explicação" — Legislação-Chave por Tributo */}
+                  <CardExplicacaoLegislacao
+                    compacto
+                    norma={{
+                      chave_norma: derivarChaveNorma({
+                        titulo: item.titulo,
+                        numero: item.numero,
+                        ano: item.ano,
+                        tributo: item.tributo,
+                      }),
+                      titulo: item.titulo,
+                      ementa: item.ementa,
+                      tipo: item.tipo,
+                      numero: item.numero,
+                      ano: item.ano,
+                      tributo: item.tributo,
+                      orgao: item.orgao,
+                      link_oficial: item.linkOficial,
+                    }}
+                  />
                 </div>
               </div>
             ))}
@@ -537,6 +579,21 @@ export default function Legislacao() {
                       Ver documento
                     </a>
                   </div>
+
+                  {/* Botão e Bloco "Gerar Explicação" — Resultados de Busca Automática / LexML / Senado */}
+                  <CardExplicacaoLegislacao
+                    norma={{
+                      chave_norma: derivarChaveNorma(norma),
+                      titulo: norma.titulo,
+                      ementa: norma.ementa,
+                      tipo: norma.tipo,
+                      numero: norma.numero,
+                      ano: norma.ano,
+                      tributo: norma.tributo,
+                      orgao: norma.orgao,
+                      link_oficial: norma.linkOficial,
+                    }}
+                  />
                 </div>
               ))}
             </div>
