@@ -3,6 +3,7 @@ import type { ResultadosRecuperador } from '@/types/recuperadorCreditos'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 
 import { QuadroTesesContextuaisRecuperador } from './QuadroTesesContextuaisRecuperador'
+import { AvisoOrientativo } from '@/components/common/AvisoOrientativo'
 
 interface Props {
   resultados: ResultadosRecuperador
@@ -59,11 +60,12 @@ export default function ModuloDashboardRecuperador({
             <h2 className="text-xl font-bold text-white mt-0.5">
               Potencial Total Recuperável: {formatarMoeda(valorExibir)}
             </h2>
-            <p className="text-xs text-slate-300 mt-1">
+            <p className="text-xs text-slate-300 mt-1 mb-2.5">
               Valores acumulados nos últimos 60 meses com correção monetária pela taxa SELIC para as{' '}
               {resultados.resultadosTeses.length} teses aplicáveis ao setor{' '}
               {segmento || 'selecionado'}.
             </p>
+            <AvisoOrientativo variante="curta" tema="escuro" className="max-w-2xl" />
           </div>
 
           {/* TOGGLE CENÁRIO INTEGRAL VS CONSERVADOR */}
@@ -149,6 +151,9 @@ export default function ModuloDashboardRecuperador({
           </button>
         </div>
       </div>
+
+      {/* AVISO LEGAL COMPLETO NO RESUMO FINAL DO DASHBOARD EXECUTIVO */}
+      <AvisoOrientativo variante="completa" tema="claro" />
 
       {/* CARDS DE DISTRIBUIÇÃO: POR TRIBUTO & POR FAROL */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

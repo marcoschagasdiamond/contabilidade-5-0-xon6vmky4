@@ -79,6 +79,7 @@ import {
   ModuloCalculadoraId,
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
 import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
+import { AvisoOrientativo } from '@/components/common/AvisoOrientativo'
 
 interface Modulo6DashboardProps {
   simulacoesComparar?: SimulacaoCalculadora[]
@@ -1994,6 +1995,11 @@ export default function Modulo6Dashboard({
               </tr>
             </tbody>
           </table>
+        </div>
+
+        {/* NOTA ORIENTATIVA NO RODAPÉ DO QUADRO DE RESULTADOS DO DASHBOARD */}
+        <div className="p-4 bg-slate-50/80 border-t border-slate-200">
+          <AvisoOrientativo variante="curta" tema="claro" />
         </div>
       </Card>
 

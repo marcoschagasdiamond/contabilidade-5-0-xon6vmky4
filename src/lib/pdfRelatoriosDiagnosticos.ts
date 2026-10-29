@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf'
 import type { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
 import type { DiagnosticoRecord } from '@/services/diagnosticos'
 import { formatarCNPJ } from '@/lib/cnpj'
+import { desenharAvisoLegalCompletoPDF } from '@/components/common/AvisoOrientativo'
 
 export interface DadosRelatorioConsolidado {
   clienteNome?: string
@@ -985,6 +986,7 @@ export function exportarPdfRelatorioConsolidado(dados: DadosRelatorioConsolidado
       margin + 4,
       y + 27,
     )
+    y += 38
   } else {
     doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
     doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
@@ -1000,7 +1002,15 @@ export function exportarPdfRelatorioConsolidado(dados: DadosRelatorioConsolidado
       margin + 4,
       y + 10.5,
     )
+    y += 18
   }
+
+  // AVISO LEGAL COMPLETO NA PÁGINA FINAL DO RELATÓRIO CONSOLIDADO PDF
+  if (y > 230) {
+    doc.addPage()
+    y = 20
+  }
+  desenharAvisoLegalCompletoPDF(doc, margin, y, contentWidth)
 
   aplicarRodape(doc)
   doc.save(`Relatorio_Consolidado_Diagnostico_${empresa.replace(/\s+/g, '_')}.pdf`)

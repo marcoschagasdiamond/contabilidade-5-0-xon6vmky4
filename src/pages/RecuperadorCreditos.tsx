@@ -31,6 +31,8 @@ import {
 import { gerarParecerRecuperadorPDF } from '@/lib/pdfRecuperadorCreditos'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 
+import { AvisoOrientativo } from '@/components/common/AvisoOrientativo'
+
 // Submódulos
 import ModuloConfiguracoesRecuperador from '@/components/recuperador/ModuloConfiguracoesRecuperador'
 import BlocoPisCofinsRecuperador from '@/components/recuperador/BlocoPisCofinsRecuperador'
@@ -609,10 +611,15 @@ export default function RecuperadorCreditos() {
               />
             )}
 
+            {/* AVISO ORIENTATIVO COMPLETO NO RESUMO FINAL */}
+            <div className="mt-8">
+              <AvisoOrientativo variante="completa" tema="claro" />
+            </div>
+
             {/* AVISO TÉCNICO REGULATÓRIO */}
-            <div className="mt-12 p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 text-xs space-y-2">
+            <div className="mt-6 p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 text-xs space-y-2">
               <div className="font-bold text-[#07132B] text-sm">
-                Aviso Legal & Condições de Homologação
+                Condições Técnicas de Homologação & SPED
               </div>
               <p className="leading-relaxed">
                 Os valores apresentados neste simulador constituem projeções administrativas

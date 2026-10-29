@@ -15,6 +15,10 @@ import {
 } from '@/types/calculadoraIbsCbs'
 import { extrairConclusaoDeSimulacao, derivarFatoresExplicativos } from '@/lib/conclusaoAnalitica'
 import type { ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
+import {
+  desenharNotaCurtaPDF,
+  desenharAvisoLegalCompletoPDF,
+} from '@/components/common/AvisoOrientativo'
 
 export interface GerarPdfSimulacaoOptions {
   nomeSimulacao: string
@@ -632,7 +636,11 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     currentY + 22,
   )
 
-  currentY += 38
+  currentY += 34
+
+  // Nota orientativa curta no rodapé do Bloco 2 (Dashboard)
+  const hNotaBloco2 = desenharNotaCurtaPDF(doc, margin, currentY, contentWidth)
+  currentY += hNotaBloco2 + 5
 
   // ==========================================
   // BLOCO 3: MÓDULO 3 - COMPARATIVO DOS 4 REGIMES
@@ -741,7 +749,11 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     currentY += 7.5
   })
 
-  currentY += 8
+  currentY += 2
+
+  // Nota orientativa curta no rodapé do Bloco 3 (Comparativo dos 4 Regimes)
+  const hNotaBloco3 = desenharNotaCurtaPDF(doc, margin, currentY, contentWidth)
+  currentY += hNotaBloco3 + 6
 
   // ==========================================
   // BLOCO 4: MÓDULO 4 - QUADRO DE CRÉDITOS POR CATEGORIA (ANTIGO VS. NOVO IVA DUAL)
@@ -852,7 +864,11 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     currentY += 5.2
   })
 
-  currentY += 8
+  currentY += 2
+
+  // Nota orientativa curta no rodapé do Bloco 4 (Simulador de Créditos)
+  const hNotaBloco4 = desenharNotaCurtaPDF(doc, margin, currentY, contentWidth)
+  currentY += hNotaBloco4 + 6
 
   // ==========================================
   // BLOCO 5: MÓDULO 5 - CRONOGRAMA DA TRANSIÇÃO COM COLUNA 'REGIME MAIS ECONÔMICO'
@@ -937,7 +953,11 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     currentY += 5.5
   })
 
-  currentY += 10
+  currentY += 2
+
+  // Nota orientativa curta no rodapé do Bloco 5 (Cronograma da Transição)
+  const hNotaBloco5 = desenharNotaCurtaPDF(doc, margin, currentY, contentWidth)
+  currentY += hNotaBloco5 + 6
 
   // ==========================================
   // PÁGINA FINAL: CONCLUSÃO, RECOMENDAÇÃO EM TEXTO, OBSERVAÇÕES & ASSINATURA
@@ -1073,12 +1093,12 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   verificarQuebraPagina(42)
   doc.setFillColor(255, 255, 255)
   doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-  doc.roundedRect(margin, currentY, contentWidth, 32, 2, 2, 'D')
+  doc.roundedRect(margin, currentY, contentWidth, 24, 2, 2, 'D')
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(8.5)
+  doc.setFontSize(8)
   doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
-  doc.text('NOTAS & OBSERVAÇÕES ESPECÍFICAS DO ANALISTA', margin + 5, currentY + 5.5)
+  doc.text('NOTAS & OBSERVAÇÕES ESPECÍFICAS DO ANALISTA', margin + 5, currentY + 5)
 
   const textoObs =
     observacoesContador ||
@@ -1086,14 +1106,20 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
     'Sem observações adicionais inseridas pelo responsável técnico nesta data. O planejamento tributário formal deve considerar a publicação dos regulamentos do CGIBS e as legislações estaduais/municipais dos anos correntes.'
 
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7.5)
+  doc.setFontSize(7)
   doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
   const linhasObs = doc.splitTextToSize(textoObs, contentWidth - 10)
-  doc.text(linhasObs, margin + 5, currentY + 11.5)
+  doc.text(linhasObs, margin + 5, currentY + 10)
 
-  currentY += 38
+  currentY += 28
+
+  // AVISO LEGAL COMPLETO NA PÁGINA FINAL (COM LINK PARA DIAGNÓSTICO 360°)
+  verificarQuebraPagina(22)
+  const hAvisoLegal = desenharAvisoLegalCompletoPDF(doc, margin, currentY, contentWidth)
+  currentY += hAvisoLegal + 6
 
   // Bloco de Assinatura
+  verificarQuebraPagina(40)
   const cidadeEmpresa = parametros.ufOrigem
     ? `São Paulo - ${parametros.ufOrigem}`
     : 'São Paulo - SP'
@@ -1661,7 +1687,7 @@ export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions
   // Box Observações
   doc.setFillColor(255, 255, 255)
   doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
-  doc.roundedRect(margin, currentY, contentWidth, 24, 2, 2, 'D')
+  doc.roundedRect(margin, currentY, contentWidth, 22, 2, 2, 'D')
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8)
@@ -1684,10 +1710,17 @@ export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions
   doc.setFontSize(7.2)
   doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
   const linhasObs = doc.splitTextToSize(obsTexto, contentWidth - 10)
-  doc.text(linhasObs, margin + 5, currentY + 11)
+  doc.text(linhasObs, margin + 5, currentY + 10)
 
-  currentY += 30
+  currentY += 26
 
+  // AVISO LEGAL COMPLETO NA PÁGINA FINAL (COM LINK PARA DIAGNÓSTICO 360°)
+  verificarQuebraPagina(22)
+  const hAvisoLegalComp = desenharAvisoLegalCompletoPDF(doc, margin, currentY, contentWidth)
+  currentY += hAvisoLegalComp + 6
+
+  // Bloco de Assinatura
+  verificarQuebraPagina(40)
   adicionarBlocoAssinatura(doc, margin, currentY, contentWidth, responsavelTecnico)
 
   // Rodapé

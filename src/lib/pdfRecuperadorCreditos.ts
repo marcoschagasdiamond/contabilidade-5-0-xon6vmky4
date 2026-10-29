@@ -4,6 +4,7 @@ import type {
   ResultadosRecuperador,
   ResultadoTese,
 } from '@/types/recuperadorCreditos'
+import { desenharAvisoLegalCompletoPDF } from '@/components/common/AvisoOrientativo'
 import type { ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
 import {
   desenharLogoContabilidade50,
@@ -615,6 +616,11 @@ export function gerarParecerRecuperadorPDF(options: GerarPdfRecuperadorOptions):
   doc.text(linhasAviso, margin + 4, currentY + 8.5)
 
   currentY += 18
+
+  // AVISO LEGAL COMPLETO NA PÁGINA FINAL (COM LINK PARA DIAGNÓSTICO 360°)
+  verificarQuebraPagina(24)
+  const hAvisoLegalRecup = desenharAvisoLegalCompletoPDF(doc, margin, currentY, contentWidth)
+  currentY += hAvisoLegalRecup + 5
 
   // Bloco de Assinatura
   const cidadeEmpresa = parametros.configuracoes.uf

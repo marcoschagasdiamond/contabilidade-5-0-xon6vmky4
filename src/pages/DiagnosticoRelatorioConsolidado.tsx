@@ -12,6 +12,7 @@ import {
 import { formatarCNPJ } from '@/lib/cnpj'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
+import { AvisoOrientativo } from '@/components/common/AvisoOrientativo'
 import { QuadroMudancasPerfilConsolidado } from '@/components/diagnosticos/QuadroMudancasPerfilConsolidado'
 import {
   exportarPdfEtapaConfiguracoes,
@@ -1242,6 +1243,9 @@ export default function DiagnosticoRelatorioConsolidado() {
                       </div>
                     </div>
                   </div>
+
+                  {/* NOTA ORIENTATIVA NA AUTOAVALIAÇÃO DAS 7 FRENTES */}
+                  <AvisoOrientativo variante="curta" tema="claro" />
                 </div>
               ) : (
                 <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -1334,6 +1338,9 @@ export default function DiagnosticoRelatorioConsolidado() {
                       ))}
                     </ul>
                   </div>
+
+                  {/* NOTA ORIENTATIVA NO PAINEL DA TRANSIÇÃO */}
+                  <AvisoOrientativo variante="curta" tema="claro" />
                 </div>
               ) : (
                 <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -1437,6 +1444,9 @@ export default function DiagnosticoRelatorioConsolidado() {
                       </strong>
                     </div>
                   </div>
+
+                  {/* NOTA ORIENTATIVA NO PAINEL DE COMPARAÇÃO DE REGIME */}
+                  <AvisoOrientativo variante="curta" tema="claro" />
                 </div>
               ) : (
                 <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -1535,6 +1545,9 @@ export default function DiagnosticoRelatorioConsolidado() {
                       </strong>
                     </div>
                   </div>
+
+                  {/* NOTA ORIENTATIVA NO PAINEL DE ENQUADRAMENTO COMPLETO */}
+                  <AvisoOrientativo variante="curta" tema="claro" />
                 </div>
               ) : (
                 <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -1729,6 +1742,9 @@ export default function DiagnosticoRelatorioConsolidado() {
                     </div>
                   )}
                 </div>
+
+                {/* NOTA ORIENTATIVA NO RELATÓRIO INDIVIDUAL DA ETAPA 02 */}
+                <AvisoOrientativo variante="curta" tema="claro" />
               </div>
             ) : (
               <div className="p-8 text-center bg-amber-50 rounded-2xl border border-amber-200">
@@ -1797,6 +1813,9 @@ export default function DiagnosticoRelatorioConsolidado() {
                     </strong>
                   </div>
                 </div>
+
+                {/* NOTA ORIENTATIVA NO RELATÓRIO INDIVIDUAL DA ETAPA 03 */}
+                <AvisoOrientativo variante="curta" tema="claro" />
               </div>
             ) : (
               <div className="p-8 text-center bg-amber-50 rounded-2xl border border-amber-200">
@@ -1868,6 +1887,9 @@ export default function DiagnosticoRelatorioConsolidado() {
                     </strong>
                   </div>
                 </div>
+
+                {/* NOTA ORIENTATIVA NO RELATÓRIO INDIVIDUAL DA ETAPA 04 */}
+                <AvisoOrientativo variante="curta" tema="claro" />
               </div>
             ) : (
               <div className="p-8 text-center bg-amber-50 rounded-2xl border border-amber-200">
@@ -1923,29 +1945,34 @@ export default function DiagnosticoRelatorioConsolidado() {
             </div>
 
             {diagEnquadramento ? (
-              <div className="p-6 rounded-2xl bg-[#07132B] text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <span className="text-xs font-mono text-[#2ECC71] uppercase font-bold block">
-                    Regime Recomendado na Reforma
-                  </span>
-                  <strong className="text-2xl font-heading text-white">
-                    {diagEnquadramento.sistema_recomendado_novo ||
-                      diagEnquadramento.regime_recomendado}
-                  </strong>
-                  <p className="text-xs text-slate-300 mt-1">
-                    Ano-base {diagEnquadramento.ano_base || 2026} sob a EC 132/2023.
-                  </p>
+              <div className="space-y-4">
+                <div className="p-6 rounded-2xl bg-[#07132B] text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-mono text-[#2ECC71] uppercase font-bold block">
+                      Regime Recomendado na Reforma
+                    </span>
+                    <strong className="text-2xl font-heading text-white">
+                      {diagEnquadramento.sistema_recomendado_novo ||
+                        diagEnquadramento.regime_recomendado}
+                    </strong>
+                    <p className="text-xs text-slate-300 mt-1">
+                      Ano-base {diagEnquadramento.ano_base || 2026} sob a EC 132/2023.
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs text-slate-300 uppercase block">Economia Anual</span>
+                    <strong className="text-2xl font-heading text-[#2ECC71]">
+                      {formatarMoeda(
+                        diagEnquadramento.economia_anual_novo ||
+                          diagEnquadramento.economia_anual ||
+                          0,
+                      )}
+                    </strong>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs text-slate-300 uppercase block">Economia Anual</span>
-                  <strong className="text-2xl font-heading text-[#2ECC71]">
-                    {formatarMoeda(
-                      diagEnquadramento.economia_anual_novo ||
-                        diagEnquadramento.economia_anual ||
-                        0,
-                    )}
-                  </strong>
-                </div>
+
+                {/* NOTA ORIENTATIVA NO RELATÓRIO INDIVIDUAL DA ETAPA 05 */}
+                <AvisoOrientativo variante="curta" tema="claro" />
               </div>
             ) : (
               <div className="p-8 text-center bg-amber-50 rounded-2xl border border-amber-200">
@@ -1966,6 +1993,11 @@ export default function DiagnosticoRelatorioConsolidado() {
             )}
           </div>
         )}
+      </div>
+
+      {/* AVISO LEGAL COMPLETO NO FECHAMENTO DO RELATÓRIO CONSOLIDADO */}
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 mt-12 mb-6">
+        <AvisoOrientativo variante="completa" tema="claro" />
       </div>
 
       {/* QUADRO: FAZER OUTRO DIAGNÓSTICO (DIAMOND GROUP: NAVY #07132B, DOURADO #D4AF37, SEM ÍCONES NO BOTÃO) */}
