@@ -1,8 +1,19 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapPin, Phone, Mail, Clock, ShieldCheck } from 'lucide-react'
 import LeadForm from '@/components/LeadForm'
 
 export default function Contato() {
+  const navigate = useNavigate()
+
+  const handleVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      navigate('/legislacao')
+    }
+  }
+
   return (
     <div className="pt-24 pb-20 bg-slate-50 min-h-screen">
       {/* 1. HEADER */}
@@ -135,9 +146,9 @@ export default function Contato() {
               </div>
             </div>
 
-            {/* Coluna Direita: O mesmo componente LeadForm reutilizado */}
+            {/* Coluna Direita: Card Entre em Contato com LeadForm e botão Voltar */}
             <div className="lg:col-span-6">
-              <LeadForm />
+              <LeadForm onVoltar={handleVoltar} />
             </div>
           </div>
         </div>

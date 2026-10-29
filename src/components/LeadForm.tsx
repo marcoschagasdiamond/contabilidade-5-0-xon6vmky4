@@ -22,7 +22,13 @@ interface FormErrors {
   funcionarios?: string
 }
 
-export default function LeadForm({ className = '' }: { className?: string }) {
+export default function LeadForm({
+  className = '',
+  onVoltar,
+}: {
+  className?: string
+  onVoltar?: () => void
+}) {
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -190,13 +196,25 @@ export default function LeadForm({ className = '' }: { className?: string }) {
       <div
         className={`bg-white rounded-[24px] p-6 sm:p-8 shadow-[0_25px_50px_rgba(0,0,0,0.2)] text-slate-800 ${className}`}
       >
-        <div className="mb-6">
-          <h3 className="font-heading font-bold text-2xl text-slate-900 tracking-tight">
-            Receba uma Proposta Personalizada
-          </h3>
-          <p className="text-sm text-slate-500 mt-1">
-            Preencha seus dados e fale com um especialista
-          </p>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-heading font-bold text-2xl text-slate-900 tracking-tight">
+              Receba uma Proposta Personalizada
+            </h3>
+            <p className="text-sm text-slate-500 mt-1">
+              Preencha seus dados e fale com um especialista
+            </p>
+          </div>
+          {onVoltar && (
+            <button
+              type="button"
+              onClick={onVoltar}
+              aria-label="Voltar para a página anterior"
+              className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] border border-[#07132B]/10 shadow-sm transition-all duration-150 hover:-translate-y-0.5 btn-press cursor-pointer"
+            >
+              Voltar
+            </button>
+          )}
         </div>
 
         {serverError && (
@@ -459,6 +477,20 @@ export default function LeadForm({ className = '' }: { className?: string }) {
             </Link>
             .
           </p>
+
+          {/* Botão Voltar secundário no rodapé do formulário */}
+          {onVoltar && (
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={onVoltar}
+                aria-label="Voltar para a página anterior"
+                className="text-xs font-bold text-[#07132B] hover:text-[#D4AF37] underline decoration-1 underline-offset-4 transition-colors cursor-pointer py-1"
+              >
+                Voltar
+              </button>
+            </div>
+          )}
         </form>
       </div>
 
