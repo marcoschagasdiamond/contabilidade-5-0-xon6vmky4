@@ -18,13 +18,15 @@ export interface NotificacaoTributaria {
   id: string
   titulo: string
   mensagem: string
-  tipo: 'aliquota_nova' | 'legislacao_nova' | 'alerta_senado'
-  tributo?: 'CBS' | 'IBS'
+  tipo: 'aliquota_nova' | 'legislacao_nova' | 'alerta_senado' | 'tese_jurisprudencia'
+  tributo?: string
   ano?: number
   aliquota?: number
   fonte?: string
   lida?: boolean
   destinatario_id?: string
+  link_acao?: string
+  tese_id?: string
   created?: string
   updated?: string
 }
@@ -41,6 +43,9 @@ export interface ItemLegislacao {
   ementa: string
   linkOficial: string
   destaque: boolean
+  categoria?: 'legislacao' | 'jurisprudencia'
+  teseRecuperadorId?: string
+  dataJulgamento?: string
 }
 
 export interface FiltrosLegislacao {
@@ -170,6 +175,80 @@ export async function pesquisarLegislacao(filtros: FiltrosLegislacao = {}): Prom
  * Catálogo estático garantido para fallback total sem rede
  */
 export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
+  // Jurisprudência-Chave Vinculante para Recuperação de Créditos (STF / STJ)
+  {
+    id: 'juris-stf-re-592616-tema-118',
+    titulo: 'STF — RE 592.616 (Tema 118 RG): ISS não integra a base de cálculo do PIS/Cofins',
+    tipo: 'Jurisprudência / STF',
+    numero: 'RE 592.616 (Tema 118)',
+    ano: 2026,
+    orgao: 'Supremo Tribunal Federal (STF)',
+    tributo: 'PIS/Cofins',
+    dataPublicacao: '21/10/2026',
+    ementa:
+      'Tese fixada pelo Plenário do STF sob repercussão geral: o valor recolhido a título de ISS não integra a base de cálculo das contribuições ao PIS e à Cofins, assegurando o direito à repetição e compensação administrativa de indébito para empresas tomadoras e prestadoras.',
+    linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=118',
+    destaque: true,
+    categoria: 'jurisprudencia',
+    teseRecuperadorId: 'tese_pis_iss_servicos',
+    dataJulgamento: '21/10/2026',
+  },
+  {
+    id: 'juris-stf-re-574706-tema-69',
+    titulo:
+      'STF — RE 574.706 e RE 594.339: Exclusão do ICMS da Base do PIS/Cofins (Tese do Século)',
+    tipo: 'Jurisprudência / STF',
+    numero: 'RE 574.706 / RE 594.339',
+    ano: 2021,
+    orgao: 'Supremo Tribunal Federal (STF)',
+    tributo: 'PIS/Cofins',
+    dataPublicacao: '13/05/2021',
+    ementa:
+      'Julgamento histórico do Tema 69/STF transitado em julgado: o ICMS destacado nas notas fiscais não se incorpora ao patrimônio do contribuinte e não compõe a receita bruta para fins de apuração de PIS/Cofins, com modulação dos efeitos a partir de 15/03/2017.',
+    linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=69',
+    destaque: true,
+    categoria: 'jurisprudencia',
+    teseRecuperadorId: 'tese_pis_icms_base',
+    dataJulgamento: '13/05/2021',
+  },
+  {
+    id: 'juris-stj-tema-1182-resp-1945110',
+    titulo:
+      'STJ — Tema 1182 (REsp 1.945.110/RN): Exclusão de Benefícios e Crédito Presumido de ICMS',
+    tipo: 'Jurisprudência / STJ',
+    numero: 'Tema 1182 / REsp 1.945.110',
+    ano: 2023,
+    orgao: 'Superior Tribunal de Justiça (STJ)',
+    tributo: 'ICMS',
+    dataPublicacao: '26/04/2023',
+    ementa:
+      'Primeira Seção do STJ fixou tese vinculante sobre a não incidência de PIS/Cofins e IRPJ/CSLL sobre incentivos fiscais estaduais de ICMS (crédito presumido, isenção e redução de base), preenchidos os requisitos formais de reserva de incentivos fiscais.',
+    linkOficial:
+      'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1182&cod_tema_final=1182',
+    destaque: true,
+    categoria: 'jurisprudencia',
+    teseRecuperadorId: 'tese_pis_subvencao_icms',
+    dataJulgamento: '26/04/2023',
+  },
+  {
+    id: 'juris-stj-tema-77-resp-1075508',
+    titulo: 'STJ — Tema 77 (REsp 1.075.508/SC): Crédito de IPI na Entrada de Insumos Desonerados',
+    tipo: 'Jurisprudência / STJ',
+    numero: 'Tema 77 / REsp 1.075.508',
+    ano: 2009,
+    orgao: 'Superior Tribunal de Justiça (STJ)',
+    tributo: 'IPI',
+    dataPublicacao: '24/06/2009',
+    ementa:
+      'Direito ao creditamento de IPI na aquisição de matérias-primas, produtos intermediários e insumos industriais aplicados na industrialização de produtos finais tributados à alíquota zero ou desonerados, assegurando a não cumulatividade constitucional.',
+    linkOficial:
+      'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=77&cod_tema_final=77',
+    destaque: true,
+    categoria: 'jurisprudencia',
+    teseRecuperadorId: 'tese_pis_insumos_presumido',
+    dataJulgamento: '24/06/2009',
+  },
+
   // Reforma Tributária
   {
     id: 'ec-132-2023',

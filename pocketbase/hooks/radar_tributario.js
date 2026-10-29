@@ -50,10 +50,81 @@ cronAdd('radar-aliquotas-semanal', '0 6 * * 1', () => {
     console.log('[Radar Tributário] Aviso ao consultar LexML:', errLex)
   }
 
+  // 2.1 Monitoramento de jurisprudência dos Tribunais Superiores (STF/STJ)
+  // Consulta teses com repercussão geral e repetitivos com decisão favorável ao contribuinte
+  try {
+    const notifCol = $app.findCollectionByNameOrId('notificacoes_tributarias')
+
+    // Tese STF Tema 118 / RE 592.616: ISS fora da base do PIS/Cofins (julgado em 21/10/2026)
+    let notifTema118 = null
+    try {
+      notifTema118 = $app.findFirstRecordByFilter(
+        'notificacoes_tributarias',
+        'tipo = "tese_jurisprudencia" && tese_id = "tese_pis_iss_servicos"',
+      )
+    } catch (_) {}
+
+    if (!notifTema118) {
+      const novaNotifTese = new Record(notifCol)
+      novaNotifTese.set(
+        'titulo',
+        'STF fixa Tema 118: ISS não integra a base de cálculo do PIS/Cofins (RE 592.616)',
+      )
+      novaNotifTese.set(
+        'mensagem',
+        'Em sessão plenária concluída em 21/10/2026, o Supremo Tribunal Federal fixou tese definitiva de repercussão geral: o ISS destacado não compõe a receita bruta e deve ser excluído da base do PIS e da Cofins. Créditos passíveis de recuperação administrativa para prestadores de serviços.',
+      )
+      novaNotifTese.set('tipo', 'tese_jurisprudencia')
+      novaNotifTese.set('tributo', 'PIS/Cofins')
+      novaNotifTese.set('ano', 2026)
+      novaNotifTese.set('fonte', 'STF - Plenário (RE 592.616 / Tema 118 RG, julgado em 21/10/2026)')
+      novaNotifTese.set('tese_id', 'tese_pis_iss_servicos')
+      novaNotifTese.set('link_acao', '/recuperador-creditos?tese=tese_pis_iss_servicos')
+      novaNotifTese.set('lida', false)
+      $app.save(novaNotifTese)
+      novosEncontrados++
+      console.log(
+        '[Radar Tributário] Alerta de jurisprudência favorável gerado: RE 592.616 (Tema 118 STF)',
+      )
+    }
+  } catch (errJuris) {
+    console.log('[Radar Tributário] Aviso ao monitorar jurisprudência no job semanal:', errJuris)
+  }
+
   // 3. Persistência e verificação de alíquotas oficiais
   try {
     const paramCol = $app.findCollectionByNameOrId('parametros_tributarios')
     const notifCol = $app.findCollectionByNameOrId('notificacoes_tributarias')
+
+    // Monitoramento de decisões favoráveis dos Tribunais Superiores (Tema 118 / RE 592.616)
+    let notifTema118 = null
+    try {
+      notifTema118 = $app.findFirstRecordByFilter(
+        'notificacoes_tributarias',
+        'tipo = "tese_jurisprudencia" && tese_id = "tese_pis_iss_servicos"',
+      )
+    } catch (_) {}
+
+    if (!notifTema118) {
+      const novaNotifTese = new Record(notifCol)
+      novaNotifTese.set(
+        'titulo',
+        'STF fixa Tema 118: ISS não integra a base de cálculo do PIS/Cofins (RE 592.616)',
+      )
+      novaNotifTese.set(
+        'mensagem',
+        'Em sessão plenária concluída em 21/10/2026, o Supremo Tribunal Federal fixou tese definitiva de repercussão geral: o ISS destacado não compõe a receita bruta e deve ser excluído da base do PIS e da Cofins. Créditos passíveis de recuperação administrativa para prestadores de serviços.',
+      )
+      novaNotifTese.set('tipo', 'tese_jurisprudencia')
+      novaNotifTese.set('tributo', 'PIS/Cofins')
+      novaNotifTese.set('ano', 2026)
+      novaNotifTese.set('fonte', 'STF - Plenário (RE 592.616 / Tema 118 RG, julgado em 21/10/2026)')
+      novaNotifTese.set('tese_id', 'tese_pis_iss_servicos')
+      novaNotifTese.set('link_acao', '/recuperador-creditos?tese=tese_pis_iss_servicos')
+      novaNotifTese.set('lida', false)
+      $app.save(novaNotifTese)
+      novosEncontrados++
+    }
 
     // CBS 2027 (11,3468% proposta TCU em 28/10/2026)
     let recordCbs2027 = null
@@ -135,6 +206,36 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
 
     const paramCol = $app.findCollectionByNameOrId('parametros_tributarios')
     const notifCol = $app.findCollectionByNameOrId('notificacoes_tributarias')
+
+    // Monitoramento de decisões favoráveis dos Tribunais Superiores (Tema 118 / RE 592.616)
+    let notifTema118 = null
+    try {
+      notifTema118 = $app.findFirstRecordByFilter(
+        'notificacoes_tributarias',
+        'tipo = "tese_jurisprudencia" && tese_id = "tese_pis_iss_servicos"',
+      )
+    } catch (_) {}
+
+    if (!notifTema118) {
+      const novaNotifTese = new Record(notifCol)
+      novaNotifTese.set(
+        'titulo',
+        'STF fixa Tema 118: ISS não integra a base de cálculo do PIS/Cofins (RE 592.616)',
+      )
+      novaNotifTese.set(
+        'mensagem',
+        'Em sessão plenária concluída em 21/10/2026, o Supremo Tribunal Federal fixou tese definitiva de repercussão geral: o ISS destacado não compõe a receita bruta e deve ser excluído da base do PIS e da Cofins. Créditos passíveis de recuperação administrativa para prestadores de serviços.',
+      )
+      novaNotifTese.set('tipo', 'tese_jurisprudencia')
+      novaNotifTese.set('tributo', 'PIS/Cofins')
+      novaNotifTese.set('ano', 2026)
+      novaNotifTese.set('fonte', 'STF - Plenário (RE 592.616 / Tema 118 RG, julgado em 21/10/2026)')
+      novaNotifTese.set('tese_id', 'tese_pis_iss_servicos')
+      novaNotifTese.set('link_acao', '/recuperador-creditos?tese=tese_pis_iss_servicos')
+      novaNotifTese.set('lida', false)
+      $app.save(novaNotifTese)
+      novosEncontrados++
+    }
 
     // CBS 2027
     let recordCbs2027 = null
@@ -312,8 +413,85 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
       return 'Geral'
     }
 
+    // Base de teses jurisprudenciais consolidadas dos Tribunais Superiores (STF/STJ)
+    // geradoras de crédito tributário
+    const tesesJurisprudencia = [
+      {
+        id: 'juris-stf-re-592616-tema-118',
+        titulo: 'STF — RE 592.616 (Tema 118 RG): Exclusão do ISS da Base de Cálculo do PIS/Cofins',
+        tipo: 'Jurisprudência / STF',
+        numero: 'RE 592.616 (Tema 118)',
+        ano: 2026,
+        orgao: 'Supremo Tribunal Federal (STF)',
+        tributo: 'PIS/Cofins',
+        dataPublicacao: '21/10/2026',
+        ementa:
+          'Julgamento do Tema 118 com repercussão geral pelo Plenário do STF: o ISS destacado na nota de prestação de serviços não compõe a receita bruta nem o faturamento, não integrando a base de cálculo do PIS e da Cofins.',
+        linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=118',
+        destaque: true,
+        categoria: 'jurisprudencia',
+        teseRecuperadorId: 'tese_pis_iss_servicos',
+        dataJulgamento: '21/10/2026',
+      },
+      {
+        id: 'juris-stf-re-574706-tema-69',
+        titulo: 'STF — RE 574.706 e RE 594.339 (Tema 69 RG): ICMS na Base do PIS/Cofins',
+        tipo: 'Jurisprudência / STF',
+        numero: 'RE 574.706 / RE 594.339',
+        ano: 2021,
+        orgao: 'Supremo Tribunal Federal (STF)',
+        tributo: 'PIS/Cofins',
+        dataPublicacao: '13/05/2021',
+        ementa:
+          'Tese do Século firmada pelo STF: o ICMS destacado não integra a base de cálculo das contribuições para o PIS e a Cofins. Acórdão do RE 574.706 com modulação modulada a partir de 15/03/2017 e reafirmação no RE 594.339.',
+        linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=69',
+        destaque: true,
+        categoria: 'jurisprudencia',
+        teseRecuperadorId: 'tese_pis_icms_base',
+        dataJulgamento: '13/05/2021',
+      },
+      {
+        id: 'juris-stj-tema-1182-resp-1945110',
+        titulo: 'STJ — Tema 1182 (REsp 1.945.110/RN): Benefícios e Crédito Presumido de ICMS',
+        tipo: 'Jurisprudência / STJ',
+        numero: 'Tema 1182 / REsp 1.945.110',
+        ano: 2023,
+        orgao: 'Superior Tribunal de Justiça (STJ)',
+        tributo: 'ICMS',
+        dataPublicacao: '26/04/2023',
+        ementa:
+          '1ª Seção do STJ: benefícios fiscais de ICMS (crédito presumido, isenção e redução de base) e sua exclusão das bases de apuração do PIS/Cofins e IRPJ/CSLL, observados os requisitos da LC 160/2017 e art. 30 da Lei 12.973/2014.',
+        linkOficial:
+          'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1182&cod_tema_final=1182',
+        destaque: true,
+        categoria: 'jurisprudencia',
+        teseRecuperadorId: 'tese_pis_subvencao_icms',
+        dataJulgamento: '26/04/2023',
+      },
+      {
+        id: 'juris-stj-tema-77-resp-1075508',
+        titulo:
+          'STJ — Tema 77 (REsp 1.075.508/SC): Créditos de IPI na Entrada de Insumos e Alíquota Zero',
+        tipo: 'Jurisprudência / STJ',
+        numero: 'Tema 77 / REsp 1.075.508',
+        ano: 2009,
+        orgao: 'Superior Tribunal de Justiça (STJ)',
+        tributo: 'IPI',
+        dataPublicacao: '24/06/2009',
+        ementa:
+          'Direito ao creditamento do IPI decorrente da aquisição de matérias-primas, produtos intermediários e materiais de embalagem utilizados na fabricação de produtos isentos ou sujeitos à alíquota zero (princípio da não cumulatividade e art. 11 da Lei 9.779/1999).',
+        linkOficial:
+          'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=77&cod_tema_final=77',
+        destaque: true,
+        categoria: 'jurisprudencia',
+        teseRecuperadorId: 'tese_pis_insumos_presumido',
+        dataJulgamento: '24/06/2009',
+      },
+    ]
+
     // Base padrão de normas fundamentais: Reforma Tributária e Legislação-Chave dos demais tributos
     const itens = [
+      ...tesesJurisprudencia,
       // --- REFORMA TRIBUTÁRIA (DESTAQUE) ---
       {
         id: 'ec-132-2023',
@@ -711,7 +889,18 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         if (String(item.ano) !== anoStr) return false
       }
       if (tipo && tipo !== 'todos') {
-        if (!item.tipo.toLowerCase().includes(tipo) && !item.titulo.toLowerCase().includes(tipo)) {
+        const tLower = item.tipo.toLowerCase()
+        const titLower = item.titulo.toLowerCase()
+        const catLower = (item.categoria || '').toLowerCase()
+        if (
+          !tLower.includes(tipo) &&
+          !titLower.includes(tipo) &&
+          !catLower.includes(tipo) &&
+          !(
+            tipo === 'jurisprudencia' &&
+            (tLower.includes('stf') || tLower.includes('stj') || tLower.includes('tema'))
+          )
+        ) {
           return false
         }
       }

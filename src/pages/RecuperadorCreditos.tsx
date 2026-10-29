@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
@@ -85,6 +86,7 @@ export default function RecuperadorCreditos() {
   const { user } = useAuth()
   const { clienteAtivo } = useClienteAtivo()
   const { toast } = useToast()
+  const [searchParams] = useSearchParams()
 
   // Função pura que deriva o estado inicial do Recuperador seguindo as prioridades:
   // 1) Empresa Ativa da Carteira
@@ -226,7 +228,14 @@ export default function RecuperadorCreditos() {
     [],
   )
 
-  const [moduloAtivo, setModuloAtivo] = useState<ModuloRecuperadorId>('dashboard')
+  const [moduloAtivo, setModuloAtivo] = useState<ModuloRecuperadorId>(() => {
+    const teseParam = searchParams.get('tese')
+    if (teseParam) {
+      if (teseParam.startsWith('tese_pis_')) return 'pis_cofins'
+      if (teseParam.startsWith('tese_folha_')) return 'folha'
+    }
+    return 'dashboard'
+  })
   const [configuracoes, setConfiguracoes] = useState<ConfiguracoesRecuperador>(() =>
     derivarConfiguracoesIniciais(clienteAtivo),
   )
@@ -291,6 +300,28 @@ export default function RecuperadorCreditos() {
   useEffect(() => {
     recarregarSimulacoes()
   }, [user?.id])
+
+  // Trata deep link da tese vindo de /legislacao ou notificações (?tese=...)
+  useEffect(() => {
+    const teseParam = searchParams.get('tese')
+    if (teseParam) {
+      if (teseParam.startsWith('tese_pis_')) {
+        setModuloAtivo('pis_cofins')
+      } else if (teseParam.startsWith('tese_folha_')) {
+        setModuloAtivo('folha')
+      }
+      // Ativa a tese explicitamente caso estivesse inativa
+      setTesesSelecionadas((prev) => {
+        if (prev[teseParam] && !prev[teseParam].ativa) {
+          return {
+            ...prev,
+            [teseParam]: { ...prev[teseParam], ativa: true },
+          }
+        }
+        return prev
+      })
+    }
+  }, [searchParams])
 
   // Teses filtradas pelo segmento selecionado no Módulo 1 (Configurações)
   const tesesElegiveisSetor = React.useMemo(() => {

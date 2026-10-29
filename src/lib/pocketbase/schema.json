@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-29T13:21:45.457Z",
+  "generatedAt": "2026-10-29T13:39:11.512Z",
   "collections": [
     {
       "name": "users",
@@ -1856,14 +1856,30 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["aliquota_nova", "legislacao_nova", "alerta_senado"]
+          "selectValues": [
+            "aliquota_nova",
+            "legislacao_nova",
+            "alerta_senado",
+            "tese_jurisprudencia"
+          ]
         },
         {
           "name": "tributo",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["CBS", "IBS"]
+          "selectValues": [
+            "CBS",
+            "IBS",
+            "PIS/Cofins",
+            "ICMS",
+            "ISS",
+            "IPI",
+            "IRPJ",
+            "CSLL",
+            "INSS",
+            "Geral"
+          ]
         },
         {
           "name": "ano",
@@ -1909,6 +1925,18 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "link_acao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tese_id",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

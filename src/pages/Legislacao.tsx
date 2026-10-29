@@ -134,6 +134,75 @@ export default function Legislacao() {
     }
   }
 
+  // Lista fixa de Jurisprudência-Chave para Recuperação de Créditos (STF / STJ)
+  const JURISPRUDENCIAS_CHAVE_RECUPERACAO = [
+    {
+      id: 'tese-re-592616-tema-118',
+      tributo: 'PIS/Cofins',
+      tribunal: 'STF',
+      teseNumero: 'RE 592.616 / STF (Tema 118 RG)',
+      dataJulgamento: '21/10/2026',
+      resumo:
+        'O ISS não integra a base de cálculo do PIS e da Cofins. O Plenário do STF pacificou a exclusão do imposto municipal sob repercussão geral, permitindo o levantamento e a repetição/compensação de indébitos fiscais.',
+      impactoEconomico:
+        'Empresas de Serviços e prestadores sujeitos ao ISS e Lucro Presumido/Real.',
+      linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=118',
+      teseRecuperadorId: 'tese_pis_iss_servicos',
+      ementa:
+        'Recurso Extraordinário 592.616 (Tema 118 da Repercussão Geral): o ISSQN destacado na nota de prestação de serviços não compõe o faturamento nem a receita bruta da empresa prestadora, não podendo compor a base de cálculo da contribuição ao PIS/Pasep e da Cofins.',
+      ano: 2026,
+    },
+    {
+      id: 'tese-re-574706-re-594339-tema-69',
+      tributo: 'PIS/Cofins',
+      tribunal: 'STF',
+      teseNumero: 'RE 574.706 e RE 594.339 / STF (Tema 69 RG)',
+      dataJulgamento: '13/05/2021',
+      resumo:
+        'ICMS na base do PIS/Cofins: o ICMS destacado nas notas fiscais não integra a base de cálculo do PIS e da Cofins (Tese do Século). Modulação definida a partir de 15/03/2017, com reafirmação plena no RE 594.339.',
+      impactoEconomico:
+        'Comércio, Indústria, Transporte e contribuintes do ICMS no Lucro Real ou Presumido.',
+      linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=69',
+      teseRecuperadorId: 'tese_pis_icms_base',
+      ementa:
+        'Recurso Extraordinário 574.706 e RE 594.339 (Tema 69 RG): o valor arrecadado a título de ICMS não se incorpora ao patrimônio do contribuinte e não consubstancia faturamento, motivo pelo qual é inconstitucional a sua inclusão na base de incidência do PIS e da Cofins.',
+      ano: 2021,
+    },
+    {
+      id: 'tese-stj-tema-1182-resp-1945110',
+      tributo: 'ICMS',
+      tribunal: 'STJ',
+      teseNumero: 'Tema 1182 / STJ (REsp 1.945.110/RN)',
+      dataJulgamento: '26/04/2023',
+      resumo:
+        'ICMS do crédito presumido e benefícios fiscais: exclusão de benefícios fiscais estaduais (crédito presumido, isenção e redução) da base de cálculo do PIS/Cofins e IRPJ/CSLL, observados os ditames da LC 160/2017.',
+      impactoEconomico:
+        'Indústrias e distribuidoras beneficiárias de incentivos de ICMS estaduais.',
+      linkOficial:
+        'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1182&cod_tema_final=1182',
+      teseRecuperadorId: 'tese_pis_subvencao_icms',
+      ementa:
+        'Tema Repetitivo 1.182 do Superior Tribunal de Justiça: impossibilidade de exigência de demonstração prévia de concessão de estímulo à implantação/expansão de empreendimento para fruição da exclusão de benefícios de ICMS das bases de tributos federais.',
+      ano: 2023,
+    },
+    {
+      id: 'tese-stj-tema-77-resp-1075508',
+      tributo: 'IPI',
+      tribunal: 'STJ',
+      teseNumero: 'Tema 77 / STJ (REsp 1.075.508/SC)',
+      dataJulgamento: '24/06/2009',
+      resumo:
+        'Insumos IPI: direito ao creditamento do IPI relativo à aquisição de matérias-primas e insumos empregados na fabricação de produtos isentos ou sujeitos à alíquota zero, em respeito à não cumulatividade e art. 11 da Lei 9.779/1999.',
+      impactoEconomico: 'Indústrias de transformação e montagem com etapas ou saídas desoneradas.',
+      linkOficial:
+        'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=77&cod_tema_final=77',
+      teseRecuperadorId: 'tese_pis_insumos_presumido',
+      ementa:
+        'Recurso Especial 1.075.508/SC julgado sob a sistemática do art. 543-C do CPC (Tema 77/STJ): é legítimo o creditamento de IPI na entrada de insumos aplicados em produtos desonerados ou à alíquota zero.',
+      ano: 2009,
+    },
+  ]
+
   // Lista fixa de Legislação-Chave por Tributo do Sistema Tributário Nacional
   const LEGISLACOES_CHAVE_POR_TRIBUTO = [
     {
@@ -565,7 +634,9 @@ export default function Legislacao() {
                                     ? 'Nova Alíquota Detectada'
                                     : notif.tipo === 'alerta_senado'
                                       ? 'Alerta do Senado'
-                                      : 'Legislação Nova'}
+                                      : notif.tipo === 'tese_jurisprudencia'
+                                        ? 'Jurisprudência Favorável'
+                                        : 'Legislação Nova'}
                                 </span>
                               </div>
 
@@ -604,12 +675,21 @@ export default function Legislacao() {
                             ) : (
                               <span />
                             )}
-                            <Link
-                              to="/calculadora-ibs-cbs"
-                              className="inline-flex items-center text-[11px] font-bold text-[#D4AF37] hover:underline"
-                            >
-                              Aplicar na Calculadora →
-                            </Link>
+                            {notif.tipo === 'tese_jurisprudencia' || notif.link_acao ? (
+                              <Link
+                                to={notif.link_acao || '/recuperador-creditos'}
+                                className="inline-flex items-center text-[11px] font-bold text-[#D4AF37] hover:underline"
+                              >
+                                Recuperar este crédito →
+                              </Link>
+                            ) : (
+                              <Link
+                                to="/calculadora-ibs-cbs"
+                                className="inline-flex items-center text-[11px] font-bold text-[#D4AF37] hover:underline"
+                              >
+                                Aplicar na Calculadora →
+                              </Link>
+                            )}
                           </div>
                         </div>
                       )
@@ -718,6 +798,7 @@ export default function Legislacao() {
                 { id: 'projeto', label: 'Projetos de Lei / PLN' },
                 { id: 'resolucao', label: 'Resoluções do Senado' },
                 { id: 'acordao', label: 'Acórdão / TCU' },
+                { id: 'jurisprudencia', label: 'Jurisprudência / Teses' },
               ].map((tp) => (
                 <button
                   key={tp.id}
@@ -735,6 +816,126 @@ export default function Legislacao() {
             </div>
           </CardContent>
         </Card>
+
+        {/* SEÇÃO FIXA: JURISPRUDÊNCIA-CHAVE PARA RECUPERAÇÃO DE CRÉDITOS (PADRÃO DIAMOND GROUP, SEM ÍCONES) */}
+        <section aria-labelledby="titulo-jurisprudencia-chave" className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-[#D4AF37] gap-2">
+            <div>
+              <div className="inline-block px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/40 mb-1">
+                Teses Vinculantes STF & STJ • Repercussão Geral
+              </div>
+              <h2
+                id="titulo-jurisprudencia-chave"
+                className="text-xl sm:text-2xl lg:text-3xl font-heading font-extrabold text-[#07132B]"
+              >
+                Jurisprudência-Chave para Recuperação de Créditos
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold bg-[#07132B] text-[#D4AF37] px-3 py-1.5 rounded-xl border border-[#D4AF37]/40">
+                4 teses geradoras de crédito
+              </span>
+              <Link
+                to="/recuperador-creditos"
+                className="hidden sm:inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-xl bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] shadow-sm transition-all"
+              >
+                Abrir Recuperador de Créditos →
+              </Link>
+            </div>
+          </div>
+
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-4xl">
+            Teses tributárias pacificadas nos Tribunais Superiores com efeito vinculante ou
+            repercussão geral favorável ao contribuinte. As teses abaixo geram direito líquido e
+            certo ao levantamento e recuperação de indébito dos últimos 60 meses com atualização
+            oficial pela taxa SELIC.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {JURISPRUDENCIAS_CHAVE_RECUPERACAO.map((tese) => {
+              return (
+                <div
+                  key={tese.id}
+                  className="rounded-2xl border-2 border-[#07132B]/15 hover:border-[#D4AF37] bg-white p-5 sm:p-6 flex flex-col justify-between space-y-4 shadow-sm hover:shadow-lg transition-all"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#07132B] text-[#D4AF37]">
+                          Tributo: {tese.tributo}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-100 text-slate-700 border border-slate-200">
+                          {tese.tribunal}
+                        </span>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-slate-500">
+                        Julgamento: {tese.dataJulgamento}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="font-heading font-extrabold text-base sm:text-lg text-[#07132B] leading-snug">
+                        {tese.teseNumero}
+                      </h3>
+                      <p className="text-[11px] font-mono text-[#D4AF37] font-semibold mt-0.5">
+                        {tese.impactoEconomico}
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
+                      <span className="text-[10px] font-mono uppercase font-bold text-slate-500 block">
+                        Resumo da Tese:
+                      </span>
+                      <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                        {tese.resumo}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-3 border-t border-slate-100">
+                    <div className="flex items-center justify-between text-xs flex-wrap gap-2">
+                      <Link
+                        to={`/recuperador-creditos?tese=${encodeURIComponent(tese.teseRecuperadorId)}`}
+                        className="font-heading font-bold text-xs text-[#07132B] hover:text-[#D4AF37] bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50 transition-colors"
+                      >
+                        Recuperar este crédito →
+                      </Link>
+
+                      <a
+                        href={tese.linkOficial}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-semibold text-slate-600 hover:text-[#07132B] underline decoration-1 underline-offset-2 transition-colors"
+                      >
+                        Ver acórdão oficial no {tese.tribunal}
+                      </a>
+                    </div>
+
+                    {/* Botão e Bloco "Gerar Explicação" em Linguagem Leiga (com cache) */}
+                    <CardExplicacaoLegislacao
+                      norma={{
+                        chave_norma: derivarChaveNorma({
+                          id: tese.id,
+                          titulo: tese.teseNumero,
+                          tributo: tese.tributo,
+                          ano: tese.ano,
+                        }),
+                        titulo: tese.teseNumero,
+                        ementa: `${tese.resumo} Fundamento: ${tese.ementa}`,
+                        tipo: `Jurisprudência / ${tese.tribunal}`,
+                        numero: tese.teseNumero,
+                        ano: tese.ano,
+                        tributo: tese.tributo,
+                        orgao: tese.tribunal,
+                        link_oficial: tese.linkOficial,
+                      }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
 
         {/* SEÇÃO 1: LEGISLAÇÃO-CHAVE DA REFORMA TRIBUTÁRIA (FIXA E OBRIGATÓRIA) */}
         <section className="space-y-4">
