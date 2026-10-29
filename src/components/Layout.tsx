@@ -217,7 +217,7 @@ export default function Layout() {
             </div>
           </Link>
 
-          {/* DESKTOP NAV: Início, Serviços, Sobre Nós, Calculadora IBS/CBS, Diagnóstico, Reforma Tributária */}
+          {/* DESKTOP NAV: Início, Serviços, Calculadora IBS/CBS, Recuperador, Diagnóstico, Reforma Tributária, Legislação */}
           <nav className="hidden lg:flex items-center gap-5 xl:gap-6">
             <Link
               to="/"
@@ -239,17 +239,6 @@ export default function Layout() {
             >
               Serviços
             </Link>
-            <a
-              href="/#sobre"
-              onClick={(e) => handleNavClick(e, 'sobre')}
-              className={`nav-link-hover text-sm font-medium transition-colors ${
-                location.hash === '#sobre'
-                  ? 'text-[#2ECC71] font-semibold active'
-                  : 'text-slate-200 hover:text-white'
-              }`}
-            >
-              Sobre Nós
-            </a>
             <a
               href="/calculadora-ibs-cbs"
               onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
@@ -615,7 +604,7 @@ export default function Layout() {
                 </div>
               )}
 
-              {/* Links Principais Mobile: Início, Serviços, Sobre Nós, Calculadora IBS/CBS, Diagnóstico, Reforma Tributária */}
+              {/* Links Principais Mobile: Início, Serviços, Calculadora IBS/CBS, Recuperador, Diagnóstico, Reforma Tributária, Legislação */}
               <div className="flex flex-col gap-3 mt-6">
                 <Link
                   to="/"
@@ -639,13 +628,6 @@ export default function Layout() {
                 >
                   Serviços
                 </Link>
-                <a
-                  href="/#sobre"
-                  onClick={(e) => handleNavClick(e, 'sobre')}
-                  className="text-base font-medium py-2 border-b border-white/5 text-slate-200 hover:text-[#2ECC71]"
-                >
-                  Sobre Nós
-                </a>
                 <a
                   href="/calculadora-ibs-cbs"
                   onClick={(e) => handleToolNav(e, '/calculadora-ibs-cbs')}
@@ -823,18 +805,8 @@ export default function Layout() {
                     className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
                   >
                     <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
-                    Home
+                    Início
                   </Link>
-                </li>
-                <li>
-                  <a
-                    href="/#sobre"
-                    onClick={(e) => handleNavClick(e, 'sobre')}
-                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
-                    Sobre Nós
-                  </a>
                 </li>
                 <li>
                   <Link
