@@ -170,6 +170,7 @@ export async function pesquisarLegislacao(filtros: FiltrosLegislacao = {}): Prom
  * Catálogo estático garantido para fallback total sem rede
  */
 export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
+  // Reforma Tributária
   {
     id: 'ec-132-2023',
     titulo: 'Emenda Constitucional nº 132/2023',
@@ -249,11 +250,250 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
     numero: '12546',
     ano: 2011,
     orgao: 'Presidência da República',
-    tributo: 'Geral',
+    tributo: 'INSS',
     dataPublicacao: '14/12/2011',
     ementa:
       'Desoneração da folha de pagamentos (CPRB) e cronograma de transição para o novo modelo de aproveitamento de créditos com a entrada plena do IBS/CBS.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2011/lei/l12546.htm',
+    destaque: false,
+  },
+
+  // Legislação-Chave por Tributo
+  // ICMS
+  {
+    id: 'lc-87-1996-kandir',
+    titulo: 'Lei Complementar nº 87/1996 (Lei Kandir)',
+    tipo: 'Lei Complementar',
+    numero: '87',
+    ano: 1996,
+    orgao: 'Presidência da República / Congresso Nacional',
+    tributo: 'ICMS',
+    dataPublicacao: '13/09/1996',
+    ementa:
+      'Dispõe sobre o imposto dos Estados e do Distrito Federal sobre operações relativas à circulação de mercadorias e sobre prestações de serviços de transporte interestadual e intermunicipal e de comunicação (ICMS).',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp87.htm',
+    destaque: false,
+  },
+  {
+    id: 'lc-190-2022-difal',
+    titulo: 'Lei Complementar nº 190/2022 (DIFAL ICMS)',
+    tipo: 'Lei Complementar',
+    numero: '190',
+    ano: 2022,
+    orgao: 'Presidência da República / Congresso Nacional',
+    tributo: 'ICMS',
+    dataPublicacao: '04/01/2022',
+    ementa:
+      'Regulamenta a cobrança do Diferencial de Alíquota (DIFAL) do ICMS nas operações e prestações interestaduais destinadas a consumidor final não contribuinte do imposto.',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp190.htm',
+    destaque: false,
+  },
+
+  // IPI
+  {
+    id: 'decreto-7212-2010-ripi',
+    titulo: 'Decreto nº 7.212/2010 (RIPI - Regulamento do IPI)',
+    tipo: 'Decreto Federal',
+    numero: '7212',
+    ano: 2010,
+    orgao: 'Presidência da República',
+    tributo: 'IPI',
+    dataPublicacao: '15/06/2010',
+    ementa:
+      'Regulamenta a cobrança, fiscalização, arrecadação e administração do Imposto sobre Produtos Industrializados (IPI), definindo fato gerador, estabelecimento industrial e equiparados.',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2010/decreto/d7212.htm',
+    destaque: false,
+  },
+  {
+    id: 'lei-4502-1964-ipi',
+    titulo: 'Lei nº 4.502/1964 (Lei Básica do IPI)',
+    tipo: 'Lei Ordinária',
+    numero: '4502',
+    ano: 1964,
+    orgao: 'Presidência da República',
+    tributo: 'IPI',
+    dataPublicacao: '30/11/1964',
+    ementa:
+      'Dispõe sobre o imposto de consumo e reorganiza a tributação dos produtos industrializados no ordenamento nacional.',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/l4502.htm',
+    destaque: false,
+  },
+
+  // PIS / COFINS
+  {
+    id: 'lei-10637-2002-pis',
+    titulo: 'Lei nº 10.637/2002 (PIS Não Cumulativo)',
+    tipo: 'Lei Ordinária',
+    numero: '10637',
+    ano: 2002,
+    orgao: 'Presidência da República',
+    tributo: 'PIS/Cofins',
+    dataPublicacao: '30/12/2002',
+    ementa:
+      'Dispõe sobre a não-cumulatividade na cobrança da contribuição para os Programas de Integração Social (PIS) e de Formação do Patrimônio do Servidor Público (Pasep).',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/2002/l10637.htm',
+    destaque: false,
+  },
+  {
+    id: 'lei-10833-2003-cofins',
+    titulo: 'Lei nº 10.833/2003 (Cofins Não Cumulativa)',
+    tipo: 'Lei Ordinária',
+    numero: '10833',
+    ano: 2003,
+    orgao: 'Presidência da República',
+    tributo: 'PIS/Cofins',
+    dataPublicacao: '29/12/2003',
+    ementa:
+      'Altera a Legislação Tributária Federal e dispõe sobre a cobrança não-cumulativa da Contribuição para o Financiamento da Seguridade Social (Cofins).',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/2003/l10833.htm',
+    destaque: false,
+  },
+  {
+    id: 'in-rfb-2121-2022-pis-cofins',
+    titulo: 'Instrução Normativa RFB nº 2.121/2022 (Consolidação PIS/Cofins)',
+    tipo: 'Instrução Normativa',
+    numero: '2121',
+    ano: 2022,
+    orgao: 'Receita Federal do Brasil (RFB)',
+    tributo: 'PIS/Cofins',
+    dataPublicacao: '15/12/2022',
+    ementa:
+      'Consolida as normas sobre a apuração, a cobrança, a fiscalização, a arrecadação e a administração da Contribuição para o PIS/Pasep e da Cofins.',
+    linkOficial: 'https://normas.receita.fazenda.gov.br/sijut2consulta/link.action?idAto=127926',
+    destaque: false,
+  },
+
+  // ISS
+  {
+    id: 'lc-116-2003-iss',
+    titulo: 'Lei Complementar nº 116/2003 (Lei Geral do ISSQN)',
+    tipo: 'Lei Complementar',
+    numero: '116',
+    ano: 2003,
+    orgao: 'Presidência da República / Congresso Nacional',
+    tributo: 'ISS',
+    dataPublicacao: '31/07/2003',
+    ementa:
+      'Dispõe sobre o Imposto Sobre Serviços de Qualquer Natureza, de competência dos Municípios e do Distrito Federal, e fixa a Lista de Serviços Anexa.',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp116.htm',
+    destaque: false,
+  },
+  {
+    id: 'lc-175-2020-iss',
+    titulo: 'Lei Complementar nº 175/2020 (Padrão Nacional do ISS)',
+    tipo: 'Lei Complementar',
+    numero: '175',
+    ano: 2020,
+    orgao: 'Presidência da República / Congresso Nacional',
+    tributo: 'ISS',
+    dataPublicacao: '23/09/2020',
+    ementa:
+      'Dispõe sobre o padrão nacional de obrigação acessória do ISSQN incidente sobre planos de saúde, leasing, cartões de crédito/débito e fundos.',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp175.htm',
+    destaque: false,
+  },
+
+  // IRPJ
+  {
+    id: 'lei-12973-2014-irpj',
+    titulo: 'Lei nº 12.973/2014 (Adequação aos Padrões IFRS)',
+    tipo: 'Lei Ordinária',
+    numero: '12973',
+    ano: 2014,
+    orgao: 'Presidência da República',
+    tributo: 'IRPJ',
+    dataPublicacao: '13/05/2014',
+    ementa:
+      'Altera a legislação tributária federal relativa ao IRPJ, CSLL, PIS e Cofins; revoga o Regime Tributário de Transição (RTT) e adapta as regras fiscais às normas contábeis internacionais (IFRS).',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2014/lei/l12973.htm',
+    destaque: false,
+  },
+  {
+    id: 'decreto-9580-2018-rir',
+    titulo: 'Decreto nº 9.580/2018 (RIR/2018 - Regulamento do IR)',
+    tipo: 'Decreto Federal',
+    numero: '9580',
+    ano: 2018,
+    orgao: 'Presidência da República',
+    tributo: 'IRPJ',
+    dataPublicacao: '22/11/2018',
+    ementa:
+      'Regulamenta a tributação, a fiscalização, a arrecadação e a administração do Imposto sobre a Renda e Proventos de Qualquer Natureza (Lucro Real, Presumido e Arbitrado).',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/decreto/d9580.htm',
+    destaque: false,
+  },
+  {
+    id: 'lei-9249-1995-irpj',
+    titulo: 'Lei nº 9.249/1995 (Bases de Cálculo do IRPJ e JCP)',
+    tipo: 'Lei Ordinária',
+    numero: '9249',
+    ano: 1995,
+    orgao: 'Presidência da República',
+    tributo: 'IRPJ',
+    dataPublicacao: '26/12/1995',
+    ementa:
+      'Altera a legislação do imposto de renda das pessoas jurídicas, define as regras de Juros sobre Capital Próprio (JCP), apuração do Lucro Real e percentuais do Lucro Presumido.',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/l9249.htm',
+    destaque: false,
+  },
+
+  // CSLL
+  {
+    id: 'lei-7689-1988-csll',
+    titulo: 'Lei nº 7.689/1988 (Instituição da CSLL)',
+    tipo: 'Lei Ordinária',
+    numero: '7689',
+    ano: 1988,
+    orgao: 'Presidência da República',
+    tributo: 'CSLL',
+    dataPublicacao: '15/12/1988',
+    ementa:
+      'Institui a Contribuição Social sobre o Lucro das Pessoas Jurídicas (CSLL) destinada ao financiamento da Seguridade Social.',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/l7689.htm',
+    destaque: false,
+  },
+  {
+    id: 'in-rfb-1700-2017-irpj-csll',
+    titulo: 'Instrução Normativa RFB nº 1.700/2017 (Apuração IRPJ e CSLL)',
+    tipo: 'Instrução Normativa',
+    numero: '1700',
+    ano: 2017,
+    orgao: 'Receita Federal do Brasil (RFB)',
+    tributo: 'CSLL',
+    dataPublicacao: '14/03/2017',
+    ementa:
+      'Dispõe sobre a determinação e o pagamento do IRPJ e da CSLL devidos pelas pessoas jurídicas e disciplina o tratamento tributário do Lucro Real, Presumido e Arbitrado.',
+    linkOficial: 'https://normas.receita.fazenda.gov.br/sijut2consulta/link.action?idAto=81268',
+    destaque: false,
+  },
+
+  // INSS
+  {
+    id: 'lei-8212-1991-custeio',
+    titulo: 'Lei nº 8.212/1991 (Lei Orgânica da Seguridade Social)',
+    tipo: 'Lei Ordinária',
+    numero: '8212',
+    ano: 1991,
+    orgao: 'Presidência da República',
+    tributo: 'INSS',
+    dataPublicacao: '24/07/1991',
+    ementa:
+      'Dispõe sobre a organização da Seguridade Social, institui Plano de Custeio e as contribuições sociais sobre folha, faturamento e lucro.',
+    linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/l8212cons.htm',
+    destaque: false,
+  },
+  {
+    id: 'in-rfb-2110-2022-inss',
+    titulo: 'Instrução Normativa RFB nº 2.110/2022 (Normas Gerais da CPRB e INSS)',
+    tipo: 'Instrução Normativa',
+    numero: '2110',
+    ano: 2022,
+    orgao: 'Receita Federal do Brasil (RFB)',
+    tributo: 'INSS',
+    dataPublicacao: '17/10/2022',
+    ementa:
+      'Dispõe sobre as normas gerais de tributação previdenciária e de arrecadação das contribuições sociais destinadas à Previdência Social e de outras entidades/fundos.',
+    linkOficial: 'https://normas.receita.fazenda.gov.br/sijut2consulta/link.action?idAto=126484',
     destaque: false,
   },
 ]
