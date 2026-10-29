@@ -250,6 +250,7 @@ export default function RecuperadorCreditos() {
   // Modais
   const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
   const [modalPdfAberto, setModalPdfAberto] = useState(false)
+  const [modalLimparAberto, setModalLimparAberto] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
   // Simulações salvas
@@ -349,6 +350,46 @@ export default function RecuperadorCreditos() {
         ...atualizacao,
       },
     }))
+  }
+
+  const handleLimparDashboard = () => {
+    // 1. Zera dados de entrada e restaura configurações padrão
+    setConfiguracoes({
+      ...CONFIGURACOES_PADRAO,
+      clienteId: null,
+      empresa: '',
+      cnpj: '',
+      regimeAtual: 'Lucro Presumido',
+      segmento: '',
+      uf: 'SP',
+      anosFaturamento: derivarAnosFaturamentoDeMensal(0),
+      numeroMedioEmpregados: 0,
+      percentualRotatividadeAnual: 0,
+      massaSalarialMensal: 0,
+      faturamentoMensal: 0,
+      percentualComprasVendas: 0,
+      anoTransicao: 2033,
+      regimeAplicado: 'Padrão / Sem Redução',
+      origemPreenchimento: 'manual',
+    })
+
+    // 2. Desmarca todas as teses selecionadas (ativas voltam para false)
+    const tesesPadrao = gerarSelecaoTesesPadrao()
+    const tesesDesmarcadas: Record<string, TeseSelecaoUsuario> = {}
+    Object.keys(tesesPadrao).forEach((key) => {
+      tesesDesmarcadas[key] = {
+        ...tesesPadrao[key],
+        ativa: false,
+      }
+    })
+    setTesesSelecionadas(tesesDesmarcadas)
+    setCenarioSelecionado('integral')
+
+    toast({
+      title: 'Recuperador limpo!',
+      description:
+        'Todos os faturamentos, anos e teses foram zerados e a tela retornou ao estado inicial.',
+    })
   }
 
   const handleCarregarSimulacao = (sim: SimulacaoRecuperador) => {
@@ -578,10 +619,13 @@ export default function RecuperadorCreditos() {
             {moduloAtivo === 'dashboard' && (
               <ModuloDashboardRecuperador
                 resultados={resultadosAtuais}
+                configuracoes={configuracoes}
                 cenarioSelecionado={cenarioSelecionado}
                 segmento={configuracoes.segmento}
                 regimeAtual={configuracoes.regimeAtual}
                 onChangeCenario={setCenarioSelecionado}
+                onLimparDashboard={handleLimparDashboard}
+                onIrParaConfiguracoes={() => setModuloAtivo('configuracoes')}
                 onGerarPdf={() => setModalPdfAberto(true)}
                 onSalvarAnalise={() => setModalSalvarAberto(true)}
                 onSelecionarTese={(teseId) => {

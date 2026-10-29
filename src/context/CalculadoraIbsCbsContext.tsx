@@ -41,6 +41,7 @@ import {
   carregarDadosEmpresa,
   salvarDadosEmpresa,
   existeDadosEmpresaSalvos,
+  limparDadosEmpresa,
   DadosEmpresaPerfil,
   DADOS_EMPRESA_PADRAO,
   STORAGE_EVENT,
@@ -183,6 +184,9 @@ interface CalculadoraContextType {
     dashboardFaturamento: boolean
     dashboardPercentualCompras: boolean
   }
+
+  // Limpeza Completa do Dashboard
+  limparDashboard: () => void
 
   // Salvar / Restaurar Simulação Completa
   obterSnapshotParametros: () => ParametrosSimulacaoCalculadora
@@ -594,6 +598,67 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   }
 
   const resetConfig = () => setConfig(CONFIGURACOES_PADRAO)
+
+  // Reseta em cascata todos os dados de entrada, cálculos e sincronizações
+  const limparDashboard = () => {
+    // 1. Reseta configurações gerais do Módulo 1 (alíquotas de referência, etc.)
+    setConfig(CONFIGURACOES_PADRAO)
+
+    // 2. Módulo 2: Calculadora Simples
+    setValorOperacaoState(0)
+    setPercentualComprasVendasSimplesState(0)
+    setRegimeOperacaoState('padrao')
+    setAnoOperacaoState(2033)
+
+    // 3. Módulo 3: Comparativo
+    setFaturamentoMensalState(0)
+    setPercentualComprasVendasComparativoState(0)
+    setFolhaPagamentoMensal(0)
+    setDespesasComCreditosMensais(0)
+    setMargemLucroEstimada(20)
+    setPercentualExportacao(0)
+    setProporcaoServicoMisto(50)
+    setAliquotaImpostoSeletivo(10)
+
+    // 4. Módulo 4: Simulador de Créditos
+    setDespesasCreditos(CATEGORIAS_CREDITO_PADRAO)
+
+    // 5. Módulo 5: Transição e Estoque
+    setFaturamentoAnualProjetadoState(0)
+    setValorEstoqueVirada(0)
+
+    // 6. Módulo 6: Dashboard filtros
+    setPeriodoDashboard('mensal')
+    setRegimeAtualFiltroState('Lucro Presumido')
+    setAnoTransicaoDashboardState(2033)
+
+    // 7. Flags de edição manual restauradas aos padrões
+    setEditadoLocalmente({
+      modulo2AnoOperacao: false,
+      modulo2RegimeOperacao: false,
+      modulo2ValorOperacao: false,
+      modulo2PercentualCompras: false,
+      modulo3Faturamento: false,
+      modulo3PercentualCompras: false,
+      modulo3TipoAtividade: false,
+      modulo4Categorias: false,
+      modulo5Faturamento: false,
+      modulo5SetorTransicao: false,
+      dashboardRegimeAtual: false,
+      dashboardAnoTransicao: false,
+      dashboardSetor: false,
+      dashboardFaturamento: false,
+      dashboardPercentualCompras: false,
+    })
+
+    // 8. Limpa os dados em localStorage através de limparDadosEmpresa()
+    try {
+      limparDadosEmpresa()
+    } catch (err) {
+      console.warn('[CalculadoraContext] Erro ao limpar dados empresa:', err)
+    }
+    setOrigemDadosEmpresa(false)
+  }
 
   const limparEtiquetaOrigem = (campo: keyof OrigemCamposAliquota) => {
     setConfig((prev) => {
@@ -2579,6 +2644,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
         origemDadosEmpresa,
         restaurarDadosEmpresaNoModulo,
+        limparDashboard,
 
         obterSnapshotParametros,
         obterSnapshotResultados,
