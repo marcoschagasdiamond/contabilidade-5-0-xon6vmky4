@@ -10,6 +10,7 @@ export type TipoCredito =
   | 'Crédito de ICMS de incentivos'
   | 'Crédito judicial contra o Fisco'
   | 'Dívida ativa securitizada'
+  | 'Outros'
 
 export type EsferaCredito = 'federal' | 'estadual' | 'municipal'
 
@@ -128,6 +129,7 @@ export const TIPOS_CREDITO_LISTA: TipoCredito[] = [
   'Crédito de ICMS de incentivos',
   'Crédito judicial contra o Fisco',
   'Dívida ativa securitizada',
+  'Outros',
 ]
 
 export const SITUACOES_CREDITO_VENDA: { valor: SituacaoCreditoVenda; label: string }[] = [

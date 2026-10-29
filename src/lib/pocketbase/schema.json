@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-29T19:22:08.302Z",
+  "generatedAt": "2026-10-29T19:32:05.505Z",
   "collections": [
     {
       "name": "users",
@@ -1531,7 +1531,8 @@
             "Crédito de PIS/Cofins",
             "Crédito de ICMS de incentivos",
             "Crédito judicial contra o Fisco",
-            "Dívida ativa securitizada"
+            "Dívida ativa securitizada",
+            "Outros"
           ]
         },
         {

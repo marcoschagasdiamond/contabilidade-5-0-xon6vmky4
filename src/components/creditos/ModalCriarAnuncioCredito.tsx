@@ -13,7 +13,7 @@ import {
   type NovoAnuncioInput,
 } from '@/types/creditos'
 import { criarAnuncioCredito } from '@/services/creditos'
-import { formatarCNPJ, limparCNPJ } from '@/lib/cnpj'
+import { formatarCpfCnpj, limparCNPJ, validarCpfCnpj } from '@/lib/cnpj'
 
 interface ModalCriarAnuncioCreditoProps {
   aberto: boolean
@@ -81,6 +81,26 @@ export function ModalCriarAnuncioCredito({
 
     if (!contatoNome.trim()) {
       setErro('Informe o nome de contato do anunciante.')
+      return
+    }
+
+    const docLimpo = limparCNPJ(contatoDocumento)
+    if (!docLimpo) {
+      setErro('O CPF/CNPJ do anunciante é obrigatório. Por favor, preencha o documento.')
+      return
+    }
+
+    if (docLimpo.length !== 11 && docLimpo.length !== 14) {
+      setErro('O documento informado deve conter 11 dígitos (CPF) ou 14 dígitos (CNPJ).')
+      return
+    }
+
+    if (!validarCpfCnpj(docLimpo)) {
+      setErro(
+        docLimpo.length === 11
+          ? 'O CPF informado é inválido. Verifique os dígitos digitados.'
+          : 'O CNPJ informado é inválido. Verifique os dígitos digitados.',
+      )
       return
     }
 
@@ -382,16 +402,17 @@ export function ModalCriarAnuncioCredito({
 
               <div>
                 <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                  CNPJ ou CPF do Anunciante
+                  CPF ou CNPJ do Anunciante *
                 </label>
                 <input
                   type="text"
-                  placeholder="00.000.000/0001-00"
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
                   value={contatoDocumento}
                   onChange={(e) => {
-                    const l = limparCNPJ(e.target.value)
-                    setContatoDocumento(l.length > 11 ? formatarCNPJ(l) : e.target.value)
+                    const formatado = formatarCpfCnpj(e.target.value)
+                    setContatoDocumento(formatado)
                   }}
+                  required
                   className="w-full px-3 py-2 rounded-lg bg-[#0A1A2F] border border-white/15 text-white text-xs focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>

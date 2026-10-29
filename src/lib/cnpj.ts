@@ -1,11 +1,15 @@
 /**
- * Utilitários para formatação e validação de CNPJ brasileiro
+ * Utilitários para formatação e validação de CNPJ e CPF brasileiro
  */
 
 /**
  * Remove qualquer caractere que não seja dígito
  */
 export function limparCNPJ(valor: string): string {
+  return (valor || '').replace(/\D/g, '')
+}
+
+export function limparCpfCnpj(valor: string): string {
   return (valor || '').replace(/\D/g, '')
 }
 
@@ -71,4 +75,85 @@ export function validarCNPJ(cnpj: string): boolean {
   const dv2 = resto < 2 ? 0 : 11 - resto
 
   return parseInt(digits[13], 10) === dv2
+}
+
+/**
+ * Aplica a máscara brasileira de CPF: 000.000.000-00
+ * Conforme o usuário digita ou cola, formata progressivamente até 11 dígitos.
+ */
+export function formatarCPF(valor: string): string {
+  const digits = limparCNPJ(valor).slice(0, 11)
+  if (!digits) return ''
+
+  if (digits.length <= 3) {
+    return digits
+  }
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 3)}.${digits.slice(3)}`
+  }
+  if (digits.length <= 9) {
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
+  }
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`
+}
+
+/**
+ * Aplica máscara dinâmica de CPF ou CNPJ conforme o número digitado:
+ * - Até 11 dígitos: formata progressivamente como CPF (000.000.000-00)
+ * - Acima de 11 dígitos até 14 dígitos: formata progressivamente como CNPJ (00.000.000/0000-00)
+ */
+export function formatarCpfCnpj(valor: string): string {
+  const digits = limparCNPJ(valor).slice(0, 14)
+  if (!digits) return ''
+  if (digits.length <= 11) {
+    return formatarCPF(digits)
+  }
+  return formatarCNPJ(digits)
+}
+
+/**
+ * Validação do algoritmo oficial de dígitos verificadores de CPF da Receita Federal
+ */
+export function validarCPF(cpf: string): boolean {
+  const digits = limparCNPJ(cpf)
+  if (digits.length !== 11) {
+    return false
+  }
+
+  // Rejeita sequências repetidas como 111.111.111-11
+  if (/^(\d)\1{10}$/.test(digits)) {
+    return false
+  }
+
+  let soma = 0
+  for (let i = 0; i < 9; i++) {
+    soma += parseInt(digits[i], 10) * (10 - i)
+  }
+  let resto = (soma * 10) % 11
+  if (resto === 10 || resto === 11) resto = 0
+  if (resto !== parseInt(digits[9], 10)) {
+    return false
+  }
+
+  soma = 0
+  for (let i = 0; i < 10; i++) {
+    soma += parseInt(digits[i], 10) * (11 - i)
+  }
+  resto = (soma * 10) % 11
+  if (resto === 10 || resto === 11) resto = 0
+  return resto === parseInt(digits[10], 10)
+}
+
+/**
+ * Validação para documento informado: aceita CPF válido (11 dígitos) ou CNPJ válido (14 dígitos)
+ */
+export function validarCpfCnpj(documento: string): boolean {
+  const digits = limparCNPJ(documento)
+  if (digits.length === 11) {
+    return validarCPF(digits)
+  }
+  if (digits.length === 14) {
+    return validarCNPJ(digits)
+  }
+  return false
 }
