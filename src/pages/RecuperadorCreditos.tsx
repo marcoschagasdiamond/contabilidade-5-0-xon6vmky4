@@ -231,6 +231,16 @@ export default function RecuperadorCreditos() {
   )
 
   const [moduloAtivo, setModuloAtivo] = useState<ModuloRecuperadorId>(() => {
+    const moduloParam = searchParams.get('modulo')
+    if (
+      moduloParam === 'configuracoes' ||
+      moduloParam === 'pis_cofins' ||
+      moduloParam === 'folha' ||
+      moduloParam === 'apuracao_selic' ||
+      moduloParam === 'dashboard'
+    ) {
+      return moduloParam
+    }
     const teseParam = searchParams.get('tese')
     if (teseParam) {
       if (teseParam.startsWith('tese_pis_')) return 'pis_cofins'
@@ -304,24 +314,48 @@ export default function RecuperadorCreditos() {
     recarregarSimulacoes()
   }, [user?.id])
 
-  // Trata deep link da tese vindo de /legislacao ou notificações (?tese=...)
+  // Trata deep link da tese vindo de /legislacao ou notificações (?modulo=...&tese=...)
   useEffect(() => {
+    const moduloParam = searchParams.get('modulo')
+    if (
+      moduloParam === 'configuracoes' ||
+      moduloParam === 'pis_cofins' ||
+      moduloParam === 'folha' ||
+      moduloParam === 'apuracao_selic' ||
+      moduloParam === 'dashboard'
+    ) {
+      setModuloAtivo(moduloParam)
+    }
+
     const teseParam = searchParams.get('tese')
     if (teseParam) {
-      if (teseParam.startsWith('tese_pis_')) {
-        setModuloAtivo('pis_cofins')
-      } else if (teseParam.startsWith('tese_folha_')) {
-        setModuloAtivo('folha')
+      if (!moduloParam) {
+        if (teseParam.startsWith('tese_pis_')) {
+          setModuloAtivo('pis_cofins')
+        } else if (teseParam.startsWith('tese_folha_')) {
+          setModuloAtivo('folha')
+        }
       }
       // Ativa a tese explicitamente caso estivesse inativa
       setTesesSelecionadas((prev) => {
-        if (prev[teseParam] && !prev[teseParam].ativa) {
-          return {
-            ...prev,
-            [teseParam]: { ...prev[teseParam], ativa: true },
+        const existente = prev[teseParam]
+        if (existente) {
+          if (!existente.ativa) {
+            return {
+              ...prev,
+              [teseParam]: { ...existente, ativa: true },
+            }
           }
+          return prev
         }
-        return prev
+        return {
+          ...prev,
+          [teseParam]: {
+            teseId: teseParam,
+            ativa: true,
+            farol: 'verde',
+          },
+        }
       })
     }
   }, [searchParams])

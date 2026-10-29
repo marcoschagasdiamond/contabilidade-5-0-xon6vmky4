@@ -148,6 +148,7 @@ export default function Legislacao() {
         'Empresas de Serviços e prestadores sujeitos ao ISS e Lucro Presumido/Real.',
       linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=118',
       teseRecuperadorId: 'tese_pis_iss_servicos',
+      moduloAbaRecuperador: 'pis_cofins',
       ementa:
         'Recurso Extraordinário 592.616 (Tema 118 da Repercussão Geral): o ISSQN destacado na nota de prestação de serviços não compõe o faturamento nem a receita bruta da empresa prestadora, não podendo compor a base de cálculo da contribuição ao PIS/Pasep e da Cofins.',
       ano: 2026,
@@ -164,6 +165,7 @@ export default function Legislacao() {
         'Comércio, Indústria, Transporte e contribuintes do ICMS no Lucro Real ou Presumido.',
       linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=69',
       teseRecuperadorId: 'tese_pis_icms_base',
+      moduloAbaRecuperador: 'pis_cofins',
       ementa:
         'Recurso Extraordinário 574.706 e RE 594.339 (Tema 69 RG): o valor arrecadado a título de ICMS não se incorpora ao patrimônio do contribuinte e não consubstancia faturamento, motivo pelo qual é inconstitucional a sua inclusão na base de incidência do PIS e da Cofins.',
       ano: 2021,
@@ -181,6 +183,7 @@ export default function Legislacao() {
       linkOficial:
         'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1182&cod_tema_final=1182',
       teseRecuperadorId: 'tese_pis_subvencao_icms',
+      moduloAbaRecuperador: 'icms',
       ementa:
         'Tema Repetitivo 1.182 do Superior Tribunal de Justiça: impossibilidade de exigência de demonstração prévia de concessão de estímulo à implantação/expansão de empreendimento para fruição da exclusão de benefícios de ICMS das bases de tributos federais.',
       ano: 2023,
@@ -197,14 +200,78 @@ export default function Legislacao() {
       linkOficial:
         'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=77&cod_tema_final=77',
       teseRecuperadorId: 'tese_pis_insumos_presumido',
+      moduloAbaRecuperador: 'pis_cofins',
       ementa:
         'Recurso Especial 1.075.508/SC julgado sob a sistemática do art. 543-C do CPC (Tema 77/STJ): é legítimo o creditamento de IPI na entrada de insumos aplicados em produtos desonerados ou à alíquota zero.',
       ano: 2009,
     },
+    {
+      id: 'tese-stf-tema-959-re-1187264',
+      tributo: 'INSS',
+      tribunal: 'STF',
+      teseNumero: 'Tema 959 / STF (RE 1.187.264 RG)',
+      dataJulgamento: '24/02/2021',
+      resumo:
+        'Exclusão do ICMS da base do INSS/CPRB (Tese dos Desembolsos): o ICMS destacado não compõe a receita bruta para cálculo da contribuição previdenciária patronal substitutiva (CPRB). Aplicável exclusivamente a Lucro Real e Lucro Presumido.',
+      impactoEconomico:
+        'Empresas enquadradas na CPRB e Lucro Real/Presumido (Comércio, Indústria, Transporte e Serviços).',
+      linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=959',
+      teseRecuperadorId: 'tese_folha_icms_base_inss_tema_959',
+      moduloAbaRecuperador: 'folha',
+      ementa:
+        'Recurso Extraordinário 1.187.264/SP (Tema 959 RG): é inconstitucional a inclusão do Imposto sobre Circulação de Mercadorias e Serviços (ICMS) na base de cálculo da Contribuição Previdenciária sobre a Receita Bruta (CPRB).',
+      ano: 2021,
+    },
+    {
+      id: 'tese-stf-tema-1079-fapi-salario-educacao',
+      tributo: 'INSS',
+      tribunal: 'STJ / STF',
+      teseNumero: 'Tema 1079 / Salário-Educação e FAPI',
+      dataJulgamento: '13/03/2024',
+      resumo:
+        'Tese do Salário-Educação e FAPI: restituição de contribuições de terceiros recolhidas sem a observância do teto legal de 20 salários mínimos (art. 4º da Lei 6.950/1981) ou incidentes sobre verbas de caráter não remuneratório/previdência complementar.',
+      impactoEconomico:
+        'Pessoas jurídicas no Lucro Real e Presumido com folha de pagamento e empregados contratados.',
+      linkOficial:
+        'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1079&cod_tema_final=1079',
+      teseRecuperadorId: 'tese_folha_salario_educacao_fapi',
+      moduloAbaRecuperador: 'folha',
+      ementa:
+        'Tema Repetitivo 1.079 do STJ e REsp 1.570.980: discussão sobre o limite de 20 salários mínimos aplicável à base de cálculo das contribuições parafiscais arrecadadas por conta de terceiros (Salário-Educação, FAPI e Sistema S).',
+      ano: 2024,
+    },
+    {
+      id: 'tese-stf-tema-1023-jcp-pis-cofins',
+      tributo: 'PIS/Cofins',
+      tribunal: 'STF',
+      teseNumero: 'Tema 1023 / STF (RE 1.072.485 RG)',
+      dataJulgamento: '18/08/2023',
+      resumo:
+        'Tese dos Juros sobre Capital Próprio (JCP) na base do PIS/Cofins: não incidência de PIS e Cofins sobre receitas auferidas a título de JCP, por configurarem remuneração do capital investido e distribuição aos sócios, e não receita de vendas de bens ou serviços.',
+      impactoEconomico:
+        'Pessoas jurídicas no Lucro Real e Presumido que apuram ou recebem Juros sobre Capital Próprio.',
+      linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=1023',
+      teseRecuperadorId: 'tese_pis_juros_capital_proprio',
+      moduloAbaRecuperador: 'pis_cofins',
+      ementa:
+        'Recurso Extraordinário 1.072.485 (Tema 1023 RG): análise constitucional da exigência de PIS e Cofins sobre receitas financeiras e patrimoniais decorrentes de Juros sobre Capital Próprio nos termos da Lei 9.249/1995.',
+      ano: 2023,
+    },
   ]
 
   // Lista fixa de Legislação-Chave por Tributo do Sistema Tributário Nacional
-  const LEGISLACOES_CHAVE_POR_TRIBUTO = [
+  const LEGISLACOES_CHAVE_POR_TRIBUTO: Array<{
+    tributo: string
+    titulo: string
+    tipo: string
+    numero: string
+    ano: number
+    orgao: string
+    ementa: string
+    linkOficial: string
+    destaqueItem: string
+    alertaVencimento?: string
+  }> = [
     {
       tributo: 'ICMS',
       titulo: 'Lei Complementar nº 87/1996 (Lei Kandir)',
@@ -216,6 +283,7 @@ export default function Legislacao() {
         'Norma geral do ICMS no território nacional. Disciplina hipóteses de incidência, base de cálculo, não incidência em exportações, diferencial de alíquotas e compensação de créditos.',
       linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp87.htm',
       destaqueItem: 'Regra matriz nacional do ICMS e desoneração de exportações',
+      alertaVencimento: 'Vigência até 2033',
     },
     {
       tributo: 'ICMS',
@@ -228,6 +296,7 @@ export default function Legislacao() {
         'Regulamenta o Diferencial de Alíquota do ICMS nas operações e prestações interestaduais destinadas a consumidor final não contribuinte (e-commerce e vendas B2C interestaduais).',
       linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp190.htm',
       destaqueItem: 'EC 87/2015 e partilha federativa da venda a consumidor final',
+      alertaVencimento: 'Fase muda em 2029',
     },
     {
       tributo: 'IPI',
@@ -240,6 +309,7 @@ export default function Legislacao() {
         'Consolidação do Regulamento do Imposto sobre Produtos Industrializados. Estabelece fatos geradores, equiparações industriais, regimes de suspensão e créditos da Tabela TIPI.',
       linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2010/decreto/d7212.htm',
       destaqueItem: 'Regulamento oficial completo e classificação fiscal TIPI',
+      alertaVencimento: 'Fase muda em 2027',
     },
     {
       tributo: 'PIS/Cofins',
@@ -252,6 +322,7 @@ export default function Legislacao() {
         'Instituem o regime de não-cumulatividade do PIS/Pasep (1,65%) e da Cofins (7,6%), definindo rol de insumos, créditos de depreciação, regimes monofásicos e alíquota zero.',
       linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/2003/l10833.htm',
       destaqueItem: 'Regime não cumulativo do Lucro Real e tomada de créditos',
+      alertaVencimento: 'Fase muda em 2027',
     },
     {
       tributo: 'PIS/Cofins',
@@ -264,6 +335,7 @@ export default function Legislacao() {
         'Consolidação das normas gerais de apuração, recolhimento, retenções e tomada de créditos de PIS/Pasep e Cofins em todo o território nacional.',
       linkOficial: 'https://normas.receita.fazenda.gov.br/sijut2consulta/link.action?idAto=127926',
       destaqueItem: 'Manual e regulamento consolidado de créditos fiscais da Receita',
+      alertaVencimento: 'Fase muda em 2027',
     },
     {
       tributo: 'ISS',
@@ -276,6 +348,7 @@ export default function Legislacao() {
         'Estatuto nacional do ISSQN com Lista de Serviços Anexa, fixação de alíquota mínima (2%) e máxima (5%), local da prestação e vedações a benefícios fiscais predatórios.',
       linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp116.htm',
       destaqueItem: 'Lista de 40 subitens e competência tributária municipal',
+      alertaVencimento: 'Vigência até 2033',
     },
     {
       tributo: 'IRPJ',
@@ -288,6 +361,7 @@ export default function Legislacao() {
         'Marco fiscal da contabilidade brasileira: alinha o IRPJ e a CSLL aos padrões internacionais IFRS, extingue o RTT, regulamenta subvenções de investimento (art. 30) e lucros no exterior.',
       linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2014/lei/l12973.htm',
       destaqueItem: 'Harmonização societária e fiscal IFRS para Lucro Real e Presumido',
+      alertaVencimento: 'Vigência contínua',
     },
     {
       tributo: 'IRPJ',
@@ -300,6 +374,7 @@ export default function Legislacao() {
         'Regulamenta a tributação, a fiscalização, a arrecadação e a administração do Imposto sobre a Renda de Pessoas Jurídicas (Lucro Real, Presumido, Arbitrado e Retenções).',
       linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/decreto/d9580.htm',
       destaqueItem: 'Regulamento do Imposto de Renda em vigor na Receita Federal',
+      alertaVencimento: 'Vigência contínua',
     },
     {
       tributo: 'CSLL',
@@ -310,8 +385,9 @@ export default function Legislacao() {
       orgao: 'Presidência da República',
       ementa:
         'Institui a Contribuição Social sobre o Lucro Líquido das pessoas jurídicas e define as adições, exclusões e compensações de bases negativas na seguridade social.',
-      linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/l7689.htm',
+      linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/l7689.htm',
       destaqueItem: 'Norma instituidora e regras de apuração da base da CSLL',
+      alertaVencimento: 'Vigência contínua',
     },
     {
       tributo: 'INSS',
@@ -324,6 +400,7 @@ export default function Legislacao() {
         'Plano de Custeio da Previdência Social. Define as contribuições patronais (20%), RAT/FAP, contribuição de terceiros/sistema S e retenção de 11% sobre cessão de mão de obra.',
       linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/l8212cons.htm',
       destaqueItem: 'Pilar da contribuição previdenciária patronal e retenções',
+      alertaVencimento: 'Vigência contínua',
     },
     {
       tributo: 'INSS',
@@ -336,9 +413,9 @@ export default function Legislacao() {
         'Regime de Contribuição Previdenciária sobre a Receita Bruta (CPRB) em substituição aos 20% patronais, com regras de transição vigentes e impactos na folha.',
       linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2011/lei/l12546.htm',
       destaqueItem: 'Desoneração da folha por setor econômico e alíquotas substitutivas',
+      alertaVencimento: 'Fase muda em 2027',
     },
   ]
-
   // Divisão: Legislações Chave da Reforma (Fixas) vs Outras Normas Encontradas
   const normasChave = itens.filter((i) => i.destaque)
   const outrasNormas = itens.filter((i) => !i.destaque)
@@ -833,7 +910,7 @@ export default function Legislacao() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold bg-[#07132B] text-[#D4AF37] px-3 py-1.5 rounded-xl border border-[#D4AF37]/40">
-                4 teses geradoras de crédito
+                {JURISPRUDENCIAS_CHAVE_RECUPERACAO.length} teses geradoras de crédito
               </span>
               <Link
                 to="/recuperador-creditos"
@@ -895,7 +972,7 @@ export default function Legislacao() {
                   <div className="space-y-3 pt-3 border-t border-slate-100">
                     <div className="flex items-center justify-between text-xs flex-wrap gap-2">
                       <Link
-                        to={`/recuperador-creditos?tese=${encodeURIComponent(tese.teseRecuperadorId)}`}
+                        to={`/recuperador-creditos?modulo=${encodeURIComponent(tese.moduloAbaRecuperador)}&tese=${encodeURIComponent(tese.teseRecuperadorId)}`}
                         className="font-heading font-bold text-xs text-[#07132B] hover:text-[#D4AF37] bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg border border-[#D4AF37]/50 transition-colors"
                       >
                         Recuperar este crédito →
@@ -961,9 +1038,16 @@ export default function Legislacao() {
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#07132B] text-[#D4AF37]">
-                      {norma.tipo}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#07132B] text-[#D4AF37]">
+                        {norma.tipo}
+                      </span>
+                      {norma.alertaVencimento && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#07132B]/10 text-[#07132B] border border-[#07132B]/20">
+                          {norma.alertaVencimento}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs font-mono font-bold text-slate-500">
                       {norma.dataPublicacao}
                     </span>
@@ -1054,9 +1138,16 @@ export default function Legislacao() {
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#07132B] text-[#D4AF37]">
-                      {item.tributo}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#07132B] text-[#D4AF37]">
+                        {item.tributo}
+                      </span>
+                      {item.alertaVencimento && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                          {item.alertaVencimento}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[11px] font-mono font-semibold text-slate-500">
                       Ano: {item.ano}
                     </span>
@@ -1131,7 +1222,14 @@ export default function Legislacao() {
                   className="bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 transition-all space-y-2"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <span className="font-bold text-sm text-[#07132B]">{norma.titulo}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-sm text-[#07132B]">{norma.titulo}</span>
+                      {norma.alertaVencimento && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-[#D4AF37]/15 text-[#07132B] border border-[#D4AF37]/40">
+                          {norma.alertaVencimento}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[11px] font-mono text-slate-500">
                       {norma.dataPublicacao}
                     </span>

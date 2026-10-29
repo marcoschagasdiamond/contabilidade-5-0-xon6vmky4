@@ -519,6 +519,93 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
           ramos: ['industria', 'misto'],
         },
       },
+      {
+        id: 'juris-stf-tema-959-re-1187264',
+        titulo:
+          'STF — Tema 959 (RE 1.187.264): Exclusão do ICMS da Base do INSS/CPRB (Tese dos Desembolsos)',
+        tipo: 'Jurisprudência / STF',
+        numero: 'Tema 959 / RE 1.187.264',
+        ano: 2021,
+        orgao: 'Supremo Tribunal Federal (STF)',
+        tributo: 'INSS',
+        dataPublicacao: '24/02/2021',
+        ementa:
+          'Fixação pelo Plenário do STF: é inconstitucional a inclusão do ICMS destacado na base de cálculo da CPRB (Contribuição Previdenciária sobre a Receita Bruta), aplicando a tese dos desembolsos e vedando tributação de valores que não compõem faturamento. Aplicável estritamente a Lucro Real e Lucro Presumido.',
+        linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=959',
+        destaque: true,
+        categoria: 'jurisprudencia',
+        natureza: 'recuperacao_credito',
+        teseRecuperadorId: 'tese_folha_icms_base_inss_tema_959',
+        dataJulgamento: '24/02/2021',
+        etiquetas: {
+          tributos: ['INSS', 'ICMS'],
+          segmentos: [
+            'Comércio',
+            'Indústria',
+            'Agro',
+            'Transporte',
+            'Bares e Restaurantes',
+            'Construção Civil',
+            'Tecnologia',
+          ],
+          regimes: ['Lucro Real', 'Lucro Presumido'],
+          operacoes: ['B2B', 'B2C', 'Geral'],
+          ramos: ['comercio', 'industria', 'agronegocio', 'construcao_civil', 'servico', 'misto'],
+        },
+      },
+      {
+        id: 'juris-stf-tema-1079-fapi-salario-educacao',
+        titulo:
+          'STF/STJ — Tema 1079 / Salário-Educação e FAPI: Limitação de 20 Salários Mínimos e Verbas Indenizatórias',
+        tipo: 'Jurisprudência / STF',
+        numero: 'Tema 1079 / REsp 1.570.980',
+        ano: 2024,
+        orgao: 'Superior Tribunal de Justiça (STJ) / STF',
+        tributo: 'INSS',
+        dataPublicacao: '13/03/2024',
+        ementa:
+          'Direito à recuperação de recolhimentos indevidos das contribuições ao Salário-Educação e Fundo de Aposentadoria Programada Individual (FAPI/Previdência Complementar), afastando a base de cálculo sem teto legal ou sobre verbas não remuneratórias (Lei 6.950/1981 art. 4º).',
+        linkOficial:
+          'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1079&cod_tema_final=1079',
+        destaque: true,
+        categoria: 'jurisprudencia',
+        natureza: 'recuperacao_credito',
+        teseRecuperadorId: 'tese_folha_salario_educacao_fapi',
+        dataJulgamento: '13/03/2024',
+        etiquetas: {
+          tributos: ['INSS'],
+          segmentos: ['Todos'],
+          regimes: ['Lucro Real', 'Lucro Presumido'],
+          operacoes: ['Todos'],
+          ramos: ['Todos'],
+        },
+      },
+      {
+        id: 'juris-stf-tema-1023-jcp-pis-cofins',
+        titulo:
+          'STF — Tema 1023 (RE 1.072.485): Exclusão de Juros sobre Capital Próprio (JCP) da Base do PIS/Cofins',
+        tipo: 'Jurisprudência / STF',
+        numero: 'Tema 1023 / RE 1.072.485',
+        ano: 2023,
+        orgao: 'Supremo Tribunal Federal (STF)',
+        tributo: 'PIS/Cofins',
+        dataPublicacao: '18/08/2023',
+        ementa:
+          'Não incidência de PIS e Cofins sobre receitas auferidas a título de Juros sobre o Capital Próprio (JCP), por constituírem remuneração de capital próprio/distribuição patrimonial e não receita bruta operacional de venda de bens ou serviços. Cabível para pessoas jurídicas no Lucro Real e Presumido.',
+        linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=1023',
+        destaque: true,
+        categoria: 'jurisprudencia',
+        natureza: 'recuperacao_credito',
+        teseRecuperadorId: 'tese_pis_juros_capital_proprio',
+        dataJulgamento: '18/08/2023',
+        etiquetas: {
+          tributos: ['PIS/Cofins'],
+          segmentos: ['Todos'],
+          regimes: ['Lucro Real', 'Lucro Presumido'],
+          operacoes: ['Todos'],
+          ramos: ['Todos'],
+        },
+      },
     ]
 
     // Base padrão de normas fundamentais: Reforma Tributária e Legislação-Chave com ETIQUETAS DE APLICABILIDADE
@@ -540,6 +627,8 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Cronograma 2026–2033',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['IBS', 'CBS', 'IS', 'Geral'],
           segmentos: ['Todos'],
@@ -563,6 +652,8 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Vigência plena até 2033',
+        alertaVencimento: 'Teste em 2026, vigência CBS 2027',
         etiquetas: {
           tributos: ['IBS', 'CBS', 'IS', 'Geral'],
           segmentos: ['Todos'],
@@ -587,6 +678,8 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Exercício 2026–2027',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['CBS'],
           segmentos: ['Todos'],
@@ -611,6 +704,8 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Prazo Senado: até 15/12/2026',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['CBS'],
           segmentos: ['Todos'],
@@ -634,6 +729,8 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Vigência por prazo indeterminado (transição até 2033)',
+        alertaVencimento: 'Vigência até 2033',
         etiquetas: {
           tributos: ['Geral', 'Simples Nacional', 'IBS', 'CBS'],
           segmentos: ['Todos'],
@@ -657,6 +754,8 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Regime de transição 2027–2032',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['IBS', 'CBS', 'Simples Nacional'],
           segmentos: ['Todos'],
@@ -681,6 +780,8 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Deliberação obrigatória em 2026',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['CBS', 'IBS'],
           segmentos: ['Todos'],
@@ -705,6 +806,8 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         categoria: 'legislacao',
         natureza: 'recuperacao_credito',
         teseRecuperadorId: 'tese_folha_desoneracao_12546',
+        prazoVigencia: 'Cronograma regressivo até 2027',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['INSS'],
           segmentos: ['Transporte', 'Construção Civil', 'Tecnologia', 'Indústria'],
@@ -1427,6 +1530,93 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
           ramos: ['industria', 'misto'],
         },
       },
+      {
+        id: 'juris-stf-tema-959-re-1187264',
+        titulo:
+          'STF — Tema 959 (RE 1.187.264): Exclusão do ICMS da Base do INSS/CPRB (Tese dos Desembolsos)',
+        tipo: 'Jurisprudência / STF',
+        numero: 'Tema 959 / RE 1.187.264',
+        ano: 2021,
+        orgao: 'Supremo Tribunal Federal (STF)',
+        tributo: 'INSS',
+        dataPublicacao: '24/02/2021',
+        ementa:
+          'Fixação pelo Plenário do STF: é inconstitucional a inclusão do ICMS destacado na base de cálculo da CPRB (Contribuição Previdenciária sobre a Receita Bruta), aplicando a tese dos desembolsos e vedando tributação de valores que não compõem faturamento. Aplicável estritamente a Lucro Real e Lucro Presumido.',
+        linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=959',
+        destaque: true,
+        categoria: 'jurisprudencia',
+        natureza: 'recuperacao_credito',
+        teseRecuperadorId: 'tese_folha_icms_base_inss_tema_959',
+        dataJulgamento: '24/02/2021',
+        etiquetas: {
+          tributos: ['INSS', 'ICMS'],
+          segmentos: [
+            'Comércio',
+            'Indústria',
+            'Agro',
+            'Transporte',
+            'Bares e Restaurantes',
+            'Construção Civil',
+            'Tecnologia',
+          ],
+          regimes: ['Lucro Real', 'Lucro Presumido'],
+          operacoes: ['B2B', 'B2C', 'Geral'],
+          ramos: ['comercio', 'industria', 'agronegocio', 'construcao_civil', 'servico', 'misto'],
+        },
+      },
+      {
+        id: 'juris-stf-tema-1079-fapi-salario-educacao',
+        titulo:
+          'STF/STJ — Tema 1079 / Salário-Educação e FAPI: Limitação de 20 Salários Mínimos e Verbas Indenizatórias',
+        tipo: 'Jurisprudência / STF',
+        numero: 'Tema 1079 / REsp 1.570.980',
+        ano: 2024,
+        orgao: 'Superior Tribunal de Justiça (STJ) / STF',
+        tributo: 'INSS',
+        dataPublicacao: '13/03/2024',
+        ementa:
+          'Direito à recuperação de recolhimentos indevidos das contribuições ao Salário-Educação e Fundo de Aposentadoria Programada Individual (FAPI/Previdência Complementar), afastando a base de cálculo sem teto legal ou sobre verbas não remuneratórias (Lei 6.950/1981 art. 4º).',
+        linkOficial:
+          'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1079&cod_tema_final=1079',
+        destaque: true,
+        categoria: 'jurisprudencia',
+        natureza: 'recuperacao_credito',
+        teseRecuperadorId: 'tese_folha_salario_educacao_fapi',
+        dataJulgamento: '13/03/2024',
+        etiquetas: {
+          tributos: ['INSS'],
+          segmentos: ['Todos'],
+          regimes: ['Lucro Real', 'Lucro Presumido'],
+          operacoes: ['Todos'],
+          ramos: ['Todos'],
+        },
+      },
+      {
+        id: 'juris-stf-tema-1023-jcp-pis-cofins',
+        titulo:
+          'STF — Tema 1023 (RE 1.072.485): Exclusão de Juros sobre Capital Próprio (JCP) da Base do PIS/Cofins',
+        tipo: 'Jurisprudência / STF',
+        numero: 'Tema 1023 / RE 1.072.485',
+        ano: 2023,
+        orgao: 'Supremo Tribunal Federal (STF)',
+        tributo: 'PIS/Cofins',
+        dataPublicacao: '18/08/2023',
+        ementa:
+          'Não incidência de PIS e Cofins sobre receitas auferidas a título de Juros sobre o Capital Próprio (JCP), por constituírem remuneração de capital próprio/distribuição patrimonial e não receita bruta operacional de venda de bens ou serviços. Cabível para pessoas jurídicas no Lucro Real e Presumido.',
+        linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=1023',
+        destaque: true,
+        categoria: 'jurisprudencia',
+        natureza: 'recuperacao_credito',
+        teseRecuperadorId: 'tese_pis_juros_capital_proprio',
+        dataJulgamento: '18/08/2023',
+        etiquetas: {
+          tributos: ['PIS/Cofins'],
+          segmentos: ['Todos'],
+          regimes: ['Lucro Real', 'Lucro Presumido'],
+          operacoes: ['Todos'],
+          ramos: ['Todos'],
+        },
+      },
       // --- Normas Reforma Tributária ---
       {
         id: 'ec-132-2023',
@@ -1443,6 +1633,8 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Cronograma 2026–2033',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['IBS', 'CBS', 'IS', 'Geral'],
           segmentos: ['Todos'],
@@ -1466,6 +1658,8 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Vigência plena até 2033',
+        alertaVencimento: 'Teste em 2026, vigência CBS 2027',
         etiquetas: {
           tributos: ['IBS', 'CBS', 'IS', 'Geral'],
           segmentos: ['Todos'],
@@ -1490,6 +1684,8 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Exercício 2026–2027',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['CBS'],
           segmentos: ['Todos'],
@@ -1514,6 +1710,8 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Prazo Senado: até 15/12/2026',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['CBS'],
           segmentos: ['Todos'],
@@ -1537,6 +1735,8 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Vigência por prazo indeterminado (transição até 2033)',
+        alertaVencimento: 'Vigência até 2033',
         etiquetas: {
           tributos: ['Geral', 'Simples Nacional', 'IBS', 'CBS'],
           segmentos: ['Todos'],
@@ -1560,6 +1760,8 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Regime de transição 2027–2032',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['IBS', 'CBS', 'Simples Nacional'],
           segmentos: ['Todos'],
@@ -1584,6 +1786,8 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         destaque: true,
         categoria: 'legislacao',
         natureza: 'mudanca_impacto',
+        prazoVigencia: 'Deliberação obrigatória em 2026',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['CBS', 'IBS'],
           segmentos: ['Todos'],
@@ -1608,6 +1812,8 @@ routerAdd('POST', '/backend/v1/c50/legislacao/contextual', (e) => {
         categoria: 'legislacao',
         natureza: 'recuperacao_credito',
         teseRecuperadorId: 'tese_folha_desoneracao_12546',
+        prazoVigencia: 'Cronograma regressivo até 2027',
+        alertaVencimento: 'Fase muda em 2027',
         etiquetas: {
           tributos: ['INSS'],
           segmentos: ['Transporte', 'Construção Civil', 'Tecnologia', 'Indústria'],

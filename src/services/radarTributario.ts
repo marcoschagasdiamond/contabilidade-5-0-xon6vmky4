@@ -56,6 +56,8 @@ export interface ItemLegislacao {
   teseRecuperadorId?: string
   dataJulgamento?: string
   etiquetas?: EtiquetasAplicabilidade
+  prazoVigencia?: string
+  alertaVencimento?: string
 }
 
 export interface PerfilEmpresaFiltro {
@@ -295,13 +297,16 @@ export async function obterLegislacaoContextual(
     const direitoRecuperacaoCredito = CATALOGO_LEGISLACAO_FALLBACK.filter((item) => {
       if (item.categoria !== 'jurisprudencia' && item.natureza !== 'recuperacao_credito')
         return false
-      // Teses de PIS/Cofins e IPI (não-cumulativo) NUNCA aparecem para Simples Nacional
+      // Teses de PIS/Cofins, IPI e teses exclusivas de Lucro Real/Presumido (ex: Tema 959/STF) NUNCA aparecem para Simples Nacional
       if (isSimples) {
         if (
           item.id === 'juris-stf-re-592616-tema-118' ||
           item.id === 'juris-stf-re-574706-tema-69' ||
           item.id === 'juris-stj-tema-1182-resp-1945110' ||
           item.id === 'juris-stj-tema-77-resp-1075508' ||
+          item.id === 'juris-stf-tema-959-re-1187264' ||
+          item.id === 'juris-stf-tema-1079-fapi-salario-educacao' ||
+          item.id === 'juris-stf-tema-1023-jcp-pis-cofins' ||
           item.tributo === 'PIS/Cofins' ||
           item.tributo === 'IPI'
         ) {
@@ -411,8 +416,103 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=77&cod_tema_final=77',
     destaque: true,
     categoria: 'jurisprudencia',
+    natureza: 'recuperacao_credito',
     teseRecuperadorId: 'tese_pis_insumos_presumido',
     dataJulgamento: '24/06/2009',
+    etiquetas: {
+      tributos: ['IPI'],
+      segmentos: ['Indústria'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['B2B', 'Geral'],
+      ramos: ['industria', 'misto'],
+    },
+  },
+  {
+    id: 'juris-stf-tema-959-re-1187264',
+    titulo:
+      'STF — Tema 959 (RE 1.187.264): Exclusão do ICMS da Base do INSS/CPRB (Tese dos Desembolsos)',
+    tipo: 'Jurisprudência / STF',
+    numero: 'Tema 959 / RE 1.187.264',
+    ano: 2021,
+    orgao: 'Supremo Tribunal Federal (STF)',
+    tributo: 'INSS',
+    dataPublicacao: '24/02/2021',
+    ementa:
+      'Fixação pelo Plenário do STF: é inconstitucional a inclusão do ICMS destacado na base de cálculo da CPRB (Contribuição Previdenciária sobre a Receita Bruta), aplicando a tese dos desembolsos e vedando tributação de valores que não compõem faturamento. Aplicável estritamente a Lucro Real e Lucro Presumido.',
+    linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=959',
+    destaque: true,
+    categoria: 'jurisprudencia',
+    natureza: 'recuperacao_credito',
+    teseRecuperadorId: 'tese_folha_icms_base_inss_tema_959',
+    dataJulgamento: '24/02/2021',
+    etiquetas: {
+      tributos: ['INSS', 'ICMS'],
+      segmentos: [
+        'Comércio',
+        'Indústria',
+        'Agro',
+        'Transporte',
+        'Bares e Restaurantes',
+        'Construção Civil',
+        'Tecnologia',
+      ],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['B2B', 'B2C', 'Geral'],
+      ramos: ['comercio', 'industria', 'agronegocio', 'construcao_civil', 'servico', 'misto'],
+    },
+  },
+  {
+    id: 'juris-stf-tema-1079-fapi-salario-educacao',
+    titulo:
+      'STF/STJ — Tema 1079 / Salário-Educação e FAPI: Limitação de 20 Salários Mínimos e Verbas Indenizatórias',
+    tipo: 'Jurisprudência / STF',
+    numero: 'Tema 1079 / REsp 1.570.980',
+    ano: 2024,
+    orgao: 'Superior Tribunal de Justiça (STJ) / STF',
+    tributo: 'INSS',
+    dataPublicacao: '13/03/2024',
+    ementa:
+      'Direito à recuperação de recolhimentos indevidos das contribuições ao Salário-Educação e Fundo de Aposentadoria Programada Individual (FAPI/Previdência Complementar), afastando a base de cálculo sem teto legal ou sobre verbas não remuneratórias (Lei 6.950/1981 art. 4º).',
+    linkOficial:
+      'https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1079&cod_tema_final=1079',
+    destaque: true,
+    categoria: 'jurisprudencia',
+    natureza: 'recuperacao_credito',
+    teseRecuperadorId: 'tese_folha_salario_educacao_fapi',
+    dataJulgamento: '13/03/2024',
+    etiquetas: {
+      tributos: ['INSS'],
+      segmentos: ['Todos'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
+  },
+  {
+    id: 'juris-stf-tema-1023-jcp-pis-cofins',
+    titulo:
+      'STF — Tema 1023 (RE 1.072.485): Exclusão de Juros sobre Capital Próprio (JCP) da Base do PIS/Cofins',
+    tipo: 'Jurisprudência / STF',
+    numero: 'Tema 1023 / RE 1.072.485',
+    ano: 2023,
+    orgao: 'Supremo Tribunal Federal (STF)',
+    tributo: 'PIS/Cofins',
+    dataPublicacao: '18/08/2023',
+    ementa:
+      'Não incidência de PIS e Cofins sobre receitas auferidas a título de Juros sobre o Capital Próprio (JCP), por constituírem remuneração de capital próprio/distribuição patrimonial e não receita bruta operacional de venda de bens ou serviços. Cabível para pessoas jurídicas no Lucro Real e Presumido.',
+    linkOficial: 'https://portal.stf.jus.br/jurisprudenciaRepercussao/tema.asp?num=1023',
+    destaque: true,
+    categoria: 'jurisprudencia',
+    natureza: 'recuperacao_credito',
+    teseRecuperadorId: 'tese_pis_juros_capital_proprio',
+    dataJulgamento: '18/08/2023',
+    etiquetas: {
+      tributos: ['PIS/Cofins'],
+      segmentos: ['Todos'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
 
   // Reforma Tributária
@@ -429,6 +529,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Altera o Sistema Tributário Nacional para instituir a Reforma Tributária sobre o consumo, criando o IBS, a CBS e o Imposto Seletivo (IS), e estabelecendo regras de transição federativa até 2033.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/constituicao/emendas/emc/emc132.htm',
     destaque: true,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Cronograma 2026–2033',
+    alertaVencimento: 'Fase muda em 2027',
+    etiquetas: {
+      tributos: ['IBS', 'CBS', 'IS', 'Geral'],
+      segmentos: ['Todos'],
+      regimes: ['Todos'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
   {
     id: 'lc-214-2025',
@@ -443,6 +554,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Institui o Imposto sobre Bens e Serviços (IBS), a Contribuição Social sobre Bens e Serviços (CBS) e o Imposto Seletivo (IS); dispõe sobre o processo administrativo fiscal e as hipóteses de redução e alíquota zero.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm',
     destaque: true,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Vigência plena até 2033',
+    alertaVencimento: 'Teste em 2026, vigência CBS 2027',
+    etiquetas: {
+      tributos: ['IBS', 'CBS', 'IS', 'Geral'],
+      segmentos: ['Todos'],
+      regimes: ['Todos'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
   {
     id: 'pln-24-2026',
@@ -457,6 +579,10 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Dispõe sobre as diretrizes orçamentárias e financeiras da partilha e compensação federal da CBS durante o exercício de transição de 2027 perante os fundos federativos.',
     linkOficial: 'https://www.congressonacional.leg.br/materias/materias-orcamentarias/pln-24-2026',
     destaque: true,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Exercício 2026–2027',
+    alertaVencimento: 'Fase muda em 2027',
     etiquetas: {
       tributos: ['CBS'],
       segmentos: ['Todos'],
@@ -479,6 +605,10 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
     linkOficial:
       'https://pesquisa.apps.tcu.gov.br/#/documento/acordao-completo/2341%252F2026/SESSAO%2520PLENARIA',
     destaque: true,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Prazo Senado: até 15/12/2026',
+    alertaVencimento: 'Fase muda em 2027',
     etiquetas: {
       tributos: ['CBS'],
       segmentos: ['Todos'],
@@ -502,6 +632,8 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
     destaque: true,
     categoria: 'legislacao',
     natureza: 'mudanca_impacto',
+    prazoVigencia: 'Vigência por prazo indeterminado (transição até 2033)',
+    alertaVencimento: 'Vigência até 2033',
     etiquetas: {
       tributos: ['Geral', 'Simples Nacional', 'IBS', 'CBS'],
       segmentos: ['Todos'],
@@ -525,6 +657,8 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
     destaque: true,
     categoria: 'legislacao',
     natureza: 'mudanca_impacto',
+    prazoVigencia: 'Regime de transição 2027–2032',
+    alertaVencimento: 'Fase muda em 2027',
     etiquetas: {
       tributos: ['IBS', 'CBS', 'Simples Nacional'],
       segmentos: ['Todos'],
@@ -547,6 +681,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
     linkOficial:
       'https://legis.senado.leg.br/dadosabertos/materia/pesquisa/lista?ano=2026&palavraChave=CBS',
     destaque: true,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Deliberação obrigatória em 2026',
+    alertaVencimento: 'Fase muda em 2027',
+    etiquetas: {
+      tributos: ['CBS', 'IBS'],
+      segmentos: ['Todos'],
+      regimes: ['Todos'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
   {
     id: 'lei-12546-desoneracao',
@@ -561,6 +706,18 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Desoneração da folha de pagamentos (CPRB) e cronograma de transição para o novo modelo de aproveitamento de créditos com a entrada plena do IBS/CBS.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2011/lei/l12546.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'recuperacao_credito',
+    teseRecuperadorId: 'tese_folha_desoneracao_12546',
+    prazoVigencia: 'Cronograma regressivo até 2027',
+    alertaVencimento: 'Fase muda em 2027',
+    etiquetas: {
+      tributos: ['INSS'],
+      segmentos: ['Transporte', 'Construção Civil', 'Tecnologia', 'Indústria'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['B2B', 'Geral'],
+      ramos: ['industria', 'construcao_civil', 'servico'],
+    },
   },
 
   // Legislação-Chave por Tributo
@@ -578,6 +735,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Dispõe sobre o imposto dos Estados e do Distrito Federal sobre operações relativas à circulação de mercadorias e sobre prestações de serviços de transporte interestadual e intermunicipal e de comunicação (ICMS).',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp87.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Extinção gradual de 2029 a 2032',
+    alertaVencimento: 'Vigência até 2033',
+    etiquetas: {
+      tributos: ['ICMS'],
+      segmentos: ['Comércio', 'Indústria', 'Agro', 'Transporte', 'Bares e Restaurantes'],
+      regimes: ['Lucro Real', 'Lucro Presumido', 'Simples Nacional'],
+      operacoes: ['B2B', 'B2C', 'Geral'],
+      ramos: ['comercio', 'industria', 'agronegocio', 'food_service', 'misto'],
+    },
   },
   {
     id: 'lc-190-2022-difal',
@@ -592,6 +760,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Regulamenta a cobrança do Diferencial de Alíquota (DIFAL) do ICMS nas operações e prestações interestaduais destinadas a consumidor final não contribuinte do imposto.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp190.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Substituição pelo princípio do destino na LC 214/2025',
+    alertaVencimento: 'Fase muda em 2029',
+    etiquetas: {
+      tributos: ['ICMS'],
+      segmentos: ['Comércio', 'Indústria', 'Bares e Restaurantes'],
+      regimes: ['Lucro Real', 'Lucro Presumido', 'Simples Nacional'],
+      operacoes: ['B2C', 'Geral'],
+      ramos: ['comercio', 'industria', 'food_service', 'misto'],
+    },
   },
 
   // IPI
@@ -608,6 +787,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Regulamenta a cobrança, fiscalização, arrecadação e administração do Imposto sobre Produtos Industrializados (IPI), definindo fato gerador, estabelecimento industrial e equiparados.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2010/decreto/d7212.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Alíquotas reduzidas a zero a partir de 2027 (salvo ZFM)',
+    alertaVencimento: 'Fase muda em 2027',
+    etiquetas: {
+      tributos: ['IPI'],
+      segmentos: ['Indústria'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['B2B', 'Geral'],
+      ramos: ['industria', 'misto'],
+    },
   },
   {
     id: 'lei-4502-1964-ipi',
@@ -622,6 +812,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Dispõe sobre o imposto de consumo e reorganiza a tributação dos produtos industrializados no ordenamento nacional.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/l4502.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Revogação gradativa e transição para o Imposto Seletivo (IS)',
+    alertaVencimento: 'Fase muda em 2027',
+    etiquetas: {
+      tributos: ['IPI'],
+      segmentos: ['Indústria'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['B2B', 'Geral'],
+      ramos: ['industria', 'misto'],
+    },
   },
 
   // PIS / COFINS
@@ -638,6 +839,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Dispõe sobre a não-cumulatividade na cobrança da contribuição para os Programas de Integração Social (PIS) e de Formação do Patrimônio do Servidor Público (Pasep).',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/2002/l10637.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Extinção definitiva e substituição pela CBS em 2027',
+    alertaVencimento: 'Fase muda em 2027',
+    etiquetas: {
+      tributos: ['PIS/Cofins'],
+      segmentos: ['Comércio', 'Indústria', 'Serviços', 'Agro', 'Transporte', 'Tecnologia'],
+      regimes: ['Lucro Real'],
+      operacoes: ['B2B', 'B2C', 'Geral'],
+      ramos: ['comercio', 'industria', 'servico', 'agronegocio', 'misto'],
+    },
   },
   {
     id: 'lei-10833-2003-cofins',
@@ -652,6 +864,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Altera a Legislação Tributária Federal e dispõe sobre a cobrança não-cumulativa da Contribuição para o Financiamento da Seguridade Social (Cofins).',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/2003/l10833.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Extinção definitiva e substituição pela CBS em 2027',
+    alertaVencimento: 'Fase muda em 2027',
+    etiquetas: {
+      tributos: ['PIS/Cofins'],
+      segmentos: ['Comércio', 'Indústria', 'Serviços', 'Agro', 'Transporte', 'Tecnologia'],
+      regimes: ['Lucro Real'],
+      operacoes: ['B2B', 'B2C', 'Geral'],
+      ramos: ['comercio', 'industria', 'servico', 'agronegocio', 'misto'],
+    },
   },
   {
     id: 'in-rfb-2121-2022-pis-cofins',
@@ -666,6 +889,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Consolida as normas sobre a apuração, a cobrança, a fiscalização, a arrecadação e a administração da Contribuição para o PIS/Pasep e da Cofins.',
     linkOficial: 'https://normas.receita.fazenda.gov.br/sijut2consulta/link.action?idAto=127926',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Aplicabilidade plena até dezembro de 2026',
+    alertaVencimento: 'Fase muda em 2027',
+    etiquetas: {
+      tributos: ['PIS/Cofins'],
+      segmentos: ['Todos'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
 
   // ISS
@@ -682,6 +916,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Dispõe sobre o Imposto Sobre Serviços de Qualquer Natureza, de competência dos Municípios e do Distrito Federal, e fixa a Lista de Serviços Anexa.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp116.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Transição federativa com extinção gradual 2029–2032',
+    alertaVencimento: 'Vigência até 2033',
+    etiquetas: {
+      tributos: ['ISS'],
+      segmentos: ['Serviços', 'Saúde', 'Educação', 'Tecnologia', 'Construção Civil'],
+      regimes: ['Lucro Real', 'Lucro Presumido', 'Simples Nacional'],
+      operacoes: ['B2B', 'B2C', 'Geral'],
+      ramos: ['servico', 'construcao_civil', 'locacao_bens', 'misto'],
+    },
   },
   {
     id: 'lc-175-2020-iss',
@@ -696,6 +941,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Dispõe sobre o padrão nacional de obrigação acessória do ISSQN incidente sobre planos de saúde, leasing, cartões de crédito/débito e fundos.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp175.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Integração ao Comitê Gestor do IBS (LC 214/2025)',
+    alertaVencimento: 'Vigência até 2033',
+    etiquetas: {
+      tributos: ['ISS'],
+      segmentos: ['Serviços', 'Saúde', 'Tecnologia'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['B2B', 'B2C', 'Geral'],
+      ramos: ['servico', 'misto'],
+    },
   },
 
   // IRPJ
@@ -712,6 +968,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Altera a legislação tributária federal relativa ao IRPJ, CSLL, PIS e Cofins; revoga o Regime Tributário de Transição (RTT) e adapta as regras fiscais às normas contábeis internacionais (IFRS).',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2014/lei/l12973.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Vigência plena e contínua',
+    alertaVencimento: 'Vigência contínua',
+    etiquetas: {
+      tributos: ['IRPJ', 'CSLL', 'PIS/Cofins'],
+      segmentos: ['Todos'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
   {
     id: 'decreto-9580-2018-rir',
@@ -726,6 +993,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Regulamenta a tributação, a fiscalização, a arrecadação e a administração do Imposto sobre a Renda e Proventos de Qualquer Natureza (Lucro Real, Presumido e Arbitrado).',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/decreto/d9580.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Vigência plena e contínua',
+    alertaVencimento: 'Vigência contínua',
+    etiquetas: {
+      tributos: ['IRPJ'],
+      segmentos: ['Todos'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
   {
     id: 'lei-9249-1995-irpj',
@@ -740,6 +1018,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Altera a legislação do imposto de renda das pessoas jurídicas, define as regras de Juros sobre Capital Próprio (JCP), apuração do Lucro Real e percentuais do Lucro Presumido.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/l9249.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Vigência plena e contínua',
+    alertaVencimento: 'Vigência contínua',
+    etiquetas: {
+      tributos: ['IRPJ'],
+      segmentos: ['Todos'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
 
   // CSLL
@@ -756,6 +1045,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Institui a Contribuição Social sobre o Lucro das Pessoas Jurídicas (CSLL) destinada ao financiamento da Seguridade Social.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/l7689.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Vigência plena e contínua',
+    alertaVencimento: 'Vigência contínua',
+    etiquetas: {
+      tributos: ['CSLL'],
+      segmentos: ['Todos'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
   {
     id: 'in-rfb-1700-2017-irpj-csll',
@@ -770,6 +1070,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Dispõe sobre a determinação e o pagamento do IRPJ e da CSLL devidos pelas pessoas jurídicas e disciplina o tratamento tributário do Lucro Real, Presumido e Arbitrado.',
     linkOficial: 'https://normas.receita.fazenda.gov.br/sijut2consulta/link.action?idAto=81268',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Vigência plena e contínua',
+    alertaVencimento: 'Vigência contínua',
+    etiquetas: {
+      tributos: ['CSLL', 'IRPJ'],
+      segmentos: ['Todos'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
 
   // INSS
@@ -786,6 +1097,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Dispõe sobre a organização da Seguridade Social, institui Plano de Custeio e as contribuições sociais sobre folha, faturamento e lucro.',
     linkOficial: 'https://www.planalto.gov.br/ccivil_03/leis/l8212cons.htm',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'mudanca_impacto',
+    prazoVigencia: 'Vigência contínua (com transição da CPRB)',
+    alertaVencimento: 'Vigência contínua',
+    etiquetas: {
+      tributos: ['INSS'],
+      segmentos: ['Todos'],
+      regimes: ['Lucro Real', 'Lucro Presumido', 'Simples Nacional'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
   {
     id: 'in-rfb-2110-2022-inss',
@@ -800,5 +1122,17 @@ export const CATALOGO_LEGISLACAO_FALLBACK: ItemLegislacao[] = [
       'Dispõe sobre as normas gerais de tributação previdenciária e de arrecadação das contribuições sociais destinadas à Previdência Social e de outras entidades/fundos.',
     linkOficial: 'https://normas.receita.fazenda.gov.br/sijut2consulta/link.action?idAto=126484',
     destaque: false,
+    categoria: 'legislacao',
+    natureza: 'recuperacao_credito',
+    teseRecuperadorId: 'tese_folha_inss_verbas_indenizatorias',
+    prazoVigencia: 'Vigência contínua',
+    alertaVencimento: 'Vigência contínua',
+    etiquetas: {
+      tributos: ['INSS'],
+      segmentos: ['Todos'],
+      regimes: ['Lucro Real', 'Lucro Presumido'],
+      operacoes: ['Todos'],
+      ramos: ['Todos'],
+    },
   },
 ]

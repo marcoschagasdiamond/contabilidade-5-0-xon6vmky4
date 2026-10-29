@@ -212,6 +212,48 @@ export const TESES_RECUPERADOR: TeseRecuperacaoDefinicao[] = [
     percentualEstimadoPadrao: 1.1,
     regimesElegiveis: ['Lucro Real', 'Lucro Presumido'],
   },
+  {
+    id: 'tese_folha_icms_base_inss_tema_959',
+    modulo: 'folha',
+    codigo: 'FOL-07',
+    titulo: 'Exclusão do ICMS da Base da CPRB/Contribuições Previdenciárias (Tema 959/STF)',
+    fundamento: 'STF - RE 1.187.264/SP (Tema 959 RG) e Tese dos Desembolsos',
+    descricao:
+      'Inconstitucionalidade da inclusão do ICMS destacado na base de cálculo da CPRB (Contribuição Previdenciária sobre a Receita Bruta) e recolhimentos substitutivos ao INSS. Aplicável a Lucro Real e Presumido.',
+    riscoPadrao: 'verde',
+    justificativaRisco:
+      'Tema 959 do STF julgado com repercussão geral fixando a exclusão do ICMS da base da CPRB. Risco baixo.',
+    percentualEstimadoPadrao: 1.45,
+    regimesElegiveis: ['Lucro Real', 'Lucro Presumido'],
+  },
+  {
+    id: 'tese_folha_salario_educacao_fapi',
+    modulo: 'folha',
+    codigo: 'FOL-08',
+    titulo: 'Não Incidência de Contribuição ao Salário-Educação e FAPI',
+    fundamento: 'STF - Tema 1079 e REsp 1.570.980/SP (Limite de 20 Salários Mínimos)',
+    descricao:
+      'Restituição e compensação de valores recolhidos a título de contribuição de terceiros (Salário-Educação e FAPI/Previdência Complementar) calculados sem a observância do teto de 20 salários mínimos ou sobre verbas não remuneratórias.',
+    riscoPadrao: 'amarelo',
+    justificativaRisco:
+      'Tese apoiada no art. 4º da Lei 6.950/1981 e julgados da 1ª Seção do STJ, sujeita à modulação. Risco moderado.',
+    percentualEstimadoPadrao: 0.95,
+    regimesElegiveis: ['Lucro Real', 'Lucro Presumido'],
+  },
+  {
+    id: 'tese_pis_juros_capital_proprio',
+    modulo: 'pis_cofins',
+    codigo: 'PIS-07',
+    titulo: 'Exclusão do JCP da Base de Cálculo do PIS e da COFINS',
+    fundamento: 'STF - RE 1.072.485 (Tema 1023) & Lei 9.249/1995 art. 9º',
+    descricao:
+      'Não incidência de PIS e COFINS sobre os Juros sobre o Capital Próprio (JCP) auferidos pela pessoa jurídica, por se tratarem de remuneração de capital e distribuição de lucros aos acionistas/sócios, e não receita de vendas/serviços.',
+    riscoPadrao: 'amarelo',
+    justificativaRisco:
+      'Discussão constitucional no STF com sólidos precedentes na jurisprudência federal. Risco moderado.',
+    percentualEstimadoPadrao: 0.85,
+    regimesElegiveis: ['Lucro Real', 'Lucro Presumido'],
+  },
 ]
 
 export const CONFIGURACOES_PADRAO: ConfiguracoesRecuperador = {
@@ -326,6 +368,26 @@ export function isTeseElegivelParaSegmento(teseId: string, segmento?: string): b
       // "Revisão RAT/FAP" e "Desoneração da Lei 12.546": visíveis somente para os setores elegíveis da Lei 12.546
       // (Transporte, Construção Civil, Tecnologia, Indústria)
       return SETORES_ELEGIVEIS_LEI_12546.includes(segmento)
+
+    case 'tese_folha_icms_base_inss_tema_959':
+      // Exclusão do ICMS da base do INSS/CPRB: aplicável a setores que recolhem ICMS e/ou CPRB
+      return [
+        'Comércio',
+        'Indústria',
+        'Agro',
+        'Transporte',
+        'Bares e Restaurantes',
+        'Construção Civil',
+        'Tecnologia',
+      ].includes(segmento)
+
+    case 'tese_folha_salario_educacao_fapi':
+      // Salário-educação / FAPI: visível para todos os setores
+      return true
+
+    case 'tese_pis_juros_capital_proprio':
+      // JCP na base do PIS/Cofins: visível para todos os setores (Lucro Real/Presumido)
+      return true
 
     default:
       return true

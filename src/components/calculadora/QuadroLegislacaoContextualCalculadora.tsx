@@ -201,9 +201,16 @@ export function QuadroLegislacaoContextualCalculadora({
                     <span className="font-mono text-[#D4AF37] font-bold">
                       {item.tipo} • {item.numero}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {item.tributo} • {item.ano}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {item.alertaVencimento && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium tracking-wide bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30">
+                          {item.alertaVencimento}
+                        </span>
+                      )}
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {item.tributo} • {item.ano}
+                      </span>
+                    </div>
                   </div>
 
                   <h4 className="text-xs sm:text-sm font-bold text-white leading-snug">
