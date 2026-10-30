@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-30T16:33:40.418Z",
+  "generatedAt": "2026-10-30T17:29:01.906Z",
   "collections": [
     {
       "name": "users",
@@ -1935,6 +1935,30 @@
         },
         {
           "name": "tese_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "email_enviado",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "email_enviado_em",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "alerta_vencimento",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "prazo_vigencia",
           "type": "text",
           "required": false,
           "system": false

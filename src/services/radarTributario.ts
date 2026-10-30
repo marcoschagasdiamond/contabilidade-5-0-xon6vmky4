@@ -27,6 +27,10 @@ export interface NotificacaoTributaria {
   destinatario_id?: string
   link_acao?: string
   tese_id?: string
+  email_enviado?: boolean
+  email_enviado_em?: string
+  alerta_vencimento?: string
+  prazo_vigencia?: string
   created?: string
   updated?: string
 }

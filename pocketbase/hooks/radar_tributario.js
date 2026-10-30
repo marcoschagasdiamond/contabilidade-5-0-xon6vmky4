@@ -195,6 +195,195 @@ cronAdd('radar-aliquotas-semanal', '0 6 * * 1', () => {
     console.log('[Radar Tributário] Erro ao salvar parâmetros no banco:', errDb)
   }
 
+  // 4. DISPARO DE E-MAIL SEMANAL COM RESUMO DE NOVIDADES (PADRÃO DIAMOND GROUP)
+  // Verifica se há novidades não notificadas na coleção 'notificacoes_tributarias'
+  try {
+    const pendentes = $app.findRecordsByFilter(
+      'notificacoes_tributarias',
+      'email_enviado = false || email_enviado = null',
+      '-created',
+      50,
+    )
+
+    if (pendentes && pendentes.length > 0) {
+      console.log(
+        `[Radar Tributário] ${pendentes.length} novidade(s) pendente(s) de notificação por e-mail. Preparando disparo...`,
+      )
+
+      // Buscar Analistas, Admins e Master (exclui empresários)
+      const destinatarios = []
+      try {
+        const users = $app.findRecordsByFilter(
+          '_pb_users_auth_',
+          "nivel_acesso = 'master' || nivel_acesso = 'admin' || nivel_acesso = 'analista' || role = 'admin'",
+          'created',
+          200,
+        )
+        for (let i = 0; i < users.length; i++) {
+          const u = users[i]
+          const em = (u.getString('email') || '').trim().toLowerCase()
+          if (em && em.includes('@') && !destinatarios.includes(em)) {
+            destinatarios.push(em)
+          }
+        }
+      } catch (errUsers) {
+        console.log('[Radar Tributário] Erro ao buscar destinatários analistas/admins:', errUsers)
+      }
+
+      // Fallback garantido: Dr. Marco Chagas
+      const masterEmail = 'marcoschagasdiamond@icloud.com'
+      if (!destinatarios.includes(masterEmail)) {
+        destinatarios.push(masterEmail)
+      }
+
+      // Montar itens de novidades para o e-mail
+      let itensHtml = ''
+      for (let i = 0; i < pendentes.length; i++) {
+        const p = pendentes[i]
+        const tit = p.getString('titulo') || 'Atualização Tributária'
+        const msg = p.getString('mensagem') || ''
+        const trib = p.getString('tributo') || 'Geral'
+        const tipoLabel =
+          p.getString('tipo') === 'tese_jurisprudencia'
+            ? 'Jurisprudência Favorável'
+            : p.getString('tipo') === 'aliquota_nova'
+              ? 'Alíquota Oficial'
+              : 'Legislação / Norma'
+        const linkAcao = p.getString('link_acao') || '/legislacao'
+        const fonte = p.getString('fonte') || 'Fontes Oficiais'
+
+        itensHtml += `
+          <div style="background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 4px solid #D4AF37; padding: 18px 20px; margin-bottom: 16px;">
+            <div style="margin-bottom: 8px;">
+              <span style="display: inline-block; background-color: #07132B; color: #D4AF37; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; margin-right: 8px;">${tipoLabel}</span>
+              <span style="display: inline-block; background-color: #e2e8f0; color: #334155; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px;">${trib}</span>
+            </div>
+            <h3 style="font-size: 15px; font-weight: 700; color: #07132B; margin: 0 0 8px 0; line-height: 1.4;">${tit}</h3>
+            <p style="font-size: 13px; color: #475569; line-height: 1.6; margin: 0 0 10px 0;">${msg}</p>
+            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">
+              <strong>Fonte:</strong> ${fonte}
+            </div>
+            <div>
+              <a href="https://contabilidade-50.goskip.app${linkAcao}" style="font-size: 12px; font-weight: 700; color: #07132B; text-decoration: underline;">
+                Ver detalhes na plataforma &rarr;
+              </a>
+            </div>
+          </div>
+        `
+      }
+
+      const totalNovidades = pendentes.length
+      const assunto = `Radar Tributário: ${totalNovidades} nova(s) atualização(ões) e teses no catálogo • Diamond Group`
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+          <meta charset="utf-8" />
+          <title>Radar Tributário — Resumo Semanal</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #07132B; margin: 0; padding: 24px; color: #1e293b;">
+          <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 640px; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #D4AF37; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+            <tr>
+              <td style="background: linear-gradient(135deg, #07132B 0%, #0d2249 100%); padding: 36px 28px; text-align: center; border-bottom: 2px solid #D4AF37;">
+                <h1 style="color: #ffffff; font-size: 26px; margin: 0; font-weight: 800; letter-spacing: -0.5px;">Contabilidade 5.0</h1>
+                <p style="color: #D4AF37; font-size: 13px; font-weight: 700; text-transform: uppercase; margin: 8px 0 0 0; letter-spacing: 1.2px;">
+                  Radar Tributário • Relatório Semanal aos Analistas
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 32px 28px;">
+                <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;">
+                  <p style="font-size: 14px; color: #166534; font-weight: 600; margin: 0;">
+                    Varredura semanal concluída: identificamos <strong>${totalNovidades} novidade(s) relevante(s)</strong> de legislação, jurisprudência e alíquotas oficiais no catálogo.
+                  </p>
+                </div>
+
+                <p style="font-size: 14px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
+                  Olá, Analista! O monitoramento semanal do <strong>Radar Tributário Contabilidade 5.0</strong> compilou as normas, decisões vinculantes e alíquotas atualizadas para orientar suas simulações e diagnósticos tributários:
+                </p>
+
+                <!-- Lista de Novidades -->
+                <div style="margin-bottom: 28px;">
+                  ${itensHtml}
+                </div>
+
+                <!-- Botões de Ação -->
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 10px; margin-bottom: 20px;">
+                  <tr>
+                    <td align="center">
+                      <a href="https://contabilidade-50.goskip.app/legislacao" style="display: inline-block; background: #07132B; color: #D4AF37; text-decoration: none; font-weight: 800; font-size: 14px; padding: 14px 32px; border-radius: 12px; border: 1px solid #D4AF37; margin-right: 8px;">
+                        Acessar Catálogo de Legislação
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <div style="background-color: #f8fafc; border-radius: 10px; padding: 14px 16px; border: 1px solid #e2e8f0; font-size: 12px; color: #64748b; line-height: 1.5; text-align: center;">
+                  Este e-mail é gerado semanalmente e enviado exclusivamente para o corpo técnico de <strong>Analistas e Administradores</strong> credenciados na plataforma Contabilidade 5.0 • Diamond Group.
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 18px 24px; text-align: center; font-size: 11px; color: #94a3b8;">
+                Contabilidade 5.0 • Diamond Group • Inteligência Contábil & Tributária
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      let senderAddress = 'noreply@goskip.dev'
+      let senderName = 'Contabilidade 5.0 • Diamond Group'
+      try {
+        const meta = $app.settings().meta
+        if (meta && meta.senderAddress) senderAddress = meta.senderAddress
+        if (meta && meta.senderName) senderName = meta.senderName
+      } catch (_) {}
+
+      // Disparar e-mail para cada analista/admin
+      let enviosSucesso = 0
+      for (let i = 0; i < destinatarios.length; i++) {
+        const dest = destinatarios[i]
+        try {
+          const mailMsg = new MailerMessage({
+            from: { address: senderAddress, name: senderName },
+            to: [{ address: dest }],
+            subject: assunto,
+            html: htmlContent,
+          })
+          $app.newMailClient().send(mailMsg)
+          enviosSucesso++
+        } catch (errSend) {
+          console.log(`[Radar Tributário] Falha ao enviar e-mail para ${dest}:`, errSend)
+        }
+      }
+
+      console.log(
+        `[Radar Tributário] E-mail-resumo semanal disparado para ${enviosSucesso}/${destinatarios.length} destinatários.`,
+      )
+
+      // Marcar registros como notificados/enviados
+      const nowIso = new Date().toISOString().replace('T', ' ').substring(0, 19)
+      for (let i = 0; i < pendentes.length; i++) {
+        try {
+          const r = pendentes[i]
+          r.set('email_enviado', true)
+          r.set('email_enviado_em', nowIso)
+          $app.save(r)
+        } catch (errSaveNotif) {
+          console.log('[Radar Tributário] Erro ao marcar notificacao como enviada:', errSaveNotif)
+        }
+      }
+    } else {
+      console.log('[Radar Tributário] Nenhuma novidade nova pendente de e-mail. Disparo ignorado.')
+    }
+  } catch (errEmailJob) {
+    console.log('[Radar Tributário] Erro no fluxo de e-mail semanal:', errEmailJob)
+  }
+
   console.log(`[Radar Tributário] Varredura semanal finalizada. Novos: ${novosEncontrados}`)
 })
 
@@ -303,9 +492,175 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
       novosEncontrados++
     }
 
+    // Disparo de notificação por e-mail caso haja novidades não enviadas
+    let emailsEnviados = 0
+    try {
+      const pendentesSync = $app.findRecordsByFilter(
+        'notificacoes_tributarias',
+        'email_enviado = false || email_enviado = null',
+        '-created',
+        50,
+      )
+
+      if (pendentesSync && pendentesSync.length > 0) {
+        const dests = []
+        try {
+          const uList = $app.findRecordsByFilter(
+            '_pb_users_auth_',
+            "nivel_acesso = 'master' || nivel_acesso = 'admin' || nivel_acesso = 'analista' || role = 'admin'",
+            'created',
+            200,
+          )
+          for (let i = 0; i < uList.length; i++) {
+            const em = (uList[i].getString('email') || '').trim().toLowerCase()
+            if (em && em.includes('@') && !dests.includes(em)) {
+              dests.push(em)
+            }
+          }
+        } catch (_) {}
+
+        const masterEmail = 'marcoschagasdiamond@icloud.com'
+        if (!dests.includes(masterEmail)) {
+          dests.push(masterEmail)
+        }
+
+        let itensHtml = ''
+        for (let i = 0; i < pendentesSync.length; i++) {
+          const p = pendentesSync[i]
+          const tit = p.getString('titulo') || 'Atualização Tributária'
+          const msg = p.getString('mensagem') || ''
+          const trib = p.getString('tributo') || 'Geral'
+          const tipoLabel =
+            p.getString('tipo') === 'tese_jurisprudencia'
+              ? 'Jurisprudência Favorável'
+              : p.getString('tipo') === 'aliquota_nova'
+                ? 'Alíquota Oficial'
+                : 'Legislação / Norma'
+          const linkAcao = p.getString('link_acao') || '/legislacao'
+          const fonte = p.getString('fonte') || 'Fontes Oficiais'
+
+          itensHtml += `
+            <div style="background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 4px solid #D4AF37; padding: 18px 20px; margin-bottom: 16px;">
+              <div style="margin-bottom: 8px;">
+                <span style="display: inline-block; background-color: #07132B; color: #D4AF37; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; margin-right: 8px;">${tipoLabel}</span>
+                <span style="display: inline-block; background-color: #e2e8f0; color: #334155; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px;">${trib}</span>
+              </div>
+              <h3 style="font-size: 15px; font-weight: 700; color: #07132B; margin: 0 0 8px 0; line-height: 1.4;">${tit}</h3>
+              <p style="font-size: 13px; color: #475569; line-height: 1.6; margin: 0 0 10px 0;">${msg}</p>
+              <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">
+                <strong>Fonte:</strong> ${fonte}
+              </div>
+              <div>
+                <a href="https://contabilidade-50.goskip.app${linkAcao}" style="font-size: 12px; font-weight: 700; color: #07132B; text-decoration: underline;">
+                  Ver detalhes na plataforma &rarr;
+                </a>
+              </div>
+            </div>
+          `
+        }
+
+        const totalNovidades = pendentesSync.length
+        const assunto = `Radar Tributário: ${totalNovidades} nova(s) atualização(ões) e teses no catálogo • Diamond Group`
+
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html lang="pt-BR">
+          <head>
+            <meta charset="utf-8" />
+            <title>Radar Tributário — Resumo Semanal</title>
+          </head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #07132B; margin: 0; padding: 24px; color: #1e293b;">
+            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 640px; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #D4AF37; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+              <tr>
+                <td style="background: linear-gradient(135deg, #07132B 0%, #0d2249 100%); padding: 36px 28px; text-align: center; border-bottom: 2px solid #D4AF37;">
+                  <h1 style="color: #ffffff; font-size: 26px; margin: 0; font-weight: 800; letter-spacing: -0.5px;">Contabilidade 5.0</h1>
+                  <p style="color: #D4AF37; font-size: 13px; font-weight: 700; text-transform: uppercase; margin: 8px 0 0 0; letter-spacing: 1.2px;">
+                    Radar Tributário • Relatório Semanal aos Analistas
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 32px 28px;">
+                  <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;">
+                    <p style="font-size: 14px; color: #166534; font-weight: 600; margin: 0;">
+                      Varredura concluída: identificamos <strong>${totalNovidades} novidade(s) relevante(s)</strong> de legislação, jurisprudência e alíquotas oficiais no catálogo.
+                    </p>
+                  </div>
+
+                  <p style="font-size: 14px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
+                    Olá, Analista! O monitoramento do <strong>Radar Tributário Contabilidade 5.0</strong> compilou as normas, decisões vinculantes e alíquotas atualizadas para orientar suas simulações e diagnósticos tributários:
+                  </p>
+
+                  <div style="margin-bottom: 28px;">
+                    ${itensHtml}
+                  </div>
+
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 10px; margin-bottom: 20px;">
+                    <tr>
+                      <td align="center">
+                        <a href="https://contabilidade-50.goskip.app/legislacao" style="display: inline-block; background: #07132B; color: #D4AF37; text-decoration: none; font-weight: 800; font-size: 14px; padding: 14px 32px; border-radius: 12px; border: 1px solid #D4AF37; margin-right: 8px;">
+                          Acessar Catálogo de Legislação
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <div style="background-color: #f8fafc; border-radius: 10px; padding: 14px 16px; border: 1px solid #e2e8f0; font-size: 12px; color: #64748b; line-height: 1.5; text-align: center;">
+                    Este e-mail é gerado automaticamente e enviado exclusivamente para o corpo técnico de <strong>Analistas e Administradores</strong> credenciados na plataforma Contabilidade 5.0 • Diamond Group.
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 18px 24px; text-align: center; font-size: 11px; color: #94a3b8;">
+                  Contabilidade 5.0 • Diamond Group • Inteligência Contábil & Tributária
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+
+        let senderAddress = 'noreply@goskip.dev'
+        let senderName = 'Contabilidade 5.0 • Diamond Group'
+        try {
+          const meta = $app.settings().meta
+          if (meta && meta.senderAddress) senderAddress = meta.senderAddress
+          if (meta && meta.senderName) senderName = meta.senderName
+        } catch (_) {}
+
+        for (let i = 0; i < dests.length; i++) {
+          try {
+            const mailMsg = new MailerMessage({
+              from: { address: senderAddress, name: senderName },
+              to: [{ address: dests[i] }],
+              subject: assunto,
+              html: htmlContent,
+            })
+            $app.newMailClient().send(mailMsg)
+            emailsEnviados++
+          } catch (errSend) {
+            console.log(`[Radar Tributário] Falha ao enviar para ${dests[i]}:`, errSend)
+          }
+        }
+
+        const nowIso = new Date().toISOString().replace('T', ' ').substring(0, 19)
+        for (let i = 0; i < pendentesSync.length; i++) {
+          try {
+            const r = pendentesSync[i]
+            r.set('email_enviado', true)
+            r.set('email_enviado_em', nowIso)
+            $app.save(r)
+          } catch (_) {}
+        }
+      }
+    } catch (errSyncMail) {
+      console.log('[Radar Tributário] Erro no envio de e-mails via sync manual:', errSyncMail)
+    }
+
     return e.json(200, {
       sucesso: true,
       novosEncontrados,
+      emailsEnviados,
       mensagem: 'Varredura e sincronização de alíquotas oficiais concluídas com sucesso.',
     })
   } catch (err) {
