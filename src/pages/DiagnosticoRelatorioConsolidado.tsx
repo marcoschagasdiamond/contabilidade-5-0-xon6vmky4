@@ -2021,8 +2021,14 @@ export default function DiagnosticoRelatorioConsolidado() {
 
             <div className="shrink-0 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Link
-                to="/diagnostico-360"
+                to="/agendamento?origem=relatorio_consolidado&assunto=Apresentação+do+Dossiê+Consolidado"
                 className="inline-flex items-center justify-center px-7 py-4 rounded-xl font-bold text-sm sm:text-base text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-lg shadow-[#D4AF37]/20 transition-all hover:scale-105 cursor-pointer text-center"
+              >
+                Agendar Reunião com Especialista
+              </Link>
+              <Link
+                to="/diagnostico-360"
+                className="inline-flex items-center justify-center px-7 py-4 rounded-xl font-bold text-sm sm:text-base text-white bg-white/10 hover:bg-white/20 border border-white/20 shadow-md transition-all text-center"
               >
                 Fazer Outro Diagnóstico
               </Link>

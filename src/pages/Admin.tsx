@@ -52,9 +52,12 @@ import { AbaClientesVisaoGlobal } from '@/components/admin/AbaClientesVisaoGloba
 import { AbaAnalistasParceiros } from '@/components/admin/AbaAnalistasParceiros'
 import { AbaUsuariosPermissoes } from '@/components/admin/AbaUsuariosPermissoes'
 import { AbaMercadoCreditosAdmin } from '@/components/admin/AbaMercadoCreditosAdmin'
+import { AbaReunioesAdmin } from '@/components/admin/AbaReunioesAdmin'
 import { ModalFichaClienteGlobal } from '@/components/admin/ModalFichaClienteGlobal'
 import { listarTodosAnunciosAdmin, listarPedidosAdmin } from '@/services/creditos'
 import type { AnuncioCredito, PedidoInformacaoCredito } from '@/types/creditos'
+import { listarTodasReunioesAdmin } from '@/services/reunioes'
+import type { ReuniaoRecord } from '@/types/reunioes'
 import {
   listarClientesVisaoGlobal,
   obterMetricasAnalistas,
@@ -67,6 +70,7 @@ type TabTipo =
   | 'analistas'
   | 'usuarios_permissoes'
   | 'mercado_creditos'
+  | 'reunioes'
   | 'clientes'
   | 'leads'
   | 'diagnosticos'
@@ -89,6 +93,10 @@ export default function Admin() {
   const [anunciosCreditosAdmin, setAnunciosCreditosAdmin] = useState<AnuncioCredito[]>([])
   const [pedidosCreditosAdmin, setPedidosCreditosAdmin] = useState<PedidoInformacaoCredito[]>([])
   const [isLoadingCreditosAdmin, setIsLoadingCreditosAdmin] = useState(true)
+
+  // Reuniões Agendadas
+  const [reunioesAdmin, setReunioesAdmin] = useState<ReuniaoRecord[]>([])
+  const [isLoadingReunioesAdmin, setIsLoadingReunioesAdmin] = useState(true)
 
   // Clientes Empresas
   const [clientes, setClientes] = useState<ClienteEmpresaRecord[]>([])
@@ -215,7 +223,20 @@ export default function Admin() {
     fetchDiagnosticos()
     fetchDadosMaster()
     fetchCreditosAdmin()
+    fetchReunioesAdmin()
   }, [])
+
+  const fetchReunioesAdmin = async () => {
+    setIsLoadingReunioesAdmin(true)
+    try {
+      const data = await listarTodasReunioesAdmin()
+      setReunioesAdmin(data)
+    } catch (err) {
+      console.error('Erro ao carregar reuniões admin:', err)
+    } finally {
+      setIsLoadingReunioesAdmin(false)
+    }
+  }
 
   // Inscrição em tempo real na coleção 'clientes_empresas'
   useRealtime<ClienteEmpresaRecord>(
@@ -796,6 +817,29 @@ export default function Admin() {
             </span>
           </button>
 
+          {/* ABA MASTER 5: REUNIÕES AGENDADAS (PADRÃO DIAMOND GROUP, SEM ÍCONES) */}
+          <button
+            onClick={() => setActiveTab('reunioes')}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-heading font-bold flex items-center gap-2 transition-all ${
+              activeTab === 'reunioes'
+                ? 'bg-[#07132B] text-[#D4AF37] shadow-sm ring-2 ring-[#D4AF37]/60'
+                : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <span>Reuniões Agendadas</span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'reunioes'
+                  ? 'bg-[#D4AF37] text-[#07132B]'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              {reunioesAdmin.filter((r) => r.status === 'agendada').length > 0
+                ? `${reunioesAdmin.filter((r) => r.status === 'agendada').length} agendadas`
+                : `${reunioesAdmin.length}`}
+            </span>
+          </button>
+
           <div className="h-6 w-px bg-slate-300 mx-1 hidden sm:block" />
 
           {/* ABAS ORIGINAIS PRESERVADAS */}
@@ -985,6 +1029,22 @@ export default function Admin() {
             isMaster={isMaster}
             onAtualizar={() => {
               fetchCreditosAdmin()
+            }}
+            onFeedback={(fb) => {
+              setFeedbackDiag(fb)
+              if (fb) {
+                setTimeout(() => setFeedbackDiag(null), 6000)
+              }
+            }}
+          />
+        )}
+
+        {activeTab === 'reunioes' && (
+          <AbaReunioesAdmin
+            reunioes={reunioesAdmin}
+            isLoading={isLoadingReunioesAdmin}
+            onAtualizar={() => {
+              fetchReunioesAdmin()
             }}
             onFeedback={(fb) => {
               setFeedbackDiag(fb)

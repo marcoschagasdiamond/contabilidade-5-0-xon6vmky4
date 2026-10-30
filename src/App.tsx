@@ -52,6 +52,7 @@ import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
 import RecuperadorCreditos from './pages/RecuperadorCreditos'
 import DadosEmpresa from './pages/DadosEmpresa'
 import Planos from './pages/Planos'
+import Agendamento from './pages/Agendamento'
 import NotFound from './pages/NotFound'
 
 // Reforma Tributária (Diamond Group)
@@ -243,6 +244,14 @@ const App = () => (
                   element={
                     <RotaAutenticada>
                       <DadosEmpresa />
+                    </RotaAutenticada>
+                  }
+                />
+                <Route
+                  path="/agendamento"
+                  element={
+                    <RotaAutenticada>
+                      <Agendamento />
                     </RotaAutenticada>
                   }
                 />

@@ -406,6 +406,13 @@ export default function Layout() {
                           Planos
                         </Link>
                         <Link
+                          to="/agendamento"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:text-white hover:bg-white/10 transition-colors font-semibold"
+                        >
+                          Agendar Reunião
+                        </Link>
+                        <Link
                           to="/minha-conta"
                           onClick={() => setIsUserMenuOpen(false)}
                           className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
@@ -572,6 +579,13 @@ export default function Layout() {
                         className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
                       >
                         Planos
+                      </Link>
+                      <Link
+                        to="/agendamento"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:text-white hover:bg-white/10 transition-colors font-semibold"
+                      >
+                        Agendar Reunião
                       </Link>
                       <Link
                         to="/minha-conta"

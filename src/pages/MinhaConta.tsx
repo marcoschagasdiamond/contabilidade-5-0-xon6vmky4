@@ -246,6 +246,22 @@ export default function MinhaConta() {
                 </Link>
               </div>
 
+              {/* BOTÃO DE AGENDAMENTO DE REUNIÃO (PADRÃO DIAMOND GROUP, SEM ÍCONES) */}
+              <div className="p-3.5 rounded-xl bg-[#07132B] text-white border border-[#D4AF37]/30 space-y-2 mb-4">
+                <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider block">
+                  CONSULTORIA COM ESPECIALISTA
+                </span>
+                <p className="text-xs text-slate-300">
+                  Precisa alinhar metas ou sanar dúvidas com a equipe executiva?
+                </p>
+                <Link
+                  to="/agendamento?origem=minha_conta&assunto=Alinhamento+Estratégico+Empresarial"
+                  className="block text-center py-2 px-3 rounded-lg text-xs font-heading font-bold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] transition-colors"
+                >
+                  Agendar Reunião
+                </Link>
+              </div>
+
               <div className="space-y-4 text-xs">
                 <div>
                   <span className="text-slate-400 block font-medium uppercase tracking-wider text-[10px]">

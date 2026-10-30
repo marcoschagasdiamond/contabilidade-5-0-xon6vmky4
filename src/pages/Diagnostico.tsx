@@ -3842,16 +3842,15 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
             >
               Ver Resultado Novamente
             </Button>
-            <a
-              href={`https://wa.me/551140028922?text=${encodeURIComponent(
-                `Olá, fiz o diagnóstico tributário para a empresa ${formData.empresa}. O resultado apontou ${resultado?.regimeRecomendado}. Gostaria de agendar uma consultoria.`,
+            <Link
+              to={`/agendamento?origem=diagnostico_tributario&assunto=${encodeURIComponent(
+                `Apresentação do Diagnóstico da Empresa ${formData.empresa}`,
               )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] transition-colors"
+              onClick={() => setIsEspecialistaModalOpen(false)}
+              className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-bold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] transition-colors shadow-md"
             >
-              Falar no WhatsApp Agora
-            </a>
+              Agendar Reunião na Agenda
+            </Link>
           </div>
         </DialogContent>
       </Dialog>

@@ -283,12 +283,12 @@ export default function Diagnostico360() {
               Baumgartener.
             </p>
           </div>
-          <a
-            href="/#contato"
-            className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+          <Link
+            to="/agendamento?origem=diagnostico_360&assunto=Avaliação+Personalizada+Diagnóstico+360°"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0 text-center"
           >
-            Fale com um Especialista
-          </a>
+            Agendar com um Especialista
+          </Link>
         </div>
 
         {/* ========================================================= */}
@@ -362,12 +362,12 @@ export default function Diagnostico360() {
             <p className="text-xs sm:text-sm text-slate-600 text-center sm:text-left">
               Precisa equilibrar o saneamento imediato e a governança de longo prazo da sua empresa?
             </p>
-            <a
-              href="/#contato"
-              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+            <Link
+              to="/agendamento?origem=diagnostico_360&assunto=Alinhamento+de+Reestruturação+e+Governança"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0 text-center"
             >
-              Fale com um Especialista
-            </a>
+              Agendar Reunião com Especialista
+            </Link>
           </div>
         </section>
 
@@ -568,12 +568,12 @@ export default function Diagnostico360() {
                 Nossos analistas estruturam a auditoria e o plano de mitigação sob medida.
               </p>
             </div>
-            <a
-              href="/#contato"
-              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+            <Link
+              to="/agendamento?origem=diagnostico_360&assunto=Auditoria+e+Mitigação+das+7+Frentes+360°"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0 text-center"
             >
-              Fale com um Especialista
-            </a>
+              Agendar Reunião com Especialista
+            </Link>
           </div>
         </section>
 
@@ -744,12 +744,12 @@ export default function Diagnostico360() {
                 Acompanhamento consultivo direto com os analistas e parceiros do Diamond Group.
               </p>
             </div>
-            <a
-              href="/#contato"
-              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+            <Link
+              to="/agendamento?origem=diagnostico_360&assunto=Aceleração+dos+Marcos+30-60-90"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0 text-center"
             >
-              Fale com um Especialista
-            </a>
+              Agendar Reunião com Especialista
+            </Link>
           </div>
         </section>
 
@@ -807,12 +807,12 @@ export default function Diagnostico360() {
             <p className="text-xs sm:text-sm text-slate-600 text-center sm:text-left">
               Quer iniciar as 4 etapas do ciclo de assessoria com suporte executivo?
             </p>
-            <a
-              href="/#contato"
-              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0"
+            <Link
+              to="/agendamento?origem=diagnostico_360&assunto=Início+das+4+Etapas+do+Ciclo+da+Assessoria"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-md transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap shrink-0 text-center"
             >
-              Fale com um Especialista
-            </a>
+              Agendar Reunião com Especialista
+            </Link>
           </div>
         </section>
 
