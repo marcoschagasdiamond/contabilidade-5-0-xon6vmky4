@@ -5,7 +5,6 @@ import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { Button } from '@/components/ui/button'
-import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
 import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 import { createDiagnostico } from '@/services/diagnosticos'
@@ -593,8 +592,6 @@ export default function DiagnosticoAutoavaliacao() {
           </div>
         </section>
       </div>
-
-      <DiamondFooterCTA />
 
       <PaywallModal open={paywallAberto} onOpenChange={setPaywallAberto} motivo="diagnostico" />
     </div>

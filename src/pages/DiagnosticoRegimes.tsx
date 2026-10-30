@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
-import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
 import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 import { Modulo6ComparadorRegime } from '@/components/reforma/Modulo6ComparadorRegime'
@@ -260,8 +259,6 @@ export default function DiagnosticoRegimes() {
           salvoFeedback={salvoFeedback}
         />
       </div>
-
-      <DiamondFooterCTA />
 
       <PaywallModal open={paywallAberto} onOpenChange={setPaywallAberto} motivo="diagnostico" />
     </div>

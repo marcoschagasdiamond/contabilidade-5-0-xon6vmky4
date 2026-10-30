@@ -4,7 +4,6 @@ import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
-import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { TermoPPLI, formatarTextoComPPLI } from '@/components/diagnosticos/TermoPPLI'
@@ -859,8 +858,6 @@ export default function Diagnostico360() {
           </div>
         </section>
       </div>
-
-      <DiamondFooterCTA />
     </div>
   )
 }

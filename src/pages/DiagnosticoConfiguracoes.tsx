@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
-import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
@@ -802,8 +801,6 @@ export default function DiagnosticoConfiguracoes() {
           </div>
         </div>
       </div>
-
-      <DiamondFooterCTA />
     </div>
   )
 }
