@@ -30,6 +30,8 @@ import { useToast } from '@/hooks/use-toast'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { ModalGerarPdf, type ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
+import { ModalExportarDadosSimulacao } from '@/components/calculadora/ModalExportarDadosSimulacao'
+import { converterSimulacaoSalvaParaExportacao } from '@/lib/exportacaoCalculadora'
 import { gerarRelatorioSimulacaoPDF } from '@/lib/pdfSimulacaoCalculadora'
 import { excluirSimulacao, renomearSimulacao } from '@/services/simulacoesCalculadora'
 import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
@@ -82,6 +84,11 @@ export function ListaSimulacoes({
   // Estado para gerar PDF Individual com Modal de Responsável Técnico
   const [simulacaoParaPdf, setSimulacaoParaPdf] = useState<SimulacaoCalculadora | null>(null)
   const [gerandoPdf, setGerandoPdf] = useState(false)
+
+  // Estado para Exportar Dados da Simulação Salva (Planilha CSV + Relatório PDF)
+  const [simulacaoParaExportar, setSimulacaoParaExportar] = useState<SimulacaoCalculadora | null>(
+    null,
+  )
 
   const handleExcluir = async () => {
     if (!simulacaoExcluir) return
@@ -319,10 +326,15 @@ export function ListaSimulacoes({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="text-xs">
                       <DropdownMenuItem
-                        onClick={() => handleAbrirModalPdfIndividual(sim)}
-                        className="cursor-pointer gap-2"
+                        onClick={() => setSimulacaoParaExportar(sim)}
+                        className="cursor-pointer font-bold text-[#07132B]"
                       >
-                        <FileDown className="w-3.5 h-3.5 text-emerald-600" />
+                        Exportar dados (Planilha / PDF)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleAbrirModalPdfIndividual(sim)}
+                        className="cursor-pointer"
+                      >
                         Baixar Relatório PDF
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -330,9 +342,8 @@ export function ListaSimulacoes({
                           setSimulacaoRenomear(sim)
                           setNovoNome(sim.nome)
                         }}
-                        className="cursor-pointer gap-2"
+                        className="cursor-pointer"
                       >
-                        <Pencil className="w-3.5 h-3.5 text-slate-600" />
                         Renomear
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -403,6 +414,23 @@ export function ListaSimulacoes({
         modo="individual"
         onConfirmar={handleConfirmarPdfIndividual}
         gerando={gerandoPdf}
+      />
+
+      {/* MODAL EXPORTAR DADOS DA SIMULAÇÃO SELECIONADA NO HISTÓRICO */}
+      <ModalExportarDadosSimulacao
+        open={!!simulacaoParaExportar}
+        onOpenChange={(open) => !open && setSimulacaoParaExportar(null)}
+        dadosSimulacao={
+          simulacaoParaExportar
+            ? converterSimulacaoSalvaParaExportacao(simulacaoParaExportar)
+            : null
+        }
+        titulo={
+          simulacaoParaExportar
+            ? `Exportar Dados: "${simulacaoParaExportar.nome}"`
+            : 'Exportar Dados'
+        }
+        descricao="Baixe a planilha com todos os parâmetros e resultados deste cenário ou emita o relatório técnico em PDF."
       />
 
       {/* MODAL CONFIRMAÇÃO DE EXCLUSÃO */}

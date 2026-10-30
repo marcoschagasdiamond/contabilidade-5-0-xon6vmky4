@@ -33,6 +33,7 @@ import {
   ModalCompartilharLink,
   decodificarParametrosDaUrl,
 } from '@/components/calculadora/ModalCompartilharLink'
+import { ModalExportarDadosSimulacao } from '@/components/calculadora/ModalExportarDadosSimulacao'
 import { ModalGerarPdf, type ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
 import { gerarRelatorioComparativoPDF } from '@/lib/pdfSimulacaoCalculadora'
 import {
@@ -125,6 +126,7 @@ function CalculadoraConteudo() {
   const [modalCompartilharAberto, setModalCompartilharAberto] = useState(false)
   const [modalPdfAtualAberto, setModalPdfAtualAberto] = useState(false)
   const [modalPdfComparativoAberto, setModalPdfComparativoAberto] = useState(false)
+  const [modalExportarDadosAberto, setModalExportarDadosAberto] = useState(false)
   const [gerandoPdfComparativo, setGerandoPdfComparativo] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
   const [paywallSimulacaoAberto, setPaywallSimulacaoAberto] = useState(false)
@@ -343,9 +345,17 @@ function CalculadoraConteudo() {
                 {resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%
               </strong>
             </span>
-            {/* BOTÕES DE AÇÃO RÁPIDA: SALVAR, COMPARTILHAR E BAIXAR PDF */}
-            <div className="flex items-center gap-2 ml-auto">
+            {/* BOTÕES DE AÇÃO RÁPIDA: EXPORTAR DADOS, SALVAR, COMPARTILHAR E BAIXAR PDF */}
+            <div className="flex flex-wrap items-center gap-2 ml-auto">
               <FreemiumBadge tipo="simulacao" />
+              <button
+                type="button"
+                onClick={() => setModalExportarDadosAberto(true)}
+                className="px-3 py-1 rounded-lg bg-[#07132B] hover:bg-[#122347] text-white border border-[#D4AF37] font-extrabold transition-all shadow-sm"
+                title="Exportar planilha (CSV/Excel) e dados da simulação atual"
+              >
+                <span>Exportar dados</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setModalCompartilharAberto(true)}
@@ -575,6 +585,7 @@ function CalculadoraConteudo() {
                 onNavegarModulo={(id) => setModuloAtivo(id)}
                 onSalvarSimulacao={handleTentarSalvarSimulacao}
                 onBaixarPdf={handleBaixarPdfAtual}
+                onExportarDados={() => setModalExportarDadosAberto(true)}
                 gerandoPdf={gerandoPdf}
               />
             )}
@@ -583,6 +594,7 @@ function CalculadoraConteudo() {
                 onNavegarModulo={(id) => setModuloAtivo(id)}
                 onSalvarSimulacao={handleTentarSalvarSimulacao}
                 onBaixarPdf={handleBaixarPdfAtual}
+                onExportarDados={() => setModalExportarDadosAberto(true)}
                 gerandoPdf={gerandoPdf}
               />
             )}
@@ -591,6 +603,7 @@ function CalculadoraConteudo() {
                 onNavegarModulo={(id) => setModuloAtivo(id)}
                 onSalvarSimulacao={handleTentarSalvarSimulacao}
                 onBaixarPdf={handleBaixarPdfAtual}
+                onExportarDados={() => setModalExportarDadosAberto(true)}
                 gerandoPdf={gerandoPdf}
               />
             )}
@@ -599,6 +612,7 @@ function CalculadoraConteudo() {
                 onNavegarModulo={(id) => setModuloAtivo(id)}
                 onSalvarSimulacao={handleTentarSalvarSimulacao}
                 onBaixarPdf={handleBaixarPdfAtual}
+                onExportarDados={() => setModalExportarDadosAberto(true)}
                 gerandoPdf={gerandoPdf}
               />
             )}
@@ -609,6 +623,7 @@ function CalculadoraConteudo() {
                 onNavegarModulo={(id) => setModuloAtivo(id)}
                 onSalvarSimulacao={handleTentarSalvarSimulacao}
                 onBaixarPdf={handleBaixarPdfAtual}
+                onExportarDados={() => setModalExportarDadosAberto(true)}
                 gerandoPdf={gerandoPdf}
               />
             )}
@@ -679,6 +694,19 @@ function CalculadoraConteudo() {
         modo="individual"
         onConfirmar={handleConfirmarPdfAtual}
         gerando={gerandoPdf}
+      />
+
+      {/* MODAL EXPORTAR DADOS DA SIMULAÇÃO ATUAL */}
+      <ModalExportarDadosSimulacao
+        open={modalExportarDadosAberto}
+        onOpenChange={setModalExportarDadosAberto}
+        dadosSimulacao={{
+          nomeSimulacao: 'Simulação Atual em Tela',
+          empresa: clienteAtivo?.nome,
+          cnpj: clienteAtivo?.cnpj_cpf,
+          parametros: obterSnapshotParametros(),
+          resultados: obterSnapshotResultados(),
+        }}
       />
 
       {/* MODAL RESPONSÁVEL TÉCNICO PARA PDF COMPARATIVO */}

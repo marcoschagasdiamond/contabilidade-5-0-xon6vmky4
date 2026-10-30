@@ -34,6 +34,7 @@ export interface Modulo2CalculadoraSimplesProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
   onSalvarSimulacao?: () => void
   onBaixarPdf?: () => void
+  onExportarDados?: () => void
   gerandoPdf?: boolean
 }
 
@@ -41,6 +42,7 @@ export default function Modulo2CalculadoraSimples({
   onNavegarModulo,
   onSalvarSimulacao,
   onBaixarPdf,
+  onExportarDados,
   gerandoPdf = false,
 }: Modulo2CalculadoraSimplesProps = {}) {
   const {
@@ -605,11 +607,12 @@ export default function Modulo2CalculadoraSimples({
         )
       })()}
 
-      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR E BAIXAR PDF) */}
+      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR, BAIXAR PDF E EXPORTAR DADOS) */}
       {onSalvarSimulacao && onBaixarPdf && (
         <BarraAcoesSimulacao
           onSalvar={onSalvarSimulacao}
           onBaixarPdf={onBaixarPdf}
+          onExportarDados={onExportarDados}
           gerandoPdf={gerandoPdf}
         />
       )}

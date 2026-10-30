@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 export interface BarraAcoesSimulacaoProps {
   onSalvar: () => void
   onBaixarPdf: () => void
+  onExportarDados?: () => void
   gerandoPdf?: boolean
   /**
    * Quando true, no mobile a barra fica fixa no rodapé (sticky bottom-0 z-30),
@@ -15,13 +16,14 @@ export interface BarraAcoesSimulacaoProps {
 
 /**
  * Barra de Ações Estratégicas da Simulação (Diamond Group)
- * Apresenta os dois botões: 'Salvar Simulação' e 'Baixar Relatório em PDF'
+ * Apresenta os botões: 'Exportar dados', 'Salvar Simulação' e 'Gerar parecer da calculadora'
  * Padrão visual Diamond Group: Navy #07132B / Dourado #D4AF37, SEM ÍCONES,
  * executando as mesmas validações e ações dos botões superiores.
  */
 export function BarraAcoesSimulacao({
   onSalvar,
   onBaixarPdf,
+  onExportarDados,
   gerandoPdf = false,
   stickyMobile = false,
   className = '',
@@ -44,7 +46,19 @@ export function BarraAcoesSimulacao({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 justify-center">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0 justify-center">
+          {/* Botão Exportar dados: Fundo Navy com borda Dourada, sem ícones */}
+          {onExportarDados && (
+            <Button
+              type="button"
+              onClick={onExportarDados}
+              className="flex-1 sm:flex-initial h-10 px-4 rounded-xl bg-[#07132B] hover:bg-[#0f244c] text-white border border-[#D4AF37]/60 font-extrabold text-xs tracking-wide shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+              title="Exportar planilha (CSV/Excel) e relatório completo dos parâmetros e resultados"
+            >
+              Exportar dados
+            </Button>
+          )}
+
           {/* Botão Salvar Simulação: Fundo Dourado #D4AF37, texto Navy #07132B, sem ícones */}
           <Button
             type="button"

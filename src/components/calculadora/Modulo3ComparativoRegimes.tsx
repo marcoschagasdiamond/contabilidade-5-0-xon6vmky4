@@ -79,6 +79,7 @@ export interface Modulo3ComparativoRegimesProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
   onSalvarSimulacao?: () => void
   onBaixarPdf?: () => void
+  onExportarDados?: () => void
   gerandoPdf?: boolean
 }
 
@@ -86,6 +87,7 @@ export default function Modulo3ComparativoRegimes({
   onNavegarModulo,
   onSalvarSimulacao,
   onBaixarPdf,
+  onExportarDados,
   gerandoPdf = false,
 }: Modulo3ComparativoRegimesProps = {}) {
   const {
@@ -1688,11 +1690,12 @@ export default function Modulo3ComparativoRegimes({
         </CardContent>
       </Card>
 
-      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR E BAIXAR PDF) */}
+      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR, BAIXAR PDF E EXPORTAR DADOS) */}
       {onSalvarSimulacao && onBaixarPdf && (
         <BarraAcoesSimulacao
           onSalvar={onSalvarSimulacao}
           onBaixarPdf={onBaixarPdf}
+          onExportarDados={onExportarDados}
           gerandoPdf={gerandoPdf}
         />
       )}

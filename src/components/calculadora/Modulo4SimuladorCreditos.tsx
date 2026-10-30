@@ -36,6 +36,7 @@ export interface Modulo4SimuladorCreditosProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
   onSalvarSimulacao?: () => void
   onBaixarPdf?: () => void
+  onExportarDados?: () => void
   gerandoPdf?: boolean
 }
 
@@ -43,6 +44,7 @@ export default function Modulo4SimuladorCreditos({
   onNavegarModulo,
   onSalvarSimulacao,
   onBaixarPdf,
+  onExportarDados,
   gerandoPdf = false,
 }: Modulo4SimuladorCreditosProps = {}) {
   const {
@@ -626,11 +628,12 @@ export default function Modulo4SimuladorCreditos({
         </div>
       </div>
 
-      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR E BAIXAR PDF) */}
+      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR, BAIXAR PDF E EXPORTAR DADOS) */}
       {onSalvarSimulacao && onBaixarPdf && (
         <BarraAcoesSimulacao
           onSalvar={onSalvarSimulacao}
           onBaixarPdf={onBaixarPdf}
+          onExportarDados={onExportarDados}
           gerandoPdf={gerandoPdf}
         />
       )}

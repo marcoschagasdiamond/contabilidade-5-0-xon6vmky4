@@ -46,6 +46,7 @@ export interface Modulo5TransicaoCronogramaProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
   onSalvarSimulacao?: () => void
   onBaixarPdf?: () => void
+  onExportarDados?: () => void
   gerandoPdf?: boolean
 }
 
@@ -53,6 +54,7 @@ export default function Modulo5TransicaoCronograma({
   onNavegarModulo,
   onSalvarSimulacao,
   onBaixarPdf,
+  onExportarDados,
   gerandoPdf = false,
 }: Modulo5TransicaoCronogramaProps = {}) {
   const {
@@ -630,11 +632,12 @@ export default function Modulo5TransicaoCronograma({
         </CardContent>
       </Card>
 
-      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR E BAIXAR PDF) */}
+      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR, BAIXAR PDF E EXPORTAR DADOS) */}
       {onSalvarSimulacao && onBaixarPdf && (
         <BarraAcoesSimulacao
           onSalvar={onSalvarSimulacao}
           onBaixarPdf={onBaixarPdf}
+          onExportarDados={onExportarDados}
           gerandoPdf={gerandoPdf}
         />
       )}

@@ -80,6 +80,7 @@ import {
   ModuloCalculadoraId,
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
 import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
+import { ModalExportarDadosSimulacao } from '@/components/calculadora/ModalExportarDadosSimulacao'
 import { AvisoOrientativo } from '@/components/common/AvisoOrientativo'
 
 interface Modulo6DashboardProps {
@@ -88,6 +89,7 @@ interface Modulo6DashboardProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
   onSalvarSimulacao?: () => void
   onBaixarPdf?: () => void
+  onExportarDados?: () => void
   gerandoPdf?: boolean
 }
 
@@ -97,6 +99,7 @@ export default function Modulo6Dashboard({
   onNavegarModulo,
   onSalvarSimulacao,
   onBaixarPdf,
+  onExportarDados,
   gerandoPdf: gerandoPdfProp,
 }: Modulo6DashboardProps) {
   const {
@@ -146,6 +149,7 @@ export default function Modulo6Dashboard({
   const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
   const [modalCompartilharAberto, setModalCompartilharAberto] = useState(false)
   const [modalGerarPdfAberto, setModalGerarPdfAberto] = useState(false)
+  const [modalExportarDadosAberto, setModalExportarDadosAberto] = useState(false)
   const [modalLimparAberto, setModalLimparAberto] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
@@ -153,6 +157,14 @@ export default function Modulo6Dashboard({
 
   const handleAbrirModalPdfDashboard = () => {
     setModalGerarPdfAberto(true)
+  }
+
+  const handleAbrirExportarDados = () => {
+    if (onExportarDados) {
+      onExportarDados()
+    } else {
+      setModalExportarDadosAberto(true)
+    }
   }
 
   const handleConfirmarPdf = (
@@ -723,7 +735,7 @@ export default function Modulo6Dashboard({
             </div>
 
             {/* Grupo de Botões de Ação com Destaque e Hierarquia Visual Clara */}
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0 bg-white/5 p-1.5 rounded-xl border border-white/10 shadow-inner">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0 bg-white/5 p-1.5 rounded-xl border border-white/10 shadow-inner">
               {/* Botão Limpar Dashboard (outline Dourado/Navy, sem ícones) */}
               <Button
                 type="button"
@@ -733,6 +745,16 @@ export default function Modulo6Dashboard({
                 title="Limpar todos os dados e resultados do Dashboard"
               >
                 <span>Limpar Dashboard</span>
+              </Button>
+
+              {/* Botão Exportar dados: Padrão Diamond Group, sem ícones */}
+              <Button
+                type="button"
+                onClick={handleAbrirExportarDados}
+                className="bg-[#07132B] hover:bg-[#0d224d] text-white border-2 border-[#D4AF37]/80 font-extrabold text-xs h-10 px-3.5 shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+                title="Exportar planilha (CSV/Excel) e relatório com todos os parâmetros e resultados"
+              >
+                <span>Exportar dados</span>
               </Button>
 
               {/* Botão Secundário 1: Compartilhar */}
@@ -2077,11 +2099,12 @@ export default function Modulo6Dashboard({
         </>
       )}
 
-      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES SALVAR E BAIXAR PDF) */}
+      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES EXPORTAR DADOS, SALVAR E BAIXAR PDF) */}
       {/* No Dashboard Executivo: duplicação no fim + barra fixa (sticky no rodapé) em telas pequenas para acompanhar a rolagem */}
       <BarraAcoesSimulacao
         onSalvar={onSalvarSimulacao ?? (() => setModalSalvarAberto(true))}
         onBaixarPdf={onBaixarPdf ?? handleAbrirModalPdfDashboard}
+        onExportarDados={handleAbrirExportarDados}
         gerandoPdf={gerandoPdfProp ?? gerandoPdf}
         stickyMobile={true}
       />
@@ -2105,6 +2128,19 @@ export default function Modulo6Dashboard({
         open={modalCompartilharAberto}
         onOpenChange={setModalCompartilharAberto}
         parametros={obterSnapshotParametros()}
+      />
+
+      {/* Modal Exportar Dados (Planilha CSV/Excel + Relatório Técnico PDF) */}
+      <ModalExportarDadosSimulacao
+        open={modalExportarDadosAberto}
+        onOpenChange={setModalExportarDadosAberto}
+        dadosSimulacao={{
+          nomeSimulacao: 'Simulação Executiva - Dashboard',
+          empresa: clienteAtivo?.nome,
+          cnpj: clienteAtivo?.cnpj_cpf,
+          parametros: obterSnapshotParametros(),
+          resultados: obterSnapshotResultados(),
+        }}
       />
 
       {/* Modal Gerar Relatório Técnico em PDF */}
