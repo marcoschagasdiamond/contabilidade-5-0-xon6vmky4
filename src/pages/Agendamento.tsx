@@ -42,9 +42,13 @@ function formatarDataIso(data: Date): string {
   return `${y}-${m}-${d}`
 }
 
-function parseDataIso(iso: string): Date {
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d)
+function parseDataIso(iso?: string | null): Date | null {
+  if (!iso || typeof iso !== 'string') return null
+  const partes = iso.split('-').map(Number)
+  if (partes.length < 3 || partes.some(isNaN)) return null
+  const [y, m, d] = partes
+  const data = new Date(y, m - 1, d)
+  return isNaN(data.getTime()) ? null : data
 }
 
 export default function AgendamentoReuniao() {
@@ -292,13 +296,15 @@ export default function AgendamentoReuniao() {
                   Data & Horário
                 </span>
                 <strong className="text-slate-900 font-heading text-base block mt-0.5">
-                  {parseDataIso(reuniaoCriada.data).toLocaleDateString('pt-BR', {
+                  {parseDataIso(reuniaoCriada.data)?.toLocaleDateString('pt-BR', {
                     weekday: 'long',
                     day: '2-digit',
                     month: 'long',
                     year: 'numeric',
-                  })}{' '}
-                  às {reuniaoCriada.horario}
+                  }) ||
+                    reuniaoCriada.data ||
+                    'Data a definir'}{' '}
+                  {reuniaoCriada.horario ? `às ${reuniaoCriada.horario}` : ''}
                 </strong>
               </div>
               <div>
@@ -409,10 +415,12 @@ export default function AgendamentoReuniao() {
                     </span>
                     <h3 className="text-base sm:text-lg font-heading font-extrabold text-slate-900">
                       Horários Disponíveis em{' '}
-                      {parseDataIso(dataSelecionada).toLocaleDateString('pt-BR', {
+                      {parseDataIso(dataSelecionada)?.toLocaleDateString('pt-BR', {
                         day: '2-digit',
                         month: 'short',
-                      })}
+                      }) ||
+                        dataSelecionada ||
+                        'Data selecionada'}
                     </h3>
                   </div>
                   {carregandoDisponibilidade && (
@@ -503,11 +511,13 @@ export default function AgendamentoReuniao() {
                 </span>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-200">
-                    {parseDataIso(dataSelecionada).toLocaleDateString('pt-BR', {
+                    {parseDataIso(dataSelecionada)?.toLocaleDateString('pt-BR', {
                       day: '2-digit',
                       month: 'long',
                       year: 'numeric',
-                    })}
+                    }) ||
+                      dataSelecionada ||
+                      'Data a definir'}
                   </span>
                   <strong className="text-lg font-heading text-[#D4AF37]">
                     {horarioSelecionado || 'Selecione um horário'}
@@ -686,7 +696,10 @@ export default function AgendamentoReuniao() {
                         <p className="text-xs text-slate-600">
                           Data:{' '}
                           <span className="font-semibold text-slate-800">
-                            {parseDataIso(r.data).toLocaleDateString('pt-BR')} às {r.horario}
+                            {parseDataIso(r.data)?.toLocaleDateString('pt-BR') ||
+                              r.data ||
+                              'Data a definir'}{' '}
+                            {r.horario ? `às ${r.horario}` : ''}
                           </span>
                           {r.empresa && <span> • Empresa: {r.empresa}</span>}
                         </p>
