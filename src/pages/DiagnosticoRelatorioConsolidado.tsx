@@ -1021,7 +1021,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                     to="/diagnostico-configuracoes"
                     className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-[#07132B] hover:bg-slate-200 transition-colors"
                   >
-                    Revisar etapa →
+                    Revisar etapa 01 →
                   </Link>
                 </div>
               </div>
@@ -1137,7 +1137,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                     to="/diagnostico-autoavaliacao"
                     className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-[#07132B] hover:bg-slate-200 transition-colors"
                   >
-                    Revisar etapa →
+                    Revisar etapa 02 →
                   </Link>
                 </div>
               </div>
@@ -1262,7 +1262,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                     to="/diagnostico-autoavaliacao"
                     className="px-4 py-2 rounded-xl text-xs font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0c1f44] transition-all self-start sm:self-auto"
                   >
-                    Fazer Autoavaliação →
+                    Iniciar Autoavaliação →
                   </Link>
                 </div>
               )}
@@ -1292,7 +1292,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                     to="/diagnostico-transicao"
                     className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-[#07132B] hover:bg-slate-200 transition-colors"
                   >
-                    Revisar etapa →
+                    Revisar etapa 03 →
                   </Link>
                 </div>
               </div>
@@ -1356,7 +1356,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                     to="/diagnostico-transicao"
                     className="px-4 py-2 rounded-xl text-xs font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0c1f44] transition-all self-start sm:self-auto"
                   >
-                    Acessar Transição Fiscal →
+                    Iniciar Transição Fiscal →
                   </Link>
                 </div>
               )}
@@ -1386,7 +1386,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                     to="/diagnostico-regimes"
                     className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-[#07132B] hover:bg-slate-200 transition-colors"
                   >
-                    Revisar etapa →
+                    Revisar etapa 04 →
                   </Link>
                 </div>
               </div>
@@ -1462,7 +1462,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                     to="/diagnostico-regimes"
                     className="px-4 py-2 rounded-xl text-xs font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0c1f44] transition-all self-start sm:self-auto"
                   >
-                    Comparar Regimes →
+                    Iniciar Comparação de Regimes →
                   </Link>
                 </div>
               )}
@@ -1564,7 +1564,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                     to="/diagnostico"
                     className="px-4 py-2 rounded-xl text-xs font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0c1f44] transition-all self-start sm:self-auto"
                   >
-                    Concluir Enquadramento
+                    Iniciar Enquadramento →
                   </Link>
                 </div>
               )}
@@ -1758,7 +1758,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                   to="/diagnostico-autoavaliacao"
                   className="px-5 py-2.5 rounded-xl font-bold text-xs bg-[#07132B] text-[#D4AF37]"
                 >
-                  Fazer Autoavaliação
+                  Iniciar Autoavaliação
                 </Link>
               </div>
             )}
@@ -1904,7 +1904,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                   to="/diagnostico-regimes"
                   className="px-5 py-2.5 rounded-xl font-bold text-xs bg-[#07132B] text-[#D4AF37]"
                 >
-                  Comparar Regimes
+                  Iniciar Comparação de Regimes
                 </Link>
               </div>
             )}
@@ -1987,7 +1987,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                   to="/diagnostico"
                   className="px-5 py-2.5 rounded-xl font-bold text-xs bg-[#07132B] text-[#D4AF37]"
                 >
-                  Concluir Enquadramento
+                  Iniciar Enquadramento
                 </Link>
               </div>
             )}

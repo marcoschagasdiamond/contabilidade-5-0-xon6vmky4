@@ -5,11 +5,23 @@ import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
+import { useProgressoTrilha, type EstadoEtapaTrilha } from '@/hooks/useProgressoTrilha'
 
 export default function DiagnosticosHub() {
   const navigate = useNavigate()
   const { temDadosSalvos, dadosEmpresa } = useDadosEmpresa()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { etapa00, etapa01, etapa02, etapa03, etapa04, etapa05 } = useProgressoTrilha()
+
+  const obterCtaEtapa = (estado: EstadoEtapaTrilha, nomeAcao: string) => {
+    if (estado === 'concluida') {
+      return `Revisar ${nomeAcao}`
+    }
+    if (estado === 'em_andamento') {
+      return `Continuar ${nomeAcao}`
+    }
+    return `Iniciar ${nomeAcao}`
+  }
 
   // Se o visitante ainda não preencheu os Dados da Empresa, redireciona com ?destino=/diagnosticos
   useEffect(() => {
@@ -36,7 +48,9 @@ export default function DiagnosticosHub() {
       rota: '/diagnostico-360',
       corAccent: '#D4AF37',
       badge: 'Apresentação do Serviço • 7 Frentes',
-      textoBotao: 'Iniciar Trilha',
+      estado: etapa00.estado,
+      labelEstado: etapa00.labelEstado,
+      nomeAcao: 'Trilha',
     },
     {
       numero: '01',
@@ -55,7 +69,9 @@ export default function DiagnosticosHub() {
       rota: '/diagnostico-configuracoes',
       corAccent: '#D4AF37',
       badge: 'Parâmetros Base • Propagação Ativa',
-      textoBotao: 'Acessar Configurações',
+      estado: etapa01.estado,
+      labelEstado: etapa01.labelEstado,
+      nomeAcao: 'Configurações',
     },
     {
       numero: '02',
@@ -74,7 +90,9 @@ export default function DiagnosticosHub() {
       rota: '/diagnostico-autoavaliacao',
       corAccent: '#2ECC71',
       badge: 'Ferramenta Interativa • 14 Respostas',
-      textoBotao: 'Fazer Autoavaliação',
+      estado: etapa02.estado,
+      labelEstado: etapa02.labelEstado,
+      nomeAcao: 'Autoavaliação',
     },
     {
       numero: '03',
@@ -93,7 +111,9 @@ export default function DiagnosticosHub() {
       rota: '/diagnostico-transicao',
       corAccent: '#F59E0B',
       badge: 'Roteiro 40 min • Farol de Risco',
-      textoBotao: 'Acessar Transição Fiscal',
+      estado: etapa03.estado,
+      labelEstado: etapa03.labelEstado,
+      nomeAcao: 'Transição Fiscal',
     },
     {
       numero: '04',
@@ -112,7 +132,9 @@ export default function DiagnosticosHub() {
       rota: '/diagnostico-regimes',
       corAccent: '#3B82F6',
       badge: 'Comparador + Matriz 4 Regimes',
-      textoBotao: 'Comparar Regimes',
+      estado: etapa04.estado,
+      labelEstado: etapa04.labelEstado,
+      nomeAcao: 'Comparação de Regime',
     },
     {
       numero: '05',
@@ -131,7 +153,9 @@ export default function DiagnosticosHub() {
       rota: '/diagnostico',
       corAccent: '#10B981',
       badge: 'Parecer Executivo + PDF',
-      textoBotao: 'Abrir Enquadramento',
+      estado: etapa05.estado,
+      labelEstado: etapa05.labelEstado,
+      nomeAcao: 'Enquadramento',
     },
   ]
 
@@ -252,16 +276,31 @@ export default function DiagnosticosHub() {
                       </span>
                     </div>
 
-                    <span
-                      className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider"
-                      style={{
-                        backgroundColor: `${diag.corAccent}15`,
-                        color: '#07132B',
-                        border: `1px solid ${diag.corAccent}40`,
-                      }}
-                    >
-                      {diag.badge}
-                    </span>
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                      {diag.estado === 'concluida' ? (
+                        <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#2ECC71]/15 text-[#1b7943] border border-[#2ECC71]/40">
+                          Concluída
+                        </span>
+                      ) : diag.estado === 'em_andamento' ? (
+                        <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-500/15 text-amber-700 border border-amber-500/40">
+                          Em andamento
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-300">
+                          Não iniciada
+                        </span>
+                      )}
+                      <span
+                        className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider"
+                        style={{
+                          backgroundColor: `${diag.corAccent}15`,
+                          color: '#07132B',
+                          border: `1px solid ${diag.corAccent}40`,
+                        }}
+                      >
+                        {diag.badge}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Títulos */}
@@ -311,11 +350,14 @@ export default function DiagnosticosHub() {
                     to={diag.rota}
                     className="inline-flex items-center px-6 py-3 rounded-xl font-heading font-black text-xs sm:text-sm text-white shadow-md transition-all hover:brightness-110 group-hover:shadow-lg text-center"
                     style={{
-                      backgroundColor: '#07132B',
-                      border: `1px solid ${diag.corAccent}60`,
+                      backgroundColor: diag.estado === 'concluida' ? '#07132B' : '#07132B',
+                      border:
+                        diag.estado === 'concluida'
+                          ? '1px solid #2ECC71'
+                          : `1px solid ${diag.corAccent}60`,
                     }}
                   >
-                    <span>{diag.textoBotao || 'Acessar Etapa'} →</span>
+                    <span>{obterCtaEtapa(diag.estado, diag.nomeAcao)} →</span>
                   </Link>
                 </div>
               </div>

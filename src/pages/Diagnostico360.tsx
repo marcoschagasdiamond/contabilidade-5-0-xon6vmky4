@@ -10,6 +10,7 @@ import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { TermoPPLI, formatarTextoComPPLI } from '@/components/diagnosticos/TermoPPLI'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
+import { useProgressoTrilha } from '@/hooks/useProgressoTrilha'
 
 // Definição completa dos 7 riscos extraídos com rigor do PDF da Diamond Intelligence
 export interface Risco360Item {
@@ -210,6 +211,7 @@ export default function Diagnostico360() {
   const navigate = useNavigate()
   const { temDadosSalvos, dadosEmpresa } = useDadosEmpresa()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { etapa01Preenchida } = useProgressoTrilha()
 
   // Gate de Dados da Empresa
   useEffect(() => {
@@ -844,7 +846,7 @@ export default function Diagnostico360() {
                 to="/diagnostico-configuracoes"
                 className="w-full sm:w-auto px-8 py-4 rounded-xl font-heading font-black text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-xl transition-all duration-200 hover:-translate-y-0.5 text-center"
               >
-                Iniciar Trilha Completa de Diagnósticos
+                {etapa01Preenchida ? 'Continuar Trilha' : 'Iniciar Trilha Completa de Diagnósticos'}
               </Link>
 
               <a
