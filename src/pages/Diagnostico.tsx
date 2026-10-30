@@ -38,6 +38,11 @@ import {
   Download,
 } from 'lucide-react'
 import { gerarRelatorioDiagnosticoPDF } from '@/lib/pdfRelatorio'
+import { gerarDiagnosticoCompletoPDF } from '@/lib/pdfDiagnosticoCompleto'
+import { listarSimulacoes } from '@/services/simulacoesCalculadora'
+import { listarSimulacoesRecuperador } from '@/services/simulacoesRecuperador'
+import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
+import type { SimulacaoRecuperador } from '@/types/recuperadorCreditos'
 import {
   executarDiagnosticoTributario,
   executarDiagnosticoTributario as calcularDiagnostico,
@@ -312,6 +317,104 @@ export default function Diagnostico() {
   const [isEspecialistaModalOpen, setIsEspecialistaModalOpen] = useState(false)
   const [mostrarDetalhesTecnicos, setMostrarDetalhesTecnicos] = useState(false)
   const [isGerandoPDF, setIsGerandoPDF] = useState(false)
+  const [isGerandoCompletoPDF, setIsGerandoCompletoPDF] = useState(false)
+  const [simulacoesCalculadora, setSimulacoesCalculadora] = useState<SimulacaoCalculadora[]>([])
+  const [simulacoesRecuperador, setSimulacoesRecuperador] = useState<SimulacaoRecuperador[]>([])
+
+  // Carrega simulações da Calculadora IBS/CBS e do Recuperador de Créditos uma vez ao montar
+  useEffect(() => {
+    let isMounted = true
+    const carregarSimulacoes = async () => {
+      try {
+        const [listaCalc, listaRec] = await Promise.all([
+          listarSimulacoes(user?.id),
+          listarSimulacoesRecuperador(user?.id),
+        ])
+        if (isMounted) {
+          setSimulacoesCalculadora(listaCalc || [])
+          setSimulacoesRecuperador(listaRec || [])
+        }
+      } catch (err) {
+        console.error('Erro ao carregar simulações para diagnóstico completo:', err)
+      }
+    }
+    carregarSimulacoes()
+    return () => {
+      isMounted = false
+    }
+  }, [user?.id])
+
+  // Computa a condição das 3 análises para o Diagnóstico Completo
+  const temCalculadora = simulacoesCalculadora.length > 0
+  const temRecuperador = simulacoesRecuperador.length > 0
+  const temDiagnostico = Boolean(formData.empresa?.trim() && formData.rbt12 > 0 && !isCalculando)
+  const todasAnalisesPreenchidas = temCalculadora && temRecuperador && temDiagnostico
+
+  // Texto discreto indicando o que falta para habilitar o Diagnóstico Completo
+  const textoFaltantes = React.useMemo(() => {
+    const faltam: string[] = []
+    if (!temDiagnostico) faltam.push('o Diagnóstico Tributário')
+    if (!temCalculadora) faltam.push('a Calculadora IBS/CBS')
+    if (!temRecuperador) faltam.push('o Recuperador de Créditos')
+
+    if (faltam.length === 0) return null
+    if (faltam.length === 1) {
+      return `Complete ${faltam[0]} para gerar o diagnóstico completo`
+    }
+    if (faltam.length === 2) {
+      return `Complete ${faltam[0]} e ${faltam[1]} para gerar o diagnóstico completo`
+    }
+    return `Complete ${faltam[0]}, ${faltam[1]} e ${faltam[2]} para gerar o diagnóstico completo`
+  }, [temDiagnostico, temCalculadora, temRecuperador])
+
+  // Emissão do relatório unificado das 3 análises (Diagnóstico Completo)
+  const handleGerarDiagnosticoCompleto = async () => {
+    if (!todasAnalisesPreenchidas) return
+
+    if (!podeBaixarPdfDiagnostico) {
+      setPaywallMotivo('pdf')
+      setPaywallModalOpen(true)
+      return
+    }
+
+    setIsGerandoCompletoPDF(true)
+    try {
+      const diagResultado =
+        resultado ||
+        executarDiagnosticoTributario({
+          segmento: formData.segmento,
+          rbt12: formData.rbt12,
+          folha12: formData.folha12,
+          folhaMensal: formData.folhaMensal,
+          despesasCreditosMensais: formData.despesasCreditos,
+          percentualExportacao: formData.percentualExportacao,
+          ufOrigem: formData.ufOrigem,
+          margemLucro: formData.margemLucro,
+          funcionarios: formData.funcionarios,
+          emissaoNf: formData.emissaoNf,
+          atividadeMista: formData.atividadeMista,
+          regimeAtual: formData.regimeAtual,
+          cidade: formData.cidade,
+          anoBase: formData.anoBase,
+        })
+
+      const perfil = carregarDadosEmpresa()
+
+      gerarDiagnosticoCompletoPDF({
+        empresa: formData.empresa || perfil?.nomeEmpresa || 'Empresa',
+        cnpj: formData.cnpj || perfil?.cnpj,
+        dadosEmpresa: perfil,
+        resultadoDiagnostico: diagResultado,
+        simulacaoCalculadora: simulacoesCalculadora[0] || null,
+        simulacaoRecuperador: simulacoesRecuperador[0] || null,
+        responsavelNome: user?.nome,
+      })
+    } catch (err) {
+      console.error('Erro ao gerar Diagnóstico Completo:', err)
+    } finally {
+      setIsGerandoCompletoPDF(false)
+    }
+  }
 
   const handleBaixarPDF = async () => {
     if (!resultado) return
@@ -2092,34 +2195,57 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
             </div>
 
             {/* Ações */}
-            <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <button
                 type="button"
                 onClick={voltarEtapa}
-                className="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs sm:text-sm font-semibold flex items-center gap-2"
+                className="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Voltar</span>
               </button>
 
-              <button
-                type="button"
-                onClick={avancarEtapa}
-                disabled={isCalculando}
-                className="px-8 py-3.5 rounded-xl font-heading font-semibold text-sm text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_4px_14px_rgba(46,204,113,0.35)] hover:shadow-[0_6px_20px_rgba(46,204,113,0.5)] transition-all duration-200 hover:-translate-y-0.5 btn-press flex items-center gap-2 disabled:opacity-75"
-              >
-                {isCalculando ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-[#0A1A13]" />
-                    <span>Calculando Cenários...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Gerar Diagnóstico Tributário</span>
-                  </>
-                )}
-              </button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <button
+                  type="button"
+                  onClick={avancarEtapa}
+                  disabled={isCalculando}
+                  className="px-8 py-3.5 rounded-xl font-heading font-semibold text-sm text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_4px_14px_rgba(46,204,113,0.35)] hover:shadow-[0_6px_20px_rgba(46,204,113,0.5)] transition-all duration-200 hover:-translate-y-0.5 btn-press flex items-center justify-center gap-2 disabled:opacity-75"
+                >
+                  {isCalculando ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-[#0A1A13]" />
+                      <span>Calculando Cenários...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Gerar Diagnóstico Tributário</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="flex flex-col items-center sm:items-end">
+                  <button
+                    type="button"
+                    onClick={handleGerarDiagnosticoCompleto}
+                    disabled={!todasAnalisesPreenchidas || isGerandoCompletoPDF}
+                    className={`px-7 py-3.5 rounded-xl font-heading font-semibold text-sm transition-all duration-200 flex items-center justify-center whitespace-nowrap ${
+                      todasAnalisesPreenchidas && !isGerandoCompletoPDF
+                        ? 'text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_4px_14px_rgba(212,175,55,0.35)] hover:shadow-[0_6px_20px_rgba(212,175,55,0.5)] hover:-translate-y-0.5 btn-press cursor-pointer'
+                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-75'
+                    }`}
+                    title={textoFaltantes || 'Gerar dossiê unificado das três análises em PDF'}
+                  >
+                    {isGerandoCompletoPDF ? 'Gerando...' : 'Gerar Diagnóstico Completo'}
+                  </button>
+                  {textoFaltantes && (
+                    <span className="text-[11px] text-slate-500 mt-1.5 text-center sm:text-right font-medium max-w-xs">
+                      {textoFaltantes}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}
