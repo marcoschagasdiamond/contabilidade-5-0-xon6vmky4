@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-30T15:39:01.544Z",
+  "generatedAt": "2026-10-30T15:47:48.350Z",
   "collections": [
     {
       "name": "users",
@@ -2230,6 +2230,80 @@
         "CREATE INDEX idx_reunioes_data_horario ON reunioes (data, horario)",
         "CREATE INDEX idx_reunioes_status ON reunioes (status)",
         "CREATE INDEX idx_reunioes_created ON reunioes (created DESC)"
+      ]
+    },
+    {
+      "name": "onboarding_progresso",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && user_id = @request.auth.id",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "passo_empresa_concluido",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "passo_diagnostico_concluido",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "passo_calculadora_concluido",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "wizard_dispensado",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "checklist_recolhido",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "concluido_em",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_onboarding_user ON onboarding_progresso (user_id)",
+        "CREATE INDEX idx_onboarding_created ON onboarding_progresso (created DESC)"
       ]
     }
   ]

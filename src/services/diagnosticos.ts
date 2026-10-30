@@ -88,6 +88,17 @@ export async function createDiagnostico(
   data: Omit<Diagnostico, 'id' | 'created' | 'updated'>,
 ): Promise<DiagnosticoRecord> {
   const record = await pb.collection('diagnosticos').create<DiagnosticoRecord>(data)
+
+  // Se o usuário estiver autenticado, atualiza progresso de onboarding
+  const userId = (data as any).user_id || pb.authStore.record?.id
+  if (userId) {
+    import('@/services/onboarding').then(({ salvarProgressoOnboarding }) => {
+      salvarProgressoOnboarding(userId, { passo_diagnostico_concluido: true }).catch((e) =>
+        console.warn('[Onboarding] Aviso ao atualizar passo diagnostico:', e),
+      )
+    })
+  }
+
   return record
 }
 

@@ -238,6 +238,14 @@ export default function DadosEmpresa() {
     salvar(formData)
       .then(() => {
         setSalvoComSucesso(true)
+        // Se usuário veio do onboarding ou está no fluxo de onboarding, marca passo 1 como concluído
+        if (user?.id) {
+          import('@/services/onboarding').then(({ salvarProgressoOnboarding }) => {
+            salvarProgressoOnboarding(user.id, { passo_empresa_concluido: true }).catch((e) =>
+              console.warn('[Onboarding] Erro ao marcar passo empresa:', e),
+            )
+          })
+        }
         try {
           localStorage.removeItem(CHAVE_RASCUNHO)
         } catch {

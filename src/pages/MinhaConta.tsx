@@ -35,6 +35,9 @@ import { getDiagnosticos, type DiagnosticoRecord } from '@/services/diagnosticos
 import { listarSimulacoes } from '@/services/simulacoesCalculadora'
 import { listarConversasAssistente, type ConversaAssistente } from '@/services/conversasAssistente'
 import { listarClientes } from '@/services/clientes'
+import { useOnboarding } from '@/hooks/useOnboarding'
+import { WizardPrimeirosPassos } from '@/components/onboarding/WizardPrimeirosPassos'
+import { ChecklistComeceAqui } from '@/components/onboarding/ChecklistComeceAqui'
 import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
 import type { Cliente } from '@/types/cliente'
 
@@ -43,6 +46,21 @@ export default function MinhaConta() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const { dadosEmpresa, salvoNoBanco } = useDadosEmpresa()
+
+  const {
+    exibirWizard,
+    fecharModalWizardTemporariamente,
+    dispensarWizard,
+    abrirWizard,
+    checklistRecolhido,
+    alternarChecklistRecolhido,
+    passos,
+    totalConcluidos,
+    totalPassos,
+    percentualConcluido,
+    todosPassosConcluidos,
+    marcarPassoConcluido,
+  } = useOnboarding()
 
   const [meusDiagnosticos, setMeusDiagnosticos] = useState<DiagnosticoRecord[]>([])
   const [minhasSimulacoes, setMinhasSimulacoes] = useState<SimulacaoCalculadora[]>([])
@@ -142,7 +160,32 @@ export default function MinhaConta() {
 
   return (
     <div className="pt-28 pb-20 bg-slate-50 min-h-screen">
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6">
+      {/* WIZARD MODAL GUIADO */}
+      <WizardPrimeirosPassos
+        aberto={exibirWizard}
+        aoFechar={fecharModalWizardTemporariamente}
+        aoDispensar={dispensarWizard}
+        passos={passos}
+        totalConcluidos={totalConcluidos}
+        percentualConcluido={percentualConcluido}
+      />
+
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 space-y-8">
+        {/* CHECKLIST DE ATIVAÇÃO PERSISTENTE ("COMECE POR AQUI") SE EMPRESÁRIO */}
+        {isEmpresario && (
+          <ChecklistComeceAqui
+            passos={passos}
+            totalConcluidos={totalConcluidos}
+            totalPassos={totalPassos}
+            percentualConcluido={percentualConcluido}
+            todosPassosConcluidos={todosPassosConcluidos}
+            recolhido={checklistRecolhido}
+            aoAlternarRecolhido={alternarChecklistRecolhido}
+            aoReabrirWizard={abrirWizard}
+            aoMarcarPasso={marcarPassoConcluido}
+          />
+        )}
+
         {/* CABEÇALHO DO PERFIL */}
         <div className="bg-[#07132B] text-white rounded-[24px] p-6 sm:p-8 border border-[#D4AF37]/30 shadow-xl mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />

@@ -176,6 +176,15 @@ export async function salvarSimulacao(dados: {
       const rec = await pb
         .collection('simulacoes_calculadora')
         .create<PocketBaseSimulacaoRecord>(payload)
+
+      // Atualiza progresso do onboarding (Passo 3: Calculadora IBS/CBS)
+      try {
+        const { salvarProgressoOnboarding } = await import('@/services/onboarding')
+        await salvarProgressoOnboarding(effectiveUserId, { passo_calculadora_concluido: true })
+      } catch (onbErr) {
+        console.warn('[Onboarding] Aviso ao atualizar passo calculadora:', onbErr)
+      }
+
       return recordToSimulacao(rec)
     } catch (err) {
       console.warn('Erro ao salvar no PocketBase, usando fallback local:', err)

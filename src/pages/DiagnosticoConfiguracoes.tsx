@@ -39,7 +39,7 @@ export default function DiagnosticoConfiguracoes() {
   const { toast } = useToast()
   const { dadosEmpresa, salvar: salvarDadosContext, temDadosSalvos } = useDadosEmpresa()
   const { clienteAtivo, clienteAtivoId, recarregarClientes } = useClienteAtivo()
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
 
   // Estado local do formulário espelhando o Módulo 1 da Calculadora e Passo 1 do Diagnóstico
   const [formData, setFormData] = useState({
@@ -221,6 +221,15 @@ export default function DiagnosticoConfiguracoes() {
       }
 
       setSalvoSucesso(true)
+      // Se usuário autenticado, marca o passo de diagnóstico (etapa 01 da trilha) como concluído
+      if (user?.id) {
+        import('@/services/onboarding').then(({ salvarProgressoOnboarding }) => {
+          salvarProgressoOnboarding(user.id, {
+            passo_empresa_concluido: true,
+            passo_diagnostico_concluido: true,
+          }).catch((e) => console.warn('[Onboarding] Erro ao atualizar etapa diagnostico:', e))
+        })
+      }
       toast({
         title: 'Configurações salvas com sucesso!',
         description:

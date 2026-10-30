@@ -19,9 +19,28 @@ import {
   Briefcase,
 } from 'lucide-react'
 import LeadForm from '@/components/LeadForm'
+import { useOnboarding } from '@/hooks/useOnboarding'
+import { WizardPrimeirosPassos } from '@/components/onboarding/WizardPrimeirosPassos'
+import { ChecklistComeceAqui } from '@/components/onboarding/ChecklistComeceAqui'
 
 export default function Index() {
   const navigate = useNavigate()
+
+  const {
+    exibirWizard,
+    fecharModalWizardTemporariamente,
+    dispensarWizard,
+    abrirWizard,
+    exibirChecklist,
+    checklistRecolhido,
+    alternarChecklistRecolhido,
+    passos,
+    totalConcluidos,
+    totalPassos,
+    percentualConcluido,
+    todosPassosConcluidos,
+    marcarPassoConcluido,
+  } = useOnboarding()
 
   const partners = [
     'TechCorp',
@@ -129,10 +148,41 @@ export default function Index() {
 
   return (
     <div className="overflow-hidden">
+      {/* WIZARD DE PRIMEIROS PASSOS (MODAL NÃO BLOQUEANTE, SÓ NO PRIMEIRO ACESSO DE EMPRESÁRIO SEM DADOS) */}
+      <WizardPrimeirosPassos
+        aberto={exibirWizard}
+        aoFechar={fecharModalWizardTemporariamente}
+        aoDispensar={dispensarWizard}
+        passos={passos}
+        totalConcluidos={totalConcluidos}
+        percentualConcluido={percentualConcluido}
+      />
+
+      {/* CHECKLIST DE ATIVAÇÃO PERSISTENTE ("COMECE POR AQUI") SE LOGADO COMO EMPRESÁRIO */}
+      {exibirChecklist && (
+        <section className="pt-24 pb-4 px-4 sm:px-6 bg-[#07132B]">
+          <div className="max-w-[1200px] mx-auto">
+            <ChecklistComeceAqui
+              passos={passos}
+              totalConcluidos={totalConcluidos}
+              totalPassos={totalPassos}
+              percentualConcluido={percentualConcluido}
+              todosPassosConcluidos={todosPassosConcluidos}
+              recolhido={checklistRecolhido}
+              aoAlternarRecolhido={alternarChecklistRecolhido}
+              aoReabrirWizard={abrirWizard}
+              aoMarcarPasso={marcarPassoConcluido}
+            />
+          </div>
+        </section>
+      )}
+
       {/* 1. SEÇÃO HERO */}
       <section
         id="inicio"
-        className="relative min-h-screen pt-28 pb-20 md:py-36 flex items-center bg-gradient-to-r from-[#0A1A13] via-[#0D2A1C] to-[#145A32] text-white"
+        className={`relative min-h-screen ${
+          exibirChecklist ? 'pt-12 pb-20 md:py-28' : 'pt-28 pb-20 md:py-36'
+        } flex items-center bg-gradient-to-r from-[#0A1A13] via-[#0D2A1C] to-[#145A32] text-white`}
       >
         {/* Subtle grid pattern overlay */}
         <div
