@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'

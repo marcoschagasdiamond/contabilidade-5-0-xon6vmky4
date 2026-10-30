@@ -443,6 +443,11 @@ export interface ResultadoDiagnosticoCompleto {
   // NOVO CÓDIGO TRIBUTÁRIO (Reforma Tributária - EC 132/2023, LC 214/2025)
   anoBase: number
   novoSistema: ResultadoNovoSistemaReforma
+  // Parâmetros de faturamento e folha da análise
+  faturamentoMensal?: number
+  folhaMensal?: number
+  rbt12?: number
+  folha12?: number
 }
 
 // Limites legais
@@ -1363,6 +1368,10 @@ export function executarDiagnosticoTributario(
     alternativas,
     anoBase: anoSimulacao,
     novoSistema,
+    faturamentoMensal: Math.round(rbt12 / 12),
+    folhaMensal: Math.round(folha12 / 12),
+    rbt12,
+    folha12,
   }
 }
 

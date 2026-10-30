@@ -223,8 +223,18 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
       margin + 4,
       y + 25,
     )
+    const fat12m =
+      resultadoDiagnostico.rbt12 ??
+      (resultadoDiagnostico.faturamentoMensal !== undefined
+        ? resultadoDiagnostico.faturamentoMensal * 12
+        : (dadosEmpresa?.faturamentoMensal || 0) * 12)
+    const folha12m =
+      resultadoDiagnostico.folha12 ??
+      (resultadoDiagnostico.folhaMensal !== undefined
+        ? resultadoDiagnostico.folhaMensal * 12
+        : (dadosEmpresa?.folhaPagamentoMensal || 0) * 12)
     doc.text(
-      `Faturamento 12m: ${formatarMoeda(resultadoDiagnostico.faturamentoMensal * 12)}  |  Folha 12m: ${formatarMoeda(resultadoDiagnostico.folhaMensal * 12)}  |  Fator R: ${resultadoDiagnostico.fatorR.toFixed(1)}%`,
+      `Faturamento 12m: ${formatarMoeda(fat12m)}  |  Folha 12m: ${formatarMoeda(folha12m)}  |  Fator R: ${resultadoDiagnostico.fatorR.toFixed(1)}%`,
       margin + 4,
       y + 31,
     )
@@ -337,6 +347,30 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
     const res = simulacaoCalculadora.resultados
     const par = simulacaoCalculadora.parametros
 
+    const regimeVantajoso =
+      res?.resultadoComparativo?.regimeMaisVantajoso ||
+      res?.resultadoDashboard?.regimeRecomendado ||
+      'Simples Nacional'
+    const economiaEstimada =
+      res?.resultadoDashboard?.economiaAnualProjetada ||
+      res?.resultadoComparativo?.economiaVersusPior ||
+      0
+    const cargaAtual =
+      res?.resultadoComparativo?.simplesNacional?.totalEfetivo ||
+      res?.resultadoDashboard?.aliquotaEfetivaAtual ||
+      0
+    const cargaNovo =
+      res?.resultadoComparativo?.ibsCbs?.totalEfetivo ||
+      res?.resultadoDashboard?.aliquotaEfetivaNova ||
+      0
+    const creditosIbsCbs =
+      res?.resultadoCreditos?.totalNovo || res?.resultadoComparativo?.ibsCbs?.creditos || 0
+    const splitEstimado = res?.resultadoSplitPayment?.retencaoMensalNota || 0
+    const ramoOuSetor =
+      par?.config?.tipoAtividade || par?.tipoAtividade || par?.setorTransicao || 'Serviços'
+    const comprasPct =
+      par?.percentualComprasVendasComparativo ?? par?.percentualComprasVendasSimples ?? 40
+
     doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
     doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
     doc.roundedRect(margin, y, contentWidth, 44, 2, 2, 'FD')
@@ -345,7 +379,7 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
     doc.setFontSize(8.5)
     doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
     doc.text(
-      `Simulação Vigente: "${simulacaoCalculadora.nome || 'Cenário Base'}" (Ano da Operação: ${par?.anoOperacao || 2026})`,
+      `Simulação Vigente: "${simulacaoCalculadora.nome || 'Cenário Base'}" (Ano da Operação: ${par?.anoOperacao || par?.anoTransicao || 2026})`,
       margin + 4,
       y + 7,
     )
@@ -353,13 +387,9 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7.5)
     doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+    doc.text(`• Regime Mais Econômico Apurado: ${regimeVantajoso}`, margin + 4, y + 13)
     doc.text(
-      `• Regime Mais Econômico Apurado: ${res?.regimeMaisVantajoso || 'Simples Nacional'}`,
-      margin + 4,
-      y + 13,
-    )
-    doc.text(
-      `• Carga Atual (Vigente): ${formatarMoeda(res?.cargaRegimeAtual)}/ano  |  Carga IBS/CBS Projetada: ${formatarMoeda(res?.cargaNovoIbsCbs)}/ano`,
+      `• Carga Atual (Vigente): ${formatarMoeda(cargaAtual)}/ano  |  Carga IBS/CBS Projetada: ${formatarMoeda(cargaNovo)}/ano`,
       margin + 4,
       y + 19,
     )
@@ -367,7 +397,7 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
     doc.text(
-      `• Economia Anual Estimada: ${formatarMoeda(res?.economiaAnualEstimada)} / ano`,
+      `• Economia Anual Estimada: ${formatarMoeda(economiaEstimada)} / ano`,
       margin + 4,
       y + 25,
     )
@@ -375,12 +405,12 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
     doc.text(
-      `• Créditos Apropriáveis de IBS/CBS: ${formatarMoeda(res?.creditosIbsCbsTotal)}/ano  |  Split Payment Estimado: ${formatarMoeda(res?.splitPaymentEstimado)}/mês`,
+      `• Créditos Apropriáveis de IBS/CBS: ${formatarMoeda(creditosIbsCbs)}/ano  |  Split Payment Estimado: ${formatarMoeda(splitEstimado)}/mês`,
       margin + 4,
       y + 31,
     )
     doc.text(
-      `• Ramo Aplicado: ${par?.ramo || 'Serviços'}  |  Compras Tributadas: ${par?.percentualComprasTributadas ?? 40}%  |  Alíquota Padrão Ref: 26,50%`,
+      `• Ramo Aplicado: ${ramoOuSetor}  |  Compras Tributadas: ${comprasPct}%  |  Alíquota Padrão Ref: 26,50%`,
       margin + 4,
       y + 37,
     )
@@ -409,8 +439,37 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
   y += 7
 
   if (simulacaoRecuperador) {
-    const resRec = simulacaoRecuperador.resultado
+    const resRec = simulacaoRecuperador.resultados
     const parRec = simulacaoRecuperador.parametros
+    const cfgRec = parRec?.configuracoes
+
+    const creditoPrincipal = resRec?.totalIntegralOriginal ?? 0
+    const atualizacaoSelic = resRec?.totalIntegralSelic ?? 0
+    const totalComSelic =
+      simulacaoRecuperador.total_recuperavel_integral ??
+      resRec?.totalIntegralCorrigido ??
+      creditoPrincipal + atualizacaoSelic
+
+    const creditoPisCofins =
+      simulacaoRecuperador.total_pis_cofins ?? resRec?.totalPisCofinsCorrigido ?? 0
+    const creditoFolha = simulacaoRecuperador.total_folha ?? resRec?.totalFolhaCorrigido ?? 0
+    const creditoIrpjCsll =
+      simulacaoRecuperador.total_irpj_csll ?? resRec?.totalIrpjCsllCorrigido ?? 0
+    const creditoOutros =
+      simulacaoRecuperador.total_outros_tributos ?? resRec?.totalOutrosTributosCorrigido ?? 0
+
+    const faturamentoMedio =
+      cfgRec?.faturamentoMensal ??
+      (cfgRec?.anosFaturamento && cfgRec.anosFaturamento.length > 0
+        ? cfgRec.anosFaturamento.reduce((acc, a) => acc + (a.faturamento || 0), 0) /
+          (cfgRec.anosFaturamento.length * 12)
+        : 0)
+
+    const tesesAtivasCount = resRec?.resultadosTeses
+      ? resRec.resultadosTeses.filter((t) => t.ativa).length
+      : parRec?.teses
+        ? Object.values(parRec.teses).filter((t) => t.ativa).length
+        : 0
 
     doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
     doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
@@ -429,7 +488,7 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
     doc.setFontSize(7.5)
     doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
     doc.text(
-      `• Crédito Principal Homologado: ${formatarMoeda(resRec?.creditoPrincipal)}  |  Atualização Oficial SELIC: ${formatarMoeda(resRec?.atualizacaoSelic)}`,
+      `• Crédito Principal Homologado: ${formatarMoeda(creditoPrincipal)}  |  Atualização Oficial SELIC: ${formatarMoeda(atualizacaoSelic)}`,
       margin + 4,
       y + 13,
     )
@@ -437,7 +496,7 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(COR_EMERALD[0], COR_EMERALD[1], COR_EMERALD[2])
     doc.text(
-      `• CRÉDITO TOTAL RECUPERÁVEL COM SELIC: ${formatarMoeda(resRec?.totalComSelic)}`,
+      `• CRÉDITO TOTAL RECUPERÁVEL COM SELIC: ${formatarMoeda(totalComSelic)}`,
       margin + 4,
       y + 19,
     )
@@ -445,17 +504,17 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
     doc.text(
-      `• PIS/COFINS (Insumos & Tese do Século): ${formatarMoeda(resRec?.creditoPisCofins)}  |  Folha & Previdenciário: ${formatarMoeda(resRec?.creditoFolha)}`,
+      `• PIS/COFINS (Insumos & Tese do Século): ${formatarMoeda(creditoPisCofins)}  |  Folha & Previdenciário: ${formatarMoeda(creditoFolha)}`,
       margin + 4,
       y + 25,
     )
     doc.text(
-      `• IRPJ / CSLL: ${formatarMoeda(resRec?.creditoIrpjCsll)}  |  Outros Tributos: ${formatarMoeda(resRec?.creditoOutros)}`,
+      `• IRPJ / CSLL: ${formatarMoeda(creditoIrpjCsll)}  |  Outros Tributos: ${formatarMoeda(creditoOutros)}`,
       margin + 4,
       y + 31,
     )
     doc.text(
-      `• Faturamento Mensal Médio Auditado: ${formatarMoeda(parRec?.faturamentoMensalMedio)}  |  Teses Ativas no Checklist: ${resRec?.tesesSelecionadasCount || 0}`,
+      `• Faturamento Mensal Médio Auditado: ${formatarMoeda(faturamentoMedio)}  |  Teses Ativas no Checklist: ${tesesAtivasCount}`,
       margin + 4,
       y + 37,
     )
