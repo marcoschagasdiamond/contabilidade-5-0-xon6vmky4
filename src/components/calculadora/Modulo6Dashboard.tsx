@@ -758,15 +758,15 @@ export default function Modulo6Dashboard({
                 <span>Salvar Simulação</span>
               </Button>
 
-              {/* Botão Primário em Destaque: Baixar Relatório em PDF (sem ícones — apenas texto e cores) */}
+              {/* Botão Primário em Destaque: Gerar parecer da calculadora (sem ícones — apenas texto e cores) */}
               <Button
                 type="button"
                 onClick={handleAbrirModalPdfDashboard}
                 disabled={gerandoPdf}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs h-10 px-4 shadow-[0_0_15px_rgba(16,185,129,0.4)] border border-emerald-400 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                title="Exportar dossiê completo em PDF"
+                title="Gerar parecer da calculadora em PDF"
               >
-                <span>{gerandoPdf ? 'Gerando...' : 'Baixar Relatório em PDF'}</span>
+                <span>{gerandoPdf ? 'Gerando...' : 'Gerar parecer da calculadora'}</span>
               </Button>
             </div>
           </div>

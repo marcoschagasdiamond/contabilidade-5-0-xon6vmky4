@@ -41,8 +41,9 @@ export default function DiagnosticoRelatorioConsolidado() {
   const abaUrl = searchParams.get('aba') || 'consolidado'
 
   const { toast } = useToast()
-  const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
-  const { dadosEmpresa, temDadosSalvos } = useDadosEmpresa()
+  const navigate = useNavigate()
+  const { clienteAtivo, clienteAtivoId, limparClienteAtivo } = useClienteAtivo()
+  const { dadosEmpresa, temDadosSalvos, limpar: limparDadosEmpresaContext } = useDadosEmpresa()
 
   const [carregando, setCarregando] = useState(true)
   const [todosDiagnosticos, setTodosDiagnosticos] = useState<DiagnosticoRecord[]>([])
@@ -2019,19 +2020,37 @@ export default function DiagnosticoRelatorioConsolidado() {
               </p>
             </div>
 
-            <div className="shrink-0 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <div className="shrink-0 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <Link
                 to="/agendamento?origem=relatorio_consolidado&assunto=Apresentação+do+Dossiê+Consolidado"
-                className="inline-flex items-center justify-center px-7 py-4 rounded-xl font-bold text-sm sm:text-base text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-lg shadow-[#D4AF37]/20 transition-all hover:scale-105 cursor-pointer text-center"
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl font-bold text-xs sm:text-sm text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-lg shadow-[#D4AF37]/20 transition-all hover:scale-105 cursor-pointer text-center"
               >
                 Agendar Reunião com Especialista
               </Link>
               <Link
                 to="/diagnostico-360"
-                className="inline-flex items-center justify-center px-7 py-4 rounded-xl font-bold text-sm sm:text-base text-white bg-white/10 hover:bg-white/20 border border-white/20 shadow-md transition-all text-center"
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-white/10 hover:bg-white/20 border border-[#D4AF37]/40 shadow-md transition-all text-center"
+                title="Novo diagnóstico com os dados cadastrais da empresa atual pré-preenchidos"
               >
-                Fazer Outro Diagnóstico
+                Diagnóstico da mesma empresa
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  limparDadosEmpresaContext()
+                  limparClienteAtivo()
+                  toast({
+                    title: 'Dados cadastrais redefinidos',
+                    description:
+                      'Iniciando diagnóstico para uma nova empresa com campos em branco. Os históricos anteriores permanecem salvos.',
+                  })
+                  navigate('/diagnostico-configuracoes')
+                }}
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl font-bold text-xs sm:text-sm text-[#D4AF37] bg-[#07132B] hover:bg-[#0c224c] border border-[#D4AF37] shadow-md transition-all hover:scale-105 cursor-pointer text-center"
+                title="Limpar etapa 01/Dados da Empresa e preencher nova empresa do zero (históricos preservados)"
+              >
+                Diagnóstico de outra empresa
+              </button>
             </div>
           </div>
         </div>

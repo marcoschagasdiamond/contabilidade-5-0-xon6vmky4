@@ -172,7 +172,7 @@ export default function ModuloDashboardRecuperador({
             onClick={onGerarPdf}
             className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-500 transition-colors shadow-sm"
           >
-            Gerar Parecer Técnico em PDF
+            Gerar relatório de créditos
           </button>
         </div>
       </div>

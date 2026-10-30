@@ -55,15 +55,15 @@ export function BarraAcoesSimulacao({
             Salvar Simulação
           </Button>
 
-          {/* Botão Baixar Relatório em PDF: Navy #07132B com borda e realce Dourado #D4AF37, sem ícones */}
+          {/* Botão Gerar Parecer da Calculadora: Navy #07132B com borda e realce Dourado #D4AF37, sem ícones */}
           <Button
             type="button"
             onClick={onBaixarPdf}
             disabled={gerandoPdf}
             className="flex-1 sm:flex-initial h-10 px-5 rounded-xl bg-[#07132B] hover:bg-[#0c1e40] text-[#D4AF37] hover:text-white border-2 border-[#D4AF37] font-extrabold text-xs tracking-wide shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
-            title="Baixar Relatório em PDF com o parecer e memória de cálculo"
+            title="Gerar parecer da calculadora em PDF com a memória de cálculo"
           >
-            {gerandoPdf ? 'Gerando Relatório...' : 'Baixar Relatório em PDF'}
+            {gerandoPdf ? 'Gerando Parecer...' : 'Gerar parecer da calculadora'}
           </Button>
         </div>
       </div>

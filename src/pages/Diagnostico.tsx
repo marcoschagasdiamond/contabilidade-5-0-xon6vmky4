@@ -2303,7 +2303,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   ) : (
                     <>
                       <Download className="w-3.5 h-3.5" />
-                      <span>Baixar relatório em PDF</span>
+                      <span>Gerar parecer do diagnóstico</span>
                     </>
                   )}
                 </button>
@@ -3719,7 +3719,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   ) : (
                     <>
                       <Download className="w-5 h-5 text-[#2ECC71]" />
-                      <span>Baixar relatório em PDF</span>
+                      <span>Gerar parecer do diagnóstico</span>
                     </>
                   )}
                 </button>
