@@ -138,7 +138,16 @@ export async function criarAgendamentoReuniao(input: NovaReuniaoInput): Promise<
   }
 
   const record = await pb.collection('reunioes').create<ReuniaoRecord>(payload)
-  return record
+  // Garantir que o objeto retornado sempre contenha campos essenciais definidos
+  return {
+    ...record,
+    status: (record?.status || 'agendada') as StatusReuniao,
+    data: record?.data || payload.data,
+    horario: record?.horario || payload.horario,
+    cliente_nome: record?.cliente_nome || payload.cliente_nome,
+    cliente_email: record?.cliente_email || payload.cliente_email,
+    assunto: record?.assunto || payload.assunto,
+  }
 }
 
 /**

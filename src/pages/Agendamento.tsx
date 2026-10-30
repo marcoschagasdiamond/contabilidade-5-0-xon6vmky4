@@ -296,15 +296,15 @@ export default function AgendamentoReuniao() {
                   Data & Horário
                 </span>
                 <strong className="text-slate-900 font-heading text-base block mt-0.5">
-                  {parseDataIso(reuniaoCriada.data)?.toLocaleDateString('pt-BR', {
+                  {parseDataIso(reuniaoCriada?.data)?.toLocaleDateString('pt-BR', {
                     weekday: 'long',
                     day: '2-digit',
                     month: 'long',
                     year: 'numeric',
                   }) ||
-                    reuniaoCriada.data ||
+                    reuniaoCriada?.data ||
                     'Data a definir'}{' '}
-                  {reuniaoCriada.horario ? `às ${reuniaoCriada.horario}` : ''}
+                  {reuniaoCriada?.horario ? `às ${reuniaoCriada.horario}` : ''}
                 </strong>
               </div>
               <div>
@@ -312,7 +312,7 @@ export default function AgendamentoReuniao() {
                   Status
                 </span>
                 <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#145A32] text-white">
-                  {reuniaoCriada.status.toUpperCase()}
+                  {String(reuniaoCriada?.status || 'agendada').toUpperCase()}
                 </span>
               </div>
               <div>
@@ -320,19 +320,28 @@ export default function AgendamentoReuniao() {
                   Solicitante
                 </span>
                 <p className="text-slate-900 font-semibold mt-0.5">
-                  {reuniaoCriada.cliente_nome} ({reuniaoCriada.cliente_email})
+                  {reuniaoCriada?.cliente_nome || nome || 'Não informado'}
+                  {reuniaoCriada?.cliente_email || email
+                    ? ` (${reuniaoCriada?.cliente_email || email})`
+                    : ''}
                 </p>
-                {reuniaoCriada.empresa && (
-                  <p className="text-slate-600 text-xs">Empresa: {reuniaoCriada.empresa}</p>
+                {(reuniaoCriada?.empresa || empresa) && (
+                  <p className="text-slate-600 text-xs">
+                    Empresa: {reuniaoCriada?.empresa || empresa}
+                  </p>
                 )}
               </div>
               <div>
                 <span className="text-slate-500 uppercase font-semibold text-[11px] block">
                   Pauta / Assunto
                 </span>
-                <p className="text-slate-900 font-semibold mt-0.5">{reuniaoCriada.assunto}</p>
-                {reuniaoCriada.observacao && (
-                  <p className="text-slate-600 text-xs mt-1">Obs: {reuniaoCriada.observacao}</p>
+                <p className="text-slate-900 font-semibold mt-0.5">
+                  {reuniaoCriada?.assunto || assunto || 'Reunião de Alinhamento'}
+                </p>
+                {(reuniaoCriada?.observacao || observacao) && (
+                  <p className="text-slate-600 text-xs mt-1">
+                    Obs: {reuniaoCriada?.observacao || observacao}
+                  </p>
                 )}
               </div>
             </div>
@@ -439,8 +448,8 @@ export default function AgendamentoReuniao() {
                 {disponibilidade && disponibilidade.disponivel && (
                   <>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-                      {disponibilidade.horariosConfigurados.map((h) => {
-                        const isOcupado = disponibilidade.horariosOcupados.includes(h)
+                      {(disponibilidade.horariosConfigurados || []).map((h) => {
+                        const isOcupado = (disponibilidade.horariosOcupados || []).includes(h)
                         const isSelected = horarioSelecionado === h
 
                         return (
@@ -668,18 +677,19 @@ export default function AgendamentoReuniao() {
             ) : (
               <div className="divide-y divide-slate-100">
                 {minhasReunioes.map((r) => {
-                  const cancelada = r.status === 'cancelada'
-                  const realizada = r.status === 'realizada'
+                  const statusVal = r?.status || 'agendada'
+                  const cancelada = statusVal === 'cancelada'
+                  const realizada = statusVal === 'realizada'
 
                   return (
                     <div
-                      key={r.id}
+                      key={r?.id || Math.random().toString()}
                       className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <strong className="text-slate-900 font-heading text-sm">
-                            {r.assunto}
+                            {r?.assunto || 'Reunião com Especialista'}
                           </strong>
                           <span
                             className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
@@ -690,30 +700,30 @@ export default function AgendamentoReuniao() {
                                   : 'bg-emerald-100 text-[#145A32]'
                             }`}
                           >
-                            {r.status}
+                            {statusVal}
                           </span>
                         </div>
                         <p className="text-xs text-slate-600">
                           Data:{' '}
                           <span className="font-semibold text-slate-800">
-                            {parseDataIso(r.data)?.toLocaleDateString('pt-BR') ||
-                              r.data ||
+                            {parseDataIso(r?.data)?.toLocaleDateString('pt-BR') ||
+                              r?.data ||
                               'Data a definir'}{' '}
-                            {r.horario ? `às ${r.horario}` : ''}
+                            {r?.horario ? `às ${r.horario}` : ''}
                           </span>
-                          {r.empresa && <span> • Empresa: {r.empresa}</span>}
+                          {r?.empresa && <span> • Empresa: {r.empresa}</span>}
                         </p>
-                        {r.resposta_especialista && (
+                        {r?.resposta_especialista && (
                           <div className="text-xs text-[#07132B] font-medium bg-amber-50/80 p-2 rounded-lg border border-amber-200 mt-1">
                             Mensagem do especialista: {r.resposta_especialista}
                           </div>
                         )}
-                        {r.cancelado_motivo && (
+                        {r?.cancelado_motivo && (
                           <p className="text-xs text-rose-600">Motivo: {r.cancelado_motivo}</p>
                         )}
                       </div>
 
-                      {!cancelada && !realizada && (
+                      {!cancelada && !realizada && r?.id && (
                         <button
                           type="button"
                           disabled={cancelandoId === r.id}

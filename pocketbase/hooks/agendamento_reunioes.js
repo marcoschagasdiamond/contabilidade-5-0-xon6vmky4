@@ -15,6 +15,12 @@ onRecordCreateRequest((e) => {
   const record = e.record
   const data = record.getString('data').trim()
   const horario = record.getString('horario').trim()
+  const status = record.getString('status').trim()
+
+  // Se o status vier vazio/indefinido, garantir status default 'agendada'
+  if (!status) {
+    record.set('status', 'agendada')
+  }
 
   if (!data || !horario) {
     throw new BadRequestError('Data e horário são obrigatórios para agendar a reunião.')
@@ -58,6 +64,8 @@ onRecordCreateRequest((e) => {
     }
     console.log('Erro ao checar conflito de reunião:', err)
   }
+
+  e.next()
 }, 'reunioes')
 
 onRecordUpdateRequest((e) => {
@@ -69,6 +77,7 @@ onRecordUpdateRequest((e) => {
 
   // Se estiver cancelando, não há conflito
   if (status === 'cancelada') {
+    e.next()
     return
   }
 
@@ -103,6 +112,8 @@ onRecordUpdateRequest((e) => {
     }
     console.log('Erro ao validar reagendamento:', err)
   }
+
+  e.next()
 }, 'reunioes')
 
 routerAdd('GET', '/backend/v1/reunioes/disponibilidade', (e) => {

@@ -110,32 +110,35 @@ export function AbaReunioesAdmin({
   }, [])
 
   // Filtragem
-  const reunioesFiltradas = reunioes.filter((r) => {
+  const reunioesFiltradas = (reunioes || []).filter((r) => {
     const term = searchTerm.toLowerCase()
+    const statusVal = r?.status || 'agendada'
     const matchesSearch =
-      r.cliente_nome?.toLowerCase().includes(term) ||
-      r.cliente_email?.toLowerCase().includes(term) ||
-      r.empresa?.toLowerCase().includes(term) ||
-      r.assunto?.toLowerCase().includes(term) ||
-      r.horario?.includes(term) ||
-      r.data?.includes(term)
+      r?.cliente_nome?.toLowerCase().includes(term) ||
+      r?.cliente_email?.toLowerCase().includes(term) ||
+      r?.empresa?.toLowerCase().includes(term) ||
+      r?.assunto?.toLowerCase().includes(term) ||
+      r?.horario?.includes(term) ||
+      r?.data?.includes(term)
 
-    const matchesStatus = filtroStatus === 'todos' || r.status === filtroStatus
-    const matchesData = !filtroData || r.data === filtroData
+    const matchesStatus = filtroStatus === 'todos' || statusVal === filtroStatus
+    const matchesData = !filtroData || r?.data === filtroData
 
     return matchesSearch && matchesStatus && matchesData
   })
 
   // Estatísticas rápidas
-  const totalAgendadas = reunioes.filter((r) => r.status === 'agendada').length
-  const totalRealizadas = reunioes.filter((r) => r.status === 'realizada').length
-  const totalCanceladas = reunioes.filter((r) => r.status === 'cancelada').length
+  const totalAgendadas = (reunioes || []).filter(
+    (r) => (r?.status || 'agendada') === 'agendada',
+  ).length
+  const totalRealizadas = (reunioes || []).filter((r) => r?.status === 'realizada').length
+  const totalCanceladas = (reunioes || []).filter((r) => r?.status === 'cancelada').length
 
   const abrirModalGerenciar = (r: ReuniaoRecord) => {
     setReuniaoSelecionada(r)
-    setNovoStatus(r.status)
-    setRespostaEspecialista(r.resposta_especialista || '')
-    setCanceladoMotivo(r.cancelado_motivo || '')
+    setNovoStatus(r?.status || 'agendada')
+    setRespostaEspecialista(r?.resposta_especialista || '')
+    setCanceladoMotivo(r?.cancelado_motivo || '')
   }
 
   const handleSalvarGerenciamento = async (e: React.FormEvent) => {
@@ -390,10 +393,10 @@ export function AbaReunioesAdmin({
                       <td className="py-3.5 px-4">
                         <span
                           className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
-                            statusColors[r.status] || 'bg-slate-100 text-slate-700'
+                            statusColors[r?.status || 'agendada'] || 'bg-slate-100 text-slate-700'
                           }`}
                         >
-                          {r.status}
+                          {r?.status || 'agendada'}
                         </span>
                       </td>
 
