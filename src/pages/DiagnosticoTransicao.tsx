@@ -324,10 +324,8 @@ export default function DiagnosticoTransicao() {
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
-              Avaliação consultiva completa em dois blocos operacionais (Negócio & Vendas / Operação
-              & ERP) com laudo executivo, farol de urgência, 3 prioridades para os próximos 90 dias
-              e solução recomendada. Pré-preenchido pelos{' '}
-              <strong className="text-white">Dados da Empresa</strong> cadastrada.
+              Panorama completo da empresa em 7 frentes, com semáforo de riscos e plano de ação de
+              90 dias. Pré-preenchido pelos Dados da Empresa cadastrada.
             </p>
           </div>
         </div>

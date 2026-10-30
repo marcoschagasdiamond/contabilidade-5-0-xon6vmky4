@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ClipboardCheck,
-  Clock,
   Sparkles,
   ArrowRight,
   FileText,
@@ -480,22 +479,6 @@ export function ConteudoModulo7Diagnostico({
           </div>
         </div>
       )}
-
-      {/* APRESENTAÇÃO DO ROTEIRO */}
-      <div className="bg-[#07132B] text-white p-6 sm:p-8 rounded-2xl border border-[#D4AF37]/30 shadow-lg">
-        <div className="flex items-center gap-2 text-xs font-bold text-[#D4AF37] uppercase tracking-wider mb-2">
-          <Clock className="w-4 h-4" />
-          Metodologia Consultiva Diamond Group • Transição Fiscal da Reforma Tributária
-        </div>
-        <h2 className="text-xl sm:text-2xl font-heading font-black text-white">
-          Como conduzir esta reunião de 40 minutos com o cliente
-        </h2>
-        <p className="text-slate-300 text-xs sm:text-sm mt-2 leading-relaxed max-w-3xl">
-          Divida o encontro em 2 etapas de 20 minutos. Primeiro avalie a estratégia de vendas e
-          mercado (Bloco A); depois avalie os sistemas, insumos e fluxo financeiro (Bloco B). Ao
-          final, emita o laudo com o farol de urgência.
-        </p>
-      </div>
 
       {/* FORMULÁRIO DOS DOIS BLOCOS */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
