@@ -147,6 +147,13 @@ export function PainelSucessoFluxoGuiado({
                 Ver Relatório Consolidado →
               </Link>
 
+              <Link
+                to="/metas"
+                className="px-6 py-3.5 rounded-xl font-heading font-black text-xs sm:text-sm text-white bg-[#0D1D3A] hover:bg-[#122448] border border-[#D4AF37]/50 shadow-md transition-all duration-200 hover:-translate-y-0.5 text-center"
+              >
+                Dashboard de Metas (Fase 4)
+              </Link>
+
               <button
                 type="button"
                 onClick={handleAvancarImediato}
@@ -156,13 +163,21 @@ export function PainelSucessoFluxoGuiado({
               </button>
             </>
           ) : (
-            <button
-              type="button"
-              onClick={handleAvancarImediato}
-              className="px-7 py-3.5 rounded-xl font-heading font-black text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-lg transition-all duration-200 hover:-translate-y-0.5 text-center"
-            >
-              Continuar → {proximaEtapaNome}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleAvancarImediato}
+                className="px-7 py-3.5 rounded-xl font-heading font-black text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-lg transition-all duration-200 hover:-translate-y-0.5 text-center"
+              >
+                Continuar → {proximaEtapaNome}
+              </button>
+              <Link
+                to="/metas"
+                className="px-5 py-3.5 rounded-xl font-heading font-bold text-xs text-[#D4AF37] hover:text-white bg-[#0D1D3A] hover:bg-[#122448] border border-[#D4AF37]/40 shadow-sm transition-all text-center"
+              >
+                Metas do Mês
+              </Link>
+            </>
           )}
 
           <button

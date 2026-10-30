@@ -42,6 +42,7 @@ import DetalheCliente from './pages/DetalheCliente'
 import Carteira from './pages/Carteira'
 import Crm from './pages/Crm'
 import FichaClienteCrm from './pages/FichaClienteCrm'
+import Metas from './pages/Metas'
 import DiagnosticosHub from './pages/DiagnosticosHub'
 import DiagnosticoConfiguracoes from './pages/DiagnosticoConfiguracoes'
 import Diagnostico360 from './pages/Diagnostico360'
@@ -295,6 +296,14 @@ const App = () => (
                   element={
                     <AnalistaRoute>
                       <Crm />
+                    </AnalistaRoute>
+                  }
+                />
+                <Route
+                  path="/metas"
+                  element={
+                    <AnalistaRoute>
+                      <Metas />
                     </AnalistaRoute>
                   }
                 />

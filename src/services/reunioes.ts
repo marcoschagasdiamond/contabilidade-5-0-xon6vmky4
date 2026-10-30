@@ -153,25 +153,98 @@ export async function criarAgendamentoReuniao(input: NovaReuniaoInput): Promise<
 /**
  * Lista reuniões do usuário logado (cliente/empresário/analista)
  */
+/**
+ * Normaliza reuniões passadas que ainda estão como 'agendada' ou 'reagendada',
+ * transitando-as automaticamente para 'realizada' no backend.
+ */
+export async function sincronizarReunioesPassadas(): Promise<{ atualizadas: number }> {
+  try {
+    const url = `${pb.baseUrl}/backend/v1/reunioes/sincronizar-passadas`
+    const token = pb.authStore.token
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      return { atualizadas: data?.atualizadas || 0 }
+    }
+  } catch (err) {
+    console.warn('Falha na rota sincronizar-passadas, aplicando fallback via SDK:', err)
+  }
+
+  // Fallback via SDK: varre reuniões com data anterior a hoje
+  try {
+    const hojeStr = new Date().toISOString().slice(0, 10)
+    const pendentes = await pb.collection('reunioes').getFullList<ReuniaoRecord>({
+      filter: `data < "${hojeStr}" && (status = "agendada" || status = "reagendada")`,
+    })
+
+    let atualizadas = 0
+    for (const r of pendentes) {
+      await pb.collection('reunioes').update(r.id, {
+        status: 'realizada',
+        resposta_especialista:
+          r.resposta_especialista?.trim() ||
+          'Concluída automaticamente pelo ciclo de agendamentos.',
+      })
+      atualizadas++
+    }
+    return { atualizadas }
+  } catch (err) {
+    console.warn('Erro ao normalizar reuniões passadas via SDK:', err)
+    return { atualizadas: 0 }
+  }
+}
+
+/**
+ * Lista reuniões do usuário logado (cliente/empresário/analista),
+ * garantindo antes a normalização automática de reuniões passadas.
+ */
 export async function listarMinhasReunioes(): Promise<ReuniaoRecord[]> {
   const user = pb.authStore.record
   if (!user?.id) return []
+
+  // Normaliza reuniões passadas de forma não-bloqueante
+  sincronizarReunioesPassadas().catch(() => {})
 
   const records = await pb.collection('reunioes').getFullList<ReuniaoRecord>({
     filter: `user_id = "${user.id}"`,
     sort: '-data,-horario',
   })
-  return records
+
+  // Normalização visual imediata caso alguma ainda conste como agendada no passado
+  const hoje = new Date().toISOString().slice(0, 10)
+  return records.map((r) => {
+    if (r.data < hoje && (r.status === 'agendada' || r.status === 'reagendada')) {
+      return { ...r, status: 'realizada' }
+    }
+    return r
+  })
 }
 
 /**
- * Lista todas as reuniões (para painel Master / Admin)
+ * Lista todas as reuniões (para painel Master / Admin),
+ * garantindo antes a normalização automática de reuniões passadas.
  */
 export async function listarTodasReunioesAdmin(): Promise<ReuniaoRecord[]> {
+  // Sincroniza no backend
+  await sincronizarReunioesPassadas().catch(() => {})
+
   const records = await pb.collection('reunioes').getFullList<ReuniaoRecord>({
     sort: '-data,-horario',
   })
-  return records
+
+  const hoje = new Date().toISOString().slice(0, 10)
+  return records.map((r) => {
+    if (r.data < hoje && (r.status === 'agendada' || r.status === 'reagendada')) {
+      return { ...r, status: 'realizada' }
+    }
+    return r
+  })
 }
 
 /**
