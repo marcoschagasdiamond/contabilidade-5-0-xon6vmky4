@@ -1003,7 +1003,8 @@ export default function Legislacao() {
               {/* Rodapé informativo do Radar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-white/10 text-[11px] text-slate-400 font-mono">
                 <span>
-                  Sincronização: monitoramento semanal automático integrado com TCU, Senado e LexML.
+                  Sincronização: monitoramento semanal automático integrado com Câmara dos
+                  Deputados, TCU, Senado e LexML.
                 </span>
                 <span className="text-[#D4AF37]">
                   Parâmetros refletidos automaticamente na Calculadora IBS/CBS.

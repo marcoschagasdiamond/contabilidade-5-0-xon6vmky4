@@ -50,7 +50,102 @@ cronAdd('radar-aliquotas-semanal', '0 6 * * 1', () => {
     console.log('[Radar Tributário] Aviso ao consultar LexML:', errLex)
   }
 
-  // 2.1 Monitoramento de jurisprudência dos Tribunais Superiores (STF/STJ)
+  // 2.1 Consultar API de Dados Abertos da Câmara dos Deputados (PL/PLP de CBS, IBS e Reforma Tributária)
+  try {
+    const urlsCamaraJob = [
+      'https://dadosabertos.camara.leg.br/api/v2/proposicoes?siglaTipo=PL,PLP&keywords=CBS,IBS&ordem=DESC&ordenarPor=id&itens=8',
+      'https://dadosabertos.camara.leg.br/api/v2/proposicoes?siglaTipo=PL,PLP&keywords=reforma+tributaria&ordem=DESC&ordenarPor=id&itens=8',
+    ]
+    const notifColJob = $app.findCollectionByNameOrId('notificacoes_tributarias')
+
+    for (let uJobIdx = 0; uJobIdx < urlsCamaraJob.length; uJobIdx++) {
+      const urlJobC = urlsCamaraJob[uJobIdx]
+      try {
+        const resJobCamara = $http.send({
+          url: urlJobC,
+          method: 'GET',
+          timeout: 10,
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'Contabilidade50-RadarTributario/1.0',
+          },
+        })
+
+        if (resJobCamara.statusCode === 200 && resJobCamara.raw) {
+          const dataJobCamara = JSON.parse(resJobCamara.raw)
+          const listaJobProps = dataJobCamara?.dados || []
+
+          for (let pJobIdx = 0; pJobIdx < listaJobProps.length; pJobIdx++) {
+            const prop = listaJobProps[pJobIdx]
+            if (!prop || !prop.id) continue
+
+            const sigla = prop.siglaTipo || 'PL'
+            const num = prop.numero || ''
+            const ano = prop.ano ? parseInt(prop.ano, 10) : 2026
+            const ementa = (prop.ementa || '').trim()
+            const propId = String(prop.id)
+
+            const textoCompleto = `${sigla} ${num} ${ementa}`.toUpperCase()
+            const pertinente =
+              textoCompleto.includes('CBS') ||
+              textoCompleto.includes('IBS') ||
+              textoCompleto.includes('REFORMA TRIBUTÁRIA') ||
+              textoCompleto.includes('REFORMA TRIBUTARIA') ||
+              textoCompleto.includes('LC 214') ||
+              textoCompleto.includes('BENS E SERVIÇOS')
+            if (!pertinente) continue
+
+            let tributoClassificado = 'Geral'
+            if (textoCompleto.includes('CBS') && textoCompleto.includes('IBS')) {
+              tributoClassificado = 'CBS'
+            } else if (textoCompleto.includes('CBS')) {
+              tributoClassificado = 'CBS'
+            } else if (textoCompleto.includes('IBS')) {
+              tributoClassificado = 'IBS'
+            }
+
+            const tituloNotif = `${sigla} nº ${num}/${ano} — Proposição em Tramitação (Câmara)`
+            const linkOficialProp = `https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=${propId}`
+
+            let jaExiste = null
+            try {
+              jaExiste = $app.findFirstRecordByFilter(
+                'notificacoes_tributarias',
+                `titulo ~ "${sigla} nº ${num}/${ano}" || (fonte ~ "Câmara dos Deputados" && mensagem ~ "${propId}")`,
+              )
+            } catch (_) {}
+
+            if (!jaExiste) {
+              const novaNotifJob = new Record(notifColJob)
+              novaNotifJob.set('titulo', tituloNotif)
+              novaNotifJob.set(
+                'mensagem',
+                `${ementa ? ementa + ' ' : ''}Matéria em tramitação na Câmara dos Deputados. Fonte Oficial: ${linkOficialProp}`,
+              )
+              novaNotifJob.set('tipo', 'legislacao_nova')
+              novaNotifJob.set('tributo', tributoClassificado)
+              novaNotifJob.set('ano', ano)
+              novaNotifJob.set('fonte', 'Câmara dos Deputados')
+              novaNotifJob.set('link_acao', '/legislacao')
+              novaNotifJob.set('lida', false)
+              novaNotifJob.set('email_enviado', false)
+              $app.save(novaNotifJob)
+              novosEncontrados++
+              console.log(
+                `[Radar Tributário] Nova proposição da Câmara registrada no cron: ${sigla} nº ${num}/${ano}`,
+              )
+            }
+          }
+        }
+      } catch (errReq) {
+        console.log('[Radar Tributário] Aviso ao consultar URL Câmara no cron:', urlJobC, errReq)
+      }
+    }
+  } catch (errCamaraJob) {
+    console.log('[Radar Tributário] Erro geral na varredura da Câmara no cron:', errCamaraJob)
+  }
+
+  // 2.2 Monitoramento de jurisprudência dos Tribunais Superiores (STF/STJ)
   // Consulta teses com repercussão geral e repetitivos com decisão favorável ao contribuinte
   try {
     const notifCol = $app.findCollectionByNameOrId('notificacoes_tributarias')
@@ -508,6 +603,104 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
 
     const paramCol = $app.findCollectionByNameOrId('parametros_tributarios')
     const notifCol = $app.findCollectionByNameOrId('notificacoes_tributarias')
+
+    // Consultar API de Dados Abertos da Câmara dos Deputados (PL/PLP de CBS, IBS e Reforma Tributária)
+    try {
+      const urlsCamaraSync = [
+        'https://dadosabertos.camara.leg.br/api/v2/proposicoes?siglaTipo=PL,PLP&keywords=CBS,IBS&ordem=DESC&ordenarPor=id&itens=8',
+        'https://dadosabertos.camara.leg.br/api/v2/proposicoes?siglaTipo=PL,PLP&keywords=reforma+tributaria&ordem=DESC&ordenarPor=id&itens=8',
+      ]
+
+      for (let uSyncIdx = 0; uSyncIdx < urlsCamaraSync.length; uSyncIdx++) {
+        const urlSyncC = urlsCamaraSync[uSyncIdx]
+        try {
+          const resSyncCamara = $http.send({
+            url: urlSyncC,
+            method: 'GET',
+            timeout: 10,
+            headers: {
+              Accept: 'application/json',
+              'User-Agent': 'Contabilidade50-RadarTributario/1.0',
+            },
+          })
+
+          if (resSyncCamara.statusCode === 200 && resSyncCamara.raw) {
+            const dataSyncCamara = JSON.parse(resSyncCamara.raw)
+            const listaSyncProps = dataSyncCamara?.dados || []
+
+            for (let pSyncIdx = 0; pSyncIdx < listaSyncProps.length; pSyncIdx++) {
+              const prop = listaSyncProps[pSyncIdx]
+              if (!prop || !prop.id) continue
+
+              const sigla = prop.siglaTipo || 'PL'
+              const num = prop.numero || ''
+              const ano = prop.ano ? parseInt(prop.ano, 10) : 2026
+              const ementa = (prop.ementa || '').trim()
+              const propId = String(prop.id)
+
+              const textoCompleto = `${sigla} ${num} ${ementa}`.toUpperCase()
+              const pertinente =
+                textoCompleto.includes('CBS') ||
+                textoCompleto.includes('IBS') ||
+                textoCompleto.includes('REFORMA TRIBUTÁRIA') ||
+                textoCompleto.includes('REFORMA TRIBUTARIA') ||
+                textoCompleto.includes('LC 214') ||
+                textoCompleto.includes('BENS E SERVIÇOS')
+              if (!pertinente) continue
+
+              let tributoClassificado = 'Geral'
+              if (textoCompleto.includes('CBS') && textoCompleto.includes('IBS')) {
+                tributoClassificado = 'CBS'
+              } else if (textoCompleto.includes('CBS')) {
+                tributoClassificado = 'CBS'
+              } else if (textoCompleto.includes('IBS')) {
+                tributoClassificado = 'IBS'
+              }
+
+              const tituloNotif = `${sigla} nº ${num}/${ano} — Proposição em Tramitação (Câmara)`
+              const linkOficialProp = `https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=${propId}`
+
+              let jaExiste = null
+              try {
+                jaExiste = $app.findFirstRecordByFilter(
+                  'notificacoes_tributarias',
+                  `titulo ~ "${sigla} nº ${num}/${ano}" || (fonte ~ "Câmara dos Deputados" && mensagem ~ "${propId}")`,
+                )
+              } catch (_) {}
+
+              if (!jaExiste) {
+                const novaNotifSync = new Record(notifCol)
+                novaNotifSync.set('titulo', tituloNotif)
+                novaNotifSync.set(
+                  'mensagem',
+                  `${ementa ? ementa + ' ' : ''}Matéria em tramitação na Câmara dos Deputados. Fonte Oficial: ${linkOficialProp}`,
+                )
+                novaNotifSync.set('tipo', 'legislacao_nova')
+                novaNotifSync.set('tributo', tributoClassificado)
+                novaNotifSync.set('ano', ano)
+                novaNotifSync.set('fonte', 'Câmara dos Deputados')
+                novaNotifSync.set('link_acao', '/legislacao')
+                novaNotifSync.set('lida', false)
+                novaNotifSync.set('email_enviado', false)
+                $app.save(novaNotifSync)
+                novosEncontrados++
+                console.log(
+                  `[Radar Tributário] Proposição da Câmara registrada na sincronização manual: ${sigla} nº ${num}/${ano}`,
+                )
+              }
+            }
+          }
+        } catch (errReqSync) {
+          console.log(
+            '[Radar Tributário] Aviso ao consultar URL Câmara no sync manual:',
+            urlSyncC,
+            errReqSync,
+          )
+        }
+      }
+    } catch (errCamaraSync) {
+      console.log('[Radar Tributário] Erro na varredura da Câmara no sync manual:', errCamaraSync)
+    }
 
     // Monitoramento de decisões favoráveis dos Tribunais Superiores (Tema 118 / RE 592.616)
     let notifTema118 = null
@@ -2056,6 +2249,55 @@ routerAdd('GET', '/backend/v1/legislacao/pesquisa', (e) => {
         }
       } catch (errApi) {
         console.log('[Legislacao] API Senado falhou ou timeout:', errApi)
+      }
+
+      // Enriquecer dinamicamente consultando a API de Dados Abertos da Câmara dos Deputados
+      try {
+        const urlCamara = `https://dadosabertos.camara.leg.br/api/v2/proposicoes?siglaTipo=PL,PLP&keywords=${encodeURIComponent(
+          q,
+        )}${anoStr && anoStr !== 'TODOS' ? `&ano=${encodeURIComponent(anoStr)}` : ''}&ordem=DESC&ordenarPor=id&itens=5`
+        const resCamara = $http.send({
+          url: urlCamara,
+          method: 'GET',
+          timeout: 5,
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'Contabilidade50-RadarTributario/1.0',
+          },
+        })
+        if (resCamara.statusCode === 200 && resCamara.raw) {
+          const dataCamara = JSON.parse(resCamara.raw)
+          const props = dataCamara?.dados || []
+          const arrCamara = Array.isArray(props) ? props : [props]
+          arrCamara.slice(0, 8).forEach((prop) => {
+            if (prop && prop.id) {
+              const anoProp = prop.ano ? parseInt(prop.ano, 10) : 2026
+              const ementa = prop.ementa || ''
+              const sigla = prop.siglaTipo || 'PL'
+              const num = prop.numero || ''
+              const textoCompleto = `${sigla} ${num} ${ementa}`
+              const tributoClassificado = classificarTributoPorTexto(textoCompleto)
+
+              itens.push({
+                id: `camara-${prop.id}`,
+                titulo: `${sigla} nº ${num}/${anoProp} — Câmara dos Deputados`,
+                tipo: sigla === 'PLP' ? 'Lei Complementar' : 'Projeto de Lei',
+                numero: String(num),
+                ano: anoProp,
+                orgao: 'Câmara dos Deputados',
+                tributo: tributoClassificado,
+                dataPublicacao: prop.dataApresentacao
+                  ? String(prop.dataApresentacao).substring(0, 10)
+                  : `${anoProp}`,
+                ementa: ementa,
+                linkOficial: `https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=${prop.id}`,
+                destaque: false,
+              })
+            }
+          })
+        }
+      } catch (errApiCamara) {
+        console.log('[Legislacao] API Câmara falhou ou timeout:', errApiCamara)
       }
     }
 
