@@ -53,6 +53,7 @@ import { AbaAnalistasParceiros } from '@/components/admin/AbaAnalistasParceiros'
 import { AbaUsuariosPermissoes } from '@/components/admin/AbaUsuariosPermissoes'
 import { AbaMercadoCreditosAdmin } from '@/components/admin/AbaMercadoCreditosAdmin'
 import { AbaReunioesAdmin } from '@/components/admin/AbaReunioesAdmin'
+import { AbaRadarTributarioAdmin } from '@/components/admin/AbaRadarTributarioAdmin'
 import { ModalFichaClienteGlobal } from '@/components/admin/ModalFichaClienteGlobal'
 import { listarTodosAnunciosAdmin, listarPedidosAdmin } from '@/services/creditos'
 import type { AnuncioCredito, PedidoInformacaoCredito } from '@/types/creditos'
@@ -71,6 +72,7 @@ type TabTipo =
   | 'usuarios_permissoes'
   | 'mercado_creditos'
   | 'reunioes'
+  | 'radar_tributario'
   | 'clientes'
   | 'leads'
   | 'diagnosticos'
@@ -840,6 +842,27 @@ export default function Admin() {
             </span>
           </button>
 
+          {/* ABA MASTER 6: RADAR TRIBUTÁRIO (CONFIGURAÇÃO DE DESTINATÁRIOS SEMANAIS) */}
+          <button
+            onClick={() => setActiveTab('radar_tributario')}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-heading font-bold flex items-center gap-2 transition-all ${
+              activeTab === 'radar_tributario'
+                ? 'bg-[#07132B] text-[#D4AF37] shadow-sm ring-2 ring-[#D4AF37]/60'
+                : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <span>Radar Tributário</span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'radar_tributario'
+                  ? 'bg-[#D4AF37] text-[#07132B]'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              E-mails
+            </span>
+          </button>
+
           <div className="h-6 w-px bg-slate-300 mx-1 hidden sm:block" />
 
           {/* ABAS ORIGINAIS PRESERVADAS */}
@@ -1046,6 +1069,17 @@ export default function Admin() {
             onAtualizar={() => {
               fetchReunioesAdmin()
             }}
+            onFeedback={(fb) => {
+              setFeedbackDiag(fb)
+              if (fb) {
+                setTimeout(() => setFeedbackDiag(null), 6000)
+              }
+            }}
+          />
+        )}
+
+        {activeTab === 'radar_tributario' && (
+          <AbaRadarTributarioAdmin
             onFeedback={(fb) => {
               setFeedbackDiag(fb)
               if (fb) {

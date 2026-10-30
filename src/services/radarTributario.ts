@@ -106,6 +106,16 @@ export interface FiltrosLegislacao {
   tipo?: string
 }
 
+export interface ConfiguracaoRadarDestinatarios {
+  id?: string
+  chave: string
+  destinatarios: string[]
+  ativo: boolean
+  observacoes?: string
+  updated?: string
+  created?: string
+}
+
 /**
  * Busca os parâmetros tributários cadastrados (CBS/IBS)
  */
@@ -176,9 +186,102 @@ export async function marcarNotificacaoComoLida(id: string): Promise<boolean> {
 /**
  * Dispara varredura manual nas fontes oficiais (endpoint pb_hooks)
  */
+/**
+ * Obtém a configuração de destinatários do Radar Tributário persistida no backend
+ */
+export async function obterConfiguracaoDestinatariosRadar(): Promise<ConfiguracaoRadarDestinatarios> {
+  try {
+    const record = await pb
+      .collection('configuracoes_radar')
+      .getFirstListItem('chave = "destinatarios_radar"')
+    const raw = record.destinatarios_json
+    let destinatarios: string[] = []
+    if (Array.isArray(raw)) {
+      destinatarios = raw.map((e) => String(e).trim().toLowerCase()).filter(Boolean)
+    } else if (typeof raw === 'string' && raw.trim()) {
+      try {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) {
+          destinatarios = parsed.map((e) => String(e).trim().toLowerCase()).filter(Boolean)
+        }
+      } catch {
+        /* intentionally ignored */
+      }
+    }
+    return {
+      id: record.id,
+      chave: record.chave || 'destinatarios_radar',
+      destinatarios,
+      ativo: record.ativo !== false,
+      observacoes: record.observacoes || '',
+      updated: record.updated,
+      created: record.created,
+    }
+  } catch (err) {
+    // Se ainda não existir no banco, retorna configuração padrão indicando fallback
+    return {
+      chave: 'destinatarios_radar',
+      destinatarios: [],
+      ativo: true,
+      observacoes: '',
+    }
+  }
+}
+
+/**
+ * Salva a lista de destinatários do Radar Tributário no backend
+ */
+export async function salvarConfiguracaoDestinatariosRadar(params: {
+  destinatarios: string[]
+  ativo?: boolean
+  observacoes?: string
+}): Promise<ConfiguracaoRadarDestinatarios> {
+  const limpos = Array.from(
+    new Set(
+      params.destinatarios.map((e) => e.trim().toLowerCase()).filter((e) => e && e.includes('@')),
+    ),
+  )
+
+  const dados = {
+    chave: 'destinatarios_radar',
+    destinatarios_json: limpos,
+    ativo: params.ativo !== false,
+    observacoes: params.observacoes || '',
+  }
+
+  try {
+    const existente = await pb
+      .collection('configuracoes_radar')
+      .getFirstListItem('chave = "destinatarios_radar"')
+    const updated = await pb.collection('configuracoes_radar').update(existente.id, dados)
+    return {
+      id: updated.id,
+      chave: updated.chave,
+      destinatarios: limpos,
+      ativo: updated.ativo !== false,
+      observacoes: updated.observacoes || '',
+      updated: updated.updated,
+      created: updated.created,
+    }
+  } catch (_) {
+    // Criar novo registro caso ainda não exista
+    const created = await pb.collection('configuracoes_radar').create(dados)
+    return {
+      id: created.id,
+      chave: created.chave,
+      destinatarios: limpos,
+      ativo: created.ativo !== false,
+      observacoes: created.observacoes || '',
+      updated: created.updated,
+      created: created.created,
+    }
+  }
+}
+
 export async function dispararVarreduraRadar(): Promise<{
   sucesso: boolean
   novosEncontrados?: number
+  emailsEnviados?: number
   mensagem?: string
 }> {
   try {
