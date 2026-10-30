@@ -377,6 +377,15 @@ export default function Layout() {
                           </button>
                         )}
 
+                        {!isEmpresario && (
+                          <Link
+                            to="/crm"
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:text-white hover:bg-white/10 transition-colors font-bold"
+                          >
+                            CRM & Carteira (Fase 3)
+                          </Link>
+                        )}
                         <Link
                           to="/carteira"
                           onClick={() => setIsUserMenuOpen(false)}
@@ -552,6 +561,15 @@ export default function Layout() {
                         </button>
                       )}
 
+                      {!isEmpresario && (
+                        <Link
+                          to="/crm"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:text-white hover:bg-white/10 transition-colors font-bold"
+                        >
+                          CRM & Carteira (Fase 3)
+                        </Link>
+                      )}
                       <Link
                         to="/carteira"
                         onClick={() => setIsMobileMenuOpen(false)}

@@ -40,6 +40,8 @@ import Admin from './pages/Admin'
 import Clientes from './pages/Clientes'
 import DetalheCliente from './pages/DetalheCliente'
 import Carteira from './pages/Carteira'
+import Crm from './pages/Crm'
+import FichaClienteCrm from './pages/FichaClienteCrm'
 import DiagnosticosHub from './pages/DiagnosticosHub'
 import DiagnosticoConfiguracoes from './pages/DiagnosticoConfiguracoes'
 import Diagnostico360 from './pages/Diagnostico360'
@@ -287,7 +289,23 @@ const App = () => (
                   element={<Navigate to="/reforma-tributaria" replace />}
                 />
                 <Route path="/reforma-tributaria/glossario" element={<SubpageGlossarioFontes />} />
-                {/* Carteira de Clientes do Analista (Restrita a Analistas) */}
+                {/* CRM e Carteira de Clientes do Analista (Restrita a Analistas, Master e Admin) */}
+                <Route
+                  path="/crm"
+                  element={
+                    <AnalistaRoute>
+                      <Crm />
+                    </AnalistaRoute>
+                  }
+                />
+                <Route
+                  path="/crm/cliente/:id"
+                  element={
+                    <AnalistaRoute>
+                      <FichaClienteCrm />
+                    </AnalistaRoute>
+                  }
+                />
                 <Route
                   path="/carteira"
                   element={

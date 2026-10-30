@@ -175,6 +175,13 @@ export async function getTodosClientesEmpresas(): Promise<ClienteEmpresaRecord[]
 }
 
 /**
+ * Alias de conveniência para listar todos os clientes empresas
+ */
+export async function listarClientesEmpresas(): Promise<ClienteEmpresaRecord[]> {
+  return await getTodosClientesEmpresas()
+}
+
+/**
  * Exclui registro de cliente empresa
  */
 export async function deleteClienteEmpresa(id: string): Promise<boolean> {
