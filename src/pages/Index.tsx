@@ -225,19 +225,20 @@ export default function Index() {
 
             {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-6">
-              <Link
-                to="/diagnostico-configuracoes"
-                className="px-7 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.5)] transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center text-center cursor-pointer"
-              >
-                Fazer Diagnóstico Gratuito
-              </Link>
-
               <button
                 type="button"
                 onClick={() => scrollToSection('servicos')}
-                className="px-7 py-4 rounded-xl font-heading font-medium text-base text-white border border-white/30 hover:border-white hover:bg-white hover:text-[#145A32] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
+                className="px-7 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.5)] transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center text-center cursor-pointer"
               >
                 Conhecer Serviços
+              </button>
+
+              <button
+                type="button"
+                onClick={() => scrollToSection('contato')}
+                className="px-7 py-4 rounded-xl font-heading font-medium text-base text-white border border-white/30 hover:border-white hover:bg-white hover:text-[#145A32] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
+              >
+                Falar com um Especialista
               </button>
             </div>
 
@@ -641,12 +642,13 @@ export default function Index() {
               </p>
             </div>
             <div className="shrink-0 w-full sm:w-auto">
-              <Link
-                to="/diagnostico-configuracoes"
+              <button
+                type="button"
+                onClick={() => scrollToSection('contato')}
                 className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.5)] transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap cursor-pointer text-center"
               >
-                <span>Fazer Diagnóstico Gratuito</span>
-              </Link>
+                <span>Falar com um Especialista</span>
+              </button>
             </div>
           </div>
         </div>

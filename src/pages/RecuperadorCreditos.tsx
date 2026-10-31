@@ -550,7 +550,7 @@ export default function RecuperadorCreditos() {
         titulo="Recuperador de Créditos Tributários"
         subtitulo="Levantamento administrativo retroativo dos últimos 60 meses (5 anos) com atualização oficial pela taxa SELIC, checklist de teses do STF/STJ com farol de risco, módulos PIS/COFINS e Folha/Previdenciário e emissão de parecer executivo."
         mostrarVoltar={true}
-        mostrarDiagnosticoBtn={true}
+        mostrarDiagnosticoBtn={false}
       />
 
       {/* SELETOR CLIENTE ATIVO NO TOPO */}

@@ -338,7 +338,7 @@ function CalculadoraConteudo() {
         titulo="Calculadora IBS / CBS Integrada"
         subtitulo="Simulador completo da Reforma Tributária (EC 132/2023 e LC 214/2025) com 6 módulos conectados em tempo real: alíquotas do IVA Dual, apuração unitária, matriz comparativa de regimes, crédito financeiro irrestrito, cronograma de transição 2026-2033 e dashboard executivo."
         mostrarVoltar={true}
-        mostrarDiagnosticoBtn={true}
+        mostrarDiagnosticoBtn={false}
       />
 
       {/* SELETOR CLIENTE ATIVO NO TOPO DA CALCULADORA */}

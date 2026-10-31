@@ -17,7 +17,7 @@ export default function ReformaTributariaHub() {
         titulo="Reforma Tributária: o que muda para sua empresa"
         subtitulo="Entenda a nova tributação do consumo em linguagem simples, sem juridiquês"
         mostrarVoltar={false}
-        mostrarDiagnosticoBtn={true}
+        mostrarDiagnosticoBtn={false}
       />
 
       {/* BANNER DESTAQUE CALCULADORA IBS/CBS */}

@@ -32,7 +32,7 @@ export function DiamondHeader({
   titulo,
   subtitulo,
   mostrarVoltar = true,
-  mostrarDiagnosticoBtn = true,
+  mostrarDiagnosticoBtn = false,
 }: DiamondHeaderProps) {
   return (
     <div className="relative bg-[#07132B] text-white pt-28 pb-16 px-4 sm:px-6 lg:px-8 border-b border-[#D4AF37]/20 overflow-hidden">
@@ -92,11 +92,13 @@ export function DiamondHeader({
 interface DiamondFooterCTAProps {
   titulo?: string
   subtitulo?: string
+  mostrarBotao?: boolean
 }
 
 export function DiamondFooterCTA({
   titulo = 'Descubra exatamente o impacto financeiro na sua empresa',
   subtitulo = 'Nossa ferramenta calcula a transição 2026-2033, simula IBS, CBS e compara o Simples Nacional com o Regime Normal em menos de 3 minutos.',
+  mostrarBotao = false,
 }: DiamondFooterCTAProps) {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 my-16">
@@ -115,15 +117,17 @@ export function DiamondFooterCTA({
             <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">{subtitulo}</p>
           </div>
 
-          <div className="shrink-0 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-            <Link
-              to="/diagnostico-configuracoes"
-              className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl font-bold text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-lg shadow-[#D4AF37]/20 transition-all hover:scale-105 cursor-pointer"
-            >
-              <FileCheck2 className="w-5 h-5 text-[#07132B]" />
-              Fazer diagnóstico gratuito
-            </Link>
-          </div>
+          {mostrarBotao && (
+            <div className="shrink-0 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <Link
+                to="/diagnostico-configuracoes"
+                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl font-bold text-[#07132B] bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] hover:brightness-110 shadow-lg shadow-[#D4AF37]/20 transition-all hover:scale-105 cursor-pointer"
+              >
+                <FileCheck2 className="w-5 h-5 text-[#07132B]" />
+                Fazer diagnóstico gratuito
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>
