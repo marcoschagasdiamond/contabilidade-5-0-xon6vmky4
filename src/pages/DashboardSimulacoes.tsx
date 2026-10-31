@@ -37,6 +37,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { PainelComparacaoCenarios } from '@/components/calculadora/PainelComparacaoCenarios'
 import { ModalSimulacaoAutomaticaCenarios } from '@/components/calculadora/ModalSimulacaoAutomaticaCenarios'
+import { ModalHistoricoSimulacao } from '@/components/calculadora/ModalHistoricoSimulacao'
 
 function formatarMoeda(val?: number): string {
   if (typeof val !== 'number' || isNaN(val)) return 'R$ 0,00'
@@ -81,6 +82,10 @@ export default function DashboardSimulacoes() {
   const [idsSelecionadosComparacao, setIdsSelecionadosComparacao] = useState<string[]>([])
   const [modoVisualizacao, setModoVisualizacao] = useState<'geral' | 'comparacao'>('geral')
   const [modalSimularCenariosAberto, setModalSimularCenariosAberto] = useState(false)
+
+  // Modal de Histórico de Alterações de Simulação
+  const [historicoItemSelecionado, setHistoricoItemSelecionado] =
+    useState<ItemSimulacaoUnificado | null>(null)
 
   useEffect(() => {
     carregar()
@@ -1031,6 +1036,16 @@ export default function DashboardSimulacoes() {
                           <Button
                             size="sm"
                             variant="outline"
+                            className="text-xs h-9 font-semibold text-[#07132B] border-[#D4AF37]/50 hover:bg-[#D4AF37]/10"
+                            onClick={() => setHistoricoItemSelecionado(item)}
+                            title="Ver histórico e alterações de parâmetros"
+                          >
+                            Histórico
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="text-xs h-9 font-semibold text-slate-700 border-slate-300 hover:bg-slate-100"
                             onClick={() => handleBaixarPdf(item)}
                             disabled={isGerando}
@@ -1064,6 +1079,16 @@ export default function DashboardSimulacoes() {
           dados?.itens.filter((i) => i.tipo === 'calculadora' && i.rawCalculadora?.parametros) || []
         }
         onSimulacaoSalva={carregar}
+      />
+
+      {/* Modal de Histórico de Alterações (Auditável e Rastreável) */}
+      <ModalHistoricoSimulacao
+        open={!!historicoItemSelecionado}
+        onOpenChange={(open) => !open && setHistoricoItemSelecionado(null)}
+        simulacaoId={historicoItemSelecionado?.id || null}
+        simulacaoNome={historicoItemSelecionado?.nome}
+        empresa={historicoItemSelecionado?.empresa}
+        tipoSimulacao={historicoItemSelecionado?.tipo || 'calculadora'}
       />
     </div>
   )

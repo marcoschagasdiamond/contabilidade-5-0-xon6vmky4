@@ -34,6 +34,7 @@ import { Input } from '@/components/ui/input'
 import { ModalExportarDadosSimulacao } from '@/components/calculadora/ModalExportarDadosSimulacao'
 import { converterSimulacaoRecuperadorSalvaParaExportacao } from '@/lib/exportacaoRecuperador'
 import { ModalGerarPdf, type ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
+import { ModalHistoricoSimulacao } from '@/components/calculadora/ModalHistoricoSimulacao'
 import { gerarParecerRecuperadorPDF } from '@/lib/pdfRecuperadorCreditos'
 
 interface Props {
@@ -60,6 +61,7 @@ export function ListaSimulacoesRecuperador({
   const [simulacaoExcluir, setSimulacaoExcluir] = useState<SimulacaoRecuperador | null>(null)
   const [excluindo, setExcluindo] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
+  const [simulacaoHistorico, setSimulacaoHistorico] = useState<SimulacaoRecuperador | null>(null)
 
   const handleSalvarRenomear = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -193,6 +195,12 @@ export function ListaSimulacoesRecuperador({
                         Baixar Parecer Técnico PDF
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        onClick={() => setSimulacaoHistorico(sim)}
+                        className="cursor-pointer"
+                      >
+                        Histórico de Alterações
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onClick={() => {
                           setSimulacaoRenomear(sim)
                           setNovoNome(sim.nome)
@@ -294,6 +302,16 @@ export function ListaSimulacoesRecuperador({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* MODAL HISTÓRICO DE ALTERAÇÕES */}
+      <ModalHistoricoSimulacao
+        open={!!simulacaoHistorico}
+        onOpenChange={(open) => !open && setSimulacaoHistorico(null)}
+        simulacaoId={simulacaoHistorico?.id || null}
+        simulacaoNome={simulacaoHistorico?.nome}
+        empresa={simulacaoHistorico?.empresa}
+        tipoSimulacao="recuperador"
+      />
 
       {/* MODAL CONFIRMAÇÃO DE EXCLUSÃO */}
       <AlertDialog

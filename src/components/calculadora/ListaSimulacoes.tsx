@@ -31,6 +31,7 @@ import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { ModalGerarPdf, type ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
 import { ModalExportarDadosSimulacao } from '@/components/calculadora/ModalExportarDadosSimulacao'
+import { ModalHistoricoSimulacao } from '@/components/calculadora/ModalHistoricoSimulacao'
 import { converterSimulacaoSalvaParaExportacao } from '@/lib/exportacaoCalculadora'
 import { gerarRelatorioSimulacaoPDF } from '@/lib/pdfSimulacaoCalculadora'
 import { excluirSimulacao, renomearSimulacao } from '@/services/simulacoesCalculadora'
@@ -75,6 +76,7 @@ export function ListaSimulacoes({
   // Estado para exclusão
   const [simulacaoExcluir, setSimulacaoExcluir] = useState<SimulacaoCalculadora | null>(null)
   const [excluindo, setExcluindo] = useState(false)
+  const [simulacaoHistorico, setSimulacaoHistorico] = useState<SimulacaoCalculadora | null>(null)
 
   // Estado para renomear
   const [simulacaoRenomear, setSimulacaoRenomear] = useState<SimulacaoCalculadora | null>(null)
@@ -338,6 +340,12 @@ export function ListaSimulacoes({
                         Baixar Relatório PDF
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        onClick={() => setSimulacaoHistorico(sim)}
+                        className="cursor-pointer"
+                      >
+                        Histórico de Alterações
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onClick={() => {
                           setSimulacaoRenomear(sim)
                           setNovoNome(sim.nome)
@@ -431,6 +439,16 @@ export function ListaSimulacoes({
             : 'Exportar Dados'
         }
         descricao="Baixe a planilha com todos os parâmetros e resultados deste cenário ou emita o relatório técnico em PDF."
+      />
+
+      {/* MODAL HISTÓRICO DE ALTERAÇÕES */}
+      <ModalHistoricoSimulacao
+        open={!!simulacaoHistorico}
+        onOpenChange={(open) => !open && setSimulacaoHistorico(null)}
+        simulacaoId={simulacaoHistorico?.id || null}
+        simulacaoNome={simulacaoHistorico?.nome}
+        empresa={simulacaoHistorico?.empresa}
+        tipoSimulacao="calculadora"
       />
 
       {/* MODAL CONFIRMAÇÃO DE EXCLUSÃO */}

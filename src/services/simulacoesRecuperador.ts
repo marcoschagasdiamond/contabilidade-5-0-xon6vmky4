@@ -131,6 +131,7 @@ export async function salvarSimulacaoRecuperador(dados: {
   userId?: string | null
   clienteId?: string | null
 }): Promise<SimulacaoRecuperador> {
+  const { registrarEventoHistoricoSimulacao } = await import('@/services/historicoSimulacoes')
   const authUser = pb.authStore.record
   const effectiveUserId = dados.userId || authUser?.id
 
@@ -156,13 +157,40 @@ export async function salvarSimulacaoRecuperador(dados: {
       const rec = await pb
         .collection('simulacoes_recuperador')
         .create<PbSimulacaoRecuperadorRecord>(payload)
-      return recordToSimulacao(rec)
+      const simulacaoCriada = recordToSimulacao(rec)
+
+      try {
+        await registrarEventoHistoricoSimulacao({
+          simulacaoId: simulacaoCriada.id,
+          tipoSimulacao: 'recuperador',
+          tipoEvento: 'criacao',
+          descricao: `Análise "${simulacaoCriada.nome}" salva no Recuperador de Créditos`,
+          simulacaoNome: simulacaoCriada.nome,
+          empresa: simulacaoCriada.empresa,
+          cnpj: simulacaoCriada.cnpj,
+          clienteId: simulacaoCriada.cliente_id,
+          userId: effectiveUserId,
+          snapshotNovo: {
+            nome: simulacaoCriada.nome,
+            empresa: simulacaoCriada.empresa,
+            cnpj: simulacaoCriada.cnpj,
+            regime: simulacaoCriada.regime_atual,
+            totalRecuperavelIntegral: simulacaoCriada.total_recuperavel_integral,
+            totalRecuperavelConservador: simulacaoCriada.total_recuperavel_conservador,
+            faturamentoMensal: simulacaoCriada.parametros?.configuracoes?.faturamentoMensal,
+          },
+        })
+      } catch (histErr) {
+        console.warn('Aviso ao registrar histórico do recuperador:', histErr)
+      }
+
+      return simulacaoCriada
     } catch (err) {
       console.warn(
         'Erro ao salvar simulação recuperador no PocketBase, usando fallback local:',
         err,
       )
-      return salvarSimulacaoRecuperadorLocal(
+      const local = salvarSimulacaoRecuperadorLocal(
         dados.nome,
         dados.parametros,
         dados.resultados,
@@ -170,10 +198,34 @@ export async function salvarSimulacaoRecuperador(dados: {
         dados.cnpj,
         dados.clienteId,
       )
+      try {
+        await registrarEventoHistoricoSimulacao({
+          simulacaoId: local.id,
+          tipoSimulacao: 'recuperador',
+          tipoEvento: 'criacao',
+          descricao: `Análise local "${local.nome}" salva no Recuperador de Créditos`,
+          simulacaoNome: local.nome,
+          empresa: local.empresa,
+          cnpj: local.cnpj,
+          clienteId: local.cliente_id,
+          userId: null,
+          snapshotNovo: {
+            nome: local.nome,
+            empresa: local.empresa,
+            cnpj: local.cnpj,
+            regime: local.regime_atual,
+            totalRecuperavelIntegral: local.total_recuperavel_integral,
+            totalRecuperavelConservador: local.total_recuperavel_conservador,
+          },
+        })
+      } catch {
+        /* intentionally ignored */
+      }
+      return local
     }
   }
 
-  return salvarSimulacaoRecuperadorLocal(
+  const local = salvarSimulacaoRecuperadorLocal(
     dados.nome,
     dados.parametros,
     dados.resultados,
@@ -181,6 +233,30 @@ export async function salvarSimulacaoRecuperador(dados: {
     dados.cnpj,
     dados.clienteId,
   )
+  try {
+    await registrarEventoHistoricoSimulacao({
+      simulacaoId: local.id,
+      tipoSimulacao: 'recuperador',
+      tipoEvento: 'criacao',
+      descricao: `Análise local "${local.nome}" salva no Recuperador de Créditos`,
+      simulacaoNome: local.nome,
+      empresa: local.empresa,
+      cnpj: local.cnpj,
+      clienteId: local.cliente_id,
+      userId: null,
+      snapshotNovo: {
+        nome: local.nome,
+        empresa: local.empresa,
+        cnpj: local.cnpj,
+        regime: local.regime_atual,
+        totalRecuperavelIntegral: local.total_recuperavel_integral,
+        totalRecuperavelConservador: local.total_recuperavel_conservador,
+      },
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+  return local
 }
 
 export async function obterSimulacaoRecuperadorPorId(
@@ -273,6 +349,33 @@ export async function listarSimulacoesRecuperador(
 export async function excluirSimulacaoRecuperador(
   simulacao: SimulacaoRecuperador,
 ): Promise<boolean> {
+  const { registrarEventoHistoricoSimulacao } = await import('@/services/historicoSimulacoes')
+  const authUser = pb.authStore.record
+
+  try {
+    await registrarEventoHistoricoSimulacao({
+      simulacaoId: simulacao.id,
+      tipoSimulacao: 'recuperador',
+      tipoEvento: 'exclusao',
+      descricao: `Análise "${simulacao.nome}" excluída`,
+      simulacaoNome: simulacao.nome,
+      empresa: simulacao.empresa,
+      cnpj: simulacao.cnpj,
+      clienteId: simulacao.cliente_id,
+      userId: simulacao.user_id || authUser?.id || null,
+      snapshotAnterior: {
+        nome: simulacao.nome,
+        empresa: simulacao.empresa,
+        cnpj: simulacao.cnpj,
+        regime: simulacao.regime_atual,
+        totalRecuperavelIntegral: simulacao.total_recuperavel_integral,
+        totalRecuperavelConservador: simulacao.total_recuperavel_conservador,
+      },
+    })
+  } catch (histErr) {
+    console.warn('Aviso ao registrar histórico de exclusão recuperador:', histErr)
+  }
+
   if (simulacao.origem === 'nuvem') {
     try {
       await pb.collection('simulacoes_recuperador').delete(simulacao.id)
@@ -294,13 +397,18 @@ export async function renomearSimulacaoRecuperador(
 ): Promise<boolean> {
   const nomeTrim = novoNome.trim()
   if (!nomeTrim) return false
+  const nomeAnterior = simulacao.nome
 
+  const { registrarEventoHistoricoSimulacao } = await import('@/services/historicoSimulacoes')
+  const authUser = pb.authStore.record
+
+  let sucesso = false
   if (simulacao.origem === 'nuvem') {
     try {
       await pb.collection('simulacoes_recuperador').update(simulacao.id, {
         nome: nomeTrim,
       })
-      return true
+      sucesso = true
     } catch (err) {
       console.error('Erro ao renomear simulação recuperador na nuvem:', err)
       return false
@@ -311,8 +419,222 @@ export async function renomearSimulacaoRecuperador(
       item.id === simulacao.id ? { ...item, nome: nomeTrim } : item,
     )
     salvarSimulacoesRecuperadorLocais(atualizadas)
-    return true
+    sucesso = true
   }
+
+  if (sucesso && nomeAnterior !== nomeTrim) {
+    try {
+      await registrarEventoHistoricoSimulacao({
+        simulacaoId: simulacao.id,
+        tipoSimulacao: 'recuperador',
+        tipoEvento: 'renomeacao',
+        descricao: `Análise renomeada de "${nomeAnterior}" para "${nomeTrim}"`,
+        simulacaoNome: nomeTrim,
+        empresa: simulacao.empresa,
+        cnpj: simulacao.cnpj,
+        clienteId: simulacao.cliente_id,
+        userId: simulacao.user_id || authUser?.id || null,
+        alteracoes: [
+          {
+            campo: 'nome',
+            rotulo: 'Nome da Análise',
+            valorAnterior: nomeAnterior,
+            valorNovo: nomeTrim,
+            valorAnteriorFormatado: nomeAnterior,
+            valorNovoFormatado: nomeTrim,
+          },
+        ],
+        snapshotAnterior: {
+          nome: nomeAnterior,
+          empresa: simulacao.empresa,
+          cnpj: simulacao.cnpj,
+          regime: simulacao.regime_atual,
+        },
+        snapshotNovo: {
+          nome: nomeTrim,
+          empresa: simulacao.empresa,
+          cnpj: simulacao.cnpj,
+          regime: simulacao.regime_atual,
+        },
+      })
+    } catch (histErr) {
+      console.warn('Aviso ao registrar histórico de renomeação do recuperador:', histErr)
+    }
+  }
+
+  return sucesso
+}
+
+/**
+ * Atualiza parâmetros e apuração de uma análise do Recuperador e gera histórico de alterações
+ */
+export async function atualizarParametrosSimulacaoRecuperador(
+  simulacaoId: string,
+  novosParametros: ParametrosRecuperador,
+  novosResultados: ResultadosRecuperador,
+  dadosExtras?: {
+    nome?: string
+    empresa?: string
+    cnpj?: string
+    regimeAtual?: string
+  },
+): Promise<SimulacaoRecuperador | null> {
+  const { calcularDiffRecuperador, registrarEventoHistoricoSimulacao } =
+    await import('@/services/historicoSimulacoes')
+  const authUser = pb.authStore.record
+
+  const versaoAnterior = await obterSimulacaoRecuperadorPorId(simulacaoId)
+  if (!versaoAnterior) return null
+
+  const nomeFinal = dadosExtras?.nome?.trim() || versaoAnterior.nome
+  const empresaFinal = dadosExtras?.empresa?.trim() || versaoAnterior.empresa
+  const cnpjFinal = dadosExtras?.cnpj?.trim() || versaoAnterior.cnpj
+  const regimeFinal =
+    dadosExtras?.regimeAtual ||
+    novosParametros.configuracoes?.regimeAtual ||
+    versaoAnterior.regime_atual
+
+  const alteracoes = calcularDiffRecuperador(
+    {
+      nome: versaoAnterior.nome,
+      parametros: versaoAnterior.parametros,
+      resultados: versaoAnterior.resultados,
+    },
+    {
+      nome: nomeFinal,
+      parametros: novosParametros,
+      resultados: novosResultados,
+    },
+  )
+
+  if (versaoAnterior.origem === 'nuvem') {
+    try {
+      const payload: Record<string, any> = {
+        nome: nomeFinal,
+        empresa: empresaFinal,
+        cnpj: cnpjFinal,
+        regime_atual: regimeFinal,
+        parametros_json: novosParametros,
+        resultados_json: novosResultados,
+        total_recuperavel_integral: novosResultados.totalIntegralCorrigido,
+        total_recuperavel_conservador: novosResultados.totalConservadorCorrigido,
+        total_pis_cofins: novosResultados.totalPisCofinsCorrigido,
+        total_folha: novosResultados.totalFolhaCorrigido,
+        total_irpj_csll: novosResultados.totalIrpjCsllCorrigido || 0,
+        total_outros_tributos: novosResultados.totalOutrosTributosCorrigido || 0,
+      }
+
+      const rec = await pb
+        .collection('simulacoes_recuperador')
+        .update<PbSimulacaoRecuperadorRecord>(simulacaoId, payload)
+      const simulacaoAtualizada = recordToSimulacao(rec)
+
+      if (alteracoes.length > 0) {
+        try {
+          await registrarEventoHistoricoSimulacao({
+            simulacaoId,
+            tipoSimulacao: 'recuperador',
+            tipoEvento: 'edicao_parametros',
+            descricao: `Parâmetros do recuperador atualizados (${alteracoes.length} ${
+              alteracoes.length === 1 ? 'campo alterado' : 'campos alterados'
+            })`,
+            simulacaoNome: nomeFinal,
+            empresa: empresaFinal,
+            cnpj: cnpjFinal,
+            clienteId: versaoAnterior.cliente_id,
+            userId: versaoAnterior.user_id || authUser?.id || null,
+            alteracoes,
+            snapshotAnterior: {
+              nome: versaoAnterior.nome,
+              empresa: versaoAnterior.empresa,
+              cnpj: versaoAnterior.cnpj,
+              regime: versaoAnterior.regime_atual,
+              totalRecuperavelIntegral: versaoAnterior.total_recuperavel_integral,
+              totalRecuperavelConservador: versaoAnterior.total_recuperavel_conservador,
+            },
+            snapshotNovo: {
+              nome: nomeFinal,
+              empresa: empresaFinal,
+              cnpj: cnpjFinal,
+              regime: regimeFinal,
+              totalRecuperavelIntegral: novosResultados.totalIntegralCorrigido,
+              totalRecuperavelConservador: novosResultados.totalConservadorCorrigido,
+            },
+          })
+        } catch (histErr) {
+          console.warn('Aviso ao registrar histórico de edição recuperador:', histErr)
+        }
+      }
+
+      return simulacaoAtualizada
+    } catch (err) {
+      console.warn('Erro ao atualizar simulação recuperador na nuvem, atualizando local:', err)
+    }
+  }
+
+  // Fallback local
+  const locais = carregarSimulacoesRecuperadorLocais()
+  let atualizadaLocal: SimulacaoRecuperador | null = null
+  const novas = locais.map((item) => {
+    if (item.id === simulacaoId) {
+      atualizadaLocal = {
+        ...item,
+        nome: nomeFinal,
+        empresa: empresaFinal,
+        cnpj: cnpjFinal,
+        regime_atual: regimeFinal,
+        parametros: novosParametros,
+        resultados: novosResultados,
+        total_recuperavel_integral: novosResultados.totalIntegralCorrigido,
+        total_recuperavel_conservador: novosResultados.totalConservadorCorrigido,
+        total_pis_cofins: novosResultados.totalPisCofinsCorrigido,
+        total_folha: novosResultados.totalFolhaCorrigido,
+        updated: new Date().toISOString(),
+      }
+      return atualizadaLocal
+    }
+    return item
+  })
+  salvarSimulacoesRecuperadorLocais(novas)
+
+  if (alteracoes.length > 0) {
+    try {
+      await registrarEventoHistoricoSimulacao({
+        simulacaoId,
+        tipoSimulacao: 'recuperador',
+        tipoEvento: 'edicao_parametros',
+        descricao: `Parâmetros locais do recuperador atualizados (${alteracoes.length} ${
+          alteracoes.length === 1 ? 'campo alterado' : 'campos alterados'
+        })`,
+        simulacaoNome: nomeFinal,
+        empresa: empresaFinal,
+        cnpj: cnpjFinal,
+        clienteId: versaoAnterior.cliente_id,
+        userId: null,
+        alteracoes,
+        snapshotAnterior: {
+          nome: versaoAnterior.nome,
+          empresa: versaoAnterior.empresa,
+          cnpj: versaoAnterior.cnpj,
+          regime: versaoAnterior.regime_atual,
+          totalRecuperavelIntegral: versaoAnterior.total_recuperavel_integral,
+          totalRecuperavelConservador: versaoAnterior.total_recuperavel_conservador,
+        },
+        snapshotNovo: {
+          nome: nomeFinal,
+          empresa: empresaFinal,
+          cnpj: cnpjFinal,
+          regime: regimeFinal,
+          totalRecuperavelIntegral: novosResultados.totalIntegralCorrigido,
+          totalRecuperavelConservador: novosResultados.totalConservadorCorrigido,
+        },
+      })
+    } catch {
+      /* intentionally ignored */
+    }
+  }
+
+  return atualizadaLocal
 }
 
 export async function vincularSimulacaoRecuperadorACliente(

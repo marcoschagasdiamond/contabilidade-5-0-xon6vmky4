@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-31T01:56:49.624Z",
+  "generatedAt": "2026-10-31T02:15:37.217Z",
   "collections": [
     {
       "name": "users",
@@ -2619,6 +2619,134 @@
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_config_radar_chave ON configuracoes_radar (chave)"]
+    },
+    {
+      "name": "historico_simulacoes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || @request.auth.nivel_acesso = 'analista' || @request.auth.perfil = 'contador')",
+        "view": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || @request.auth.nivel_acesso = 'analista' || @request.auth.perfil = 'contador')",
+        "create": "@request.auth.id != ''",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "simulacao_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo_simulacao",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["calculadora", "recuperador"]
+        },
+        {
+          "name": "tipo_evento",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["criacao", "renomeacao", "edicao_parametros", "exclusao"]
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "simulacao_nome",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "empresa",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cnpj",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cliente_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "autor_nome",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "autor_email",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "autor_nivel",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "alteracoes_json",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "snapshot_anterior_json",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "snapshot_novo_json",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_hist_sim_id ON historico_simulacoes (simulacao_id)",
+        "CREATE INDEX idx_hist_sim_user ON historico_simulacoes (user_id)",
+        "CREATE INDEX idx_hist_sim_cliente ON historico_simulacoes (cliente_id)",
+        "CREATE INDEX idx_hist_sim_tipo ON historico_simulacoes (tipo_simulacao)",
+        "CREATE INDEX idx_hist_sim_evento ON historico_simulacoes (tipo_evento)",
+        "CREATE INDEX idx_hist_sim_created ON historico_simulacoes (created DESC)"
+      ]
     }
   ]
 }

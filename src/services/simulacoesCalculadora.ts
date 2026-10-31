@@ -153,6 +153,7 @@ export async function salvarSimulacao(dados: {
   userId?: string | null
   clienteId?: string | null
 }): Promise<SimulacaoCalculadora> {
+  const { registrarEventoHistoricoSimulacao } = await import('@/services/historicoSimulacoes')
   const authUser = pb.authStore.record
   const effectiveUserId = dados.userId || authUser?.id
 
@@ -177,6 +178,35 @@ export async function salvarSimulacao(dados: {
         .collection('simulacoes_calculadora')
         .create<PocketBaseSimulacaoRecord>(payload)
 
+      const simulacaoCriada = recordToSimulacao(rec)
+
+      // Registra evento de criação no histórico auditável
+      try {
+        await registrarEventoHistoricoSimulacao({
+          simulacaoId: simulacaoCriada.id,
+          tipoSimulacao: 'calculadora',
+          tipoEvento: 'criacao',
+          descricao: `Simulação "${simulacaoCriada.nome}" criada na Calculadora IBS/CBS`,
+          simulacaoNome: simulacaoCriada.nome,
+          empresa: simulacaoCriada.empresa,
+          cnpj: simulacaoCriada.cnpj,
+          clienteId: simulacaoCriada.cliente_id,
+          userId: effectiveUserId,
+          snapshotNovo: {
+            nome: simulacaoCriada.nome,
+            empresa: simulacaoCriada.empresa,
+            cnpj: simulacaoCriada.cnpj,
+            regime: simulacaoCriada.regime_recomendado,
+            faturamentoMensal: simulacaoCriada.faturamento_mensal,
+            aliquotaEfetiva: simulacaoCriada.aliquota_efetiva,
+            economiaAnual: simulacaoCriada.economia_anual,
+            tipoAtividade: simulacaoCriada.parametros?.tipoAtividade,
+          },
+        })
+      } catch (histErr) {
+        console.warn('Aviso ao registrar histórico de criação:', histErr)
+      }
+
       // Atualiza progresso do onboarding (Passo 3: Calculadora IBS/CBS)
       try {
         const { salvarProgressoOnboarding } = await import('@/services/onboarding')
@@ -185,10 +215,10 @@ export async function salvarSimulacao(dados: {
         console.warn('[Onboarding] Aviso ao atualizar passo calculadora:', onbErr)
       }
 
-      return recordToSimulacao(rec)
+      return simulacaoCriada
     } catch (err) {
       console.warn('Erro ao salvar no PocketBase, usando fallback local:', err)
-      return salvarSimulacaoLocal(
+      const local = salvarSimulacaoLocal(
         dados.nome,
         dados.parametros,
         dados.resultados,
@@ -196,11 +226,37 @@ export async function salvarSimulacao(dados: {
         dados.cnpj,
         dados.clienteId,
       )
+      try {
+        await registrarEventoHistoricoSimulacao({
+          simulacaoId: local.id,
+          tipoSimulacao: 'calculadora',
+          tipoEvento: 'criacao',
+          descricao: `Simulação local "${local.nome}" criada na Calculadora IBS/CBS`,
+          simulacaoNome: local.nome,
+          empresa: local.empresa,
+          cnpj: local.cnpj,
+          clienteId: local.cliente_id,
+          userId: null,
+          snapshotNovo: {
+            nome: local.nome,
+            empresa: local.empresa,
+            cnpj: local.cnpj,
+            regime: local.regime_recomendado,
+            faturamentoMensal: local.faturamento_mensal,
+            aliquotaEfetiva: local.aliquota_efetiva,
+            economiaAnual: local.economia_anual,
+            tipoAtividade: local.parametros?.tipoAtividade,
+          },
+        })
+      } catch {
+        /* intentionally ignored */
+      }
+      return local
     }
   }
 
   // Não autenticado: fallback local
-  return salvarSimulacaoLocal(
+  const local = salvarSimulacaoLocal(
     dados.nome,
     dados.parametros,
     dados.resultados,
@@ -208,6 +264,32 @@ export async function salvarSimulacao(dados: {
     dados.cnpj,
     dados.clienteId,
   )
+  try {
+    await registrarEventoHistoricoSimulacao({
+      simulacaoId: local.id,
+      tipoSimulacao: 'calculadora',
+      tipoEvento: 'criacao',
+      descricao: `Simulação local "${local.nome}" criada na Calculadora IBS/CBS`,
+      simulacaoNome: local.nome,
+      empresa: local.empresa,
+      cnpj: local.cnpj,
+      clienteId: local.cliente_id,
+      userId: null,
+      snapshotNovo: {
+        nome: local.nome,
+        empresa: local.empresa,
+        cnpj: local.cnpj,
+        regime: local.regime_recomendado,
+        faturamentoMensal: local.faturamento_mensal,
+        aliquotaEfetiva: local.aliquota_efetiva,
+        economiaAnual: local.economia_anual,
+        tipoAtividade: local.parametros?.tipoAtividade,
+      },
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+  return local
 }
 
 /**
@@ -303,6 +385,35 @@ export async function listarSimulacoes(userId?: string | null): Promise<Simulaca
  * Exclui uma simulação (na nuvem se for de lá, ou localmente)
  */
 export async function excluirSimulacao(simulacao: SimulacaoCalculadora): Promise<boolean> {
+  const { registrarEventoHistoricoSimulacao } = await import('@/services/historicoSimulacoes')
+  const authUser = pb.authStore.record
+
+  // Registra no histórico que a simulação foi excluída (não bloqueia a exclusão se falhar)
+  try {
+    await registrarEventoHistoricoSimulacao({
+      simulacaoId: simulacao.id,
+      tipoSimulacao: 'calculadora',
+      tipoEvento: 'exclusao',
+      descricao: `Simulação "${simulacao.nome}" excluída`,
+      simulacaoNome: simulacao.nome,
+      empresa: simulacao.empresa,
+      cnpj: simulacao.cnpj,
+      clienteId: simulacao.cliente_id,
+      userId: simulacao.user_id || authUser?.id || null,
+      snapshotAnterior: {
+        nome: simulacao.nome,
+        empresa: simulacao.empresa,
+        cnpj: simulacao.cnpj,
+        regime: simulacao.regime_recomendado,
+        faturamentoMensal: simulacao.faturamento_mensal,
+        aliquotaEfetiva: simulacao.aliquota_efetiva,
+        economiaAnual: simulacao.economia_anual,
+      },
+    })
+  } catch (histErr) {
+    console.warn('Aviso ao registrar histórico de exclusão:', histErr)
+  }
+
   if (simulacao.origem === 'nuvem') {
     try {
       await pb.collection('simulacoes_calculadora').delete(simulacao.id)
@@ -365,21 +476,242 @@ export async function renomearSimulacao(
 ): Promise<boolean> {
   const nomeTrim = novoNome.trim()
   if (!nomeTrim) return false
+  const nomeAnterior = simulacao.nome
 
+  const { registrarEventoHistoricoSimulacao } = await import('@/services/historicoSimulacoes')
+  const authUser = pb.authStore.record
+
+  let sucesso = false
   if (simulacao.origem === 'nuvem') {
     try {
       await pb.collection('simulacoes_calculadora').update(simulacao.id, {
         nome: nomeTrim,
       })
-      return true
+      sucesso = true
     } catch (err) {
       console.error('Erro ao renomear simulação na nuvem:', err)
       return false
     }
   } else {
     renomearSimulacaoLocal(simulacao.id, nomeTrim)
-    return true
+    sucesso = true
   }
+
+  if (sucesso && nomeAnterior !== nomeTrim) {
+    try {
+      await registrarEventoHistoricoSimulacao({
+        simulacaoId: simulacao.id,
+        tipoSimulacao: 'calculadora',
+        tipoEvento: 'renomeacao',
+        descricao: `Simulação renomeada de "${nomeAnterior}" para "${nomeTrim}"`,
+        simulacaoNome: nomeTrim,
+        empresa: simulacao.empresa,
+        cnpj: simulacao.cnpj,
+        clienteId: simulacao.cliente_id,
+        userId: simulacao.user_id || authUser?.id || null,
+        alteracoes: [
+          {
+            campo: 'nome',
+            rotulo: 'Nome da Simulação',
+            valorAnterior: nomeAnterior,
+            valorNovo: nomeTrim,
+            valorAnteriorFormatado: nomeAnterior,
+            valorNovoFormatado: nomeTrim,
+          },
+        ],
+        snapshotAnterior: {
+          nome: nomeAnterior,
+          empresa: simulacao.empresa,
+          cnpj: simulacao.cnpj,
+          regime: simulacao.regime_recomendado,
+        },
+        snapshotNovo: {
+          nome: nomeTrim,
+          empresa: simulacao.empresa,
+          cnpj: simulacao.cnpj,
+          regime: simulacao.regime_recomendado,
+        },
+      })
+    } catch (histErr) {
+      console.warn('Aviso ao registrar histórico de renomeação:', histErr)
+    }
+  }
+
+  return sucesso
+}
+
+/**
+ * Atualiza parâmetros e resultados de uma simulação existente da Calculadora
+ * e registra no histórico o diff detalhado dos campos alterados.
+ */
+export async function atualizarParametrosSimulacao(
+  simulacaoId: string,
+  novosParametros: ParametrosSimulacaoCalculadora,
+  novosResultados: ResultadosSimulacaoCalculadora,
+  dadosExtras?: {
+    nome?: string
+    empresa?: string
+    cnpj?: string
+  },
+): Promise<SimulacaoCalculadora | null> {
+  const { calcularDiffCalculadora, registrarEventoHistoricoSimulacao } =
+    await import('@/services/historicoSimulacoes')
+  const authUser = pb.authStore.record
+
+  // Obtém versão anterior para comparação de diff
+  const versaoAnterior = await obterSimulacaoPorId(simulacaoId)
+  if (!versaoAnterior) return null
+
+  const nomeFinal = dadosExtras?.nome?.trim() || versaoAnterior.nome
+  const empresaFinal = dadosExtras?.empresa?.trim() || versaoAnterior.empresa
+  const cnpjFinal = dadosExtras?.cnpj?.trim() || versaoAnterior.cnpj
+
+  // Calcula diff dos campos
+  const alteracoes = calcularDiffCalculadora(
+    {
+      nome: versaoAnterior.nome,
+      parametros: versaoAnterior.parametros,
+      resultados: versaoAnterior.resultados,
+    },
+    {
+      nome: nomeFinal,
+      parametros: novosParametros,
+      resultados: novosResultados,
+    },
+  )
+
+  if (versaoAnterior.origem === 'nuvem') {
+    try {
+      const payload: Record<string, any> = {
+        nome: nomeFinal,
+        empresa: empresaFinal,
+        cnpj: cnpjFinal,
+        parametros_json: novosParametros,
+        resultados_json: novosResultados,
+        regime_recomendado: novosResultados.resultadoDashboard.regimeRecomendado,
+        economia_anual: novosResultados.resultadoDashboard.economiaAnualProjetada,
+        aliquota_efetiva: novosResultados.resultadoDashboard.aliquotaEfetivaNova,
+        faturamento_mensal: novosParametros.faturamentoMensal,
+      }
+
+      const rec = await pb
+        .collection('simulacoes_calculadora')
+        .update<PocketBaseSimulacaoRecord>(simulacaoId, payload)
+      const simulacaoAtualizada = recordToSimulacao(rec)
+
+      if (alteracoes.length > 0) {
+        try {
+          await registrarEventoHistoricoSimulacao({
+            simulacaoId,
+            tipoSimulacao: 'calculadora',
+            tipoEvento: 'edicao_parametros',
+            descricao: `Parâmetros atualizados (${alteracoes.length} ${
+              alteracoes.length === 1 ? 'campo alterado' : 'campos alterados'
+            })`,
+            simulacaoNome: nomeFinal,
+            empresa: empresaFinal,
+            cnpj: cnpjFinal,
+            clienteId: versaoAnterior.cliente_id,
+            userId: versaoAnterior.user_id || authUser?.id || null,
+            alteracoes,
+            snapshotAnterior: {
+              nome: versaoAnterior.nome,
+              empresa: versaoAnterior.empresa,
+              cnpj: versaoAnterior.cnpj,
+              regime: versaoAnterior.regime_recomendado,
+              faturamentoMensal: versaoAnterior.faturamento_mensal,
+              aliquotaEfetiva: versaoAnterior.aliquota_efetiva,
+              economiaAnual: versaoAnterior.economia_anual,
+              tipoAtividade: versaoAnterior.parametros?.tipoAtividade,
+            },
+            snapshotNovo: {
+              nome: nomeFinal,
+              empresa: empresaFinal,
+              cnpj: cnpjFinal,
+              regime: novosResultados.resultadoDashboard.regimeRecomendado,
+              faturamentoMensal: novosParametros.faturamentoMensal,
+              aliquotaEfetiva: novosResultados.resultadoDashboard.aliquotaEfetivaNova,
+              economiaAnual: novosResultados.resultadoDashboard.economiaAnualProjetada,
+              tipoAtividade: novosParametros.tipoAtividade,
+            },
+          })
+        } catch (histErr) {
+          console.warn('Aviso ao registrar histórico de alteração de parâmetros:', histErr)
+        }
+      }
+
+      return simulacaoAtualizada
+    } catch (err) {
+      console.warn('Erro ao atualizar simulação na nuvem, atualizando local:', err)
+    }
+  }
+
+  // Fallback local
+  const locais = carregarSimulacoesLocais()
+  let atualizadaLocal: SimulacaoCalculadora | null = null
+  const novas = locais.map((item) => {
+    if (item.id === simulacaoId) {
+      atualizadaLocal = {
+        ...item,
+        nome: nomeFinal,
+        empresa: empresaFinal,
+        cnpj: cnpjFinal,
+        parametros: novosParametros,
+        resultados: novosResultados,
+        regime_recomendado: novosResultados.resultadoDashboard.regimeRecomendado,
+        economia_anual: novosResultados.resultadoDashboard.economiaAnualProjetada,
+        aliquota_efetiva: novosResultados.resultadoDashboard.aliquotaEfetivaNova,
+        faturamento_mensal: novosParametros.faturamentoMensal,
+        updated: new Date().toISOString(),
+      }
+      return atualizadaLocal
+    }
+    return item
+  })
+  salvarSimulacoesLocais(novas)
+
+  if (alteracoes.length > 0) {
+    try {
+      await registrarEventoHistoricoSimulacao({
+        simulacaoId,
+        tipoSimulacao: 'calculadora',
+        tipoEvento: 'edicao_parametros',
+        descricao: `Parâmetros locais atualizados (${alteracoes.length} ${
+          alteracoes.length === 1 ? 'campo alterado' : 'campos alterados'
+        })`,
+        simulacaoNome: nomeFinal,
+        empresa: empresaFinal,
+        cnpj: cnpjFinal,
+        clienteId: versaoAnterior.cliente_id,
+        userId: null,
+        alteracoes,
+        snapshotAnterior: {
+          nome: versaoAnterior.nome,
+          empresa: versaoAnterior.empresa,
+          cnpj: versaoAnterior.cnpj,
+          regime: versaoAnterior.regime_recomendado,
+          faturamentoMensal: versaoAnterior.faturamento_mensal,
+          aliquotaEfetiva: versaoAnterior.aliquota_efetiva,
+          economiaAnual: versaoAnterior.economia_anual,
+          tipoAtividade: versaoAnterior.parametros?.tipoAtividade,
+        },
+        snapshotNovo: {
+          nome: nomeFinal,
+          empresa: empresaFinal,
+          cnpj: cnpjFinal,
+          regime: novosResultados.resultadoDashboard.regimeRecomendado,
+          faturamentoMensal: novosParametros.faturamentoMensal,
+          aliquotaEfetiva: novosResultados.resultadoDashboard.aliquotaEfetivaNova,
+          economiaAnual: novosResultados.resultadoDashboard.economiaAnualProjetada,
+          tipoAtividade: novosParametros.tipoAtividade,
+        },
+      })
+    } catch {
+      /* intentionally ignored */
+    }
+  }
+
+  return atualizadaLocal
 }
 
 /**
