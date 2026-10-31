@@ -16,6 +16,10 @@ import {
 import { extrairConclusaoDeSimulacao, derivarFatoresExplicativos } from '@/lib/conclusaoAnalitica'
 import type { ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
 import {
+  obterIdentidadeParecer,
+  renderizarRodapeEscritorioPdf,
+} from '@/lib/pdfIdentidadeEscritorio'
+import {
   desenharNotaCurtaPDF,
   desenharAvisoLegalCompletoPDF,
 } from '@/components/common/AvisoOrientativo'
@@ -251,15 +255,7 @@ function aplicarRodapePadrao(doc: jsPDF, margin: number, pageWidth: number, page
     doc.setLineWidth(0.3)
     doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12)
 
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(6.8)
-    doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
-    doc.text(
-      'Contabilidade 5.0 — Diamond Group | Inteligência Fiscal & BPO Estratégico | contato@contabilidade50.com.br',
-      margin,
-      pageHeight - 7,
-    )
-    doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: 'right' })
+    renderizarRodapeEscritorioPdf(doc, i, totalPages, pageHeight - 7)
   }
 }
 

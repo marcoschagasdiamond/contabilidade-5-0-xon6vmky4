@@ -30,6 +30,8 @@ export function limparEstadoLocalSessao(): void {
       'contabilidade50_conversas_assistente_local_v1',
       'contabilidade50_historico_relatorios_local',
       'c50_master_usuarios',
+      'contabilidade50_dados_escritorio_v1',
+      'contabilidade50_gate_escritorio_dispensado',
     ]
 
     chavesParaRemover.forEach((chave) => {

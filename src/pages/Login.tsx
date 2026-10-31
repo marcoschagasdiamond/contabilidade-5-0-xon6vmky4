@@ -7,11 +7,10 @@ import {
   AlertCircle,
   ArrowRight,
   TrendingUp,
-  Sparkles,
-  Building2,
   CheckCircle2,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import pb from '@/lib/pocketbase/client'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -19,7 +18,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { login, isAuthenticated, isAdmin } = useAuth()
+  const { login, isAuthenticated, isAdmin, isContador } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -49,11 +48,21 @@ export default function Login() {
         navigate(destination, { replace: true })
       } else if (isAdmin) {
         navigate('/admin', { replace: true })
+      } else if (isContador) {
+        const checkEscritorio = async () => {
+          const { analistaPossuiEscritorioPreenchido } = await import('@/services/escritorio')
+          if (!analistaPossuiEscritorioPreenchido()) {
+            navigate('/dados-escritorio', { replace: true })
+          } else {
+            navigate('/minha-conta', { replace: true })
+          }
+        }
+        checkEscritorio()
       } else {
         navigate('/minha-conta', { replace: true })
       }
     }
-  }, [isAuthenticated, isAdmin, navigate, destination])
+  }, [isAuthenticated, isAdmin, isContador, navigate, destination])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,8 +73,22 @@ export default function Login() {
       await login(email.trim().toLowerCase(), password)
       if (destination) {
         navigate(destination, { replace: true })
-      } else if (email.trim().toLowerCase() === 'marcoschagasdiamond@icloud.com') {
+      } else if (
+        email.trim().toLowerCase() === 'marcoschagasdiamond@icloud.com' ||
+        pb.authStore.record?.nivel_acesso === 'master' ||
+        pb.authStore.record?.nivel_acesso === 'admin'
+      ) {
         navigate('/admin', { replace: true })
+      } else if (
+        pb.authStore.record?.nivel_acesso === 'analista' ||
+        pb.authStore.record?.role === 'contador'
+      ) {
+        const { analistaPossuiEscritorioPreenchido } = await import('@/services/escritorio')
+        if (!analistaPossuiEscritorioPreenchido()) {
+          navigate('/dados-escritorio', { replace: true })
+        } else {
+          navigate('/minha-conta', { replace: true })
+        }
       } else {
         navigate('/minha-conta', { replace: true })
       }

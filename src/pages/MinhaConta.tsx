@@ -268,6 +268,64 @@ export default function MinhaConta() {
           </div>
         </div>
 
+        {/* BLOCO 2: DADOS DO ESCRITÓRIO ADQUIRENTE (SÓ ANALISTA / ADMIN / MASTER - NUNCA EMPRESÁRIO) */}
+        {!isEmpresario && (
+          <div className="bg-gradient-to-br from-[#07132B] to-[#0A1A13] text-white rounded-2xl p-6 sm:p-8 border border-[#D4AF37]/30 shadow-md space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded">
+                  Bloco 2 • Identidade do Escritório
+                </span>
+                <h2 className="font-heading font-bold text-lg sm:text-xl text-white mt-1">
+                  Dados do Escritório Adquirente
+                </h2>
+                <p className="text-xs text-slate-300 max-w-xl mt-0.5">
+                  Identificação do emissor técnico exibida nos laudos e pareceres em PDF ("Parecer
+                  emitido por [Escritório]"). Não alimenta cálculos nem simulações.
+                </p>
+              </div>
+
+              <Link
+                to="/dados-escritorio"
+                className="px-4 py-2.5 rounded-xl bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] font-heading font-bold text-xs shadow-md transition-all self-start sm:self-auto shrink-0"
+              >
+                Gerenciar Cadastro do Escritório →
+              </Link>
+            </div>
+
+            {(user as any)?.escritorio_nome ? (
+              <div className="pt-3 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                  <span className="text-[11px] text-slate-400 block">Escritório Emissor</span>
+                  <span className="font-bold text-white text-xs block truncate">
+                    {(user as any).escritorio_nome}
+                  </span>
+                </div>
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                  <span className="text-[11px] text-slate-400 block">Responsável Técnico</span>
+                  <span className="font-bold text-white text-xs block truncate">
+                    {(user as any).escritorio_responsavel || (user as any).name || 'Não informado'}
+                  </span>
+                </div>
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                  <span className="text-[11px] text-slate-400 block">Localização / CNPJ</span>
+                  <span className="font-bold text-white text-xs block truncate">
+                    {[(user as any).escritorio_cidade, (user as any).escritorio_uf]
+                      .filter(Boolean)
+                      .join(' - ') || 'Brasil'}{' '}
+                    {(user as any).escritorio_cnpj ? `• ${(user as any).escritorio_cnpj}` : ''}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="pt-2 text-xs text-amber-300/90 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+                Os dados do seu escritório ainda não foram cadastrados. Seus pareceres usam o
+                fallback padrão "Contabilidade 5.0".
+              </div>
+            )}
+          </div>
+        )}
+
         {/* GRID PRINCIPAL: DADOS DA EMPRESA + DIAGNÓSTICOS VINCULADOS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* COLUNA ESQUERDA: PERFIL DA EMPRESA CADASTRADA */}

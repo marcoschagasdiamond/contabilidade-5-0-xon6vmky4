@@ -189,13 +189,15 @@ export default function Cadastro() {
       }
 
       // Destino inteligente
+      // Regra: Analista no primeiro acesso vai para o formulário de escritório /dados-escritorio
+      // Empresário vai direto para /minha-conta (NUNCA vê esse formulário)
       const target =
         destination ||
         (dadosConvite?.nivel_convite === 'admin'
           ? '/admin'
           : perfilFinal === 'empresario'
             ? '/minha-conta'
-            : '/dados-empresa')
+            : '/dados-escritorio')
       navigate(target, { replace: true })
     } catch (err: any) {
       console.error('Falha no cadastro:', err)

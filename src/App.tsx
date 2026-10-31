@@ -36,6 +36,7 @@ import Cadastro from './pages/Cadastro'
 import RecuperarSenha from './pages/RecuperarSenha'
 import RedefinirSenha from './pages/RedefinirSenha'
 import MinhaConta from './pages/MinhaConta'
+import DadosEscritorio from './pages/DadosEscritorio'
 import Admin from './pages/Admin'
 import Clientes from './pages/Clientes'
 import DetalheCliente from './pages/DetalheCliente'
@@ -58,6 +59,7 @@ import DadosEmpresa from './pages/DadosEmpresa'
 import Planos from './pages/Planos'
 import Agendamento from './pages/Agendamento'
 import NotFound from './pages/NotFound'
+import { analistaPossuiEscritorioPreenchido, gateEscritorioDispensado } from './services/escritorio'
 
 // Reforma Tributária (Diamond Group)
 import Legislacao from './pages/Legislacao'
@@ -119,6 +121,18 @@ function AnalistaRoute({ children }: { children: React.ReactNode }) {
   // Se for empresário, redireciona para a sua área restrita Minha Conta
   if (isEmpresario) {
     return <Navigate to="/minha-conta" replace />
+  }
+
+  // Gate leve do primeiro acesso do Analista (não bloqueia na página /dados-escritorio)
+  if (location.pathname !== '/dados-escritorio') {
+    if (!analistaPossuiEscritorioPreenchido() && !gateEscritorioDispensado()) {
+      return (
+        <Navigate
+          to={`/dados-escritorio?redirect=${encodeURIComponent(location.pathname + location.search)}`}
+          replace
+        />
+      )
+    }
   }
 
   return <>{children}</>
@@ -432,6 +446,14 @@ const App = () => (
                 <Route path="/cadastro" element={<Cadastro />} />
                 <Route path="/recuperar-senha" element={<RecuperarSenha />} />
                 <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+                <Route
+                  path="/dados-escritorio"
+                  element={
+                    <AnalistaRoute>
+                      <DadosEscritorio />
+                    </AnalistaRoute>
+                  }
+                />
                 <Route
                   path="/minha-conta"
                   element={
