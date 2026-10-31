@@ -42,6 +42,7 @@ export interface ParametrosSimulacaoCalculadora {
   aliquotaImpostoSeletivo: number
   proporcaoServicoMisto: number
   percentualComprasVendasComparativo: number
+  percentualComprasVendas?: number
   folhaPagamentoMensal: number
   margemLucroEstimada: number
   despesasComCreditosMensais: number

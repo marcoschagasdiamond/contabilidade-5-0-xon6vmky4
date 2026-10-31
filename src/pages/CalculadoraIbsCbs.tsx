@@ -752,15 +752,32 @@ function CalculadoraConteudo() {
         onOpenChange={setModalImportarFaturamentoAberto}
         onConfirmarImportacao={(dados: DadosFaturamentoImportados) => {
           const params = obterSnapshotParametros()
-          const updates: any = {
+          const pctCalculado =
+            dados.comprasMensal !== undefined && dados.faturamentoMensal > 0
+              ? Math.min(100, Math.round((dados.comprasMensal / dados.faturamentoMensal) * 100))
+              : undefined
+
+          const updates: Partial<typeof params> = {
             faturamentoMensal: dados.faturamentoMensal,
+            ...(pctCalculado !== undefined
+              ? {
+                  percentualComprasVendasComparativo: pctCalculado,
+                  percentualComprasVendasSimples: pctCalculado,
+                  percentualComprasVendas: pctCalculado,
+                  config: {
+                    ...params.config,
+                    faturamentoMensal: dados.faturamentoMensal,
+                    percentualComprasVendas: pctCalculado,
+                  },
+                }
+              : {
+                  config: {
+                    ...params.config,
+                    faturamentoMensal: dados.faturamentoMensal,
+                  },
+                }),
           }
-          if (dados.comprasMensal !== undefined && dados.faturamentoMensal > 0) {
-            updates.percentualComprasVendas = Math.min(
-              100,
-              Math.round((dados.comprasMensal / dados.faturamentoMensal) * 100),
-            )
-          }
+
           restaurarSimulacao({
             ...params,
             ...updates,
@@ -770,7 +787,11 @@ function CalculadoraConteudo() {
           faturamentoMensal: obterSnapshotParametros().faturamentoMensal ?? 0,
           comprasMensal:
             (obterSnapshotParametros().faturamentoMensal ?? 0) *
-            ((obterSnapshotParametros().percentualComprasVendas ?? 0) / 100),
+            ((obterSnapshotParametros().percentualComprasVendasComparativo ??
+              obterSnapshotParametros().percentualComprasVendas ??
+              obterSnapshotParametros().config?.percentualComprasVendas ??
+              0) /
+              100),
         }}
       />
 

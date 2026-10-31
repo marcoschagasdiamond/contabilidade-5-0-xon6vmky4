@@ -1112,6 +1112,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       aliquotaImpostoSeletivo,
       proporcaoServicoMisto,
       percentualComprasVendasComparativo,
+      percentualComprasVendas: config.percentualComprasVendas ?? percentualComprasVendasComparativo,
       folhaPagamentoMensal,
       margemLucroEstimada,
       despesasComCreditosMensais,
@@ -1198,8 +1199,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       // Fallback para simulações antigas
       setAnoOperacao(p.anoTransicao)
     }
-    if (p.percentualComprasVendasSimples !== undefined)
+    if (p.percentualComprasVendasSimples !== undefined) {
       setPercentualComprasVendasSimples(p.percentualComprasVendasSimples)
+    } else if (p.percentualComprasVendas !== undefined) {
+      setPercentualComprasVendasSimples(p.percentualComprasVendas)
+    }
 
     if (p.faturamentoMensal !== undefined) setFaturamentoMensal(p.faturamentoMensal)
     if (p.tipoAtividade) {
@@ -1218,8 +1222,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     if (p.aliquotaImpostoSeletivo !== undefined)
       setAliquotaImpostoSeletivo(p.aliquotaImpostoSeletivo)
     if (p.proporcaoServicoMisto !== undefined) setProporcaoServicoMisto(p.proporcaoServicoMisto)
-    if (p.percentualComprasVendasComparativo !== undefined)
+    if (p.percentualComprasVendasComparativo !== undefined) {
       setPercentualComprasVendasComparativo(p.percentualComprasVendasComparativo)
+    } else if (p.percentualComprasVendas !== undefined) {
+      setPercentualComprasVendasComparativo(p.percentualComprasVendas)
+    }
     if (p.folhaPagamentoMensal !== undefined) setFolhaPagamentoMensal(p.folhaPagamentoMensal)
     if (p.margemLucroEstimada !== undefined) setMargemLucroEstimada(p.margemLucroEstimada)
     if (p.despesasComCreditosMensais !== undefined)
