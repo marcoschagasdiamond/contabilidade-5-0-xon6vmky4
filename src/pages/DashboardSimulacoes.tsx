@@ -36,6 +36,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { PainelComparacaoCenarios } from '@/components/calculadora/PainelComparacaoCenarios'
+import { ModalSimulacaoAutomaticaCenarios } from '@/components/calculadora/ModalSimulacaoAutomaticaCenarios'
 
 function formatarMoeda(val?: number): string {
   if (typeof val !== 'number' || isNaN(val)) return 'R$ 0,00'
@@ -79,6 +80,7 @@ export default function DashboardSimulacoes() {
   // Seleção para Comparação de Cenários (2 a 4 simulações)
   const [idsSelecionadosComparacao, setIdsSelecionadosComparacao] = useState<string[]>([])
   const [modoVisualizacao, setModoVisualizacao] = useState<'geral' | 'comparacao'>('geral')
+  const [modalSimularCenariosAberto, setModalSimularCenariosAberto] = useState(false)
 
   useEffect(() => {
     carregar()
@@ -336,9 +338,16 @@ export default function DashboardSimulacoes() {
               >
                 Atualizar Dados
               </Button>
+              <Button
+                className="bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] font-extrabold text-xs sm:text-sm shadow-md"
+                onClick={() => setModalSimularCenariosAberto(true)}
+              >
+                Simular cenários
+              </Button>
               {idsSelecionadosComparacao.length >= 2 && (
                 <Button
-                  className="bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] font-extrabold text-xs sm:text-sm shadow-md"
+                  variant="outline"
+                  className="bg-white/15 hover:bg-white/25 text-white border-white/30 font-bold text-xs sm:text-sm shadow-sm"
                   onClick={handleVerComparacao}
                 >
                   Comparar Cenários ({idsSelecionadosComparacao.length})
@@ -1046,6 +1055,16 @@ export default function DashboardSimulacoes() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Simulação Automática de Cenários */}
+      <ModalSimulacaoAutomaticaCenarios
+        open={modalSimularCenariosAberto}
+        onOpenChange={setModalSimularCenariosAberto}
+        simulacoesCalculadoraDisponiveis={
+          dados?.itens.filter((i) => i.tipo === 'calculadora' && i.rawCalculadora?.parametros) || []
+        }
+        onSimulacaoSalva={carregar}
+      />
     </div>
   )
 }
