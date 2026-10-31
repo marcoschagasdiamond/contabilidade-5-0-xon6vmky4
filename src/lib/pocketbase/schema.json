@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-31T05:23:05.810Z",
+  "generatedAt": "2026-10-31T05:49:33.755Z",
   "collections": [
     {
       "name": "users",
@@ -265,6 +265,12 @@
         },
         {
           "name": "cnpj",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tipo_solicitacao",
           "type": "text",
           "required": false,
           "system": false

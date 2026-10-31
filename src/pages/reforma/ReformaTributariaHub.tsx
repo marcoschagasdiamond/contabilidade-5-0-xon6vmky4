@@ -7,6 +7,7 @@ import {
   DiamondFooterCTA,
   getIconComponent,
 } from '@/components/reforma/DiamondLayout'
+import SecaoDuplaAcaoFinal from '@/components/common/SecaoDuplaAcaoFinal'
 
 export default function ReformaTributariaHub() {
   return (
@@ -201,6 +202,13 @@ export default function ReformaTributariaHub() {
 
       {/* CTA FINAL PARA O DIAGNÓSTICO GRATUITO */}
       <DiamondFooterCTA />
+
+      {/* OPÇÕES FINAIS: PROPOSTA PERSONALIZADA & AGENDE COM ESPECIALISTA */}
+      <SecaoDuplaAcaoFinal
+        id="reforma-acoes-finais"
+        titulo="Planeje a Transição da sua Empresa na Reforma Tributária"
+        subtitulo="Receba uma proposta de consultoria customizada para sua operação ou agende uma reunião reservada com nosso time de especialistas em IBS, CBS e LC 214/2025."
+      />
     </div>
   )
 }

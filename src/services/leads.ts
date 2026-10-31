@@ -8,6 +8,7 @@ export interface Lead {
   telefone: string
   empresa: string
   cnpj?: string
+  tipo_solicitacao?: 'proposta' | 'agendamento' | string
   segmento:
     | 'Comércio'
     | 'Serviços'

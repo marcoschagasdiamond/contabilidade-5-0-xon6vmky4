@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
+import pb from '@/lib/pocketbase/client'
 import {
   consultarDisponibilidadeDia,
   criarAgendamentoReuniao,
@@ -51,7 +52,15 @@ function parseDataIso(iso?: string | null): Date | null {
   return isNaN(data.getTime()) ? null : data
 }
 
-export default function AgendamentoReuniao() {
+interface AgendamentoReuniaoProps {
+  onVoltar?: () => void
+  embedded?: boolean
+}
+
+export default function AgendamentoReuniao({
+  onVoltar,
+  embedded = false,
+}: AgendamentoReuniaoProps = {}) {
   const { user, isAuthenticated } = useAuth()
   const { dadosEmpresa } = useDadosEmpresa()
   const navigate = useNavigate()
@@ -193,6 +202,23 @@ export default function AgendamentoReuniao() {
         observacao: observacao,
         origem_contexto: origemParam,
       })
+
+      // Salva também na coleção leads com o tipo_solicitacao identificado
+      try {
+        await pb.collection('leads').create({
+          nome: nome.trim(),
+          email: email.trim().toLowerCase(),
+          telefone: telefone.trim() || '(Não informado)',
+          empresa: empresa.trim() || 'Não informada',
+          segmento: 'Serviços',
+          funcionarios: '1–5',
+          mensagem: `[Agendamento de Reunião] Data: ${dataSelecionada} às ${horarioSelecionado}. Assunto: ${assunto}. Obs: ${observacao || 'Nenhuma'}`,
+          tipo_solicitacao: 'agendamento',
+        })
+      } catch (leadErr) {
+        console.warn('Registro espelho em leads (agendamento):', leadErr)
+      }
+
       setReuniaoCriada(nova)
       fetchMinhasReunioes()
       // Atualizar disponibilidade do dia para refletir o slot ocupado
@@ -234,25 +260,37 @@ export default function AgendamentoReuniao() {
   }
 
   return (
-    <div className="min-h-screen bg-[#07132B]/5 py-12 px-4 sm:px-6">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className={embedded ? 'w-full py-2' : 'min-h-screen bg-[#07132B]/5 py-12 px-4 sm:px-6'}>
+      <div className={embedded ? 'max-w-5xl mx-auto space-y-6' : 'max-w-5xl mx-auto space-y-8'}>
         {/* CABEÇALHO PADRÃO DIAMOND GROUP (SEM ÍCONES) */}
-        <div className="rounded-3xl bg-gradient-to-br from-[#07132B] via-[#0E2442] to-[#14345C] text-white p-8 sm:p-10 border border-[#D4AF37]/30 shadow-2xl relative overflow-hidden">
+        <div className="rounded-3xl bg-gradient-to-br from-[#07132B] via-[#0E2442] to-[#14345C] text-white p-6 sm:p-10 border border-[#D4AF37]/30 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/15 rounded-full blur-3xl pointer-events-none" />
           <div className="relative">
-            <div className="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 mb-4 uppercase tracking-wider">
-              CONSULTORIA EXECUTIVA DIAMOND GROUP
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div className="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 uppercase tracking-wider">
+                CONSULTORIA EXECUTIVA DIAMOND GROUP
+              </div>
+              {onVoltar && (
+                <button
+                  type="button"
+                  onClick={onVoltar}
+                  aria-label="Voltar para a escolha de opções"
+                  className="shrink-0 px-4 py-2 rounded-xl text-xs font-bold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] border border-[#07132B]/10 shadow-sm transition-all duration-150 hover:-translate-y-0.5 cursor-pointer"
+                >
+                  Voltar
+                </button>
+              )}
             </div>
-            <h1 className="text-3xl sm:text-4xl font-heading font-extrabold text-white tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-heading font-extrabold text-white tracking-tight leading-tight">
               Agendamento de Reunião com Especialista
             </h1>
-            <p className="mt-3 text-slate-300 text-sm sm:text-base max-w-3xl leading-relaxed">
+            <p className="mt-3 text-slate-300 text-xs sm:text-base max-w-3xl leading-relaxed">
               Reserve um horário reservado com a liderança técnica da Contabilidade 5.0 para
               apresentação de laudo tributário, enquadramento na Reforma ou alinhamento de
               estratégias consultivas.
             </p>
 
-            <div className="mt-6 pt-6 border-t border-white/10 flex flex-wrap gap-6 text-xs text-slate-300 font-medium">
+            <div className="mt-5 pt-5 border-t border-white/10 flex flex-wrap gap-4 sm:gap-6 text-xs text-slate-300 font-medium">
               <span>Duração estimada: 50 minutos</span>
               <span>•</span>
               <span>Atendimento exclusivo e individual</span>
@@ -650,6 +688,19 @@ export default function AgendamentoReuniao() {
                       ? `Confirmar Reunião às ${horarioSelecionado}`
                       : 'Selecione um Horário Acima'}
                 </button>
+
+                {onVoltar && (
+                  <div className="pt-2 text-center">
+                    <button
+                      type="button"
+                      onClick={onVoltar}
+                      aria-label="Voltar para a escolha de opções"
+                      className="text-xs font-bold text-[#07132B] hover:text-[#D4AF37] underline decoration-1 underline-offset-4 transition-colors cursor-pointer py-1"
+                    >
+                      Voltar
+                    </button>
+                  </div>
+                )}
               </form>
             </div>
           </div>

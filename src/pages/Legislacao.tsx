@@ -22,6 +22,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { CardExplicacaoLegislacao } from '@/components/legislacao/CardExplicacaoLegislacao'
+import SecaoDuplaAcaoFinal from '@/components/common/SecaoDuplaAcaoFinal'
 import { derivarChaveNorma } from '@/services/explicadorLegislacao'
 
 export default function Legislacao() {
@@ -1539,6 +1540,13 @@ export default function Legislacao() {
             Carregando repositório de legislação...
           </div>
         )}
+
+        {/* OPÇÕES FINAIS: PROPOSTA PERSONALIZADA & AGENDE COM ESPECIALISTA */}
+        <SecaoDuplaAcaoFinal
+          id="legislacao-acoes-finais"
+          titulo="Dúvidas sobre o Impacto das Normas no seu Negócio?"
+          subtitulo="Solicite uma proposta personalizada de assessoria e monitoramento normativo ou agende uma reunião reservada com nosso especialista tributário."
+        />
       </main>
     </div>
   )

@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import SecaoDuplaAcaoFinal from '@/components/common/SecaoDuplaAcaoFinal'
 import {
   Calculator,
   Receipt,
@@ -509,25 +510,12 @@ export default function Servicos() {
         </div>
       </section>
 
-      {/* 3. CTA FINAL */}
-      <section className="py-16 bg-gradient-to-r from-[#0A1A13] to-[#145A32] text-white">
-        <div className="max-w-[1000px] mx-auto px-4 sm:px-6 text-center">
-          <h2 className="font-heading font-bold text-3xl sm:text-4xl mb-4">
-            Precisa de um pacote sob medida para sua operação?
-          </h2>
-          <p className="text-slate-300 text-base max-w-xl mx-auto mb-8">
-            Nossos consultores montam uma proposta que integra exatamente as soluções que o seu
-            negócio precisa hoje, com total escalabilidade para o futuro.
-          </p>
-          <a
-            href="/#contato"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-heading font-semibold text-base text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 btn-press"
-          >
-            Solicitar Proposta Customizada
-            <ArrowRight className="w-5 h-5 stroke-[2.5]" />
-          </a>
-        </div>
-      </section>
+      {/* 3. OPÇÕES FINAIS: PROPOSTA PERSONALIZADA & AGENDE COM ESPECIALISTA */}
+      <SecaoDuplaAcaoFinal
+        id="servicos-acoes-finais"
+        titulo="Precisa de um pacote sob medida para sua operação?"
+        subtitulo="Nossos consultores montam uma proposta que integra exatamente as soluções que o seu negócio precisa hoje, ou conduzem um alinhamento individual com um especialista."
+      />
     </div>
   )
 }

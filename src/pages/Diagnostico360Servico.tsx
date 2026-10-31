@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import SecaoDuplaAcaoFinal from '@/components/common/SecaoDuplaAcaoFinal'
 import { TermoPPLI, formatarTextoComPPLI } from '@/components/diagnosticos/TermoPPLI'
 import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
 import {
@@ -841,6 +842,13 @@ export default function Diagnostico360Servico() {
           </div>
         </div>
       </section>
+
+      {/* OPÇÕES FINAIS: PROPOSTA PERSONALIZADA & AGENDE COM ESPECIALISTA */}
+      <SecaoDuplaAcaoFinal
+        id="diagnostico-360-servico-acoes-finais"
+        titulo="Deseja a Aplicação Executiva do Diagnóstico 360°?"
+        subtitulo="Receba uma proposta personalizada com os 5 pilares metodológicos da Contabilidade 5.0 ou agende diretamente com um especialista para sua empresa."
+      />
     </div>
   )
 }

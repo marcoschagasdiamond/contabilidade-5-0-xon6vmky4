@@ -166,6 +166,7 @@ export default function LeadForm({
         segmento: formData.segmento,
         funcionarios: formData.funcionarios,
         mensagem: formData.mensagem.trim() || undefined,
+        tipo_solicitacao: 'proposta',
       })
 
       // Limpar formulário

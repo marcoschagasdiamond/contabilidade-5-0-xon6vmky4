@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
+import SecaoDuplaAcaoFinal from '@/components/common/SecaoDuplaAcaoFinal'
 import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { TermoPPLI, formatarTextoComPPLI } from '@/components/diagnosticos/TermoPPLI'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
@@ -847,16 +848,16 @@ export default function Diagnostico360() {
               >
                 {etapa01Preenchida ? 'Continuar Trilha' : 'Iniciar Trilha Completa de Diagnósticos'}
               </Link>
-
-              <a
-                href="/#contato"
-                className="w-full sm:w-auto px-6 py-4 rounded-xl font-heading font-bold text-xs sm:text-sm text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-xl transition-all duration-200 hover:-translate-y-0.5 text-center"
-              >
-                Fale com um Especialista
-              </a>
             </div>
           </div>
         </section>
+
+        {/* OPÇÕES FINAIS: PROPOSTA PERSONALIZADA & AGENDE COM ESPECIALISTA */}
+        <SecaoDuplaAcaoFinal
+          id="diagnostico-360-acoes-finais"
+          titulo="Deseja Avaliação Completa do Diagnóstico 360° na sua Empresa?"
+          subtitulo="Solicite uma proposta personalizada de assessoria corporativa ou agende diretamente com um especialista para analisar sua Matriz de 7 Riscos."
+        />
       </div>
     </div>
   )

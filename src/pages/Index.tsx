@@ -18,7 +18,7 @@ import {
   GraduationCap,
   Briefcase,
 } from 'lucide-react'
-import LeadForm from '@/components/LeadForm'
+import SecaoDuplaAcaoFinal from '@/components/common/SecaoDuplaAcaoFinal'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import { WizardPrimeirosPassos } from '@/components/onboarding/WizardPrimeirosPassos'
 import { ChecklistComeceAqui } from '@/components/onboarding/ChecklistComeceAqui'
@@ -654,104 +654,56 @@ export default function Index() {
         </div>
       </section>
 
-      {/* 6. CTA + FORMULÁRIO DE LEADS (#contato) */}
-      <section
-        id="contato"
-        className="py-24 bg-gradient-to-br from-[#145A32] to-[#0A1A13] text-white relative overflow-hidden"
-      >
-        {/* Decorative blur spots */}
-        <div className="absolute top-10 right-10 w-96 h-96 bg-[#2ECC71]/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-10 left-10 w-96 h-96 bg-[#145A32]/30 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
-            {/* Coluna Esquerda: Texto + Benefícios + Prova Social */}
-            <div className="lg:col-span-6">
-              <span className="inline-block px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-emerald-300 bg-white/10 border border-emerald-400/30 mb-4 backdrop-blur-sm">
-                Fale com um Especialista
-              </span>
-
-              <h2 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-[40px] leading-tight text-white tracking-tight mb-6">
-                Pronto para modernizar sua contabilidade?
-              </h2>
-
-              <p className="text-base sm:text-lg text-slate-200 leading-relaxed mb-8">
-                Preencha o formulário ao lado e um de nossos especialistas entrará em contato em até
-                24 horas úteis.
-              </p>
-
-              {/* Benefícios com check */}
-              <div className="space-y-4 mb-10">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full bg-[#2ECC71]/20 border border-[#2ECC71] flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
-                  </div>
-                  <span className="text-slate-200 font-medium text-base">
-                    Diagnóstico fiscal gratuito
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full bg-[#2ECC71]/20 border border-[#2ECC71] flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
-                  </div>
-                  <span className="text-slate-200 font-medium text-base">
-                    Proposta personalizada sem compromisso
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full bg-[#2ECC71]/20 border border-[#2ECC71] flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
-                  </div>
-                  <span className="text-slate-200 font-medium text-base">
-                    Acesso a um painel de indicadores
-                  </span>
-                </div>
+      {/* 6. PROVA SOCIAL & DEPOIMENTOS */}
+      <section className="py-12 bg-slate-900 text-white border-b border-slate-800">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
+          <div
+            id="depoimentos"
+            className="flex flex-col sm:flex-row items-center justify-between gap-6 scroll-mt-24"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex -space-x-3">
+                <img
+                  src="https://img.usecurling.com/ppl/thumbnail?gender=female&seed=77"
+                  alt="Cliente 1"
+                  className="w-12 h-12 rounded-full border-2 border-white object-cover"
+                />
+                <img
+                  src="https://img.usecurling.com/ppl/thumbnail?gender=male&seed=88"
+                  alt="Cliente 2"
+                  className="w-12 h-12 rounded-full border-2 border-white object-cover"
+                />
+                <img
+                  src="https://img.usecurling.com/ppl/thumbnail?gender=female&seed=99"
+                  alt="Cliente 3"
+                  className="w-12 h-12 rounded-full border-2 border-white object-cover"
+                />
               </div>
-
-              {/* Prova Social / Depoimentos e Avaliações */}
-              <div
-                id="depoimentos"
-                className="pt-8 border-t border-white/15 flex items-center gap-4 scroll-mt-24"
-              >
-                <div className="flex -space-x-3">
-                  <img
-                    src="https://img.usecurling.com/ppl/thumbnail?gender=female&seed=77"
-                    alt="Cliente 1"
-                    className="w-12 h-12 rounded-full border-2 border-white object-cover"
-                  />
-                  <img
-                    src="https://img.usecurling.com/ppl/thumbnail?gender=male&seed=88"
-                    alt="Cliente 2"
-                    className="w-12 h-12 rounded-full border-2 border-white object-cover"
-                  />
-                  <img
-                    src="https://img.usecurling.com/ppl/thumbnail?gender=female&seed=99"
-                    alt="Cliente 3"
-                    className="w-12 h-12 rounded-full border-2 border-white object-cover"
-                  />
+              <div>
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-3.5 h-3.5 fill-[#F1C40F] text-[#F1C40F]" />
+                  ))}
                 </div>
-                <div>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-[#F1C40F] text-[#F1C40F]" />
-                    ))}
-                  </div>
-                  <p className="text-sm font-semibold text-white mt-0.5">
-                    +500 empresas atendidas em todo o Brasil
-                  </p>
-                </div>
+                <p className="text-sm font-semibold text-white mt-0.5">
+                  +500 empresas atendidas em todo o Brasil
+                </p>
               </div>
             </div>
-
-            {/* Coluna Direita: Formulário LeadForm */}
-            <div className="lg:col-span-6">
-              <LeadForm />
+            <div className="text-xs text-slate-400 text-center sm:text-right max-w-md">
+              Atendimento executivo com governança tributária, conformidade na Reforma (IBS/CBS) e
+              suporte consultivo contínuo.
             </div>
           </div>
         </div>
       </section>
+
+      {/* 7. OPÇÕES FINAIS: PROPOSTA PERSONALIZADA & AGENDE COM ESPECIALISTA */}
+      <SecaoDuplaAcaoFinal
+        id="contato"
+        titulo="Pronto para modernizar a sua contabilidade?"
+        subtitulo="Escolha entre receber uma proposta estruturada para o seu segmento ou agendar uma reunião estratégica com o nosso time técnico."
+      />
     </div>
   )
 }
