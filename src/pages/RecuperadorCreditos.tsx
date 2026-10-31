@@ -43,6 +43,7 @@ import ModuloApuracaoSelicRecuperador from '@/components/recuperador/ModuloApura
 import ModuloDashboardRecuperador from '@/components/recuperador/ModuloDashboardRecuperador'
 import { ModalSalvarRecuperador } from '@/components/recuperador/ModalSalvarRecuperador'
 import { ListaSimulacoesRecuperador } from '@/components/recuperador/ListaSimulacoesRecuperador'
+import { ModalExportarDadosSimulacao } from '@/components/calculadora/ModalExportarDadosSimulacao'
 
 type ModuloRecuperadorId =
   | 'configuracoes'
@@ -293,6 +294,7 @@ export default function RecuperadorCreditos() {
   // Modais
   const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
   const [modalPdfAberto, setModalPdfAberto] = useState(false)
+  const [modalExportarDadosAberto, setModalExportarDadosAberto] = useState(false)
   const [modalLimparAberto, setModalLimparAberto] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
@@ -605,8 +607,16 @@ export default function RecuperadorCreditos() {
               </strong>
             </span>
 
-            {/* BOTÕES DE AÇÃO RÁPIDA: SALVAR E BAIXAR PDF */}
+            {/* BOTÕES DE AÇÃO RÁPIDA: EXPORTAR DADOS, SALVAR E BAIXAR PDF */}
             <div className="flex items-center gap-2 ml-auto">
+              <button
+                type="button"
+                onClick={() => setModalExportarDadosAberto(true)}
+                className="px-3 py-1.5 rounded-lg bg-[#07132B] hover:bg-[#0f244c] text-white border border-[#D4AF37]/70 font-extrabold text-xs tracking-wide transition-all shadow-sm cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                title="Exportar planilha (CSV/Excel) e dados da análise atual"
+              >
+                Exportar dados
+              </button>
               <button
                 type="button"
                 onClick={() => setModalSalvarAberto(true)}
@@ -757,6 +767,7 @@ export default function RecuperadorCreditos() {
                 onChangeCenario={setCenarioSelecionado}
                 onLimparDashboard={handleLimparDashboard}
                 onIrParaConfiguracoes={() => setModuloAtivo('configuracoes')}
+                onExportarDados={() => setModalExportarDadosAberto(true)}
                 onGerarPdf={() => setModalPdfAberto(true)}
                 onSalvarAnalise={() => setModalSalvarAberto(true)}
                 onSelecionarTese={(teseId) => {
@@ -843,6 +854,20 @@ export default function RecuperadorCreditos() {
         modo="individual"
         onConfirmar={handleConfirmarPdf}
         gerando={gerandoPdf}
+      />
+
+      {/* MODAL EXPORTAR DADOS DA ANÁLISE ATUAL (PLANILHA CSV / PARECER PDF) */}
+      <ModalExportarDadosSimulacao
+        open={modalExportarDadosAberto}
+        onOpenChange={setModalExportarDadosAberto}
+        moduloOrigem="recuperador"
+        dadosRecuperador={{
+          nomeAnalise: 'Recuperação de Créditos (60 Meses) - Atual em Tela',
+          empresa: clienteAtivo?.nome || configuracoes.empresa,
+          cnpj: clienteAtivo?.cnpj_cpf || configuracoes.cnpj,
+          parametros: parametrosAtuais,
+          resultados: resultadosAtuais,
+        }}
       />
     </div>
   )

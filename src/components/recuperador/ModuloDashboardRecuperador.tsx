@@ -16,6 +16,7 @@ interface Props {
   onIrParaConfiguracoes?: () => void
   onGerarPdf: () => void
   onSalvarAnalise: () => void
+  onExportarDados?: () => void
   onSelecionarTese?: (teseId: string) => void
 }
 
@@ -30,6 +31,7 @@ export default function ModuloDashboardRecuperador({
   onIrParaConfiguracoes,
   onGerarPdf,
   onSalvarAnalise,
+  onExportarDados,
   onSelecionarTese,
 }: Props) {
   const [modalLimparAberto, setModalLimparAberto] = useState(false)
@@ -158,6 +160,16 @@ export default function ModuloDashboardRecuperador({
               className="px-4 py-2 rounded-xl bg-transparent border-2 border-[#D4AF37]/70 text-[#D4AF37] font-bold text-xs hover:bg-[#D4AF37]/15 transition-all shadow-sm"
             >
               Limpar Dashboard
+            </button>
+          )}
+          {onExportarDados && (
+            <button
+              type="button"
+              onClick={onExportarDados}
+              className="px-4 py-2 rounded-xl bg-[#07132B] hover:bg-[#0f244c] text-white border border-[#D4AF37]/70 font-extrabold text-xs tracking-wide shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
+              title="Exportar planilha (CSV/Excel) e dados da simulação atual"
+            >
+              Exportar dados
             </button>
           )}
           <button
