@@ -90,6 +90,7 @@ interface Modulo6DashboardProps {
   onSalvarSimulacao?: () => void
   onBaixarPdf?: () => void
   onExportarDados?: () => void
+  onImportarFaturamento?: () => void
   gerandoPdf?: boolean
 }
 
@@ -100,6 +101,7 @@ export default function Modulo6Dashboard({
   onSalvarSimulacao,
   onBaixarPdf,
   onExportarDados,
+  onImportarFaturamento,
   gerandoPdf: gerandoPdfProp,
 }: Modulo6DashboardProps) {
   const {
@@ -2099,12 +2101,13 @@ export default function Modulo6Dashboard({
         </>
       )}
 
-      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES EXPORTAR DADOS, SALVAR E BAIXAR PDF) */}
+      {/* BARRA DE AÇÕES DA SIMULAÇÃO (DUPLICAÇÃO DOS BOTÕES IMPORTAR FATURAMENTO, EXPORTAR DADOS, SALVAR E BAIXAR PDF) */}
       {/* No Dashboard Executivo: duplicação no fim + barra fixa (sticky no rodapé) em telas pequenas para acompanhar a rolagem */}
       <BarraAcoesSimulacao
         onSalvar={onSalvarSimulacao ?? (() => setModalSalvarAberto(true))}
         onBaixarPdf={onBaixarPdf ?? handleAbrirModalPdfDashboard}
         onExportarDados={handleAbrirExportarDados}
+        onImportarFaturamento={onImportarFaturamento}
         gerandoPdf={gerandoPdfProp ?? gerandoPdf}
         stickyMobile={true}
       />

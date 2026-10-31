@@ -5,6 +5,7 @@ export interface BarraAcoesSimulacaoProps {
   onSalvar: () => void
   onBaixarPdf: () => void
   onExportarDados?: () => void
+  onImportarFaturamento?: () => void
   gerandoPdf?: boolean
   /**
    * Quando true, no mobile a barra fica fixa no rodapé (sticky bottom-0 z-30),
@@ -24,6 +25,7 @@ export function BarraAcoesSimulacao({
   onSalvar,
   onBaixarPdf,
   onExportarDados,
+  onImportarFaturamento,
   gerandoPdf = false,
   stickyMobile = false,
   className = '',
@@ -47,6 +49,18 @@ export function BarraAcoesSimulacao({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0 justify-center">
+          {/* Botão Importar faturamento: Fundo Navy com borda Dourada, sem ícones */}
+          {onImportarFaturamento && (
+            <Button
+              type="button"
+              onClick={onImportarFaturamento}
+              className="flex-1 sm:flex-initial h-10 px-4 rounded-xl bg-[#07132B] hover:bg-[#0f244c] text-[#D4AF37] border border-[#D4AF37] font-extrabold text-xs tracking-wide shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+              title="Importar faturamento a partir de planilha CSV/XLSX ou conexão com Google Sheets / Excel"
+            >
+              Importar faturamento
+            </Button>
+          )}
+
           {/* Botão Exportar dados: Fundo Navy com borda Dourada, sem ícones */}
           {onExportarDados && (
             <Button

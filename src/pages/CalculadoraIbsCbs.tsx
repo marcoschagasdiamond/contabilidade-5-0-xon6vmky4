@@ -35,6 +35,10 @@ import {
 } from '@/components/calculadora/ModalCompartilharLink'
 import { ModalExportarDadosSimulacao } from '@/components/calculadora/ModalExportarDadosSimulacao'
 import { ModalGerarPdf, type ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
+import {
+  ModalImportarFaturamento,
+  type DadosFaturamentoImportados,
+} from '@/components/calculadora/ModalImportarFaturamento'
 import { gerarRelatorioComparativoPDF } from '@/lib/pdfSimulacaoCalculadora'
 import {
   isTipoAtividadeLegado,
@@ -127,6 +131,7 @@ function CalculadoraConteudo() {
   const [modalPdfAtualAberto, setModalPdfAtualAberto] = useState(false)
   const [modalPdfComparativoAberto, setModalPdfComparativoAberto] = useState(false)
   const [modalExportarDadosAberto, setModalExportarDadosAberto] = useState(false)
+  const [modalImportarFaturamentoAberto, setModalImportarFaturamentoAberto] = useState(false)
   const [gerandoPdfComparativo, setGerandoPdfComparativo] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
   const [paywallSimulacaoAberto, setPaywallSimulacaoAberto] = useState(false)
@@ -367,17 +372,25 @@ function CalculadoraConteudo() {
                 {resultadoDashboard.aliquotaEfetivaNova.toFixed(2)}%
               </strong>
             </span>
-            {/* BOTÕES DE AÇÃO RÁPIDA: EXPORTAR DADOS, SALVAR, COMPARTILHAR E BAIXAR PDF */}
+            {/* BOTÕES DE AÇÃO RÁPIDA: IMPORTAR FATURAMENTO, EXPORTAR DADOS, SALVAR, COMPARTILHAR E BAIXAR PDF */}
             <div className="flex flex-wrap items-center gap-2 ml-auto">
               <FreemiumBadge tipo="simulacao" />
               <button
                 type="button"
+                onClick={() => setModalImportarFaturamentoAberto(true)}
+                className="px-3 py-1 rounded-lg bg-[#07132B] hover:bg-[#122347] text-[#D4AF37] border border-[#D4AF37] font-extrabold transition-all shadow-sm cursor-pointer"
+                title="Importar receita a partir de planilha CSV/XLSX ou Google Sheets"
+              >
+                <span>Importar faturamento</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setModalExportarDadosAberto(true)}
-                className="px-3 py-1 rounded-lg bg-[#07132B] hover:bg-[#122347] text-white border border-[#D4AF37] font-extrabold transition-all shadow-sm"
+                className="px-3 py-1 rounded-lg bg-[#07132B] hover:bg-[#122347] text-white border border-[#D4AF37] font-extrabold transition-all shadow-sm cursor-pointer"
                 title="Exportar planilha (CSV/Excel) e dados da simulação atual"
               >
                 <span>Exportar dados</span>
-              </button>
+              </button>{' '}
               <button
                 type="button"
                 onClick={() => setModalCompartilharAberto(true)}
@@ -608,6 +621,7 @@ function CalculadoraConteudo() {
                 onSalvarSimulacao={handleTentarSalvarSimulacao}
                 onBaixarPdf={handleBaixarPdfAtual}
                 onExportarDados={() => setModalExportarDadosAberto(true)}
+                onImportarFaturamento={() => setModalImportarFaturamentoAberto(true)}
                 gerandoPdf={gerandoPdf}
               />
             )}
@@ -646,6 +660,7 @@ function CalculadoraConteudo() {
                 onSalvarSimulacao={handleTentarSalvarSimulacao}
                 onBaixarPdf={handleBaixarPdfAtual}
                 onExportarDados={() => setModalExportarDadosAberto(true)}
+                onImportarFaturamento={() => setModalImportarFaturamentoAberto(true)}
                 gerandoPdf={gerandoPdf}
               />
             )}
@@ -728,6 +743,34 @@ function CalculadoraConteudo() {
           cnpj: clienteAtivo?.cnpj_cpf,
           parametros: obterSnapshotParametros(),
           resultados: obterSnapshotResultados(),
+        }}
+      />
+
+      {/* MODAL IMPORTAR FATURAMENTO DA SIMULAÇÃO ATUAL */}
+      <ModalImportarFaturamento
+        open={modalImportarFaturamentoAberto}
+        onOpenChange={setModalImportarFaturamentoAberto}
+        onConfirmarImportacao={(dados: DadosFaturamentoImportados) => {
+          const params = obterSnapshotParametros()
+          const updates: any = {
+            faturamentoMensal: dados.faturamentoMensal,
+          }
+          if (dados.comprasMensal !== undefined && dados.faturamentoMensal > 0) {
+            updates.percentualComprasVendas = Math.min(
+              100,
+              Math.round((dados.comprasMensal / dados.faturamentoMensal) * 100),
+            )
+          }
+          restaurarSimulacao({
+            ...params,
+            ...updates,
+          })
+        }}
+        valoresAtuais={{
+          faturamentoMensal: obterSnapshotParametros().faturamentoMensal ?? 0,
+          comprasMensal:
+            (obterSnapshotParametros().faturamentoMensal ?? 0) *
+            ((obterSnapshotParametros().percentualComprasVendas ?? 0) / 100),
         }}
       />
 

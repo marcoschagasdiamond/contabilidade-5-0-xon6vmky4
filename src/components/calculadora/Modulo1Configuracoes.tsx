@@ -40,6 +40,10 @@ import { Slider } from '@/components/ui/slider'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { ModalCliente } from '@/components/clientes/ModalCliente'
 import { Badge } from '@/components/ui/badge'
+import {
+  ModalImportarFaturamento,
+  type DadosFaturamentoImportados,
+} from '@/components/calculadora/ModalImportarFaturamento'
 
 import {
   PainelProximosPassosCalculadora,
@@ -62,6 +66,25 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
     recarregarClientes,
   } = useClienteAtivo()
   const [modalNovoClienteAberto, setModalNovoClienteAberto] = React.useState(false)
+  const [modalImportarFaturamentoAberto, setModalImportarFaturamentoAberto] = React.useState(false)
+
+  const handleConfirmarImportacaoFaturamento = (dados: DadosFaturamentoImportados) => {
+    // Preenche apenas a simulação atual, mantendo valores editáveis
+    const atualizacoes: Partial<typeof config> = {
+      faturamentoMensal: dados.faturamentoMensal,
+    }
+
+    if (dados.comprasMensal !== undefined && dados.faturamentoMensal > 0) {
+      // Atualiza percentual de compras correspondente se fornecido
+      const pctCalculado = Math.min(
+        100,
+        Math.round((dados.comprasMensal / dados.faturamentoMensal) * 100),
+      )
+      atualizacoes.percentualComprasVendas = pctCalculado
+    }
+
+    updateConfig(atualizacoes)
+  }
 
   const handleInputChange = (field: keyof typeof config, value: string) => {
     const limpo = value.replace(',', '.')
@@ -1007,15 +1030,23 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
             {/* Faturamento Mensal */}
             <div className="min-w-0 w-full space-y-1.5">
               <div className="flex items-center justify-between gap-1 flex-wrap">
-                <Label
-                  htmlFor="fatMensalM1"
-                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                <div className="flex items-center gap-1.5">
+                  <Label
+                    htmlFor="fatMensalM1"
+                    className="text-xs sm:text-sm font-bold break-words leading-snug text-[#07132B]"
+                  >
+                    Faturamento Mensal (R$)
+                  </Label>
+                </div>
+                {/* Botão Importar faturamento no cabeçalho do campo — Padrão Diamond Group, sem ícones */}
+                <button
+                  type="button"
+                  onClick={() => setModalImportarFaturamentoAberto(true)}
+                  className="text-[11px] font-bold text-[#D4AF37] hover:text-[#b89528] bg-[#07132B] hover:bg-[#0c1e40] px-2 py-0.5 rounded border border-[#D4AF37] transition-all cursor-pointer"
+                  title="Importar receita de planilha CSV/XLSX ou Google Sheets"
                 >
-                  Faturamento Mensal (R$)
-                </Label>
-                <span className="text-[10px] text-slate-500 font-medium break-words">
-                  Propaga aos Módulos 2, 3 e 5
-                </span>
+                  Importar faturamento
+                </button>
               </div>
               <Input
                 id="fatMensalM1"
@@ -1032,7 +1063,7 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
                 className="h-11 bg-white border-slate-300 text-[#07132B] font-mono font-bold shadow-sm"
               />
               <span className="text-[11px] text-slate-500 block leading-tight">
-                Receita operacional mensal de referência.
+                Receita operacional mensal de referência. Propaga aos Módulos 2, 3 e 5.
               </span>
             </div>
 
@@ -1555,6 +1586,18 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
         onSalvoComSucesso={async (novo) => {
           await recarregarClientes()
           selecionarClienteAtivo(novo.id)
+        }}
+      />
+
+      {/* MODAL IMPORTAR FATURAMENTO EXTERNO (CSV / XLSX / CONECTORES) */}
+      <ModalImportarFaturamento
+        open={modalImportarFaturamentoAberto}
+        onOpenChange={setModalImportarFaturamentoAberto}
+        onConfirmarImportacao={handleConfirmarImportacaoFaturamento}
+        valoresAtuais={{
+          faturamentoMensal: config.faturamentoMensal ?? 0,
+          comprasMensal:
+            (config.faturamentoMensal ?? 0) * ((config.percentualComprasVendas ?? 0) / 100),
         }}
       />
     </div>

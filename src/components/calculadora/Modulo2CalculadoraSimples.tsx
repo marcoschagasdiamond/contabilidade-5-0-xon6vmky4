@@ -35,6 +35,7 @@ export interface Modulo2CalculadoraSimplesProps {
   onSalvarSimulacao?: () => void
   onBaixarPdf?: () => void
   onExportarDados?: () => void
+  onImportarFaturamento?: () => void
   gerandoPdf?: boolean
 }
 
@@ -43,6 +44,7 @@ export default function Modulo2CalculadoraSimples({
   onSalvarSimulacao,
   onBaixarPdf,
   onExportarDados,
+  onImportarFaturamento,
   gerandoPdf = false,
 }: Modulo2CalculadoraSimplesProps = {}) {
   const {
@@ -613,6 +615,7 @@ export default function Modulo2CalculadoraSimples({
           onSalvar={onSalvarSimulacao}
           onBaixarPdf={onBaixarPdf}
           onExportarDados={onExportarDados}
+          onImportarFaturamento={onImportarFaturamento}
           gerandoPdf={gerandoPdf}
         />
       )}
