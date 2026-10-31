@@ -118,6 +118,39 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
 /**
  * Busca o registro de Dados da Empresa do usuário autenticado (ou por user_id)
  */
+export async function getClienteEmpresaPorId(id: string): Promise<ClienteEmpresaRecord | null> {
+  if (!id) return null
+  try {
+    const rec = await pb.collection('clientes_empresas').getOne<ClienteEmpresaRecord>(id)
+    return rec
+  } catch (err) {
+    console.warn('Registro de empresa não encontrado por ID:', id, err)
+    return null
+  }
+}
+
+export async function getClienteEmpresaPorCnpj(cnpj: string): Promise<ClienteEmpresaRecord | null> {
+  if (!cnpj) return null
+  const limpo = cnpj.replace(/\D/g, '')
+  try {
+    const list = await pb.collection('clientes_empresas').getList<ClienteEmpresaRecord>(1, 1, {
+      filter: `cnpj ~ "${limpo}" || cnpj = "${cnpj}"`,
+    })
+    return list.items[0] || null
+  } catch (err) {
+    console.warn('Registro de empresa não encontrado por CNPJ:', cnpj, err)
+    return null
+  }
+}
+
+export async function salvarClienteEmpresaPorId(
+  id: string,
+  perfil: Partial<DadosEmpresaPerfil>,
+): Promise<ClienteEmpresaRecord> {
+  const payload = perfilToRecord(perfil)
+  return await pb.collection('clientes_empresas').update<ClienteEmpresaRecord>(id, payload)
+}
+
 export async function getClienteEmpresaPorUsuario(
   userId: string,
 ): Promise<ClienteEmpresaRecord | null> {

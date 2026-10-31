@@ -29,6 +29,10 @@ export interface Cliente {
   origem_lead?: string
   funil_atualizado_em?: string
   funil_atualizado_por?: string
+  // Vínculos do CRM e dados finos da empresa
+  empresa_id?: string
+  crm_cliente_id?: string
+  origem_fonte?: 'clientes' | 'crm_clientes' | 'clientes_empresas'
 }
 
 export type ClienteRecord = Cliente & RecordModel

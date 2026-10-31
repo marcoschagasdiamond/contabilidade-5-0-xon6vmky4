@@ -30,30 +30,145 @@ export async function listarClientes(): Promise<Cliente[]> {
   const locais = carregarClientesLocais()
 
   try {
-    const cloudRecords = await pb.collection('clientes').getFullList<ClienteRecord>({
-      sort: 'nome',
+    // 1. Clientes da coleção 'clientes'
+    let cloudClientes: Cliente[] = []
+    try {
+      const cloudRecords = await pb.collection('clientes').getFullList<ClienteRecord>({
+        sort: 'nome',
+      })
+      cloudClientes = cloudRecords.map((rec) => ({
+        id: rec.id,
+        user_id: rec.user_id,
+        nome: rec.nome,
+        cnpj_cpf: rec.cnpj_cpf,
+        uf: rec.uf,
+        segmento: rec.segmento,
+        regime_atual: rec.regime_atual,
+        email: rec.email,
+        telefone: rec.telefone,
+        arquivado: Boolean(rec.arquivado),
+        created: rec.created,
+        updated: rec.updated,
+        origem_fonte: 'clientes',
+      }))
+    } catch (e) {
+      console.warn('Aviso: falha ao buscar clientes da coleção clientes:', e)
+    }
+
+    // 2. Clientes do CRM (crm_clientes com empresa_id expandido)
+    let crmClientesLista: Cliente[] = []
+    try {
+      const crmRecords = await pb.collection('crm_clientes').getFullList<any>({
+        sort: '-created',
+        expand: 'empresa_id',
+      })
+      crmClientesLista = crmRecords.map((rec) => {
+        const emp = rec.expand?.empresa_id
+        const nomeEmp = emp?.nome_empresa || 'Cliente CRM'
+        const cnpjEmp = emp?.cnpj || ''
+        const ufEmp = emp?.uf_origem || 'SP'
+        const segEmp = emp?.segmento || 'Serviços'
+        const regEmp = emp?.regime_atual || 'Simples Nacional'
+        const emailEmp = emp?.email || ''
+        const telEmp = emp?.telefone || ''
+
+        return {
+          id: rec.id,
+          user_id: rec.analista_responsavel || emp?.user_id,
+          nome: nomeEmp,
+          cnpj_cpf: cnpjEmp,
+          uf: ufEmp,
+          segmento: segEmp,
+          regime_atual: regEmp,
+          email: emailEmp,
+          telefone: telEmp,
+          arquivado: rec.status_comercial === 'Inativo' || rec.status_comercial === 'Perdido',
+          created: rec.created,
+          updated: rec.updated,
+          crm_cliente_id: rec.id,
+          empresa_id: rec.empresa_id,
+          origem_fonte: 'crm_clientes',
+        }
+      })
+    } catch (e) {
+      console.warn('Aviso: falha ao buscar clientes de crm_clientes:', e)
+    }
+
+    // 3. Empresas cadastradas diretamente em clientes_empresas
+    let empresasLista: Cliente[] = []
+    try {
+      const empRecords = await pb.collection('clientes_empresas').getFullList<any>({
+        sort: '-created',
+      })
+      empresasLista = empRecords.map((emp) => ({
+        id: emp.id,
+        user_id: emp.user_id,
+        nome: emp.nome_empresa,
+        cnpj_cpf: emp.cnpj,
+        uf: emp.uf_origem || 'SP',
+        segmento: emp.segmento || 'Serviços',
+        regime_atual: emp.regime_atual || 'Simples Nacional',
+        email: emp.email,
+        telefone: emp.telefone,
+        arquivado: false,
+        created: emp.created,
+        updated: emp.updated,
+        empresa_id: emp.id,
+        origem_fonte: 'clientes_empresas',
+      }))
+    } catch (e) {
+      console.warn('Aviso: falha ao buscar empresas de clientes_empresas:', e)
+    }
+
+    // Combina evitando duplicatas por CNPJ limpo ou ID
+    const mapaUnico = new Map<string, Cliente>()
+
+    // Prioridade 1: CRM Clientes
+    crmClientesLista.forEach((c) => {
+      const chaveCnpj = c.cnpj_cpf ? c.cnpj_cpf.replace(/\D/g, '') : ''
+      const chave = chaveCnpj || `crm_${c.id}`
+      mapaUnico.set(chave, c)
+      mapaUnico.set(c.id, c)
+      if (c.empresa_id) {
+        mapaUnico.set(c.empresa_id, c)
+      }
     })
 
-    const cloudClientes: Cliente[] = cloudRecords.map((rec) => ({
-      id: rec.id,
-      user_id: rec.user_id,
-      nome: rec.nome,
-      cnpj_cpf: rec.cnpj_cpf,
-      uf: rec.uf,
-      segmento: rec.segmento,
-      regime_atual: rec.regime_atual,
-      email: rec.email,
-      telefone: rec.telefone,
-      arquivado: Boolean(rec.arquivado),
-      created: rec.created,
-      updated: rec.updated,
-    }))
+    // Prioridade 2: Coleção clientes_empresas
+    empresasLista.forEach((emp) => {
+      const chaveCnpj = emp.cnpj_cpf ? emp.cnpj_cpf.replace(/\D/g, '') : ''
+      const chave = chaveCnpj || `emp_${emp.id}`
+      if (!mapaUnico.has(chave) && !mapaUnico.has(emp.id)) {
+        mapaUnico.set(chave, emp)
+        mapaUnico.set(emp.id, emp)
+      }
+    })
 
-    // Mescla itens locais que não estejam na nuvem
-    const idsNuvem = new Set(cloudClientes.map((c) => c.id))
-    const locaisUnicos = locais.filter((l) => !idsNuvem.has(l.id))
+    // Prioridade 3: Coleção legada clientes
+    cloudClientes.forEach((cli) => {
+      const chaveCnpj = cli.cnpj_cpf ? cli.cnpj_cpf.replace(/\D/g, '') : ''
+      const chave = chaveCnpj || `cli_${cli.id}`
+      if (!mapaUnico.has(chave) && !mapaUnico.has(cli.id)) {
+        mapaUnico.set(chave, cli)
+        mapaUnico.set(cli.id, cli)
+      }
+    })
 
-    return [...cloudClientes, ...locaisUnicos]
+    // Adiciona locais únicos
+    locais.forEach((l) => {
+      const chaveCnpj = l.cnpj_cpf ? l.cnpj_cpf.replace(/\D/g, '') : ''
+      const chave = chaveCnpj || `loc_${l.id}`
+      if (!mapaUnico.has(chave) && !mapaUnico.has(l.id)) {
+        mapaUnico.set(chave, l)
+        mapaUnico.set(l.id, l)
+      }
+    })
+
+    // Obter lista sem valores duplicados por objeto
+    const todosClientes = Array.from(new Set(mapaUnico.values()))
+    todosClientes.sort((a, b) => a.nome.localeCompare(b.nome))
+
+    return todosClientes
   } catch (err) {
     console.warn('Erro ao carregar clientes do PocketBase, usando locais:', err)
     return locais
