@@ -13,14 +13,14 @@ import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { formatarCNPJ, limparCNPJ, validarCNPJ } from '@/lib/cnpj'
+import { LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
 import {
-  LISTA_UFS_ICMS,
   CIDADES_ISS_MAPA,
-  SegmentoEmpresa,
-  RegimeAtualEmpresa,
-  PorteFuncionarios,
-  AnoBaseSimulacao,
-} from '@/types/calculadoraIbsCbs'
+  type SegmentoEmpresa,
+  type RegimeAtualEmpresa,
+  type PorteFuncionarios,
+} from '@/lib/regimes'
+import type { AnoBaseSimulacao } from '@/lib/reformaTributaria'
 import {
   calcularDiffDadosEmpresa,
   registrarAuditoriaDadosEmpresa,

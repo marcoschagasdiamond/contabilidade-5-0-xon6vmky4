@@ -1075,531 +1075,532 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
             />
 
             <div className="bg-white rounded-[24px] p-6 sm:p-10 shadow-xl border border-slate-200">
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold text-[#145A32] uppercase tracking-wider block">
-                  Passo 1 • Identificação
-                </span>
-                <BadgeOrigemPropagada origem="configuracoes" />
-              </div>
-              <h2 className="font-heading font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight">
-                Conte-nos sobre a sua empresa
-              </h2>
-              <p className="text-slate-600 text-sm mt-1">
-                Os dados de contato e localização são sincronizados a partir das Configurações do
-                Diagnóstico e da Calculadora IBS/CBS.
-              </p>
-            </div>
-
-            <div className="space-y-5">
-              {/* Nome do Contato */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Seu Nome Completo *
-                  </label>
-                  {isEmpresario && (
-                    <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
-                      Somente Leitura
-                    </span>
-                  )}
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-semibold text-[#145A32] uppercase tracking-wider block">
+                    Passo 1 • Identificação
+                  </span>
+                  <BadgeOrigemPropagada origem="configuracoes" />
                 </div>
-                <input
-                  type="text"
-                  value={formData.nome}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, nome: e.target.value }))
-                    if (errors.nome) setErrors((prev) => ({ ...prev, nome: undefined }))
-                  }}
-                  placeholder="Ex: Carlos Eduardo Silva"
-                  disabled={isEmpresario}
-                  readOnly={isEmpresario}
-                  className={`w-full px-4 py-3 rounded-xl border text-sm ${
-                    isEmpresario
-                      ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
-                      : errors.nome
-                      ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
-                      : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
-                  }`}
-                />
-                {errors.nome && (
-                  <p className="mt-1 text-xs text-red-600 font-medium">{errors.nome}</p>
-                )}
-              </div>
-
-              {/* Razão Social / Nome da Empresa e CNPJ da Empresa */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      Nome da Empresa *
-                    </label>
-                    {isEmpresario && (
-                      <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
-                        Somente Leitura
-                      </span>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.empresa}
-                    onChange={(e) => {
-                      setFormData((prev) => ({ ...prev, empresa: e.target.value }))
-                      if (errors.empresa) setErrors((prev) => ({ ...prev, empresa: undefined }))
-                    }}
-                    placeholder="Ex: Inova Tecnologia & Consultoria Ltda"
-                    disabled={isEmpresario}
-                    readOnly={isEmpresario}
-                    className={`w-full px-4 py-3 rounded-xl border text-sm ${
-                      isEmpresario
-                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
-                        : errors.empresa
-                        ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
-                        : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
-                    }`}
-                  />
-                  {errors.empresa && (
-                    <p className="mt-1 text-xs text-red-600 font-medium">{errors.empresa}</p>
-                  )}
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      CNPJ da Empresa *
-                    </label>
-                    {isEmpresario ? (
-                      <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
-                        Somente Leitura
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-slate-400">14 dígitos</span>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.cnpj}
-                    onChange={handleCnpjChange}
-                    maxLength={18}
-                    placeholder="00.000.000/0000-00"
-                    disabled={isEmpresario}
-                    readOnly={isEmpresario}
-                    className={`w-full px-4 py-3 rounded-xl border text-sm font-mono ${
-                      isEmpresario
-                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
-                        : errors.cnpj
-                        ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
-                        : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
-                    }`}
-                  />
-                  {errors.cnpj && (
-                    <p className="mt-1 text-xs text-red-600 font-medium">{errors.cnpj}</p>
-                  )}
-                  {!errors.cnpj && (
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Aceita com ou sem máscara (ex: 00.000.000/0000-00).
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* UF de Origem (ICMS) e Cidade / UF (ISS) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Seletor UF de Origem */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      UF de Origem (ICMS Estadual) *
-                    </label>
-                    <span className="text-[11px] font-bold text-[#145A32] bg-emerald-100/70 px-2 py-0.5 rounded-md border border-emerald-300/60">
-                      ICMS: {obterAliquotaIcmsUf(formData.ufOrigem).toFixed(1)}%
-                    </span>
-                  </div>
-                  <select
-                    value={formData.ufOrigem}
-                    onChange={(e) => {
-                      const novaUf = e.target.value
-                      setFormData((prev) => {
-                        const cidadeAtual = CIDADES_ISS_MAPA.find((cid) => cid.id === prev.cidade)
-                        const cidadeValida =
-                          cidadeAtual && (cidadeAtual.uf === novaUf || cidadeAtual.id === 'outra')
-                        return {
-                          ...prev,
-                          ufOrigem: novaUf,
-                          cidade: cidadeValida ? prev.cidade : 'outra',
-                        }
-                      })
-                    }}
-                    disabled={isEmpresario}
-                    className={`w-full px-4 py-3 rounded-xl border border-slate-200 text-sm ${
-                      isEmpresario
-                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
-                        : 'text-slate-900 bg-slate-50/50 input-focus-ring'
-                    }`}
-                  >
-                    {LISTA_UFS_ICMS.map((ufItem) => (
-                      <option key={ufItem.uf} value={ufItem.uf}>
-                        {ufItem.uf} — {ufItem.nome} ({ufItem.aliquotaInternaPadrao.toFixed(1)}%
-                        ICMS)
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Define a alíquota interna padrão de ICMS estadual sobre comércio e indústria.
-                  </p>
-                </div>
-
-                {/* Seletor Cidade/ISS */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      Cidade / UF (Alíquota de ISS) *
-                    </label>
-                    <span className="text-[11px] font-bold text-[#145A32] bg-emerald-100/70 px-2 py-0.5 rounded-md border border-emerald-300/60">
-                      ISS: {obterAliquotaISS(formData.cidade).aliquota.toFixed(1)}%
-                    </span>
-                  </div>
-                  <select
-                    value={formData.cidade}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, cidade: e.target.value }))}
-                    disabled={isEmpresario}
-                    className={`w-full px-4 py-3 rounded-xl border border-slate-200 text-sm ${
-                      isEmpresario
-                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
-                        : 'text-slate-900 bg-slate-50/50 input-focus-ring'
-                    }`}
-                  >
-                    {CIDADES_ISS_MAPA.filter(
-                      (cid) => cid.uf === formData.ufOrigem || cid.id === 'outra',
-                    ).map((cid) => (
-                      <option key={cid.id} value={cid.id}>
-                        {cid.descricao || `${cid.nome}/${cid.uf} (${cid.aliquota.toFixed(1)}%)`}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Define o ISS municipal aplicado aos cálculos de serviços e transporte.
-                  </p>
-                </div>
-              </div>
-
-              {/* Box explicativo UF & ICMS */}
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
-                <Info className="w-4 h-4 text-[#145A32] shrink-0 mt-0.5" />
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  <strong>Impacto no cálculo:</strong> A UF de origem determina o ICMS no sistema
-                  atual (Lucro Presumido e Real) e serve de base para calibrar a substituição
-                  gradual pelo IBS durante a transição 2029–2032.
+                <h2 className="font-heading font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight">
+                  Conte-nos sobre a sua empresa
+                </h2>
+                <p className="text-slate-600 text-sm mt-1">
+                  Os dados de contato e localização são sincronizados a partir das Configurações do
+                  Diagnóstico e da Calculadora IBS/CBS.
                 </p>
               </div>
 
-              {/* Segmento de Atuação (Grade responsiva com 10 opções) */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Segmento Principal de Atividade *
-                  </label>
-                  <span className="text-[11px] text-slate-400">Selecione 1 das 10 opções</span>
+              <div className="space-y-5">
+                {/* Nome do Contato */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Seu Nome Completo *
+                    </label>
+                    {isEmpresario && (
+                      <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                        Somente Leitura
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.nome}
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, nome: e.target.value }))
+                      if (errors.nome) setErrors((prev) => ({ ...prev, nome: undefined }))
+                    }}
+                    placeholder="Ex: Carlos Eduardo Silva"
+                    disabled={isEmpresario}
+                    readOnly={isEmpresario}
+                    className={`w-full px-4 py-3 rounded-xl border text-sm ${
+                      isEmpresario
+                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
+                        : errors.nome
+                          ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
+                          : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
+                    }`}
+                  />
+                  {errors.nome && (
+                    <p className="mt-1 text-xs text-red-600 font-medium">{errors.nome}</p>
+                  )}
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
-                  {[
-                    {
-                      id: 'Comércio' as SegmentoEmpresa,
-                      icon: ShoppingCart,
-                      desc: 'Varejo e atacado de mercadorias (Anexo I / ICMS)',
-                    },
-                    {
-                      id: 'Serviços' as SegmentoEmpresa,
-                      icon: Briefcase,
-                      desc: 'Prestação de serviços e consultoria (ISS / Fator R)',
-                    },
-                    {
-                      id: 'Indústria' as SegmentoEmpresa,
-                      icon: Factory,
-                      desc: 'Fabricação e transformação fabril (Anexo II / ICMS)',
-                    },
-                    {
-                      id: 'Saúde' as SegmentoEmpresa,
-                      icon: HeartPulse,
-                      desc: 'Clínicas, consultórios e laboratórios (ISS)',
-                    },
-                    {
-                      id: 'Educação' as SegmentoEmpresa,
-                      icon: GraduationCap,
-                      desc: 'Escolas, faculdades e cursos livres (ISS)',
-                    },
-                    {
-                      id: 'Agro' as SegmentoEmpresa,
-                      icon: Sprout,
-                      desc: 'Produção rural e agronegócio (Base 8%)',
-                    },
-                    {
-                      id: 'Transporte' as SegmentoEmpresa,
-                      icon: Truck,
-                      desc: 'Cargas e passageiros (Presunção 16% IRPJ)',
-                    },
-                    {
-                      id: 'Tecnologia' as SegmentoEmpresa,
-                      icon: Cpu,
-                      desc: 'Software, SaaS e TI (ISS / Fator R)',
-                    },
-                    {
-                      id: 'Construção Civil' as SegmentoEmpresa,
-                      icon: Hammer,
-                      desc: 'Obras, reformas e engenharia civil (ISS)',
-                    },
-                    {
-                      id: 'Bares e Restaurantes' as SegmentoEmpresa,
-                      icon: UtensilsCrossed,
-                      desc: 'Alimentação e bebidas (Presunção 8% / ICMS)',
-                    },
-                  ].map((item) => {
-                    const isSelected = formData.segmento === item.id
-                    const IconComponent = item.icon
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, segmento: item.id }))}
-                        className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
-                          isSelected
-                            ? 'border-[#2ECC71] bg-emerald-50/70 ring-2 ring-[#2ECC71]/30 shadow-sm'
-                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <div
-                              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                                isSelected
-                                  ? 'bg-[#2ECC71] text-[#0A1A13]'
-                                  : 'bg-slate-100 text-slate-600'
+
+                {/* Razão Social / Nome da Empresa e CNPJ da Empresa */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Nome da Empresa *
+                      </label>
+                      {isEmpresario && (
+                        <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                          Somente Leitura
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.empresa}
+                      onChange={(e) => {
+                        setFormData((prev) => ({ ...prev, empresa: e.target.value }))
+                        if (errors.empresa) setErrors((prev) => ({ ...prev, empresa: undefined }))
+                      }}
+                      placeholder="Ex: Inova Tecnologia & Consultoria Ltda"
+                      disabled={isEmpresario}
+                      readOnly={isEmpresario}
+                      className={`w-full px-4 py-3 rounded-xl border text-sm ${
+                        isEmpresario
+                          ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
+                          : errors.empresa
+                            ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
+                            : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
+                      }`}
+                    />
+                    {errors.empresa && (
+                      <p className="mt-1 text-xs text-red-600 font-medium">{errors.empresa}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        CNPJ da Empresa *
+                      </label>
+                      {isEmpresario ? (
+                        <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                          Somente Leitura
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-slate-400">14 dígitos</span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.cnpj}
+                      onChange={handleCnpjChange}
+                      maxLength={18}
+                      placeholder="00.000.000/0000-00"
+                      disabled={isEmpresario}
+                      readOnly={isEmpresario}
+                      className={`w-full px-4 py-3 rounded-xl border text-sm font-mono ${
+                        isEmpresario
+                          ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
+                          : errors.cnpj
+                            ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
+                            : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
+                      }`}
+                    />
+                    {errors.cnpj && (
+                      <p className="mt-1 text-xs text-red-600 font-medium">{errors.cnpj}</p>
+                    )}
+                    {!errors.cnpj && (
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Aceita com ou sem máscara (ex: 00.000.000/0000-00).
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* UF de Origem (ICMS) e Cidade / UF (ISS) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Seletor UF de Origem */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        UF de Origem (ICMS Estadual) *
+                      </label>
+                      <span className="text-[11px] font-bold text-[#145A32] bg-emerald-100/70 px-2 py-0.5 rounded-md border border-emerald-300/60">
+                        ICMS: {obterAliquotaIcmsUf(formData.ufOrigem).toFixed(1)}%
+                      </span>
+                    </div>
+                    <select
+                      value={formData.ufOrigem}
+                      onChange={(e) => {
+                        const novaUf = e.target.value
+                        setFormData((prev) => {
+                          const cidadeAtual = CIDADES_ISS_MAPA.find((cid) => cid.id === prev.cidade)
+                          const cidadeValida =
+                            cidadeAtual && (cidadeAtual.uf === novaUf || cidadeAtual.id === 'outra')
+                          return {
+                            ...prev,
+                            ufOrigem: novaUf,
+                            cidade: cidadeValida ? prev.cidade : 'outra',
+                          }
+                        })
+                      }}
+                      disabled={isEmpresario}
+                      className={`w-full px-4 py-3 rounded-xl border border-slate-200 text-sm ${
+                        isEmpresario
+                          ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                          : 'text-slate-900 bg-slate-50/50 input-focus-ring'
+                      }`}
+                    >
+                      {LISTA_UFS_ICMS.map((ufItem) => (
+                        <option key={ufItem.uf} value={ufItem.uf}>
+                          {ufItem.uf} — {ufItem.nome} ({ufItem.aliquotaInternaPadrao.toFixed(1)}%
+                          ICMS)
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Define a alíquota interna padrão de ICMS estadual sobre comércio e indústria.
+                    </p>
+                  </div>
+
+                  {/* Seletor Cidade/ISS */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Cidade / UF (Alíquota de ISS) *
+                      </label>
+                      <span className="text-[11px] font-bold text-[#145A32] bg-emerald-100/70 px-2 py-0.5 rounded-md border border-emerald-300/60">
+                        ISS: {obterAliquotaISS(formData.cidade).aliquota.toFixed(1)}%
+                      </span>
+                    </div>
+                    <select
+                      value={formData.cidade}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, cidade: e.target.value }))}
+                      disabled={isEmpresario}
+                      className={`w-full px-4 py-3 rounded-xl border border-slate-200 text-sm ${
+                        isEmpresario
+                          ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                          : 'text-slate-900 bg-slate-50/50 input-focus-ring'
+                      }`}
+                    >
+                      {CIDADES_ISS_MAPA.filter(
+                        (cid) => cid.uf === formData.ufOrigem || cid.id === 'outra',
+                      ).map((cid) => (
+                        <option key={cid.id} value={cid.id}>
+                          {cid.descricao || `${cid.nome}/${cid.uf} (${cid.aliquota.toFixed(1)}%)`}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Define o ISS municipal aplicado aos cálculos de serviços e transporte.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Box explicativo UF & ICMS */}
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-[#145A32] shrink-0 mt-0.5" />
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    <strong>Impacto no cálculo:</strong> A UF de origem determina o ICMS no sistema
+                    atual (Lucro Presumido e Real) e serve de base para calibrar a substituição
+                    gradual pelo IBS durante a transição 2029–2032.
+                  </p>
+                </div>
+
+                {/* Segmento de Atuação (Grade responsiva com 10 opções) */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Segmento Principal de Atividade *
+                    </label>
+                    <span className="text-[11px] text-slate-400">Selecione 1 das 10 opções</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                    {[
+                      {
+                        id: 'Comércio' as SegmentoEmpresa,
+                        icon: ShoppingCart,
+                        desc: 'Varejo e atacado de mercadorias (Anexo I / ICMS)',
+                      },
+                      {
+                        id: 'Serviços' as SegmentoEmpresa,
+                        icon: Briefcase,
+                        desc: 'Prestação de serviços e consultoria (ISS / Fator R)',
+                      },
+                      {
+                        id: 'Indústria' as SegmentoEmpresa,
+                        icon: Factory,
+                        desc: 'Fabricação e transformação fabril (Anexo II / ICMS)',
+                      },
+                      {
+                        id: 'Saúde' as SegmentoEmpresa,
+                        icon: HeartPulse,
+                        desc: 'Clínicas, consultórios e laboratórios (ISS)',
+                      },
+                      {
+                        id: 'Educação' as SegmentoEmpresa,
+                        icon: GraduationCap,
+                        desc: 'Escolas, faculdades e cursos livres (ISS)',
+                      },
+                      {
+                        id: 'Agro' as SegmentoEmpresa,
+                        icon: Sprout,
+                        desc: 'Produção rural e agronegócio (Base 8%)',
+                      },
+                      {
+                        id: 'Transporte' as SegmentoEmpresa,
+                        icon: Truck,
+                        desc: 'Cargas e passageiros (Presunção 16% IRPJ)',
+                      },
+                      {
+                        id: 'Tecnologia' as SegmentoEmpresa,
+                        icon: Cpu,
+                        desc: 'Software, SaaS e TI (ISS / Fator R)',
+                      },
+                      {
+                        id: 'Construção Civil' as SegmentoEmpresa,
+                        icon: Hammer,
+                        desc: 'Obras, reformas e engenharia civil (ISS)',
+                      },
+                      {
+                        id: 'Bares e Restaurantes' as SegmentoEmpresa,
+                        icon: UtensilsCrossed,
+                        desc: 'Alimentação e bebidas (Presunção 8% / ICMS)',
+                      },
+                    ].map((item) => {
+                      const isSelected = formData.segmento === item.id
+                      const IconComponent = item.icon
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, segmento: item.id }))}
+                          className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                            isSelected
+                              ? 'border-[#2ECC71] bg-emerald-50/70 ring-2 ring-[#2ECC71]/30 shadow-sm'
+                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                                  isSelected
+                                    ? 'bg-[#2ECC71] text-[#0A1A13]'
+                                    : 'bg-slate-100 text-slate-600'
+                                }`}
+                              >
+                                <IconComponent className="w-4 h-4" />
+                              </div>
+                              {isSelected && <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />}
+                            </div>
+                            <span
+                              className={`font-heading font-bold text-xs sm:text-sm block leading-tight ${
+                                isSelected ? 'text-[#145A32]' : 'text-slate-800'
                               }`}
                             >
-                              <IconComponent className="w-4 h-4" />
-                            </div>
-                            {isSelected && <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />}
+                              {item.id}
+                            </span>
                           </div>
-                          <span
-                            className={`font-heading font-bold text-xs sm:text-sm block leading-tight ${
-                              isSelected ? 'text-[#145A32]' : 'text-slate-800'
-                            }`}
-                          >
-                            {item.id}
+                          <p className="text-[10px] text-slate-500 leading-snug mt-1.5">
+                            {item.desc}
+                          </p>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Contatos em 2 colunas */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        E-mail Corporativo *
+                      </label>
+                      {isEmpresario && (
+                        <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                          Somente Leitura
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => {
+                        setFormData((prev) => ({ ...prev, email: e.target.value }))
+                        if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }))
+                      }}
+                      placeholder="carlos@empresa.com.br"
+                      disabled={isEmpresario}
+                      readOnly={isEmpresario}
+                      className={`w-full px-4 py-3 rounded-xl border text-sm ${
+                        isEmpresario
+                          ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
+                          : errors.email
+                            ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
+                            : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
+                      }`}
+                    />
+                    {errors.email && (
+                      <p className="mt-1 text-xs text-red-600 font-medium">{errors.email}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Telefone / WhatsApp *
+                      </label>
+                      {isEmpresario && (
+                        <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                          Somente Leitura
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="tel"
+                      value={formData.telefone}
+                      onChange={handlePhoneChange}
+                      placeholder="+55 (11) 99999-9999"
+                      disabled={isEmpresario}
+                      readOnly={isEmpresario}
+                      className={`w-full px-4 py-3 rounded-xl border text-sm ${
+                        isEmpresario
+                          ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
+                          : errors.telefone
+                            ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
+                            : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
+                      }`}
+                    />
+                    {errors.telefone && (
+                      <p className="mt-1 text-xs text-red-600 font-medium">{errors.telefone}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Novos Campos Estruturados da Empresa */}
+                <div className="pt-4 border-t border-slate-100 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#2ECC71]" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                      Perfil Operacional da Empresa
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Regime Atual */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                          Regime Tributário Atual
+                        </label>
+                        <span className="text-[11px] text-slate-400">Como tributa hoje</span>
+                      </div>
+                      <select
+                        value={formData.regimeAtual}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, regimeAtual: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                      >
+                        <option value="Simples Nacional">Simples Nacional</option>
+                        <option value="Lucro Presumido">Lucro Presumido</option>
+                        <option value="Lucro Real">Lucro Real</option>
+                        <option value="MEI (Microempreendedor)">MEI (Microempreendedor)</option>
+                        <option value="Nova empresa / Ainda não optante">
+                          Nova empresa / Ainda não optante
+                        </option>
+                      </select>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Serve para compararmos o regime atual com a oportunidade identificada.
+                      </p>
+                    </div>
+
+                    {/* Quantidade de funcionários */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                          Quadro de Colaboradores
+                        </label>
+                        <span className="text-[11px] text-slate-400">Equipe</span>
+                      </div>
+                      <select
+                        value={formData.funcionarios}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, funcionarios: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                      >
+                        <option value="Apenas sócios (sem funcionários)">
+                          Apenas sócios (sem funcionários CLT)
+                        </option>
+                        <option value="1 a 5 funcionários">1 a 5 funcionários</option>
+                        <option value="6 a 15 funcionários">6 a 15 funcionários</option>
+                        <option value="16 a 50 funcionários">16 a 50 funcionários</option>
+                        <option value="Mais de 50 funcionários">Mais de 50 funcionários</option>
+                      </select>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Influencia o peso da CPP (contribuição patronal previdenciária de 20%).
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    {/* Emissão de Nota Fiscal PF / PJ */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                          Perfil dos Clientes / Emissão de NF
+                        </label>
+                        <span className="text-[11px] text-slate-400">B2B ou B2C</span>
+                      </div>
+                      <select
+                        value={formData.emissaoNf}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, emissaoNf: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                      >
+                        <option value="Predominante para Pessoas Jurídicas (B2B)">
+                          Predominante para Pessoas Jurídicas (B2B)
+                        </option>
+                        <option value="Predominante para Consumidor Final / PF (B2C)">
+                          Predominante para Consumidor Final / PF (B2C)
+                        </option>
+                        <option value="Equilibrado (PF e PJ)">Equilibrado (PF e PJ)</option>
+                      </select>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Clientes PJ costumam exigir créditos fiscais ou reter impostos na fonte.
+                      </p>
+                    </div>
+
+                    {/* Operação mista de comércio e serviço */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Atividade Mista (Comércio + Serviço)
+                      </label>
+                      <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={formData.atividadeMista}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, atividadeMista: e.target.checked }))
+                          }
+                          className="mt-1 w-4 h-4 rounded text-[#2ECC71] focus:ring-[#2ECC71] border-slate-300"
+                        />
+                        <div className="text-xs">
+                          <span className="font-semibold text-slate-800 block">
+                            Minha empresa fatura tanto venda de mercadorias quanto serviços
+                          </span>
+                          <span className="text-slate-500 text-[11px] block mt-0.5">
+                            Ex: oficina mecânica que vende autopeças, empresa de TI que comercializa
+                            equipamentos.
                           </span>
                         </div>
-                        <p className="text-[10px] text-slate-500 leading-snug mt-1.5">
-                          {item.desc}
-                        </p>
-                      </button>
-                    )
-                  })}
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Contatos em 2 colunas */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      E-mail Corporativo *
-                    </label>
-                    {isEmpresario && (
-                      <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
-                        Somente Leitura
-                      </span>
-                    )}
-                  </div>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => {
-                      setFormData((prev) => ({ ...prev, email: e.target.value }))
-                      if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }))
-                    }}
-                    placeholder="carlos@empresa.com.br"
-                    disabled={isEmpresario}
-                    readOnly={isEmpresario}
-                    className={`w-full px-4 py-3 rounded-xl border text-sm ${
-                      isEmpresario
-                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
-                        : errors.email
-                        ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
-                        : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
-                    }`}
-                  />
-                  {errors.email && (
-                    <p className="mt-1 text-xs text-red-600 font-medium">{errors.email}</p>
-                  )}
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      Telefone / WhatsApp *
-                    </label>
-                    {isEmpresario && (
-                      <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
-                        Somente Leitura
-                      </span>
-                    )}
-                  </div>
-                  <input
-                    type="tel"
-                    value={formData.telefone}
-                    onChange={handlePhoneChange}
-                    placeholder="+55 (11) 99999-9999"
-                    disabled={isEmpresario}
-                    readOnly={isEmpresario}
-                    className={`w-full px-4 py-3 rounded-xl border text-sm ${
-                      isEmpresario
-                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
-                        : errors.telefone
-                        ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
-                        : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
-                    }`}
-                  />
-                  {errors.telefone && (
-                    <p className="mt-1 text-xs text-red-600 font-medium">{errors.telefone}</p>
-                  )}
-                </div>
+              {/* Ações */}
+              <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end">
+                <button
+                  type="button"
+                  onClick={avancarEtapa}
+                  className="px-8 py-3.5 rounded-xl font-heading font-semibold text-sm text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_4px_14px_rgba(46,204,113,0.35)] hover:shadow-[0_6px_20px_rgba(46,204,113,0.5)] transition-all duration-200 hover:-translate-y-0.5 btn-press flex items-center gap-2"
+                >
+                  <span>Próximo: Faturamento</span>
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                </button>
               </div>
-
-              {/* Novos Campos Estruturados da Empresa */}
-              <div className="pt-4 border-t border-slate-100 space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#2ECC71]" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                    Perfil Operacional da Empresa
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Regime Atual */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                        Regime Tributário Atual
-                      </label>
-                      <span className="text-[11px] text-slate-400">Como tributa hoje</span>
-                    </div>
-                    <select
-                      value={formData.regimeAtual}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, regimeAtual: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
-                    >
-                      <option value="Simples Nacional">Simples Nacional</option>
-                      <option value="Lucro Presumido">Lucro Presumido</option>
-                      <option value="Lucro Real">Lucro Real</option>
-                      <option value="MEI (Microempreendedor)">MEI (Microempreendedor)</option>
-                      <option value="Nova empresa / Ainda não optante">
-                        Nova empresa / Ainda não optante
-                      </option>
-                    </select>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Serve para compararmos o regime atual com a oportunidade identificada.
-                    </p>
-                  </div>
-
-                  {/* Quantidade de funcionários */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                        Quadro de Colaboradores
-                      </label>
-                      <span className="text-[11px] text-slate-400">Equipe</span>
-                    </div>
-                    <select
-                      value={formData.funcionarios}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, funcionarios: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
-                    >
-                      <option value="Apenas sócios (sem funcionários)">
-                        Apenas sócios (sem funcionários CLT)
-                      </option>
-                      <option value="1 a 5 funcionários">1 a 5 funcionários</option>
-                      <option value="6 a 15 funcionários">6 a 15 funcionários</option>
-                      <option value="16 a 50 funcionários">16 a 50 funcionários</option>
-                      <option value="Mais de 50 funcionários">Mais de 50 funcionários</option>
-                    </select>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Influencia o peso da CPP (contribuição patronal previdenciária de 20%).
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                  {/* Emissão de Nota Fiscal PF / PJ */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                        Perfil dos Clientes / Emissão de NF
-                      </label>
-                      <span className="text-[11px] text-slate-400">B2B ou B2C</span>
-                    </div>
-                    <select
-                      value={formData.emissaoNf}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, emissaoNf: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
-                    >
-                      <option value="Predominante para Pessoas Jurídicas (B2B)">
-                        Predominante para Pessoas Jurídicas (B2B)
-                      </option>
-                      <option value="Predominante para Consumidor Final / PF (B2C)">
-                        Predominante para Consumidor Final / PF (B2C)
-                      </option>
-                      <option value="Equilibrado (PF e PJ)">Equilibrado (PF e PJ)</option>
-                    </select>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Clientes PJ costumam exigir créditos fiscais ou reter impostos na fonte.
-                    </p>
-                  </div>
-
-                  {/* Operação mista de comércio e serviço */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Atividade Mista (Comércio + Serviço)
-                    </label>
-                    <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={formData.atividadeMista}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, atividadeMista: e.target.checked }))
-                        }
-                        className="mt-1 w-4 h-4 rounded text-[#2ECC71] focus:ring-[#2ECC71] border-slate-300"
-                      />
-                      <div className="text-xs">
-                        <span className="font-semibold text-slate-800 block">
-                          Minha empresa fatura tanto venda de mercadorias quanto serviços
-                        </span>
-                        <span className="text-slate-500 text-[11px] block mt-0.5">
-                          Ex: oficina mecânica que vende autopeças, empresa de TI que comercializa
-                          equipamentos.
-                        </span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Ações */}
-            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end">
-              <button
-                type="button"
-                onClick={avancarEtapa}
-                className="px-8 py-3.5 rounded-xl font-heading font-semibold text-sm text-[#0A1A13] bg-[#2ECC71] hover:bg-[#27AE60] shadow-[0_4px_14px_rgba(46,204,113,0.35)] hover:shadow-[0_6px_20px_rgba(46,204,113,0.5)] transition-all duration-200 hover:-translate-y-0.5 btn-press flex items-center gap-2"
-              >
-                <span>Próximo: Faturamento</span>
-                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-              </button>
             </div>
           </div>
         )}

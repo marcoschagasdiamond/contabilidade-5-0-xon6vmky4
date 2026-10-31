@@ -6,6 +6,8 @@ export interface Cliente {
   nome: string
   cnpj_cpf: string
   uf: string
+  cidade?: string
+  contato_principal?: string
   segmento:
     | 'Comércio'
     | 'Serviços'
