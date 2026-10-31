@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
 import { ConnectorButton } from '@/components/skip/ConnectorButton'
-import { executeConnector } from '@/lib/skipConnectors'
+import { execute } from '@/lib/skipConnectors'
 import { formatarCNPJ } from '@/lib/cnpj'
 import {
   gerarRelatorioPersonalizadoPDF,
@@ -20,7 +20,7 @@ import {
 } from '@/lib/pdfRelatorioPersonalizado'
 import { salvarRelatorioPersonalizado } from '@/services/relatoriosPersonalizados'
 import { criarInteracaoCrm } from '@/services/crm'
-import type { FichaClienteCrmCompleta } from '@/services/crm'
+import type { CrmFichaAgregada } from '@/types/crm'
 import type {
   ConfiguracaoRelatorioPersonalizado,
   ModuloAnaliseTipo,
@@ -37,7 +37,7 @@ import type { DiagnosticoRecord } from '@/services/diagnosticos'
 interface ModalMontarRelatorioCrmProps {
   aberto: boolean
   aoFechar: () => void
-  ficha: FichaClienteCrmCompleta
+  ficha: CrmFichaAgregada | null
   aoRelatorioEnviadoOuCriado?: () => void
 }
 
@@ -50,16 +50,16 @@ export function ModalMontarRelatorioCrm({
   const { user } = useAuth()
   const { toast } = useToast()
 
-  const emp = ficha.empresa
-  const cli = ficha.crmCliente
+  const emp = ficha?.empresa
+  const cli = ficha?.crmCliente
   const nomeEmpresa = emp?.nome_empresa || 'Empresa do Cliente'
   const cnpjEmpresa = emp?.cnpj || ''
   const emailCliente = emp?.email || ''
 
   // Simulações e diagnósticos vinculados à ficha do CRM
-  const simulacoesCalc = ficha.simulacoesCalculadora || []
-  const simulacoesRecup = ficha.simulacoesRecuperador || []
-  const diagnosticosLista = ficha.diagnosticos || []
+  const simulacoesCalc = ficha?.simulacoesCalculadora || []
+  const simulacoesRecup = ficha?.simulacoesRecuperador || []
+  const diagnosticosLista = ficha?.diagnosticos || []
 
   const temCalculadora = simulacoesCalc.length > 0
   const temRecuperador = simulacoesRecup.length > 0
@@ -154,18 +154,29 @@ export function ModalMontarRelatorioCrm({
 
   // Monta objeto de dados da empresa compatível
   const dadosEmpresaMock: DadosEmpresaPerfil = {
-    nomeCompleto: emp?.nome_contato || user?.name || '',
-    empresa: nomeEmpresa,
+    nomeContato: emp?.nome_contato || user?.name || '',
+    nomeEmpresa: nomeEmpresa,
     cnpj: cnpjEmpresa,
     ufOrigem: emp?.uf || 'SP',
-    cidade: emp?.cidade || 'São Paulo',
+    cidade: emp?.cidade || 'sp-sao-paulo',
     email: emp?.email || '',
     telefone: emp?.telefone || '',
-    segmento: emp?.segmento || 'Comércio Geral',
+    segmento: (emp?.segmento as any) || 'Serviços',
     regimeAtual: (emp?.regime_atual as any) || 'Simples Nacional',
-    funcionarios: '10 a 49',
-    perfilNota: 'Ambos (B2B e B2C)',
+    funcionarios: '1 a 5 funcionários',
+    emissaoNf: 'Predominante para Pessoas Jurídicas (B2B)',
     atividadeMista: false,
+    faturamentoMensal: 200000,
+    percentualComprasVendas: 40,
+    tipoAtividade: 'servico',
+    subatividadeServico: 'servico_comum',
+    subatividadeIndustria: 'industria_comum',
+    subatividadeComercio: 'varejo_comum',
+    proporcaoServicoMisto: 50,
+    folhaPagamentoMensal: 50000,
+    margemLucroEstimada: 20,
+    despesasComCreditosMensais: 30000,
+    percentualExportacao: 0,
     anoBaseTransicao: 2026,
   }
 
@@ -193,6 +204,14 @@ export function ModalMontarRelatorioCrm({
 
   // Ação 1: Salvar e Baixar PDF localmente
   const handleBaixarPdf = async () => {
+    if (!cli?.id) {
+      toast({
+        title: 'Ficha não carregada',
+        description: 'Aguarde o carregamento dos dados do cliente.',
+        variant: 'destructive',
+      })
+      return
+    }
     try {
       setGerandoPdf(true)
       const cfg = montarConfiguracaoAtual()
@@ -266,6 +285,14 @@ export function ModalMontarRelatorioCrm({
 
   // Ação 2: Copiar Link do Relatório / Simulação
   const handleCopiarLink = async () => {
+    if (!cli?.id) {
+      toast({
+        title: 'Ficha não carregada',
+        description: 'Aguarde o carregamento dos dados do cliente.',
+        variant: 'destructive',
+      })
+      return
+    }
     try {
       const cfg = montarConfiguracaoAtual()
       const analisesIncluidas: ModuloAnaliseTipo[] = []
@@ -337,6 +364,14 @@ export function ModalMontarRelatorioCrm({
       })
       return
     }
+    if (!cli?.id) {
+      toast({
+        title: 'Ficha não carregada',
+        description: 'Aguarde o carregamento dos dados do cliente.',
+        variant: 'destructive',
+      })
+      return
+    }
 
     try {
       setEnviandoGmail(true)
@@ -387,11 +422,15 @@ export function ModalMontarRelatorioCrm({
       const corpoEmailFinal = `${mensagemEmail.trim()}\n\n---\n📄 Relatório: ${cfg.titulo}\n🏢 Empresa: ${nomeEmpresa} (CNPJ: ${cnpjEmpresa ? formatarCNPJ(cnpjEmpresa) : '—'})\n🔗 Link direto do dossiê: ${linkRelatorio}\n\nEmitido sob as diretrizes da Reforma Tributária (EC 132/2023 e LC 214/2025).`
 
       // 4. Executa tool do Gmail do usuário conectado
-      await executeConnector('gmail', 'GMAIL_SEND_EMAIL', {
+      const resExec = await execute('GMAIL_SEND_EMAIL', {
         recipient_email: destinatarioEmail.trim(),
         subject: assuntoEmail.trim(),
         body: corpoEmailFinal,
       })
+
+      if (!resExec.successful) {
+        throw new Error(resExec.error || 'Falha ao enviar e-mail via Gmail.')
+      }
 
       // 5. Registra interação na timeline do cliente do CRM
       await criarInteracaoCrm({
@@ -917,7 +956,7 @@ export function ModalMontarRelatorioCrm({
                   </p>
                 </div>
                 {/* ConnectorButton padrão Skip Cloud */}
-                <ConnectorButton toolkit="gmail" />
+                <ConnectorButton toolkit="gmail" name="Gmail" />
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
