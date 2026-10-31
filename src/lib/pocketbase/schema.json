@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-31T04:31:02.528Z",
+  "generatedAt": "2026-10-31T04:52:58.936Z",
   "collections": [
     {
       "name": "users",
@@ -2906,6 +2906,100 @@
         "CREATE INDEX idx_hist_demp_user ON historico_dados_empresa (user_id)",
         "CREATE INDEX idx_hist_demp_cliente ON historico_dados_empresa (cliente_id)",
         "CREATE INDEX idx_hist_demp_created ON historico_dados_empresa (created DESC)"
+      ]
+    },
+    {
+      "name": "relatorios_personalizados",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || @request.auth.nivel_acesso = 'analista' || @request.auth.perfil = 'contador')",
+        "view": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || @request.auth.nivel_acesso = 'analista' || @request.auth.perfil = 'contador')",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')",
+        "delete": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com')"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "cliente_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "empresa_nome",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cnpj",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "analises_incluidas",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "secoes_selecionadas",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "observacoes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "configuracao",
+          "type": "json",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_relat_pers_user ON relatorios_personalizados (user_id)",
+        "CREATE INDEX idx_relat_pers_cliente ON relatorios_personalizados (cliente_id)",
+        "CREATE INDEX idx_relat_pers_empresa ON relatorios_personalizados (empresa_id)",
+        "CREATE INDEX idx_relat_pers_created ON relatorios_personalizados (created DESC)"
       ]
     }
   ]

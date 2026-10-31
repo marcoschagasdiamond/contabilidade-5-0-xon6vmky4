@@ -55,6 +55,7 @@ import DiagnosticoRelatorioConsolidado from './pages/DiagnosticoRelatorioConsoli
 import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
 import RecuperadorCreditos from './pages/RecuperadorCreditos'
 import DashboardSimulacoes from './pages/DashboardSimulacoes'
+import MeusRelatorios from './pages/MeusRelatorios'
 import DadosEmpresa from './pages/DadosEmpresa'
 import Planos from './pages/Planos'
 import Agendamento from './pages/Agendamento'
@@ -262,6 +263,14 @@ const App = () => (
                   element={
                     <RotaAutenticada>
                       <DashboardSimulacoes />
+                    </RotaAutenticada>
+                  }
+                />
+                <Route
+                  path="/meus-relatorios"
+                  element={
+                    <RotaAutenticada>
+                      <MeusRelatorios />
                     </RotaAutenticada>
                   }
                 />

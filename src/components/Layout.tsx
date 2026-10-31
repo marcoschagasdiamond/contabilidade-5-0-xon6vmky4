@@ -396,6 +396,13 @@ export default function Layout() {
                           </>
                         )}
                         <Link
+                          to="/meus-relatorios"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:text-white hover:bg-white/10 transition-colors font-bold"
+                        >
+                          Meus Relatórios
+                        </Link>
+                        <Link
                           to="/dashboard-simulacoes"
                           onClick={() => setIsUserMenuOpen(false)}
                           className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:text-white hover:bg-white/10 transition-colors font-bold"
@@ -604,6 +611,13 @@ export default function Layout() {
                           </Link>
                         </>
                       )}
+                      <Link
+                        to="/meus-relatorios"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:text-white hover:bg-white/10 transition-colors font-bold"
+                      >
+                        Meus Relatórios
+                      </Link>
                       <Link
                         to="/dashboard-simulacoes"
                         onClick={() => setIsMobileMenuOpen(false)}
