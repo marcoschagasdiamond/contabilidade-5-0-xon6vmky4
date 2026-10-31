@@ -1,5 +1,6 @@
 import pb from '@/lib/pocketbase/client'
 import type {
+  EstadoReconstruidoSimulacao,
   HistoricoSimulacaoRegistro,
   ItemAlteracaoCampo,
   SnapshotSimulacaoResumo,
@@ -440,6 +441,462 @@ export async function registrarEventoHistoricoSimulacao(dados: {
   const lista = carregarHistoricoLocal()
   salvarHistoricoLocal([itemLocal, ...lista])
   return itemLocal
+}
+
+// ==========================================
+// RECONSTRUÇÃO DE ESTADO E COMPARAÇÃO TEMPORAL
+// ==========================================
+
+export const ROTULOS_PADRAO_CAMPOS: Record<string, string> = {
+  nome: 'Nome da Simulação',
+  empresa: 'Empresa',
+  cnpj: 'CNPJ',
+  regime: 'Regime Tributário Recomendado / Atual',
+  faturamentoMensal: 'Faturamento Mensal',
+  aliquotaEfetiva: 'Alíquota Efetiva Nova (IBS/CBS)',
+  economiaAnual: 'Economia Anual Projetada',
+  totalRecuperavelIntegral: 'Total de Créditos (Integral)',
+  totalRecuperavelConservador: 'Total de Créditos (Conservador)',
+  anoTransicao: 'Ano / Fase da Transição',
+  tipoAtividade: 'Ramo / Tipo de Atividade',
+  folhaPagamentoMensal: 'Folha de Pagamento Mensal',
+  despesasComCreditosMensais: 'Compras e Insumos com Crédito',
+  margemLucroEstimada: 'Margem de Lucro Estimada',
+  totalIvaDual: 'Alíquota Padrão IVA Dual (IBS/CBS)',
+  regimeRecomendado: 'Regime Tributário Recomendado',
+  regimeAtual: 'Regime Tributário Atual',
+  economiaAnualProjetada: 'Economia Anual Projetada',
+  aliquotaEfetivaNova: 'Alíquota Efetiva Nova',
+  totalIntegralCorrigido: 'Total de Créditos (Integral)',
+  totalConservadorCorrigido: 'Total de Créditos (Conservador)',
+}
+
+export function formatarValorCampoPorChave(chave: string, valor: any): string {
+  if (valor === undefined || valor === null || valor === '') return 'Não informado'
+  if (
+    chave === 'faturamentoMensal' ||
+    chave === 'economiaAnual' ||
+    chave === 'economiaAnualProjetada' ||
+    chave === 'totalRecuperavelIntegral' ||
+    chave === 'totalRecuperavelConservador' ||
+    chave === 'totalIntegralCorrigido' ||
+    chave === 'totalConservadorCorrigido' ||
+    chave === 'folhaPagamentoMensal' ||
+    chave === 'despesasComCreditosMensais'
+  ) {
+    if (typeof valor === 'number') return formatarMoeda(valor)
+  }
+  if (
+    chave === 'aliquotaEfetiva' ||
+    chave === 'aliquotaEfetivaNova' ||
+    chave === 'totalIvaDual' ||
+    chave === 'margemLucroEstimada'
+  ) {
+    if (typeof valor === 'number')
+      return `${valor.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
+  }
+  if (chave === 'anoTransicao') {
+    if (valor === 'atual') return 'Sistema Atual'
+  }
+  return formatarValorGenerico(valor)
+}
+
+/**
+ * Recompõe o estado da simulação no momento de um evento específico.
+ * Se houver snapshot registrado naquele evento, utiliza-o como base;
+ * caso campos tenham sido alterados em eventos posteriores, aplica retroativamente
+ * as alterações anteriores para reconstruir com precisão o estado histórico.
+ */
+export function reconstruirEstadoSimulacaoNoEvento(
+  eventos: HistoricoSimulacaoRegistro[],
+  eventoAlvoId: string,
+  estadoAtualResumo?: Partial<SnapshotSimulacaoResumo>,
+): EstadoReconstruidoSimulacao {
+  // Ordena cronologicamente (do mais antigo para o mais novo)
+  const cronologicos = [...eventos].sort(
+    (a, b) => new Date(a.created).getTime() - new Date(b.created).getTime(),
+  )
+
+  const indiceAlvo = cronologicos.findIndex((e) => e.id === eventoAlvoId)
+  if (indiceAlvo === -1) {
+    // Retorna vazio ou estado atual se não encontrar
+    const camposMap: Record<string, { rotulo: string; valor: any; valorFormatado: string }> = {}
+    if (estadoAtualResumo) {
+      for (const [k, v] of Object.entries(estadoAtualResumo)) {
+        if (v !== undefined) {
+          camposMap[k] = {
+            rotulo: ROTULOS_PADRAO_CAMPOS[k] || k,
+            valor: v,
+            valorFormatado: formatarValorCampoPorChave(k, v),
+          }
+        }
+      }
+    }
+    return { campos: camposMap }
+  }
+
+  const eventoAlvo = cronologicos[indiceAlvo]
+
+  // Mapa cumulativo de campos até o evento alvo (do início até o alvo)
+  const camposCumulativos: Record<string, { rotulo: string; valor: any; valorFormatado: string }> =
+    {}
+
+  // 1. Aplica eventos do início até o eventoAlvo inclusive
+  for (let i = 0; i <= indiceAlvo; i++) {
+    const ev = cronologicos[i]
+
+    // Se o evento tem snapshot_novo_json, incorpora seus campos
+    if (ev.snapshot_novo_json) {
+      for (const [k, v] of Object.entries(ev.snapshot_novo_json)) {
+        if (v !== undefined && v !== null && v !== '') {
+          camposCumulativos[k] = {
+            rotulo: ROTULOS_PADRAO_CAMPOS[k] || k,
+            valor: v,
+            valorFormatado: formatarValorCampoPorChave(k, v),
+          }
+        }
+      }
+    }
+
+    // Se o evento tem alteracoes_json, aplica o valorNovo de cada campo
+    if (ev.alteracoes_json && Array.isArray(ev.alteracoes_json)) {
+      for (const alt of ev.alteracoes_json) {
+        camposCumulativos[alt.campo] = {
+          rotulo: alt.rotulo || ROTULOS_PADRAO_CAMPOS[alt.campo] || alt.campo,
+          valor: alt.valorNovo,
+          valorFormatado:
+            alt.valorNovoFormatado || formatarValorCampoPorChave(alt.campo, alt.valorNovo),
+        }
+      }
+    }
+
+    // Se foi evento de renomeação ou criação com nome
+    if (ev.simulacao_nome) {
+      camposCumulativos.nome = {
+        rotulo: 'Nome da Simulação',
+        valor: ev.simulacao_nome,
+        valorFormatado: ev.simulacao_nome,
+      }
+    }
+    if (ev.empresa) {
+      camposCumulativos.empresa = {
+        rotulo: 'Empresa',
+        valor: ev.empresa,
+        valorFormatado: ev.empresa,
+      }
+    }
+    if (ev.cnpj) {
+      camposCumulativos.cnpj = {
+        rotulo: 'CNPJ',
+        valor: ev.cnpj,
+        valorFormatado: ev.cnpj,
+      }
+    }
+  }
+
+  // 2. Se ainda faltam campos que existem no estado atual e não foram modificados após o evento alvo,
+  // ou se precisamos retroagir a partir do estado atual aplicando inversamente os diffs de (indiceAlvo + 1) até o fim:
+  if (estadoAtualResumo) {
+    const estadoInvertido: Record<string, any> = { ...estadoAtualResumo }
+
+    // Aplica retroativamente de trás para frente (do evento mais recente até o próximo após o alvo)
+    for (let j = cronologicos.length - 1; j > indiceAlvo; j--) {
+      const ev = cronologicos[j]
+      if (ev.alteracoes_json && Array.isArray(ev.alteracoes_json)) {
+        for (const alt of ev.alteracoes_json) {
+          if (alt.valorAnterior !== undefined) {
+            estadoInvertido[alt.campo] = alt.valorAnterior
+          }
+        }
+      }
+    }
+
+    // Mescla campos reconstruídos retroativamente caso não estejam definidos
+    for (const [k, v] of Object.entries(estadoInvertido)) {
+      if (v !== undefined && v !== null && v !== '' && !camposCumulativos[k]) {
+        camposCumulativos[k] = {
+          rotulo: ROTULOS_PADRAO_CAMPOS[k] || k,
+          valor: v,
+          valorFormatado: formatarValorCampoPorChave(k, v),
+        }
+      }
+    }
+  }
+
+  return {
+    eventoId: eventoAlvo.id,
+    dataEvento: eventoAlvo.created,
+    tipoEvento: eventoAlvo.tipo_evento,
+    descricao: eventoAlvo.descricao,
+    autorNome: eventoAlvo.autor_nome,
+    campos: camposCumulativos,
+  }
+}
+
+/**
+ * Converte um estado atual da simulação (Calculadora ou Recuperador) em formato de campos
+ */
+export function extrairEstadoAtualParaComparacao(dados: {
+  nome?: string
+  empresa?: string
+  cnpj?: string
+  tipoSimulacao?: TipoSimulacaoHistorico
+  dadosCalculadora?: {
+    parametros?: any
+    resultados?: any
+  }
+  dadosRecuperador?: {
+    parametros?: any
+    resultados?: any
+  }
+  snapshotAtual?: Partial<SnapshotSimulacaoResumo>
+}): EstadoReconstruidoSimulacao {
+  const campos: Record<string, { rotulo: string; valor: any; valorFormatado: string }> = {}
+
+  if (dados.nome) {
+    campos.nome = { rotulo: 'Nome da Simulação', valor: dados.nome, valorFormatado: dados.nome }
+  }
+  if (dados.empresa) {
+    campos.empresa = { rotulo: 'Empresa', valor: dados.empresa, valorFormatado: dados.empresa }
+  }
+  if (dados.cnpj) {
+    campos.cnpj = { rotulo: 'CNPJ', valor: dados.cnpj, valorFormatado: dados.cnpj }
+  }
+
+  // Dados Calculadora
+  if (dados.dadosCalculadora?.parametros) {
+    const p = dados.dadosCalculadora.parametros
+    if (p.faturamentoMensal !== undefined) {
+      campos.faturamentoMensal = {
+        rotulo: 'Faturamento Mensal',
+        valor: p.faturamentoMensal,
+        valorFormatado: formatarMoeda(p.faturamentoMensal),
+      }
+    }
+    if (p.tipoAtividade) {
+      campos.tipoAtividade = {
+        rotulo: 'Ramo / Tipo de Atividade',
+        valor: p.tipoAtividade,
+        valorFormatado: p.tipoAtividade.toUpperCase(),
+      }
+    }
+    if (p.folhaPagamentoMensal !== undefined) {
+      campos.folhaPagamentoMensal = {
+        rotulo: 'Folha de Pagamento Mensal',
+        valor: p.folhaPagamentoMensal,
+        valorFormatado: formatarMoeda(p.folhaPagamentoMensal),
+      }
+    }
+    if (p.despesasComCreditosMensais !== undefined) {
+      campos.despesasComCreditosMensais = {
+        rotulo: 'Compras e Insumos com Crédito',
+        valor: p.despesasComCreditosMensais,
+        valorFormatado: formatarMoeda(p.despesasComCreditosMensais),
+      }
+    }
+    if (p.margemLucroEstimada !== undefined) {
+      campos.margemLucroEstimada = {
+        rotulo: 'Margem de Lucro Estimada',
+        valor: p.margemLucroEstimada,
+        valorFormatado: `${p.margemLucroEstimada}%`,
+      }
+    }
+    const totalIva = p.config?.totalIvaDual
+    if (totalIva !== undefined) {
+      campos.totalIvaDual = {
+        rotulo: 'Alíquota Padrão IVA Dual (IBS/CBS)',
+        valor: totalIva,
+        valorFormatado: `${totalIva}%`,
+      }
+    }
+    const ano = p.anoTransicao || p.config?.anoTransicao
+    if (ano !== undefined) {
+      campos.anoTransicao = {
+        rotulo: 'Ano / Fase da Transição',
+        valor: ano,
+        valorFormatado: ano === 'atual' ? 'Sistema Atual' : String(ano),
+      }
+    }
+  }
+
+  if (dados.dadosCalculadora?.resultados?.resultadoDashboard) {
+    const r = dados.dadosCalculadora.resultados.resultadoDashboard
+    if (r.regimeRecomendado) {
+      campos.regimeRecomendado = {
+        rotulo: 'Regime Tributário Recomendado',
+        valor: r.regimeRecomendado,
+        valorFormatado: r.regimeRecomendado,
+      }
+    }
+    if (r.economiaAnualProjetada !== undefined) {
+      campos.economiaAnual = {
+        rotulo: 'Economia Anual Projetada',
+        valor: r.economiaAnualProjetada,
+        valorFormatado: formatarMoeda(r.economiaAnualProjetada),
+      }
+    }
+    if (r.aliquotaEfetivaNova !== undefined) {
+      campos.aliquotaEfetiva = {
+        rotulo: 'Alíquota Efetiva Nova (IBS/CBS)',
+        valor: r.aliquotaEfetivaNova,
+        valorFormatado: `${r.aliquotaEfetivaNova.toFixed(2)}%`,
+      }
+    }
+  }
+
+  // Dados Recuperador
+  if (dados.dadosRecuperador?.parametros?.configuracoes) {
+    const c = dados.dadosRecuperador.parametros.configuracoes
+    if (c.regimeAtual) {
+      campos.regimeAtual = {
+        rotulo: 'Regime Tributário Atual',
+        valor: c.regimeAtual,
+        valorFormatado: String(c.regimeAtual),
+      }
+    }
+    const fat = c.faturamentoMensal || c.faturamentoMensalMedio
+    if (fat !== undefined) {
+      campos.faturamentoMensal = {
+        rotulo: 'Faturamento Médio Mensal',
+        valor: fat,
+        valorFormatado: formatarMoeda(fat),
+      }
+    }
+  }
+
+  if (dados.dadosRecuperador?.resultados) {
+    const res = dados.dadosRecuperador.resultados
+    if (res.totalIntegralCorrigido !== undefined) {
+      campos.totalRecuperavelIntegral = {
+        rotulo: 'Total de Créditos (Integral)',
+        valor: res.totalIntegralCorrigido,
+        valorFormatado: formatarMoeda(res.totalIntegralCorrigido),
+      }
+    }
+    if (res.totalConservadorCorrigido !== undefined) {
+      campos.totalRecuperavelConservador = {
+        rotulo: 'Total de Créditos (Conservador)',
+        valor: res.totalConservadorCorrigido,
+        valorFormatado: formatarMoeda(res.totalConservadorCorrigido),
+      }
+    }
+  }
+
+  // Complementa com snapshotAtual se fornecido
+  if (dados.snapshotAtual) {
+    for (const [k, v] of Object.entries(dados.snapshotAtual)) {
+      if (v !== undefined && v !== null && v !== '' && !campos[k]) {
+        campos[k] = {
+          rotulo: ROTULOS_PADRAO_CAMPOS[k] || k,
+          valor: v,
+          valorFormatado: formatarValorCampoPorChave(k, v),
+        }
+      }
+    }
+  }
+
+  return {
+    descricao: 'Estado Atual da Simulação',
+    campos,
+  }
+}
+
+/**
+ * Compara dois estados da mesma simulação (ex: evento anterior vs atual, ou evento A vs evento B)
+ * e gera os diffs com indicação de quais campos sofreram alteração.
+ */
+export function compararDoisEstadosSimulacao(
+  estadoA: EstadoReconstruidoSimulacao,
+  estadoB: EstadoReconstruidoSimulacao,
+): {
+  diffs: ItemAlteracaoCampo[]
+  camposIguais: Array<{ campo: string; rotulo: string; valorFormatado: string }>
+  camposTotais: Array<{
+    campo: string
+    rotulo: string
+    valorAFormatado: string
+    valorBFormatado: string
+    mudou: boolean
+  }>
+} {
+  const todasChaves = Array.from(
+    new Set([...Object.keys(estadoA.campos || {}), ...Object.keys(estadoB.campos || {})]),
+  )
+
+  const diffs: ItemAlteracaoCampo[] = []
+  const camposIguais: Array<{ campo: string; rotulo: string; valorFormatado: string }> = []
+  const camposTotais: Array<{
+    campo: string
+    rotulo: string
+    valorAFormatado: string
+    valorBFormatado: string
+    mudou: boolean
+  }> = []
+
+  for (const chave of todasChaves) {
+    const itemA = estadoA.campos[chave]
+    const itemB = estadoB.campos[chave]
+
+    const rotulo = itemA?.rotulo || itemB?.rotulo || ROTULOS_PADRAO_CAMPOS[chave] || chave
+    const valA = itemA?.valor
+    const valB = itemB?.valor
+    const formatA =
+      itemA?.valorFormatado ||
+      (valA !== undefined ? formatarValorCampoPorChave(chave, valA) : 'Não definido')
+    const formatB =
+      itemB?.valorFormatado ||
+      (valB !== undefined ? formatarValorCampoPorChave(chave, valB) : 'Não definido')
+
+    // Normalização para comparar valores
+    let mudou = false
+    if (valA === undefined && valB !== undefined) {
+      mudou = true
+    } else if (valA !== undefined && valB === undefined) {
+      mudou = true
+    } else if (typeof valA === 'number' && typeof valB === 'number') {
+      mudou = Math.abs(valA - valB) > 0.0001
+    } else {
+      mudou = String(valA ?? '').trim() !== String(valB ?? '').trim()
+    }
+
+    camposTotais.push({
+      campo: chave,
+      rotulo,
+      valorAFormatado: formatA,
+      valorBFormatado: formatB,
+      mudou,
+    })
+
+    if (mudou) {
+      diffs.push({
+        campo: chave,
+        rotulo,
+        valorAnterior: valA,
+        valorNovo: valB,
+        valorAnteriorFormatado: formatA,
+        valorNovoFormatado: formatB,
+      })
+    } else {
+      camposIguais.push({
+        campo: chave,
+        rotulo,
+        valorFormatado: formatA,
+      })
+    }
+  }
+
+  // Ordena os campos totais colocando os alterados no topo
+  camposTotais.sort((a, b) => {
+    if (a.mudou && !b.mudou) return -1
+    if (!a.mudou && b.mudou) return 1
+    return a.rotulo.localeCompare(b.rotulo)
+  })
+
+  return {
+    diffs,
+    camposIguais,
+    camposTotais,
+  }
 }
 
 // ==========================================

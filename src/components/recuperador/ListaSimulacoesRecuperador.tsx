@@ -311,6 +311,20 @@ export function ListaSimulacoesRecuperador({
         simulacaoNome={simulacaoHistorico?.nome}
         empresa={simulacaoHistorico?.empresa}
         tipoSimulacao="recuperador"
+        dadosSimulacaoAtual={
+          simulacaoHistorico
+            ? {
+                nome: simulacaoHistorico.nome,
+                empresa: simulacaoHistorico.empresa,
+                cnpj: simulacaoHistorico.cnpj,
+                regime: simulacaoHistorico.regime_atual,
+                totalRecuperavelIntegral: simulacaoHistorico.total_recuperavel_integral,
+                totalRecuperavelConservador: simulacaoHistorico.total_recuperavel_conservador,
+                parametros: simulacaoHistorico.parametros,
+                resultados: simulacaoHistorico.resultados,
+              }
+            : undefined
+        }
       />
 
       {/* MODAL CONFIRMAÇÃO DE EXCLUSÃO */}

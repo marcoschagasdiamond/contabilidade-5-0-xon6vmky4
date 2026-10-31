@@ -1168,6 +1168,39 @@ export default function DashboardSimulacoes() {
         simulacaoNome={historicoItemSelecionado?.nome}
         empresa={historicoItemSelecionado?.empresa}
         tipoSimulacao={historicoItemSelecionado?.tipo || 'calculadora'}
+        dadosSimulacaoAtual={
+          historicoItemSelecionado
+            ? {
+                nome: historicoItemSelecionado.nome,
+                empresa: historicoItemSelecionado.empresa,
+                cnpj: historicoItemSelecionado.cnpj,
+                regime: historicoItemSelecionado.regime,
+                faturamentoMensal: historicoItemSelecionado.faturamentoMensal,
+                aliquotaEfetiva: historicoItemSelecionado.aliquotaEfetiva,
+                economiaAnual:
+                  historicoItemSelecionado.tipo === 'calculadora'
+                    ? historicoItemSelecionado.economiaAnualOuTotal
+                    : undefined,
+                totalRecuperavelIntegral:
+                  historicoItemSelecionado.tipo === 'recuperador'
+                    ? historicoItemSelecionado.totalRecuperavelIntegral ||
+                      historicoItemSelecionado.economiaAnualOuTotal
+                    : undefined,
+                totalRecuperavelConservador:
+                  historicoItemSelecionado.tipo === 'recuperador'
+                    ? historicoItemSelecionado.totalRecuperavelConservador
+                    : undefined,
+                parametros:
+                  historicoItemSelecionado.tipo === 'calculadora'
+                    ? historicoItemSelecionado.rawCalculadora?.parametros
+                    : historicoItemSelecionado.rawRecuperador?.parametros,
+                resultados:
+                  historicoItemSelecionado.tipo === 'calculadora'
+                    ? historicoItemSelecionado.rawCalculadora?.resultados
+                    : historicoItemSelecionado.rawRecuperador?.resultados,
+              }
+            : undefined
+        }
         onCompararHistoricoComOutra={
           dados && dados.itens.length > 1
             ? () => {

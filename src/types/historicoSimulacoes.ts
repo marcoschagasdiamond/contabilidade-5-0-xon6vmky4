@@ -23,6 +23,16 @@ export interface SnapshotSimulacaoResumo {
   totalRecuperavelConservador?: number
   anoTransicao?: string | number
   tipoAtividade?: string
+  [key: string]: any
+}
+
+export interface EstadoReconstruidoSimulacao {
+  eventoId?: string
+  dataEvento?: string
+  tipoEvento?: TipoEventoHistorico
+  descricao?: string
+  autorNome?: string
+  campos: Record<string, { rotulo: string; valor: any; valorFormatado: string }>
 }
 
 export interface HistoricoSimulacaoRegistro {

@@ -449,6 +449,21 @@ export function ListaSimulacoes({
         simulacaoNome={simulacaoHistorico?.nome}
         empresa={simulacaoHistorico?.empresa}
         tipoSimulacao="calculadora"
+        dadosSimulacaoAtual={
+          simulacaoHistorico
+            ? {
+                nome: simulacaoHistorico.nome,
+                empresa: simulacaoHistorico.empresa,
+                cnpj: simulacaoHistorico.cnpj,
+                regime: simulacaoHistorico.regime_recomendado,
+                faturamentoMensal: simulacaoHistorico.faturamento_mensal,
+                aliquotaEfetiva: simulacaoHistorico.aliquota_efetiva,
+                economiaAnual: simulacaoHistorico.economia_anual,
+                parametros: simulacaoHistorico.parametros,
+                resultados: simulacaoHistorico.resultados,
+              }
+            : undefined
+        }
       />
 
       {/* MODAL CONFIRMAÇÃO DE EXCLUSÃO */}
