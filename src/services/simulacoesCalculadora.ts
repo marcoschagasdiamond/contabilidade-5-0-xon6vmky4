@@ -214,6 +214,59 @@ export async function salvarSimulacao(dados: {
  * Carrega a lista de simulações do usuário autenticado (ou do localStorage se não logado)
  * Caso haja simulações locais mesmo logado, elas também são mescladas (com prioridade da nuvem).
  */
+export async function obterSimulacaoPorId(id: string): Promise<SimulacaoCalculadora | null> {
+  // 1. Tenta carregar do PocketBase
+  try {
+    const rec = await pb.collection('simulacoes_calculadora').getOne<any>(id)
+    if (rec) {
+      let parametros = {}
+      let resultados = {}
+      try {
+        parametros =
+          typeof rec.parametros_json === 'string'
+            ? JSON.parse(rec.parametros_json)
+            : rec.parametros_json || {}
+      } catch {
+        /* ignorado */
+      }
+      try {
+        resultados =
+          typeof rec.resultados_json === 'string'
+            ? JSON.parse(rec.resultados_json)
+            : rec.resultados_json || {}
+      } catch {
+        /* ignorado */
+      }
+
+      return {
+        id: rec.id,
+        user_id: rec.user_id,
+        cliente_id: rec.cliente_id || null,
+        nome: rec.nome,
+        empresa: rec.empresa || '',
+        cnpj: rec.cnpj || '',
+        parametros: parametros as any,
+        resultados: resultados as any,
+        regime_recomendado: rec.regime_recomendado,
+        economia_anual: rec.economia_anual,
+        aliquota_efetiva: rec.aliquota_efetiva,
+        faturamento_mensal: rec.faturamento_mensal,
+        ano_base: rec.ano_base,
+        created: rec.created,
+        updated: rec.updated,
+        origem: 'nuvem',
+      }
+    }
+  } catch {
+    /* fallback local */
+  }
+
+  // 2. Fallback localStorage
+  const locais = carregarSimulacoesLocais()
+  const encontrada = locais.find((s) => s.id === id)
+  return encontrada || null
+}
+
 export async function listarSimulacoes(userId?: string | null): Promise<SimulacaoCalculadora[]> {
   const authUser = pb.authStore.record
   const effectiveUserId = userId || authUser?.id

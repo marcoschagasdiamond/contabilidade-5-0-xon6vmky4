@@ -183,6 +183,61 @@ export async function salvarSimulacaoRecuperador(dados: {
   )
 }
 
+export async function obterSimulacaoRecuperadorPorId(
+  id: string,
+): Promise<SimulacaoRecuperador | null> {
+  // 1. Tenta carregar do PocketBase
+  try {
+    const rec = await pb.collection('simulacoes_recuperador').getOne<any>(id)
+    if (rec) {
+      let parametros = {}
+      let resultados = {}
+      try {
+        parametros =
+          typeof rec.parametros_json === 'string'
+            ? JSON.parse(rec.parametros_json)
+            : rec.parametros_json || {}
+      } catch {
+        /* ignorado */
+      }
+      try {
+        resultados =
+          typeof rec.resultados_json === 'string'
+            ? JSON.parse(rec.resultados_json)
+            : rec.resultados_json || {}
+      } catch {
+        /* ignorado */
+      }
+
+      return {
+        id: rec.id,
+        user_id: rec.user_id,
+        cliente_id: rec.cliente_id || null,
+        nome: rec.nome,
+        empresa: rec.empresa || '',
+        cnpj: rec.cnpj || '',
+        regime_atual: rec.regime_atual || '',
+        parametros: parametros as any,
+        resultados: resultados as any,
+        total_recuperavel_integral: rec.total_recuperavel_integral || 0,
+        total_recuperavel_conservador: rec.total_recuperavel_conservador || 0,
+        total_pis_cofins: rec.total_pis_cofins || 0,
+        total_folha: rec.total_folha || 0,
+        created: rec.created,
+        updated: rec.updated,
+        origem: 'nuvem',
+      }
+    }
+  } catch {
+    /* fallback local */
+  }
+
+  // 2. Fallback localStorage
+  const locais = carregarSimulacoesRecuperadorLocais()
+  const encontrada = locais.find((s) => s.id === id)
+  return encontrada || null
+}
+
 export async function listarSimulacoesRecuperador(
   userId?: string | null,
 ): Promise<SimulacaoRecuperador[]> {

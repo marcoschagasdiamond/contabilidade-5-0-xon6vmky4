@@ -396,6 +396,13 @@ export default function Layout() {
                           </>
                         )}
                         <Link
+                          to="/dashboard-simulacoes"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:text-white hover:bg-white/10 transition-colors font-bold"
+                        >
+                          Dashboard de Simulações
+                        </Link>
+                        <Link
                           to="/carteira"
                           onClick={() => setIsUserMenuOpen(false)}
                           className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
@@ -588,6 +595,13 @@ export default function Layout() {
                           </Link>
                         </>
                       )}
+                      <Link
+                        to="/dashboard-simulacoes"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:text-white hover:bg-white/10 transition-colors font-bold"
+                      >
+                        Dashboard de Simulações
+                      </Link>
                       <Link
                         to="/carteira"
                         onClick={() => setIsMobileMenuOpen(false)}

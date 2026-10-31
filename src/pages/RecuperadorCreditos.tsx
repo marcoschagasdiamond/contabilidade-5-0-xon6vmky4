@@ -347,6 +347,26 @@ export default function RecuperadorCreditos() {
     recarregarSimulacoes()
   }, [user?.id])
 
+  // Detecção de simulação na query string (?simulacao=...)
+  useEffect(() => {
+    const idSimulacao = searchParams.get('simulacao')
+    if (idSimulacao) {
+      const carregar = async () => {
+        try {
+          const { obterSimulacaoRecuperadorPorId } =
+            await import('@/services/simulacoesRecuperador')
+          const sim = await obterSimulacaoRecuperadorPorId(idSimulacao)
+          if (sim && sim.parametros) {
+            handleCarregarSimulacao(sim)
+          }
+        } catch (err) {
+          console.error('Erro ao carregar simulação de recuperador da URL:', err)
+        }
+      }
+      carregar()
+    }
+  }, [searchParams])
+
   // Trata deep link da tese vindo de /legislacao ou notificações (?aba=... ou ?modulo=...&tese=...)
   useEffect(() => {
     const abaParam = searchParams.get('aba')

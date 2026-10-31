@@ -53,6 +53,7 @@ import Diagnostico from './pages/Diagnostico'
 import DiagnosticoRelatorioConsolidado from './pages/DiagnosticoRelatorioConsolidado'
 import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
 import RecuperadorCreditos from './pages/RecuperadorCreditos'
+import DashboardSimulacoes from './pages/DashboardSimulacoes'
 import DadosEmpresa from './pages/DadosEmpresa'
 import Planos from './pages/Planos'
 import Agendamento from './pages/Agendamento'
@@ -242,6 +243,14 @@ const App = () => (
                 <Route path="/alertas" element={<Navigate to="/legislacao" replace />} />
                 <Route path="/calculadora-ibs-cbs" element={<CalculadoraIbsCbs />} />
                 <Route path="/recuperador-creditos" element={<RecuperadorCreditos />} />
+                <Route
+                  path="/dashboard-simulacoes"
+                  element={
+                    <RotaAutenticada>
+                      <DashboardSimulacoes />
+                    </RotaAutenticada>
+                  }
+                />
                 <Route
                   path="/dados-empresa"
                   element={

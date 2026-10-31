@@ -143,28 +143,50 @@ function CalculadoraConteudo() {
   React.useEffect(() => {
     const rawParam = searchParams.get('simulacao')
     if (rawParam) {
-      try {
-        const paramsRestaurados = decodificarParametrosDaUrl(rawParam)
-        if (paramsRestaurados) {
-          if (isTipoAtividadeLegado(paramsRestaurados.tipoAtividade)) {
-            const ramoAntigo = LABELS_RAMOS_LEGADOS[paramsRestaurados.tipoAtividade]
-            const novoRamo = normalizarTipoAtividade(paramsRestaurados.tipoAtividade)
-            setAvisoRamoLegado(
-              `O ramo "${ramoAntigo}" deste link compartilhado foi mapeado automaticamente para "${novoRamo.toUpperCase()}".`,
-            )
+      // 1. Tenta carregar por ID salvo (da nuvem ou local)
+      const tentarPorId = async (id: string) => {
+        try {
+          const { obterSimulacaoPorId } = await import('@/services/simulacoesCalculadora')
+          const encontrada = await obterSimulacaoPorId(id)
+          if (encontrada && encontrada.parametros) {
+            handleCarregarSimulacao(encontrada)
+            setSimulacaoCarregadaViaLink(true)
+            setEmpresaLink(encontrada.empresa || encontrada.nome)
+            return true
           }
-          restaurarSimulacao(paramsRestaurados)
-          setSimulacaoCarregadaViaLink(true)
-          setEmpresaLink(paramsRestaurados.empresa || 'Cenário Compartilhado')
-          toast({
-            title: 'Simulação Carregada via Link!',
-            description:
-              'Os parâmetros e cálculos compartilhados foram restaurados com sucesso na sua tela.',
-          })
+        } catch {
+          /* ignorado */
         }
-      } catch (err) {
-        console.error('Falha ao restaurar simulação da URL:', err)
+        return false
       }
+
+      tentarPorId(rawParam).then((sucesso) => {
+        if (!sucesso) {
+          // 2. Se não for ID, tenta decodificar parâmetros direto da URL (link compartilhado base64)
+          try {
+            const paramsRestaurados = decodificarParametrosDaUrl(rawParam)
+            if (paramsRestaurados) {
+              if (isTipoAtividadeLegado(paramsRestaurados.tipoAtividade)) {
+                const ramoAntigo = LABELS_RAMOS_LEGADOS[paramsRestaurados.tipoAtividade]
+                const novoRamo = normalizarTipoAtividade(paramsRestaurados.tipoAtividade)
+                setAvisoRamoLegado(
+                  `O ramo "${ramoAntigo}" deste link compartilhado foi mapeado automaticamente para "${novoRamo.toUpperCase()}".`,
+                )
+              }
+              restaurarSimulacao(paramsRestaurados)
+              setSimulacaoCarregadaViaLink(true)
+              setEmpresaLink(paramsRestaurados.empresa || 'Cenário Compartilhado')
+              toast({
+                title: 'Simulação Carregada via Link!',
+                description:
+                  'Os parâmetros e cálculos compartilhados foram restaurados com sucesso na sua tela.',
+              })
+            }
+          } catch (err) {
+            console.error('Falha ao restaurar simulação da URL:', err)
+          }
+        }
+      })
     }
   }, [searchParams])
 
