@@ -15,6 +15,10 @@ export interface SalvarRelatorioPersonalizadoParams {
   cnpj?: string
   cliente_id?: string | null
   empresa_id?: string | null
+  crm_cliente_id?: string | null
+  canal_envio?: string | null
+  enviado_para?: string | null
+  data_envio?: string | null
   user_id?: string | null
   analises_incluidas: ModuloAnaliseTipo[]
   secoes_selecionadas: SecaoRelatorioTipo[]
@@ -36,6 +40,10 @@ export async function salvarRelatorioPersonalizado(
     cnpj: params.cnpj || '',
     cliente_id: params.cliente_id || '',
     empresa_id: params.empresa_id || '',
+    crm_cliente_id: params.crm_cliente_id || '',
+    canal_envio: params.canal_envio || '',
+    enviado_para: params.enviado_para || '',
+    data_envio: params.data_envio || null,
     user_id: userId || null,
     analises_incluidas: params.analises_incluidas,
     secoes_selecionadas: params.secoes_selecionadas,
@@ -59,11 +67,14 @@ export async function listarRelatoriosPersonalizados(filtros?: {
   userId?: string | null
   clienteId?: string | null
   empresaId?: string | null
+  crmClienteId?: string | null
 }): Promise<RelatorioPersonalizadoRecord[]> {
   try {
     const condicoes: string[] = []
 
-    if (filtros?.clienteId) {
+    if (filtros?.crmClienteId) {
+      condicoes.push(`crm_cliente_id = "${filtros.crmClienteId}"`)
+    } else if (filtros?.clienteId) {
       condicoes.push(`cliente_id = "${filtros.clienteId}"`)
     } else if (filtros?.userId) {
       condicoes.push(`user_id = "${filtros.userId}"`)

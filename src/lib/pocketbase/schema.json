@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-31T04:52:58.936Z",
+  "generatedAt": "2026-10-31T05:04:46.295Z",
   "collections": [
     {
       "name": "users",
@@ -2993,13 +2993,38 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "crm_cliente_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "canal_envio",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "enviado_para",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_envio",
+          "type": "date",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_relat_pers_user ON relatorios_personalizados (user_id)",
         "CREATE INDEX idx_relat_pers_cliente ON relatorios_personalizados (cliente_id)",
         "CREATE INDEX idx_relat_pers_empresa ON relatorios_personalizados (empresa_id)",
-        "CREATE INDEX idx_relat_pers_created ON relatorios_personalizados (created DESC)"
+        "CREATE INDEX idx_relat_pers_created ON relatorios_personalizados (created DESC)",
+        "CREATE INDEX idx_relat_pers_crm_cli ON relatorios_personalizados (crm_cliente_id)"
       ]
     }
   ]

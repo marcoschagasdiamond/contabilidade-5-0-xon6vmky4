@@ -7,8 +7,15 @@ import { STATUS_COMERCIAIS_CRM } from '@/types/crm'
 import { ModalRegistrarInteracao } from '@/components/crm/ModalRegistrarInteracao'
 import { ModalConvidarCliente } from '@/components/clientes/ModalConvidarCliente'
 import { AbaHistoricoCadastral } from '@/components/crm/AbaHistoricoCadastral'
+import { ModalMontarRelatorioCrm } from '@/components/crm/ModalMontarRelatorioCrm'
 import { listarAuditoriaDadosEmpresa } from '@/services/historicoDadosEmpresa'
+import {
+  listarRelatoriosPersonalizados,
+  excluirRelatorioPersonalizado,
+} from '@/services/relatoriosPersonalizados'
+import { gerarRelatorioPersonalizadoPDF } from '@/lib/pdfRelatorioPersonalizado'
 import type { HistoricoDadosEmpresaRegistro } from '@/types/historicoDadosEmpresa'
+import type { RelatorioPersonalizadoRecord } from '@/types/relatorioPersonalizado'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,6 +25,7 @@ import { useToast } from '@/hooks/use-toast'
 
 type AbaCrm =
   | 'resumo'
+  | 'relatorios'
   | 'diagnosticos'
   | 'simulacoes'
   | 'creditos'
@@ -48,10 +56,13 @@ export default function FichaClienteCrm() {
   const [abaAtiva, setAbaAtiva] = useState<AbaCrm>('resumo')
   const [historicoCadastral, setHistoricoCadastral] = useState<HistoricoDadosEmpresaRegistro[]>([])
   const [carregandoHistoricoCadastral, setCarregandoHistoricoCadastral] = useState(false)
+  const [relatoriosCliente, setRelatoriosCliente] = useState<RelatorioPersonalizadoRecord[]>([])
+  const [carregandoRelatorios, setCarregandoRelatorios] = useState(false)
 
   // Modais
   const [modalInteracaoAberta, setModalInteracaoAberta] = useState(false)
   const [modalConviteAberta, setModalConviteAberta] = useState(false)
+  const [modalMontarRelatorioAberta, setModalMontarRelatorioAberta] = useState(false)
 
   // Edição rápida de campos do Resumo
   const [editandoResumo, setEditandoResumo] = useState(false)
@@ -98,6 +109,16 @@ export default function FichaClienteCrm() {
       setFormOrigem(data.crmCliente.origem_contato || '')
       setFormDataEntrada(data.crmCliente.data_entrada || '')
       setFormObs(data.crmCliente.observacoes || '')
+
+      // Carrega relatórios personalizados deste cliente no CRM
+      setCarregandoRelatorios(true)
+      listarRelatoriosPersonalizados({
+        crmClienteId: data.crmCliente.id,
+        clienteId: data.crmCliente.id,
+      })
+        .then((rels) => setRelatoriosCliente(rels))
+        .catch((e) => console.warn('Erro ao carregar relatórios do cliente:', e))
+        .finally(() => setCarregandoRelatorios(false))
     } catch (err: any) {
       console.error('Erro ao carregar ficha do CRM:', err)
       toast({
@@ -315,6 +336,14 @@ export default function FichaClienteCrm() {
                 ))}
               </div>
 
+              {/* BOTÃO MONTAR RELATÓRIO PERSONALIZADO (NOVA AÇÃO CRM) */}
+              <Button
+                onClick={() => setModalMontarRelatorioAberta(true)}
+                className="bg-[#D4AF37] hover:bg-[#b89528] text-[#07132B] font-bold text-xs px-4 py-2 rounded-xl shadow-sm"
+              >
+                Montar Relatório Personalizado
+              </Button>
+
               {/* BOTÃO DE INTERAÇÃO RÁPIDA */}
               <Button
                 onClick={() => setModalInteracaoAberta(true)}
@@ -409,6 +438,10 @@ export default function FichaClienteCrm() {
           <div className="flex items-center gap-1 min-w-max">
             {[
               { id: 'resumo', label: 'Resumo & Comercial' },
+              {
+                id: 'relatorios',
+                label: `Relatórios Personalizados (${relatoriosCliente.length})`,
+              },
               {
                 id: 'diagnosticos',
                 label: `Diagnósticos 360° (${ficha.diagnosticos.length})`,
@@ -752,6 +785,162 @@ export default function FichaClienteCrm() {
                 </Button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ABA 2: RELATÓRIOS PERSONALIZADOS DO CLIENTE */}
+        {abaAtiva === 'relatorios' && (
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="font-heading font-extrabold text-lg text-[#07132B]">
+                  Relatórios Personalizados Montados para este Cliente
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Dossiês técnicos customizados, dados de envio e histórico de compartilhamento.
+                </p>
+              </div>
+              <Button
+                onClick={() => setModalMontarRelatorioAberta(true)}
+                className="bg-[#D4AF37] hover:bg-[#b89528] text-[#07132B] font-bold text-xs px-4 py-2 rounded-xl shadow-sm self-start sm:self-auto"
+              >
+                + Montar Novo Relatório
+              </Button>
+            </div>
+
+            {carregandoRelatorios ? (
+              <div className="py-12 text-center text-slate-500 text-xs">
+                Carregando relatórios personalizados...
+              </div>
+            ) : relatoriosCliente.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 text-xs space-y-2">
+                <p className="font-bold text-slate-700">
+                  Nenhum relatório personalizado gerado para este cliente ainda.
+                </p>
+                <p className="max-w-md mx-auto text-[11px] text-slate-500">
+                  Clique no botão "Montar Relatório Personalizado" para selecionar análises, seções
+                  e enviar ao cliente por e-mail ou baixar o PDF.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {relatoriosCliente.map((rel) => {
+                  const dataFormatada = new Date(rel.created).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                  const modulos = rel.analises_incluidas || []
+
+                  return (
+                    <div
+                      key={rel.id}
+                      className="p-5 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col justify-between space-y-3 text-xs"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-bold text-slate-900 text-sm line-clamp-1">
+                            {rel.nome}
+                          </h3>
+                          <span className="text-[10px] font-mono text-slate-500 whitespace-nowrap">
+                            {dataFormatada}
+                          </span>
+                        </div>
+
+                        {/* Canal de envio / Histórico */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                          {rel.canal_envio === 'gmail' && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                              Enviado via Gmail {rel.enviado_para ? `(${rel.enviado_para})` : ''}
+                            </span>
+                          )}
+                          {rel.canal_envio === 'download_pdf' && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-800">
+                              Baixado em PDF
+                            </span>
+                          )}
+                          {rel.canal_envio === 'link_compartilhado' && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800">
+                              Link Compartilhado
+                            </span>
+                          )}
+                          {!rel.canal_envio && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700">
+                              Gerado no CRM
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Módulos incluídos */}
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {modulos.includes('calculadora') && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-white border border-slate-200 text-slate-700">
+                              IBS/CBS
+                            </span>
+                          )}
+                          {modulos.includes('recuperador') && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-white border border-slate-200 text-slate-700">
+                              Créditos
+                            </span>
+                          )}
+                          {modulos.includes('diagnostico') && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-white border border-slate-200 text-slate-700">
+                              Diagnóstico 360°
+                            </span>
+                          )}
+                        </div>
+
+                        {rel.observacoes && (
+                          <p className="text-slate-600 italic line-clamp-2 pt-1 text-[11px]">
+                            "{rel.observacoes}"
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const cfg = rel.configuracao
+                            gerarRelatorioPersonalizadoPDF({
+                              configuracao: cfg,
+                              empresa: rel.empresa_nome || emp?.nome_empresa || 'Empresa',
+                              cnpj: rel.cnpj || emp?.cnpj,
+                              dadosEmpresa: cfg.snapshotDadosEmpresa || null,
+                              simulacaoCalculadora: cfg.snapshotCalculadora || null,
+                              simulacaoRecuperador: cfg.snapshotRecuperador || null,
+                              diagnostico360: cfg.snapshotDiagnostico || null,
+                            })
+                            toast({
+                              title: 'Download Iniciado',
+                              description: `Baixando relatório "${rel.nome}".`,
+                            })
+                          }}
+                          className="bg-[#07132B] hover:bg-[#0d2249] text-[#D4AF37] font-bold text-xs h-8 px-3 rounded-xl"
+                        >
+                          Baixar Novamente
+                        </Button>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!confirm(`Deseja excluir o relatório "${rel.nome}"?`)) return
+                            await excluirRelatorioPersonalizado(rel.id)
+                            setRelatoriosCliente((prev) => prev.filter((r) => r.id !== rel.id))
+                            toast({ title: 'Relatório excluído' })
+                          }}
+                          className="text-[11px] text-slate-400 hover:text-rose-600 transition-colors"
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -1138,6 +1327,16 @@ export default function FichaClienteCrm() {
             title: 'Convite Enviado!',
             description: 'O empresário recebeu o convite com link de cadastro exclusivo.',
           })
+        }}
+      />
+
+      {/* MODAL MONTAR RELATÓRIO CRM */}
+      <ModalMontarRelatorioCrm
+        aberto={modalMontarRelatorioAberta}
+        aoFechar={() => setModalMontarRelatorioAberta(false)}
+        ficha={ficha}
+        aoRelatorioEnviadoOuCriado={() => {
+          carregarFicha()
         }}
       />
     </div>

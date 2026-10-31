@@ -120,7 +120,10 @@ function aplicarRodape(doc: jsPDF) {
  * Gerador de Relatório Personalizado para o perfil Empresário / Analista
  * Permite selecionar quais análises e seções entram, com notas e dados cadastrais somente leitura
  */
-export function gerarRelatorioPersonalizadoPDF(options: GerarRelatorioPersonalizadoOptions): void {
+export function construirRelatorioPersonalizadoDoc(options: GerarRelatorioPersonalizadoOptions): {
+  doc: jsPDF
+  nomeArquivo: string
+} {
   const {
     configuracao,
     empresa,
@@ -158,9 +161,7 @@ export function gerarRelatorioPersonalizadoPDF(options: GerarRelatorioPersonaliz
     }
   }
 
-  // =========================================================================
   // PÁGINA 1: CAPA & IDENTIFICAÇÃO CADASTRAL + NOTAS DO EMPRESÁRIO
-  // =========================================================================
   currentY = aplicarCabecalhoPersonalizado(
     doc,
     tituloGeral,
@@ -263,9 +264,7 @@ export function gerarRelatorioPersonalizadoPDF(options: GerarRelatorioPersonaliz
     currentY += alturaObs + 8
   }
 
-  // =========================================================================
   // SEÇÃO A: CALCULADORA IBS/CBS (SE INCLUÍDA)
-  // =========================================================================
   if (configuracao.incluirCalculadora && simulacaoCalculadora) {
     verificarQuebra(55, 'Calculadora IBS/CBS • Parecer Técnico')
 
@@ -552,9 +551,7 @@ export function gerarRelatorioPersonalizadoPDF(options: GerarRelatorioPersonaliz
     }
   }
 
-  // =========================================================================
   // SEÇÃO B: RECUPERADOR DE CRÉDITOS (SE INCLUÍDO)
-  // =========================================================================
   if (configuracao.incluirRecuperador && simulacaoRecuperador) {
     verificarQuebra(55, 'Recuperador de Créditos • Levantamento 60 Meses')
 
@@ -725,9 +722,7 @@ export function gerarRelatorioPersonalizadoPDF(options: GerarRelatorioPersonaliz
     }
   }
 
-  // =========================================================================
   // SEÇÃO C: DIAGNÓSTICO 360° (SE INCLUÍDO)
-  // =========================================================================
   if (configuracao.incluirDiagnostico) {
     verificarQuebra(55, 'Diagnóstico 360° • Governança & Riscos')
 
@@ -920,19 +915,31 @@ export function gerarRelatorioPersonalizadoPDF(options: GerarRelatorioPersonaliz
     }
   }
 
-  // =========================================================================
-  // AVISO ORIENTATIVO OBRIGATÓRIO & RODAPÉ
-  // =========================================================================
   if (currentY > 220) {
     doc.addPage()
     currentY = 20
   }
 
   desenharAvisoLegalCompletoPDF(doc, margin, currentY, contentWidth)
-
   aplicarRodape(doc)
 
   const sanitizado = empresa.replace(/[^a-zA-Z0-9_-]/g, '_')
   const nomeArquivo = `Relatorio_Personalizado_${sanitizado}.pdf`
+
+  return { doc, nomeArquivo }
+}
+
+export function gerarRelatorioPersonalizadoPDF(options: GerarRelatorioPersonalizadoOptions): void {
+  const { doc, nomeArquivo } = construirRelatorioPersonalizadoDoc(options)
   doc.save(nomeArquivo)
+}
+
+export function gerarRelatorioPersonalizadoBlob(options: GerarRelatorioPersonalizadoOptions): {
+  blob: Blob
+  nomeArquivo: string
+  doc: jsPDF
+} {
+  const { doc, nomeArquivo } = construirRelatorioPersonalizadoDoc(options)
+  const blob = doc.output('blob')
+  return { blob, nomeArquivo, doc }
 }

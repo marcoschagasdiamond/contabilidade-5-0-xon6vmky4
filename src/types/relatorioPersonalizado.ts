@@ -59,6 +59,10 @@ export interface RelatorioPersonalizadoRecord {
   user_id?: string
   cliente_id?: string
   empresa_id?: string
+  crm_cliente_id?: string
+  canal_envio?: string
+  enviado_para?: string
+  data_envio?: string
   nome: string
   empresa_nome?: string
   cnpj?: string
