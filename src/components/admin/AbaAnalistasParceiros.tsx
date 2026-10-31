@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import type { AnalistaMetricasItem, ClienteGlobalItem } from '@/types/master'
 import { ModalExcluirAnalista } from '@/components/admin/ModalExcluirAnalista'
+import { formatarCNPJ } from '@/lib/cnpj'
 
 interface AbaAnalistasParceirosProps {
   analistas: AnalistaMetricasItem[]
@@ -121,6 +122,13 @@ export function AbaAnalistasParceiros({
                 <span className="font-semibold uppercase">
                   {analistaSelecionadoDrilldown.nivel_acesso}
                 </span>
+                {analistaSelecionadoDrilldown.escritorio_nome && (
+                  <span className="ml-2 font-medium text-slate-800">
+                    • Escritório: {analistaSelecionadoDrilldown.escritorio_nome}
+                    {analistaSelecionadoDrilldown.escritorio_cnpj &&
+                      ` (CNPJ ${formatarCNPJ(analistaSelecionadoDrilldown.escritorio_cnpj)})`}
+                  </span>
+                )}
               </p>
             </div>
 
@@ -253,6 +261,7 @@ export function AbaAnalistasParceiros({
               <thead className="bg-[#07132B] text-white font-semibold text-xs uppercase tracking-wider">
                 <tr>
                   <th className="py-3.5 px-5">Analista / Parceiro</th>
+                  <th className="py-3.5 px-5">Escritório Adquirente</th>
                   <th className="py-3.5 px-5">Nível de Acesso</th>
                   <th className="py-3.5 px-5 text-center">Nº Clientes Carteira</th>
                   <th className="py-3.5 px-5 text-center">Nº Diagnósticos</th>
@@ -275,6 +284,25 @@ export function AbaAnalistasParceiros({
                       <td className="py-4 px-5">
                         <div className="font-bold text-slate-900">{item.name}</div>
                         <div className="text-xs text-slate-500">{item.email}</div>
+                      </td>
+
+                      <td className="py-4 px-5">
+                        {item.escritorio_nome ? (
+                          <div className="space-y-0.5">
+                            <span className="font-semibold text-slate-900 block text-xs">
+                              {item.escritorio_nome}
+                            </span>
+                            <div className="text-[11px] text-slate-500 font-mono">
+                              {item.escritorio_cnpj
+                                ? `CNPJ ${formatarCNPJ(item.escritorio_cnpj)}`
+                                : item.escritorio_cidade && item.escritorio_uf
+                                  ? `${item.escritorio_cidade} - ${item.escritorio_uf}`
+                                  : 'Cadastrado'}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Não cadastrado</span>
+                        )}
                       </td>
 
                       <td className="py-4 px-5">

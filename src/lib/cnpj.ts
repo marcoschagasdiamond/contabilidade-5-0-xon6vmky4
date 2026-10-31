@@ -9,6 +9,13 @@ export function limparCNPJ(valor: string): string {
   return (valor || '').replace(/\D/g, '')
 }
 
+/**
+ * Remove formatação e caracteres não numéricos do CNPJ (alias para limparCNPJ)
+ */
+export function sanitizarCNPJ(valor: string): string {
+  return (valor || '').replace(/\D/g, '')
+}
+
 export function limparCpfCnpj(valor: string): string {
   return (valor || '').replace(/\D/g, '')
 }

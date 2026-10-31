@@ -6,6 +6,7 @@ import type { SimulacaoRecuperador } from '@/types/recuperadorCreditos'
 import type { DiagnosticoRecord } from '@/services/diagnosticos'
 import { formatarCNPJ } from '@/lib/cnpj'
 import { desenharAvisoLegalCompletoPDF } from '@/components/common/AvisoOrientativo'
+import { renderizarRodapeEscritorioPdf } from '@/lib/pdfIdentidadeEscritorio'
 
 export interface GerarDiagnosticoCompletoOptions {
   empresa: string
@@ -105,15 +106,11 @@ function aplicarRodape(doc: jsPDF) {
 
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7)
-    doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
-    doc.text(
-      'Contabilidade 5.0 — Diamond Group | Dossiê Diagnóstico Completo Integrado',
-      margin,
-      pageHeight - 8,
-    )
-    doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin - 22, pageHeight - 8)
+    doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+    doc.setLineWidth(0.3)
+    doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12)
+
+    renderizarRodapeEscritorioPdf(doc, i, totalPages, pageHeight - 7)
   }
 }
 
@@ -466,9 +463,9 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
         : 0)
 
     const tesesAtivasCount = resRec?.resultadosTeses
-      ? resRec.resultadosTeses.filter((t) => t.ativa).length
+      ? resRec.resultadosTeses.filter((t: any) => t?.ativa).length
       : parRec?.teses
-        ? Object.values(parRec.teses).filter((t) => t.ativa).length
+        ? Object.values(parRec.teses).filter((t: any) => t?.ativa).length
         : 0
 
     doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])

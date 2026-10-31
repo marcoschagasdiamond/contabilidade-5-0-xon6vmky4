@@ -99,6 +99,15 @@ export async function listarTodosUsuarios(): Promise<UsuarioSistema[]> {
         total_clientes: clientesCount.get(r.id) || 0,
         total_diagnosticos: diagsCount.get(r.id) || 0,
         total_simulacoes: simsCount.get(r.id) || 0,
+        // Dados do escritório adquirente
+        escritorio_nome: r.escritorio_nome || undefined,
+        escritorio_responsavel: r.escritorio_responsavel || undefined,
+        escritorio_cnpj: r.escritorio_cnpj || undefined,
+        escritorio_email: r.escritorio_email || undefined,
+        escritorio_telefone: r.escritorio_telefone || undefined,
+        escritorio_uf: r.escritorio_uf || undefined,
+        escritorio_cidade: r.escritorio_cidade || undefined,
+        escritorio_cadastrado: !!r.escritorio_cadastrado,
       }
     })
 
@@ -803,6 +812,15 @@ export async function obterMetricasAnalistas(): Promise<AnalistaMetricasItem[]> 
       total_simulacoes: Math.max(simsCarteira, simsDiretos),
       ultimo_acesso_ou_criado: a.updated || a.created || '',
       clientes_carteira: carteira,
+      // Dados do escritório adquirente
+      escritorio_nome: a.escritorio_nome,
+      escritorio_responsavel: a.escritorio_responsavel,
+      escritorio_cnpj: a.escritorio_cnpj,
+      escritorio_email: a.escritorio_email,
+      escritorio_telefone: a.escritorio_telefone,
+      escritorio_uf: a.escritorio_uf,
+      escritorio_cidade: a.escritorio_cidade,
+      escritorio_cadastrado: a.escritorio_cadastrado,
     }
   })
 }

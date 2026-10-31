@@ -14,6 +14,7 @@ import {
 import { ModalExcluirUsuario } from '@/components/admin/ModalExcluirUsuario'
 import { ModalExcluirAnalista } from '@/components/admin/ModalExcluirAnalista'
 import { ModalExcluirEmpresario } from '@/components/admin/ModalExcluirEmpresario'
+import { formatarCNPJ } from '@/lib/cnpj'
 import { ModalIncluirUsuarioManual } from '@/components/admin/ModalIncluirUsuarioManual'
 import { ModalEnviarConviteNivel } from '@/components/admin/ModalEnviarConviteNivel'
 import { ModalControleComercialAnalista } from '@/components/admin/ModalControleComercialAnalista'
@@ -199,7 +200,9 @@ export function AbaUsuariosPermissoes({
         !termo ||
         a.name?.toLowerCase().includes(termo) ||
         a.email?.toLowerCase().includes(termo) ||
-        a.criador_nome?.toLowerCase().includes(termo)
+        a.criador_nome?.toLowerCase().includes(termo) ||
+        a.escritorio_nome?.toLowerCase().includes(termo) ||
+        a.escritorio_cnpj?.includes(termo)
 
       const matchStatus =
         filtroStatusAnalista === 'todos' ||
@@ -249,6 +252,10 @@ export function AbaUsuariosPermissoes({
       total_simulacoes: a.total_simulacoes || 0,
       ultimo_acesso_ou_criado: a.updated || a.created || '',
       clientes_carteira: [],
+      escritorio_nome: a.escritorio_nome,
+      escritorio_cnpj: a.escritorio_cnpj,
+      escritorio_cidade: a.escritorio_cidade,
+      escritorio_uf: a.escritorio_uf,
     })
   }
 
@@ -646,6 +653,7 @@ export function AbaUsuariosPermissoes({
               <thead className="bg-[#07132B]/5 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
                 <tr>
                   <th className="py-3 px-5">Analista</th>
+                  <th className="py-3 px-5">Escritório Adquirente</th>
                   <th className="py-3 px-5 text-center">Clientes</th>
                   <th className="py-3 px-5 text-center">Diagnósticos</th>
                   <th className="py-3 px-5 text-center">Simulações</th>
@@ -676,6 +684,25 @@ export function AbaUsuariosPermissoes({
                           <div className="text-[10px] text-slate-400 mt-0.5">
                             Cadastrado por: {a.criador_nome}
                           </div>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-5">
+                        {a.escritorio_nome ? (
+                          <div className="space-y-0.5 max-w-xs">
+                            <span className="font-semibold text-slate-900 block text-xs">
+                              {a.escritorio_nome}
+                            </span>
+                            <div className="text-[11px] text-slate-500 font-mono">
+                              {a.escritorio_cnpj
+                                ? `CNPJ ${formatarCNPJ(a.escritorio_cnpj)}`
+                                : a.escritorio_cidade && a.escritorio_uf
+                                  ? `${a.escritorio_cidade} - ${a.escritorio_uf}`
+                                  : 'Cadastrado'}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Não cadastrado</span>
                         )}
                       </td>
 

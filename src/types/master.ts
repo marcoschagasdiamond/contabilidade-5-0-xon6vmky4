@@ -54,6 +54,15 @@ export interface UsuarioSistema {
   total_clientes?: number
   total_diagnosticos?: number
   total_simulacoes?: number
+  // Dados do escritório adquirente (Bloco 2)
+  escritorio_nome?: string
+  escritorio_responsavel?: string
+  escritorio_cnpj?: string
+  escritorio_email?: string
+  escritorio_telefone?: string
+  escritorio_uf?: string
+  escritorio_cidade?: string
+  escritorio_cadastrado?: boolean
 }
 
 export interface ClienteGlobalItem {
@@ -95,4 +104,13 @@ export interface AnalistaMetricasItem {
   total_simulacoes: number
   ultimo_acesso_ou_criado: string
   clientes_carteira: ClienteGlobalItem[]
+  // Dados do escritório adquirente (Bloco 2)
+  escritorio_nome?: string
+  escritorio_responsavel?: string
+  escritorio_cnpj?: string
+  escritorio_email?: string
+  escritorio_telefone?: string
+  escritorio_uf?: string
+  escritorio_cidade?: string
+  escritorio_cadastrado?: boolean
 }

@@ -11,6 +11,7 @@ import {
   adicionarBlocoResponsavelTecnico,
   adicionarBlocoAssinatura,
 } from '@/lib/pdfSimulacaoCalculadora'
+import { renderizarRodapeEscritorioPdf } from '@/lib/pdfIdentidadeEscritorio'
 
 // Identidade visual Diamond Group (Navy / Dourado)
 export const COR_NAVY = [7, 19, 43] as const // #07132B
@@ -836,8 +837,9 @@ export function gerarParecerRecuperadorPDF(options: GerarPdfRecuperadorOptions):
   adicionarBlocoAssinatura(doc, margin, currentY, contentWidth, responsavelTecnico, cidadeEmpresa)
 
   // =========================================================================
-  // REQUISITO (F): RODAPÉ PADRÃO DIAMOND GROUP COM OS DADOS DA EMPRESA
+  // REQUISITO (F): RODAPÉ PADRÃO DIAMOND GROUP COM OS DADOS DA EMPRESA / ESCRITÓRIO
   // Consistente com os demais relatórios da plataforma Contabilidade 5.0
+  // Plugado com a identidade do escritório adquirente e fallback gracioso
   // =========================================================================
   const totalPages = doc.internal.pages.length - 1
   for (let i = 1; i <= totalPages; i++) {
@@ -846,15 +848,7 @@ export function gerarParecerRecuperadorPDF(options: GerarPdfRecuperadorOptions):
     doc.setLineWidth(0.3)
     doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12)
 
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(6.5)
-    doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
-    doc.text(
-      'Contabilidade 5.0 — Diamond Group | CNPJ 00.000.000/0001-00 | Recuperação de Créditos Tributários & Previdenciários | contato@contabilidade50.com.br',
-      margin,
-      pageHeight - 7,
-    )
-    doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: 'right' })
+    renderizarRodapeEscritorioPdf(doc, i, totalPages, pageHeight - 7)
   }
 
   // Baixar arquivo com nome sanitizado
