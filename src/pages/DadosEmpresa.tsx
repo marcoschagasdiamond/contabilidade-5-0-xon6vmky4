@@ -106,19 +106,9 @@ export default function DadosEmpresa() {
   const [salvoComSucesso, setSalvoComSucesso] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Sincroniza quando os dados do contexto mudarem
+  // Sincroniza quando os dados do contexto mudarem (ex: troca de cliente ativo ou carregamento do banco)
   useEffect(() => {
-    setFormData((prev) => {
-      // Se já temos valores preenchidos no formulário pelo usuário ou rascunho, preserva
-      const temPreenchimentoLocal = Boolean(
-        prev.nomeEmpresa?.trim() ||
-        prev.cnpj?.trim() ||
-        prev.nomeContato?.trim() ||
-        prev.email?.trim(),
-      )
-      if (temPreenchimentoLocal) return prev
-      return dadosEmpresa
-    })
+    setFormData(dadosEmpresa)
   }, [dadosEmpresa])
 
   // Auto-save com debounce de 600ms no localStorage dedicado

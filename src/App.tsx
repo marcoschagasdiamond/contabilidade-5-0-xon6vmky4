@@ -153,8 +153,8 @@ const App = () => (
     <ScrollToTop />
     <AuthProvider>
       <TooltipProvider>
-        <DadosEmpresaProvider>
-          <ClienteAtivoProvider>
+        <ClienteAtivoProvider>
+          <DadosEmpresaProvider>
             <Toaster />
             <Sonner />
             <Routes>
@@ -454,8 +454,8 @@ const App = () => (
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </ClienteAtivoProvider>
-        </DadosEmpresaProvider>
+          </DadosEmpresaProvider>
+        </ClienteAtivoProvider>
       </TooltipProvider>
     </AuthProvider>
   </BrowserRouter>
