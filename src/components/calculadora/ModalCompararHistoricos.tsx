@@ -181,32 +181,35 @@ export function ModalCompararHistoricos({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl w-[96vw] max-h-[92vh] flex flex-col p-0 border border-[#D4AF37]/30 bg-white shadow-2xl rounded-2xl overflow-hidden">
+      <DialogContent className="max-w-6xl w-[96vw] max-h-[94vh] sm:max-h-[92vh] flex flex-col p-0 border border-[#D4AF37]/30 bg-white shadow-2xl rounded-2xl overflow-hidden">
         {/* Cabeçalho Diamond Group (Navy/Dourado) */}
-        <div className="bg-[#07132B] text-white p-5 border-b border-[#D4AF37]/30 relative shrink-0">
+        <div className="bg-[#07132B] text-white p-3.5 sm:p-5 border-b border-[#D4AF37]/30 relative shrink-0">
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-widest text-[#D4AF37] bg-[#D4AF37]/15 border border-[#D4AF37]/30 uppercase mb-2">
+          <div className="relative pr-6 sm:pr-0">
+            <div className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold tracking-widest text-[#D4AF37] bg-[#D4AF37]/15 border border-[#D4AF37]/30 uppercase mb-1.5 sm:mb-2">
               AUDITORIA COMPARATIVA DE SIMULAÇÕES
             </div>
-            <DialogTitle className="text-xl sm:text-2xl font-heading font-extrabold text-white tracking-tight">
+            <DialogTitle className="text-base sm:text-2xl font-heading font-extrabold text-white tracking-tight leading-snug">
               Comparação de Histórico de Alterações
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-300 mt-1 max-w-3xl">
+            <DialogDescription className="text-[11px] sm:text-xs text-slate-300 mt-1 max-w-3xl leading-relaxed">
               Compare lado a lado as linhas do tempo de duas simulações, auditando as modificações
               de parâmetros, diffs "de → para", responsáveis e intensidade de edições.
             </DialogDescription>
           </div>
 
           {/* Destaque comparativo das duas simulações e seletores de troca rápida */}
-          <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-4">
             {/* Coluna Simulação A */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col justify-between">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-[11px] font-bold tracking-wider uppercase text-[#D4AF37] bg-[#D4AF37]/15 px-2 py-0.5 rounded border border-[#D4AF37]/30">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-2">
+                <span className="text-[10px] sm:text-[11px] font-bold tracking-wider uppercase text-[#D4AF37] bg-[#D4AF37]/15 px-2 py-0.5 rounded border border-[#D4AF37]/30">
                   Simulação A
                 </span>
-                <Badge variant="outline" className="border-white/20 text-slate-300 text-[10px]">
+                <Badge
+                  variant="outline"
+                  className="border-white/20 text-slate-300 text-[9px] sm:text-[10px]"
+                >
                   {simulacaoA.tipo === 'calculadora'
                     ? 'Calculadora IBS/CBS'
                     : 'Recuperador Créditos'}
@@ -240,10 +243,12 @@ export function ModalCompararHistoricos({
                   </Select>
                 </div>
               ) : (
-                <h4 className="text-sm font-bold text-white truncate">{simulacaoA.nome}</h4>
+                <h4 className="text-xs sm:text-sm font-bold text-white truncate">
+                  {simulacaoA.nome}
+                </h4>
               )}
 
-              <div className="mt-2 text-[11px] text-slate-300 flex flex-wrap gap-x-3 gap-y-0.5">
+              <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] text-slate-300 flex flex-wrap gap-x-2.5 sm:gap-x-3 gap-y-0.5">
                 <span>
                   Empresa: <strong className="text-white">{simulacaoA.empresa || '-'}</strong>
                 </span>
@@ -254,12 +259,15 @@ export function ModalCompararHistoricos({
             </div>
 
             {/* Coluna Simulação B */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col justify-between">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-[11px] font-bold tracking-wider uppercase text-blue-300 bg-blue-500/15 px-2 py-0.5 rounded border border-blue-400/30">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-2">
+                <span className="text-[10px] sm:text-[11px] font-bold tracking-wider uppercase text-blue-300 bg-blue-500/15 px-2 py-0.5 rounded border border-blue-400/30">
                   Simulação B
                 </span>
-                <Badge variant="outline" className="border-white/20 text-slate-300 text-[10px]">
+                <Badge
+                  variant="outline"
+                  className="border-white/20 text-slate-300 text-[9px] sm:text-[10px]"
+                >
                   {simulacaoB.tipo === 'calculadora'
                     ? 'Calculadora IBS/CBS'
                     : 'Recuperador Créditos'}
@@ -293,10 +301,12 @@ export function ModalCompararHistoricos({
                   </Select>
                 </div>
               ) : (
-                <h4 className="text-sm font-bold text-white truncate">{simulacaoB.nome}</h4>
+                <h4 className="text-xs sm:text-sm font-bold text-white truncate">
+                  {simulacaoB.nome}
+                </h4>
               )}
 
-              <div className="mt-2 text-[11px] text-slate-300 flex flex-wrap gap-x-3 gap-y-0.5">
+              <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] text-slate-300 flex flex-wrap gap-x-2.5 sm:gap-x-3 gap-y-0.5">
                 <span>
                   Empresa: <strong className="text-white">{simulacaoB.empresa || '-'}</strong>
                 </span>
@@ -309,64 +319,68 @@ export function ModalCompararHistoricos({
         </div>
 
         {/* Barra de Filtros e Destaque de Estatísticas Comparativas */}
-        <div className="px-5 py-3 bg-slate-50 border-b border-slate-200 shrink-0 space-y-3">
+        <div className="px-3.5 sm:px-5 py-2.5 sm:py-3 bg-slate-50 border-b border-slate-200 shrink-0 space-y-2.5 sm:space-y-3">
           {/* Quadro Comparativo de Métricas do Histórico */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
-            <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-xs">
-              <span className="text-[10px] uppercase font-bold text-slate-500 block">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-2.5 text-xs">
+            <div className="bg-white p-2 sm:p-2.5 rounded-lg border border-slate-200 shadow-xs">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 block truncate">
                 Total de Eventos
               </span>
-              <div className="mt-1 flex items-baseline justify-between font-mono">
-                <span className="text-[#D4AF37] font-bold text-sm">
-                  {statsA.totalEventos} na Sim. A
+              <div className="mt-1 flex items-baseline justify-between font-mono gap-1">
+                <span className="text-[#D4AF37] font-bold text-xs sm:text-sm truncate">
+                  {statsA.totalEventos} Sim. A
                 </span>
                 <span className="text-slate-400 text-[10px]">vs</span>
-                <span className="text-blue-900 font-bold text-sm">
-                  {statsB.totalEventos} na Sim. B
+                <span className="text-blue-900 font-bold text-xs sm:text-sm truncate">
+                  {statsB.totalEventos} Sim. B
                 </span>
               </div>
             </div>
 
-            <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-xs">
-              <span className="text-[10px] uppercase font-bold text-slate-500 block">
-                Edições de Parâmetros
+            <div className="bg-white p-2 sm:p-2.5 rounded-lg border border-slate-200 shadow-xs">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 block truncate">
+                Edições Parâmetros
               </span>
-              <div className="mt-1 flex items-baseline justify-between font-mono">
-                <span className="text-[#D4AF37] font-bold text-sm">
-                  {statsA.edicoesParametros} na Sim. A
+              <div className="mt-1 flex items-baseline justify-between font-mono gap-1">
+                <span className="text-[#D4AF37] font-bold text-xs sm:text-sm truncate">
+                  {statsA.edicoesParametros} Sim. A
                 </span>
                 <span className="text-slate-400 text-[10px]">vs</span>
-                <span className="text-blue-900 font-bold text-sm">
-                  {statsB.edicoesParametros} na Sim. B
+                <span className="text-blue-900 font-bold text-xs sm:text-sm truncate">
+                  {statsB.edicoesParametros} Sim. B
                 </span>
               </div>
             </div>
 
-            <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-xs">
-              <span className="text-[10px] uppercase font-bold text-slate-500 block">
+            <div className="bg-white p-2 sm:p-2.5 rounded-lg border border-slate-200 shadow-xs">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 block truncate">
                 Renomeações
               </span>
-              <div className="mt-1 flex items-baseline justify-between font-mono">
-                <span className="text-slate-700 font-semibold">{statsA.renomeacoes}</span>
+              <div className="mt-1 flex items-baseline justify-between font-mono gap-1">
+                <span className="text-slate-700 font-semibold text-xs sm:text-sm">
+                  {statsA.renomeacoes}
+                </span>
                 <span className="text-slate-400 text-[10px]">vs</span>
-                <span className="text-slate-700 font-semibold">{statsB.renomeacoes}</span>
+                <span className="text-slate-700 font-semibold text-xs sm:text-sm">
+                  {statsB.renomeacoes}
+                </span>
               </div>
             </div>
 
-            <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-xs">
-              <span className="text-[10px] uppercase font-bold text-slate-500 block">
-                Responsáveis / Autores
+            <div className="bg-white p-2 sm:p-2.5 rounded-lg border border-slate-200 shadow-xs">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 block truncate">
+                Autores
               </span>
-              <div className="mt-1 flex items-baseline justify-between text-[11px] truncate">
+              <div className="mt-1 flex items-baseline justify-between text-[10px] sm:text-[11px] truncate gap-1">
                 <span
-                  className="font-semibold text-slate-700"
+                  className="font-semibold text-slate-700 truncate"
                   title={statsA.autoresUnicos.join(', ')}
                 >
                   {statsA.autoresUnicos.length || 0} pessoa(s)
                 </span>
                 <span className="text-slate-400 text-[10px]">vs</span>
                 <span
-                  className="font-semibold text-slate-700"
+                  className="font-semibold text-slate-700 truncate"
                   title={statsB.autoresUnicos.join(', ')}
                 >
                   {statsB.autoresUnicos.length || 0} pessoa(s)
@@ -376,22 +390,24 @@ export function ModalCompararHistoricos({
           </div>
 
           {/* Síntese em linguagem natural Diamond */}
-          <div className="bg-[#07132B]/5 border border-[#D4AF37]/30 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-            <div className="text-slate-700">
-              <strong className="text-[#07132B] font-bold">Diagnóstico comparativo: </strong>
+          <div className="bg-[#07132B]/5 border border-[#D4AF37]/30 rounded-lg p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <div className="text-slate-700 text-[11px] sm:text-xs">
+              <strong className="text-[#07132B] font-bold">Diagnóstico: </strong>
               <span>{analiseComparativa.diferencaEdicoesTexto} </span>
-              <span className="text-slate-500">
+              <span className="text-slate-500 block sm:inline mt-0.5 sm:mt-0">
                 {analiseComparativa.diferencaTotalEventosTexto}
               </span>
             </div>
 
             {/* Filtros de eventos */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-slate-500 font-semibold text-[11px]">Filtrar:</span>
+            <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none">
+              <span className="text-slate-500 font-semibold text-[10px] sm:text-[11px] shrink-0">
+                Filtrar:
+              </span>
               <button
                 type="button"
                 onClick={() => setFiltroTipo('todos')}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors ${
+                className={`px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold transition-colors shrink-0 ${
                   filtroTipo === 'todos'
                     ? 'bg-[#07132B] text-[#D4AF37]'
                     : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -402,7 +418,7 @@ export function ModalCompararHistoricos({
               <button
                 type="button"
                 onClick={() => setFiltroTipo('edicao_parametros')}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors ${
+                className={`px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold transition-colors shrink-0 ${
                   filtroTipo === 'edicao_parametros'
                     ? 'bg-[#07132B] text-[#D4AF37]'
                     : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -413,7 +429,7 @@ export function ModalCompararHistoricos({
               <button
                 type="button"
                 onClick={() => setFiltroTipo('renomeacao')}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors ${
+                className={`px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold transition-colors shrink-0 ${
                   filtroTipo === 'renomeacao'
                     ? 'bg-[#07132B] text-[#D4AF37]'
                     : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -425,8 +441,8 @@ export function ModalCompararHistoricos({
           </div>
         </div>
 
-        {/* Linhas do Tempo Lado a Lado (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-5">
+        {/* Linhas do Tempo Lado a Lado (Desktop) ou Empilhadas Verticalmente (Mobile) */}
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
           {carregando ? (
             <div className="py-20 text-center text-slate-500 text-xs">
               <div className="inline-block w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin mb-2" />
@@ -435,27 +451,32 @@ export function ModalCompararHistoricos({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Coluna A */}
-              <div className="space-y-4">
-                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-xs py-2 border-b border-[#D4AF37]/30 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" />
-                    <h3 className="font-heading font-bold text-sm text-[#07132B] truncate max-w-[240px]">
-                      {simulacaoA.nome}
-                    </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+              {/* Coluna A (Linha do tempo Simulação A com título) */}
+              <div className="space-y-3.5 sm:space-y-4 bg-slate-50/50 p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 md:bg-transparent md:p-0 md:border-0 md:rounded-none">
+                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-xs py-1.5 sm:py-2 border-b border-[#D4AF37]/30 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37] shrink-0" />
+                    <div className="truncate">
+                      <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider block md:hidden">
+                        Linha do Tempo A
+                      </span>
+                      <h3 className="font-heading font-bold text-xs sm:text-sm text-[#07132B] truncate max-w-[200px] sm:max-w-[240px]">
+                        {simulacaoA.nome}
+                      </h3>
+                    </div>
                   </div>
-                  <span className="text-[11px] font-mono text-slate-500">
+                  <span className="text-[10px] sm:text-[11px] font-mono text-slate-500 shrink-0">
                     {filtradosA.length} {filtradosA.length === 1 ? 'evento' : 'eventos'}
                   </span>
                 </div>
 
                 {filtradosA.length === 0 ? (
-                  <div className="py-12 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
+                  <div className="py-8 sm:py-12 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
                     Nenhum evento registrado nesta simulação.
                   </div>
                 ) : (
-                  <div className="relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#D4AF37]/30">
+                  <div className="relative pl-5 space-y-3.5 sm:space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#D4AF37]/30">
                     {filtradosA.map((item, idx) => (
                       <CardEventoHistorico
                         key={item.id || idx}
@@ -467,26 +488,31 @@ export function ModalCompararHistoricos({
                 )}
               </div>
 
-              {/* Coluna B */}
-              <div className="space-y-4">
-                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-xs py-2 border-b border-blue-400/40 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-900" />
-                    <h3 className="font-heading font-bold text-sm text-[#07132B] truncate max-w-[240px]">
-                      {simulacaoB.nome}
-                    </h3>
+              {/* Coluna B (Linha do tempo Simulação B com título) */}
+              <div className="space-y-3.5 sm:space-y-4 bg-slate-50/50 p-2.5 sm:p-3 rounded-2xl border border-blue-200/50 md:bg-transparent md:p-0 md:border-0 md:rounded-none mt-2 md:mt-0">
+                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-xs py-1.5 sm:py-2 border-b border-blue-400/40 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-900 shrink-0" />
+                    <div className="truncate">
+                      <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider block md:hidden">
+                        Linha do Tempo B
+                      </span>
+                      <h3 className="font-heading font-bold text-xs sm:text-sm text-[#07132B] truncate max-w-[200px] sm:max-w-[240px]">
+                        {simulacaoB.nome}
+                      </h3>
+                    </div>
                   </div>
-                  <span className="text-[11px] font-mono text-slate-500">
+                  <span className="text-[10px] sm:text-[11px] font-mono text-slate-500 shrink-0">
                     {filtradosB.length} {filtradosB.length === 1 ? 'evento' : 'eventos'}
                   </span>
                 </div>
 
                 {filtradosB.length === 0 ? (
-                  <div className="py-12 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
+                  <div className="py-8 sm:py-12 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
                     Nenhum evento registrado nesta simulação.
                   </div>
                 ) : (
-                  <div className="relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-blue-300/40">
+                  <div className="relative pl-5 space-y-3.5 sm:space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-blue-300/40">
                     {filtradosB.map((item, idx) => (
                       <CardEventoHistorico key={item.id || idx} item={item} bordaDestaque="azul" />
                     ))}
@@ -498,8 +524,8 @@ export function ModalCompararHistoricos({
         </div>
 
         {/* Rodapé Diamond */}
-        <div className="p-3 bg-slate-100 border-t border-slate-200 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
-          <span className="text-[11px] text-slate-500">
+        <div className="p-2.5 sm:p-3 bg-slate-100 border-t border-slate-200 shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 text-xs">
+          <span className="text-[10px] sm:text-[11px] text-slate-500 text-center sm:text-left">
             Comparação imutável com rastreamento auditável de responsáveis e carimbos de tempo.
           </span>
           <Button
@@ -507,7 +533,7 @@ export function ModalCompararHistoricos({
             variant="outline"
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="text-xs bg-white text-slate-700 border-slate-300 font-semibold"
+            className="text-xs bg-white text-slate-700 border-slate-300 font-semibold w-full sm:w-auto h-8"
           >
             Fechar Comparação
           </Button>
@@ -537,19 +563,19 @@ function CardEventoHistorico({
         }`}
       />
 
-      <div className="bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl p-3 transition-all text-xs">
-        <div className="flex flex-wrap items-center justify-between gap-1 pb-1.5 border-b border-slate-200">
-          <div className="flex items-center gap-1.5">
+      <div className="bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl p-2.5 sm:p-3 transition-all text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1.5 border-b border-slate-200">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {getBadgeEvento(item.tipo_evento)}
             <strong className="text-xs font-bold text-[#07132B]">{item.descricao}</strong>
           </div>
-          <span className="text-[10px] font-mono text-slate-500">
+          <span className="text-[9px] sm:text-[10px] font-mono text-slate-500">
             {formatarDataHistorico(item.created)}
           </span>
         </div>
 
         {/* Informações do autor */}
-        <div className="mt-1.5 text-[11px] text-slate-500 flex flex-wrap items-center gap-x-2">
+        <div className="mt-1.5 text-[10px] sm:text-[11px] text-slate-500 flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <span>
             Autor: <strong className="text-slate-700">{item.autor_nome || 'Usuário'}</strong>
             {item.autor_nivel && (
@@ -559,7 +585,7 @@ function CardEventoHistorico({
             )}
           </span>
           {item.origem && (
-            <span className="text-[10px] text-slate-400">
+            <span className="text-[9px] sm:text-[10px] text-slate-400">
               • {item.origem === 'nuvem' ? 'Nuvem' : 'Local'}
             </span>
           )}
@@ -571,26 +597,28 @@ function CardEventoHistorico({
             <span className="text-[10px] font-bold text-[#07132B] uppercase tracking-wider block mb-1">
               Diferenças registradas nesta alteração:
             </span>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-[11px] border border-slate-200 rounded overflow-hidden">
-                <thead className="bg-[#07132B]/5 text-slate-700 text-[9px] uppercase font-bold">
+            <div className="overflow-x-auto -mx-1 sm:mx-0 px-1 sm:px-0">
+              <table className="w-full min-w-[320px] sm:min-w-0 text-left text-[10px] sm:text-[11px] border border-slate-200 rounded overflow-hidden">
+                <thead className="bg-[#07132B]/5 text-slate-700 text-[8px] sm:text-[9px] uppercase font-bold">
                   <tr>
-                    <th className="p-1.5 border-b border-slate-200">Parâmetro</th>
-                    <th className="p-1.5 border-b border-slate-200">De (Anterior)</th>
-                    <th className="p-1.5 border-b border-slate-200">Para (Novo)</th>
+                    <th className="p-1 sm:p-1.5 border-b border-slate-200 w-[40%]">Parâmetro</th>
+                    <th className="p-1 sm:p-1.5 border-b border-slate-200 w-[30%]">
+                      De (Anterior)
+                    </th>
+                    <th className="p-1 sm:p-1.5 border-b border-slate-200 w-[30%]">Para (Novo)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {item.alteracoes_json!.map((alt: ItemAlteracaoCampo, aIdx: number) => (
                     <tr key={aIdx} className="hover:bg-slate-50/60">
-                      <td className="p-1.5 font-medium text-slate-800">
+                      <td className="p-1 sm:p-1.5 font-medium text-slate-800 break-words">
                         {alt.rotulo || alt.campo}
                       </td>
-                      <td className="p-1.5 font-mono text-slate-500 line-through">
+                      <td className="p-1 sm:p-1.5 font-mono text-slate-500 line-through break-words">
                         {alt.valorAnteriorFormatado || String(alt.valorAnterior ?? '-')}
                       </td>
                       <td
-                        className={`p-1.5 font-mono font-bold ${
+                        className={`p-1 sm:p-1.5 font-mono font-bold break-words ${
                           bordaDestaque === 'dourada'
                             ? 'text-[#07132B] bg-[#D4AF37]/10'
                             : 'text-blue-950 bg-blue-50'
@@ -608,7 +636,7 @@ function CardEventoHistorico({
 
         {/* Snapshot dos resultados no momento */}
         {item.snapshot_novo_json && (
-          <div className="mt-2 pt-1.5 border-t border-slate-200/60 text-[10px] text-slate-500 flex flex-wrap gap-x-2.5 gap-y-0.5">
+          <div className="mt-2 pt-1.5 border-t border-slate-200/60 text-[9px] sm:text-[10px] text-slate-500 flex flex-wrap gap-x-2 gap-y-0.5">
             {item.snapshot_novo_json.regime && (
               <span>
                 Regime: <strong>{item.snapshot_novo_json.regime}</strong>

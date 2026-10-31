@@ -200,34 +200,36 @@ export function PainelCompararVersoesSimulacao({
   return (
     <div className="flex flex-col h-full overflow-hidden text-xs">
       {/* Barra de Seleção de Modo e Controles */}
-      <div className="p-4 bg-slate-50 border-b border-slate-200 shrink-0 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 font-bold text-[11px] uppercase tracking-wider">
-              Modo de Comparação:
+      <div className="p-3 sm:p-4 bg-slate-50 border-b border-slate-200 shrink-0 space-y-2.5 sm:space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
+            <span className="text-slate-500 font-bold text-[10px] sm:text-[11px] uppercase tracking-wider shrink-0">
+              Modo:
             </span>
-            <button
-              type="button"
-              onClick={() => setModoComparacao('evento_vs_atual')}
-              className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
-                modoComparacao === 'evento_vs_atual'
-                  ? 'bg-[#07132B] text-[#D4AF37] shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Evento Histórico vs. Estado Atual
-            </button>
-            <button
-              type="button"
-              onClick={() => setModoComparacao('dois_eventos')}
-              className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
-                modoComparacao === 'dois_eventos'
-                  ? 'bg-[#07132B] text-[#D4AF37] shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Entre Dois Eventos Históricos
-            </button>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setModoComparacao('evento_vs_atual')}
+                className={`px-2 sm:px-2.5 py-1 rounded text-[11px] sm:text-xs font-semibold transition-colors shrink-0 ${
+                  modoComparacao === 'evento_vs_atual'
+                    ? 'bg-[#07132B] text-[#D4AF37] shadow-xs'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                Versus Atual
+              </button>
+              <button
+                type="button"
+                onClick={() => setModoComparacao('dois_eventos')}
+                className={`px-2 sm:px-2.5 py-1 rounded text-[11px] sm:text-xs font-semibold transition-colors shrink-0 ${
+                  modoComparacao === 'dois_eventos'
+                    ? 'bg-[#07132B] text-[#D4AF37] shadow-xs'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                Entre Dois Eventos
+              </button>
+            </div>
           </div>
 
           <Button
@@ -235,25 +237,25 @@ export function PainelCompararVersoesSimulacao({
             variant="ghost"
             size="sm"
             onClick={onVoltarParaLinhaTempo}
-            className="text-xs text-slate-600 hover:text-[#07132B] hover:bg-slate-200 h-7"
+            className="text-[11px] sm:text-xs text-slate-600 hover:text-[#07132B] hover:bg-slate-200 h-7 self-start sm:self-auto px-2 sm:px-3"
           >
             ← Voltar para Linha do Tempo
           </Button>
         </div>
 
-        {/* Seletores de Eventos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-200/80">
+        {/* Seletores de Eventos - Empilhados em mobile, lado a lado em desktop */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 pt-2 border-t border-slate-200/80">
           {/* Seletor Evento A */}
           <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                Ponto de Referência A (Histórico)
+            <div className="flex items-center justify-between gap-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">
+                Ponto A (Histórico)
               </span>
               {registroAEncontrado && getBadgeEventoMini(registroAEncontrado.tipo_evento)}
             </div>
 
             <Select value={eventoAId} onValueChange={setEventoAId}>
-              <SelectTrigger className="w-full h-8 text-xs bg-slate-50 border-slate-200">
+              <SelectTrigger className="w-full h-8 text-xs bg-slate-50 border-slate-200 truncate">
                 <SelectValue placeholder="Selecione um evento..." />
               </SelectTrigger>
               <SelectContent>
@@ -266,25 +268,27 @@ export function PainelCompararVersoesSimulacao({
             </Select>
 
             {registroAEncontrado && (
-              <div className="text-[10px] text-slate-500 flex flex-wrap items-center justify-between gap-1 pt-1">
-                <span>
+              <div className="text-[10px] text-slate-500 flex flex-wrap items-center justify-between gap-1 pt-0.5">
+                <span className="truncate">
                   Autor: <strong>{registroAEncontrado.autor_nome || 'Usuário'}</strong>
                 </span>
-                <span>Data: {formatarDataHistorico(registroAEncontrado.created)}</span>
+                <span className="shrink-0">
+                  {formatarDataHistorico(registroAEncontrado.created)}
+                </span>
               </div>
             )}
           </div>
 
           {/* Seletor Evento B ou Estado Atual */}
           <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <div className="flex items-center justify-between gap-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">
                 {modoComparacao === 'evento_vs_atual'
-                  ? 'Ponto de Comparação B (Estado Atual)'
-                  : 'Ponto de Comparação B (Histórico)'}
+                  ? 'Ponto B (Estado Atual)'
+                  : 'Ponto B (Histórico)'}
               </span>
               {modoComparacao === 'evento_vs_atual' ? (
-                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-[#07132B]/10 text-[#07132B] border border-[#07132B]/20">
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-[#07132B]/10 text-[#07132B] border border-[#07132B]/20 shrink-0">
                   Estado Atual
                 </span>
               ) : (
@@ -293,18 +297,18 @@ export function PainelCompararVersoesSimulacao({
             </div>
 
             {modoComparacao === 'evento_vs_atual' ? (
-              <div className="h-8 px-2.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-900 flex items-center justify-between text-xs font-semibold">
-                <span className="truncate">Estado Mais Recente da Simulação (em vigor)</span>
+              <div className="h-8 px-2 sm:px-2.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-900 flex items-center justify-between text-xs font-semibold gap-1">
+                <span className="truncate text-[11px] sm:text-xs">Versão Atual (em vigor)</span>
                 <Badge
                   variant="outline"
-                  className="border-emerald-300 text-emerald-800 text-[9px] bg-white"
+                  className="border-emerald-300 text-emerald-800 text-[9px] bg-white shrink-0 px-1.5"
                 >
-                  Versão Atual
+                  Atual
                 </Badge>
               </div>
             ) : (
               <Select value={eventoBId} onValueChange={setEventoBId}>
-                <SelectTrigger className="w-full h-8 text-xs bg-slate-50 border-slate-200">
+                <SelectTrigger className="w-full h-8 text-xs bg-slate-50 border-slate-200 truncate">
                   <SelectValue placeholder="Selecione o segundo evento..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -322,21 +326,23 @@ export function PainelCompararVersoesSimulacao({
               </Select>
             )}
 
-            <div className="text-[10px] text-slate-500 flex flex-wrap items-center justify-between gap-1 pt-1">
+            <div className="text-[10px] text-slate-500 flex flex-wrap items-center justify-between gap-1 pt-0.5">
               {modoComparacao === 'evento_vs_atual' ? (
                 <>
-                  <span>
+                  <span className="truncate">
                     Simulação: <strong>{simulacaoNome || 'Ativa'}</strong>
                   </span>
-                  <span>Última versão salva</span>
+                  <span className="shrink-0 text-slate-400">Última versão</span>
                 </>
               ) : (
                 registroBEncontrado && (
                   <>
-                    <span>
+                    <span className="truncate">
                       Autor: <strong>{registroBEncontrado.autor_nome || 'Usuário'}</strong>
                     </span>
-                    <span>Data: {formatarDataHistorico(registroBEncontrado.created)}</span>
+                    <span className="shrink-0">
+                      {formatarDataHistorico(registroBEncontrado.created)}
+                    </span>
                   </>
                 )
               )}
@@ -345,89 +351,89 @@ export function PainelCompararVersoesSimulacao({
         </div>
 
         {/* Resumo de Diferenças e Filtro */}
-        <div className="bg-[#07132B]/5 border border-[#D4AF37]/30 rounded-lg p-2.5 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
-            <span className="text-slate-700 font-medium">
+        <div className="bg-[#07132B]/5 border border-[#D4AF37]/30 rounded-lg p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#D4AF37] shrink-0" />
+            <span className="text-slate-700 font-medium text-[11px] sm:text-xs">
               {resultadoComparacao.diffs.length === 0 ? (
                 <strong className="text-emerald-800">
-                  Nenhuma diferença de parâmetros entre os dois pontos selecionados.
+                  Nenhuma diferença de parâmetros entre os pontos.
                 </strong>
               ) : (
                 <span>
-                  Foram identificadas{' '}
+                  Identificadas{' '}
                   <strong className="text-[#07132B]">
                     {resultadoComparacao.diffs.length}{' '}
-                    {resultadoComparacao.diffs.length === 1
-                      ? 'alteração de parâmetro'
-                      : 'alterações de parâmetros'}
+                    {resultadoComparacao.diffs.length === 1 ? 'alteração' : 'alterações'}
                   </strong>{' '}
-                  entre os dois momentos.
+                  entre os momentos.
                 </span>
               )}
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-slate-500 font-semibold text-[11px]">Exibir:</span>
+          <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none">
+            <span className="text-slate-500 font-semibold text-[10px] sm:text-[11px] shrink-0">
+              Exibir:
+            </span>
             <button
               type="button"
               onClick={() => setFiltroDiferencas('apenas_alterados')}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors ${
+              className={`px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold transition-colors shrink-0 ${
                 filtroDiferencas === 'apenas_alterados'
                   ? 'bg-[#07132B] text-[#D4AF37]'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Apenas Alterados ({resultadoComparacao.diffs.length})
+              Alterados ({resultadoComparacao.diffs.length})
             </button>
             <button
               type="button"
               onClick={() => setFiltroDiferencas('todos')}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors ${
+              className={`px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold transition-colors shrink-0 ${
                 filtroDiferencas === 'todos'
                   ? 'bg-[#07132B] text-[#D4AF37]'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Todos os Parâmetros ({resultadoComparacao.camposTotais.length})
+              Todos ({resultadoComparacao.camposTotais.length})
             </button>
           </div>
         </div>
       </div>
 
-      {/* Tabela de Diff De → Para (Scrollable) */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Tabela de Diff De → Para (Scrollable e Responsiva com scroll horizontal suave) */}
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
         {camposParaExibir.length === 0 ? (
           <div className="py-12 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-            <p className="font-semibold text-slate-700 text-sm">
+            <p className="font-semibold text-slate-700 text-xs sm:text-sm">
               Nenhum campo com alteração para exibir
             </p>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-1 max-w-sm mx-auto">
               Alterne o filtro para &quot;Todos os Parâmetros&quot; ou escolha outro evento
               histórico para comparar.
             </p>
           </div>
         ) : (
           <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#07132B] text-white text-[10px] uppercase font-bold tracking-wider">
+            <div className="overflow-x-auto -mx-1 sm:mx-0 px-1 sm:px-0">
+              <table className="w-full min-w-[420px] sm:min-w-0 text-left text-xs">
+                <thead className="bg-[#07132B] text-white text-[9px] sm:text-[10px] uppercase font-bold tracking-wider">
                   <tr>
-                    <th className="p-3 border-b border-[#D4AF37]/30 w-[35%]">
+                    <th className="p-2 sm:p-3 border-b border-[#D4AF37]/30 w-[38%]">
                       Parâmetro / Indicador
                     </th>
-                    <th className="p-3 border-b border-[#D4AF37]/30 w-[32%] text-slate-200">
+                    <th className="p-2 sm:p-3 border-b border-[#D4AF37]/30 w-[31%] text-slate-200">
                       Ponto A (Anterior)
                     </th>
-                    <th className="p-3 border-b border-[#D4AF37]/30 w-[33%] text-[#D4AF37]">
+                    <th className="p-2 sm:p-3 border-b border-[#D4AF37]/30 w-[31%] text-[#D4AF37]">
                       {modoComparacao === 'evento_vs_atual'
-                        ? 'Ponto B (Estado Atual)'
-                        : 'Ponto B (Mais Recente)'}
+                        ? 'Ponto B (Atual)'
+                        : 'Ponto B (Recente)'}
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-[11px]">
+                <tbody className="divide-y divide-slate-100 text-[10px] sm:text-[11px]">
                   {camposParaExibir.map((item, idx) => {
                     return (
                       <tr
@@ -438,25 +444,27 @@ export function PainelCompararVersoesSimulacao({
                             : 'hover:bg-slate-50/70'
                         }`}
                       >
-                        <td className="p-3">
+                        <td className="p-2 sm:p-3">
                           <div className="flex items-center gap-1.5">
                             {item.mudou && (
                               <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] shrink-0" />
                             )}
-                            <span className="font-semibold text-slate-800">{item.rotulo}</span>
+                            <span className="font-semibold text-slate-800 break-words leading-tight">
+                              {item.rotulo}
+                            </span>
                           </div>
-                          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
+                          <span className="text-[9px] sm:text-[10px] font-mono text-slate-400 block mt-0.5 truncate">
                             {item.campo}
                           </span>
                         </td>
 
                         {/* Valor Ponto A */}
-                        <td className="p-3 font-mono">
+                        <td className="p-2 sm:p-3 font-mono">
                           <span
                             className={
                               item.mudou
-                                ? 'text-slate-600 line-through bg-rose-50 px-1 py-0.5 rounded border border-rose-200/50'
-                                : 'text-slate-600'
+                                ? 'text-slate-600 line-through bg-rose-50 px-1 py-0.5 rounded border border-rose-200/50 break-words inline-block'
+                                : 'text-slate-600 break-words inline-block'
                             }
                           >
                             {item.valorAFormatado}
@@ -464,12 +472,12 @@ export function PainelCompararVersoesSimulacao({
                         </td>
 
                         {/* Valor Ponto B */}
-                        <td className="p-3 font-mono">
+                        <td className="p-2 sm:p-3 font-mono">
                           <span
                             className={
                               item.mudou
-                                ? 'font-bold text-[#07132B] bg-[#D4AF37]/15 px-1.5 py-0.5 rounded border border-[#D4AF37]/30'
-                                : 'text-slate-700 font-medium'
+                                ? 'font-bold text-[#07132B] bg-[#D4AF37]/15 px-1.5 py-0.5 rounded border border-[#D4AF37]/30 break-words inline-block'
+                                : 'text-slate-700 font-medium break-words inline-block'
                             }
                           >
                             {item.valorBFormatado}
@@ -485,13 +493,13 @@ export function PainelCompararVersoesSimulacao({
         )}
 
         {/* Informações adicionais do estado comparado */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
-          <span>
-            Padrão de rastreabilidade <strong>Diamond Group</strong>: os snapshots e diffs refletem
-            exatamente a evolução dos dados gravados na coleção auditável e imutável.
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-[10px] sm:text-[11px] text-slate-600 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
+          <span className="leading-tight">
+            Padrão de rastreabilidade <strong>Diamond Group</strong>: snapshots e diffs refletem
+            fielmente a evolução dos parâmetros gravados.
           </span>
-          <span className="text-slate-400 text-[10px]">
-            {resultadoComparacao.camposIguais.length} parâmetro(s) idêntico(s)
+          <span className="text-slate-400 text-[10px] shrink-0">
+            {resultadoComparacao.camposIguais.length} idêntico(s)
           </span>
         </div>
       </div>
