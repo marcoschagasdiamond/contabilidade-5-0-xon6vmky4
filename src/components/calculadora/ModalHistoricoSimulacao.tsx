@@ -22,6 +22,7 @@ interface ModalHistoricoSimulacaoProps {
   simulacaoNome?: string
   empresa?: string
   tipoSimulacao?: 'calculadora' | 'recuperador'
+  onCompararHistoricoComOutra?: () => void
 }
 
 function getBadgeEvento(tipo: TipoEventoHistorico) {
@@ -66,6 +67,7 @@ export function ModalHistoricoSimulacao({
   simulacaoNome,
   empresa,
   tipoSimulacao = 'calculadora',
+  onCompararHistoricoComOutra,
 }: ModalHistoricoSimulacaoProps) {
   const [registros, setRegistros] = useState<HistoricoSimulacaoRegistro[]>([])
   const [carregando, setCarregando] = useState(false)
@@ -349,19 +351,32 @@ export function ModalHistoricoSimulacao({
         </div>
 
         {/* Rodapé Diamond */}
-        <div className="p-3 bg-slate-100 border-t border-slate-200 flex items-center justify-between text-xs">
+        <div className="p-3 bg-slate-100 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
           <span className="text-[11px] text-slate-500">
             Registro com carimbo de tempo inviolável e rastreamento de usuário.
           </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onOpenChange(false)}
-            className="text-xs bg-white text-slate-700 border-slate-300 font-semibold"
-          >
-            Fechar Histórico
-          </Button>
+          <div className="flex items-center gap-2">
+            {onCompararHistoricoComOutra && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onCompararHistoricoComOutra}
+                className="text-xs bg-amber-50 text-[#07132B] border-[#D4AF37] hover:bg-amber-100 font-bold"
+              >
+                Comparar Histórico com Outra
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              className="text-xs bg-white text-slate-700 border-slate-300 font-semibold"
+            >
+              Fechar Histórico
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

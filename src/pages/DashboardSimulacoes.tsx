@@ -38,6 +38,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { PainelComparacaoCenarios } from '@/components/calculadora/PainelComparacaoCenarios'
 import { ModalSimulacaoAutomaticaCenarios } from '@/components/calculadora/ModalSimulacaoAutomaticaCenarios'
 import { ModalHistoricoSimulacao } from '@/components/calculadora/ModalHistoricoSimulacao'
+import { ModalCompararHistoricos } from '@/components/calculadora/ModalCompararHistoricos'
 
 function formatarMoeda(val?: number): string {
   if (typeof val !== 'number' || isNaN(val)) return 'R$ 0,00'
@@ -86,6 +87,11 @@ export default function DashboardSimulacoes() {
   // Modal de Histórico de Alterações de Simulação
   const [historicoItemSelecionado, setHistoricoItemSelecionado] =
     useState<ItemSimulacaoUnificado | null>(null)
+
+  // Comparação de Histórico entre Duas Simulações
+  const [modalCompararHistoricosAberto, setModalCompararHistoricosAberto] = useState(false)
+  const [compararHistSimA, setCompararHistSimA] = useState<ItemSimulacaoUnificado | null>(null)
+  const [compararHistSimB, setCompararHistSimB] = useState<ItemSimulacaoUnificado | null>(null)
 
   useEffect(() => {
     carregar()
@@ -177,6 +183,45 @@ export default function DashboardSimulacoes() {
   const handleLimparComparacao = () => {
     setIdsSelecionadosComparacao([])
     setModoVisualizacao('geral')
+  }
+
+  // Abertura da comparação de históricos entre duas simulações
+  const handleAbrirComparacaoHistoricos = (
+    simA?: ItemSimulacaoUnificado,
+    simB?: ItemSimulacaoUnificado,
+  ) => {
+    const itemA = simA || itensSelecionadosParaComparar[0] || null
+    const itemB = simB || itensSelecionadosParaComparar[1] || null
+
+    if (!itemA) {
+      toast({
+        title: 'Selecione ao menos uma simulação',
+        description: 'Escolha duas simulações para comparar seus históricos lado a lado.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (!itemB) {
+      // Se tiver apenas a primeira simulação, tenta escolher outra da lista disponível
+      const outra = dados?.itens.find((i) => i.id !== itemA.id)
+      if (outra) {
+        setCompararHistSimA(itemA)
+        setCompararHistSimB(outra)
+        setModalCompararHistoricosAberto(true)
+        return
+      }
+      toast({
+        title: 'Segunda simulação necessária',
+        description: 'Você precisa ter pelo menos duas simulações para comparar históricos.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setCompararHistSimA(itemA)
+    setCompararHistSimB(itemB)
+    setModalCompararHistoricosAberto(true)
   }
 
   const handleVerComparacao = () => {
@@ -429,6 +474,22 @@ export default function DashboardSimulacoes() {
               >
                 Limpar Seleção
               </Button>
+              {idsSelecionadosComparacao.length === 2 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs border-[#D4AF37] bg-white text-[#07132B] hover:bg-amber-50 font-bold"
+                  onClick={() =>
+                    handleAbrirComparacaoHistoricos(
+                      itensSelecionadosParaComparar[0],
+                      itensSelecionadosParaComparar[1],
+                    )
+                  }
+                  title="Comparar linha do tempo de alterações das duas simulações"
+                >
+                  Comparar Histórico (2)
+                </Button>
+              )}
               <Button
                 size="sm"
                 className="text-xs font-extrabold bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B]"
@@ -1043,6 +1104,24 @@ export default function DashboardSimulacoes() {
                             Histórico
                           </Button>
 
+                          {dados && dados.itens.length > 1 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-9 font-semibold text-slate-600 border-slate-200 hover:bg-slate-100 hidden sm:inline-flex"
+                              onClick={() => {
+                                const outra =
+                                  itensSelecionadosParaComparar.find((i) => i.id !== item.id) ||
+                                  dados.itens.find((i) => i.id !== item.id) ||
+                                  null
+                                handleAbrirComparacaoHistoricos(item, outra || undefined)
+                              }}
+                              title="Comparar histórico desta simulação com outra"
+                            >
+                              Comparar Hist.
+                            </Button>
+                          )}
+
                           <Button
                             size="sm"
                             variant="outline"
@@ -1089,6 +1168,29 @@ export default function DashboardSimulacoes() {
         simulacaoNome={historicoItemSelecionado?.nome}
         empresa={historicoItemSelecionado?.empresa}
         tipoSimulacao={historicoItemSelecionado?.tipo || 'calculadora'}
+        onCompararHistoricoComOutra={
+          dados && dados.itens.length > 1
+            ? () => {
+                const itemAtual = historicoItemSelecionado
+                setHistoricoItemSelecionado(null)
+                if (itemAtual) {
+                  const outra = dados.itens.find((i) => i.id !== itemAtual.id) || null
+                  handleAbrirComparacaoHistoricos(itemAtual, outra || undefined)
+                }
+              }
+            : undefined
+        }
+      />
+
+      {/* Modal de Comparação de Histórico entre Duas Simulações */}
+      <ModalCompararHistoricos
+        open={modalCompararHistoricosAberto}
+        onOpenChange={setModalCompararHistoricosAberto}
+        simulacaoA={compararHistSimA}
+        simulacaoB={compararHistSimB}
+        todasSimulacoesDisponiveis={dados?.itens || []}
+        onTrocarSimulacaoA={(nova) => setCompararHistSimA(nova)}
+        onTrocarSimulacaoB={(nova) => setCompararHistSimB(nova)}
       />
     </div>
   )
