@@ -34,6 +34,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Checkbox } from '@/components/ui/checkbox'
+import { PainelComparacaoCenarios } from '@/components/calculadora/PainelComparacaoCenarios'
 
 function formatarMoeda(val?: number): string {
   if (typeof val !== 'number' || isNaN(val)) return 'R$ 0,00'
@@ -73,6 +75,10 @@ export default function DashboardSimulacoes() {
   const [filtroRegime, setFiltroRegime] = useState<string>('todos')
   const [ordenacao, setOrdenacao] = useState<'recentes' | 'antigos' | 'maior_valor'>('recentes')
   const [tabGrafico, setTabGrafico] = useState<'evolucao' | 'diferenca'>('evolucao')
+
+  // Seleção para Comparação de Cenários (2 a 4 simulações)
+  const [idsSelecionadosComparacao, setIdsSelecionadosComparacao] = useState<string[]>([])
+  const [modoVisualizacao, setModoVisualizacao] = useState<'geral' | 'comparacao'>('geral')
 
   useEffect(() => {
     carregar()
@@ -132,6 +138,52 @@ export default function DashboardSimulacoes() {
         return timeB - timeA
       })
   }, [dados, busca, filtroTipo, filtroRegime, ordenacao])
+
+  // Itens selecionados para comparação
+  const itensSelecionadosParaComparar = useMemo(() => {
+    if (!dados) return []
+    return dados.itens.filter((i) => idsSelecionadosComparacao.includes(i.id))
+  }, [dados, idsSelecionadosComparacao])
+
+  // Alternar seleção de um item na comparação
+  const handleToggleSelecao = (itemId: string) => {
+    setIdsSelecionadosComparacao((prev) => {
+      if (prev.includes(itemId)) {
+        return prev.filter((id) => id !== itemId)
+      }
+      if (prev.length >= 4) {
+        toast({
+          title: 'Limite de seleção atingido',
+          description: 'Você pode comparar no máximo 4 simulações simultaneamente.',
+          variant: 'destructive',
+        })
+        return prev
+      }
+      return [...prev, itemId]
+    })
+  }
+
+  const handleRemoverItemComparacao = (itemId: string) => {
+    setIdsSelecionadosComparacao((prev) => prev.filter((id) => id !== itemId))
+  }
+
+  const handleLimparComparacao = () => {
+    setIdsSelecionadosComparacao([])
+    setModoVisualizacao('geral')
+  }
+
+  const handleVerComparacao = () => {
+    if (idsSelecionadosComparacao.length < 2) {
+      toast({
+        title: 'Selecione ao menos 2 simulações',
+        description: 'Marque entre 2 e 4 simulações na lista para comparar lado a lado.',
+        variant: 'destructive',
+      })
+      return
+    }
+    setModoVisualizacao('comparacao')
+    window.scrollTo({ top: 380, behavior: 'smooth' })
+  }
 
   // Abertura da simulação
   const handleAbrirSimulacao = (item: ItemSimulacaoUnificado) => {
@@ -284,8 +336,16 @@ export default function DashboardSimulacoes() {
               >
                 Atualizar Dados
               </Button>
+              {idsSelecionadosComparacao.length >= 2 && (
+                <Button
+                  className="bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] font-extrabold text-xs sm:text-sm shadow-md"
+                  onClick={handleVerComparacao}
+                >
+                  Comparar Cenários ({idsSelecionadosComparacao.length})
+                </Button>
+              )}
               <Link to="/calculadora-ibs-cbs">
-                <Button className="bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] font-bold text-xs sm:text-sm">
+                <Button className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs sm:text-sm">
                   Nova Calculadora IBS/CBS
                 </Button>
               </Link>
@@ -325,6 +385,62 @@ export default function DashboardSimulacoes() {
 
       {/* Conteúdo Principal */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
+        {/* Barra Flutuante de Seleção para Comparação */}
+        {idsSelecionadosComparacao.length > 0 && (
+          <div className="mb-6 p-4 rounded-xl bg-[#07132B] text-white border-2 border-[#D4AF37] shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 sticky top-20 z-20">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#D4AF37] text-[#07132B] font-extrabold flex items-center justify-center text-sm shrink-0">
+                {idsSelecionadosComparacao.length}
+              </div>
+              <div>
+                <strong className="block text-sm text-white font-bold">
+                  {idsSelecionadosComparacao.length === 1
+                    ? '1 simulação selecionada para comparar'
+                    : `${idsSelecionadosComparacao.length} simulações selecionadas (máximo 4)`}
+                </strong>
+                <span className="text-xs text-slate-300">
+                  {idsSelecionadosComparacao.length < 2
+                    ? 'Marque mais 1 a 3 simulações para habilitar a comparação lado a lado.'
+                    : 'Pronto para ver o comparativo lado a lado, gráfico sobreposto e exportações.'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs border-white/20 bg-white/10 hover:bg-white/20 text-white font-semibold"
+                onClick={handleLimparComparacao}
+              >
+                Limpar Seleção
+              </Button>
+              <Button
+                size="sm"
+                className="text-xs font-extrabold bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B]"
+                disabled={idsSelecionadosComparacao.length < 2}
+                onClick={handleVerComparacao}
+              >
+                {modoVisualizacao === 'comparacao'
+                  ? 'Atualizar Painel Comparativo'
+                  : 'Ver Comparação de Cenários'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* MODO COMPARAÇÃO DE CENÁRIOS ATIVO */}
+        {modoVisualizacao === 'comparacao' && itensSelecionadosParaComparar.length >= 2 && (
+          <div className="mb-10">
+            <PainelComparacaoCenarios
+              itensSelecionados={itensSelecionadosParaComparar}
+              onLimparSelecao={() => setModoVisualizacao('geral')}
+              onRemoverItem={handleRemoverItemComparacao}
+              onAbrirSimulacao={handleAbrirSimulacao}
+            />
+          </div>
+        )}
+
         {/* Cartões Resumo (KPIs) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="border-slate-200 shadow-sm bg-white">
@@ -685,12 +801,17 @@ export default function DashboardSimulacoes() {
           <CardHeader className="border-b border-slate-100">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-lg sm:text-xl font-heading font-bold text-[#07132B]">
-                  Simulações Salvas
-                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg sm:text-xl font-heading font-bold text-[#07132B]">
+                    Simulações Salvas
+                  </CardTitle>
+                  <Badge variant="outline" className="text-xs text-slate-600 font-normal">
+                    {itensFiltrados.length} encontradas
+                  </Badge>
+                </div>
                 <CardDescription className="text-xs sm:text-sm text-slate-500 mt-1">
-                  Gerencie, filtre e gere pareceres em PDF para todas as suas simulações e da sua
-                  carteira.
+                  Marque o checkbox de 2 a 4 simulações para comparar lado a lado, ou gerencie e
+                  baixe relatórios individuais.
                 </CardDescription>
               </div>
 
@@ -785,72 +906,93 @@ export default function DashboardSimulacoes() {
                 {itensFiltrados.map((item) => {
                   const isCalculadora = item.tipo === 'calculadora'
                   const isGerando = gerandoPdfId === item.id
+                  const isSelecionado = idsSelecionadosComparacao.includes(item.id)
 
                   return (
                     <div
                       key={item.id}
-                      className="p-4 rounded-xl border border-slate-200 hover:border-[#D4AF37]/50 bg-white hover:bg-slate-50/50 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm"
+                      className={`p-4 rounded-xl border transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm ${
+                        isSelecionado
+                          ? 'border-[#D4AF37] bg-amber-50/40 ring-1 ring-[#D4AF37]'
+                          : 'border-slate-200 hover:border-[#D4AF37]/50 bg-white hover:bg-slate-50/50'
+                      }`}
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                          {isCalculadora ? (
-                            <Badge className="bg-[#07132B] text-white hover:bg-[#07132B] text-[11px] font-bold">
-                              Calculadora IBS/CBS
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-emerald-700 text-white hover:bg-emerald-700 text-[11px] font-bold">
-                              Recuperador de Créditos
-                            </Badge>
-                          )}
-
-                          <Badge variant="outline" className="text-slate-600 text-[11px]">
-                            {item.regime}
-                          </Badge>
-
-                          {item.origem === 'nuvem' ? (
-                            <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
-                              Nuvem
-                            </span>
-                          ) : (
-                            <span className="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-mono">
-                              Local
-                            </span>
-                          )}
-
-                          <span className="text-xs text-slate-400">
-                            Salvo em: {formatarData(item.created)}
-                          </span>
+                      <div className="flex items-start sm:items-center gap-3">
+                        <div className="pt-1 sm:pt-0">
+                          <Checkbox
+                            checked={isSelecionado}
+                            onCheckedChange={() => handleToggleSelecao(item.id)}
+                            className="border-slate-400 data-[state=checked]:bg-[#07132B] data-[state=checked]:border-[#07132B]"
+                            title="Marcar para comparar lado a lado (2 a 4 simulações)"
+                          />
                         </div>
 
-                        <h3 className="font-heading font-bold text-base sm:text-lg text-[#07132B] truncate">
-                          {item.nome}
-                        </h3>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                            {isSelecionado && (
+                              <Badge className="bg-[#D4AF37] text-[#07132B] hover:bg-[#D4AF37] text-[10px] font-extrabold">
+                                Selecionado p/ Comparar
+                              </Badge>
+                            )}
+                            {isCalculadora ? (
+                              <Badge className="bg-[#07132B] text-white hover:bg-[#07132B] text-[11px] font-bold">
+                                Calculadora IBS/CBS
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-emerald-700 text-white hover:bg-emerald-700 text-[11px] font-bold">
+                                Recuperador de Créditos
+                              </Badge>
+                            )}
 
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
-                          <span>
-                            Empresa: <strong className="text-slate-700">{item.empresa}</strong>
-                          </span>
-                          {item.cnpj && (
-                            <span>
-                              CNPJ: <strong className="text-slate-700">{item.cnpj}</strong>
+                            <Badge variant="outline" className="text-slate-600 text-[11px]">
+                              {item.regime}
+                            </Badge>
+
+                            {item.origem === 'nuvem' ? (
+                              <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
+                                Nuvem
+                              </span>
+                            ) : (
+                              <span className="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-mono">
+                                Local
+                              </span>
+                            )}
+
+                            <span className="text-xs text-slate-400">
+                              Salvo em: {formatarData(item.created)}
                             </span>
-                          )}
-                          {isCalculadora && item.faturamentoMensal && (
+                          </div>
+
+                          <h3 className="font-heading font-bold text-base sm:text-lg text-[#07132B] truncate">
+                            {item.nome}
+                          </h3>
+
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
                             <span>
-                              Faturamento Mensal:{' '}
-                              <strong className="text-slate-700">
-                                {formatarMoeda(item.faturamentoMensal)}
-                              </strong>
+                              Empresa: <strong className="text-slate-700">{item.empresa}</strong>
                             </span>
-                          )}
-                          {isCalculadora && item.aliquotaEfetiva !== undefined && (
-                            <span>
-                              Alíquota Efetiva:{' '}
-                              <strong className="text-slate-700">
-                                {item.aliquotaEfetiva.toFixed(2)}%
-                              </strong>
-                            </span>
-                          )}
+                            {item.cnpj && (
+                              <span>
+                                CNPJ: <strong className="text-slate-700">{item.cnpj}</strong>
+                              </span>
+                            )}
+                            {isCalculadora && item.faturamentoMensal && (
+                              <span>
+                                Faturamento Mensal:{' '}
+                                <strong className="text-slate-700">
+                                  {formatarMoeda(item.faturamentoMensal)}
+                                </strong>
+                              </span>
+                            )}
+                            {isCalculadora && item.aliquotaEfetiva !== undefined && (
+                              <span>
+                                Alíquota Efetiva:{' '}
+                                <strong className="text-slate-700">
+                                  {item.aliquotaEfetiva.toFixed(2)}%
+                                </strong>
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
