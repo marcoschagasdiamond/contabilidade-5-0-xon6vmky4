@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-31T04:09:16.053Z",
+  "generatedAt": "2026-10-31T04:31:02.528Z",
   "collections": [
     {
       "name": "users",
@@ -2794,6 +2794,118 @@
         "CREATE INDEX idx_hist_sim_tipo ON historico_simulacoes (tipo_simulacao)",
         "CREATE INDEX idx_hist_sim_evento ON historico_simulacoes (tipo_evento)",
         "CREATE INDEX idx_hist_sim_created ON historico_simulacoes (created DESC)"
+      ]
+    },
+    {
+      "name": "historico_dados_empresa",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || @request.auth.nivel_acesso = 'analista' || @request.auth.perfil = 'contador')",
+        "view": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || @request.auth.nivel_acesso = 'analista' || @request.auth.perfil = 'contador')",
+        "create": "@request.auth.id != ''",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "empresa_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cliente_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "autor_nome",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "autor_email",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "autor_nivel",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "origem_ajuste",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "nome_empresa",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cnpj",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "alteracoes_json",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "snapshot_anterior_json",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "snapshot_novo_json",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_hist_demp_empresa ON historico_dados_empresa (empresa_id)",
+        "CREATE INDEX idx_hist_demp_user ON historico_dados_empresa (user_id)",
+        "CREATE INDEX idx_hist_demp_cliente ON historico_dados_empresa (cliente_id)",
+        "CREATE INDEX idx_hist_demp_created ON historico_dados_empresa (created DESC)"
       ]
     }
   ]

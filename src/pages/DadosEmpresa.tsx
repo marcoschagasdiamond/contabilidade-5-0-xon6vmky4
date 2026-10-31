@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
+import {
+  calcularDiffDadosEmpresa,
+  registrarAuditoriaDadosEmpresa,
+  listarAuditoriaDadosEmpresa,
+} from '@/services/historicoDadosEmpresa'
+import { AbaHistoricoCadastral } from '@/components/crm/AbaHistoricoCadastral'
+import type { HistoricoDadosEmpresaRegistro } from '@/types/historicoDadosEmpresa'
 import { DadosEmpresaPerfil, DADOS_EMPRESA_PADRAO } from '@/types/dadosEmpresa'
 import { LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
 import {
@@ -74,8 +81,18 @@ export default function DadosEmpresa() {
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated, isLoading: authLoading, user } = useAuth()
-  const { dadosEmpresa, temDadosSalvos, salvoNoBanco, isSalvando, salvar, restaurarPadrao } =
-    useDadosEmpresa()
+  const {
+    dadosEmpresa,
+    temDadosSalvos,
+    salvoNoBanco,
+    isSalvando,
+    salvar,
+    restaurarPadrao,
+    empresaVinculadaId,
+  } = useDadosEmpresa()
+
+  const [historicoAuditoria, setHistoricoAuditoria] = useState<HistoricoDadosEmpresaRegistro[]>([])
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false)
 
   // Estado local do formulário
   const CHAVE_RASCUNHO = 'contabilidade50_rascunho_dados_empresa'
@@ -225,9 +242,35 @@ export default function DadosEmpresa() {
       return
     }
 
+    const alteracoes = calcularDiffDadosEmpresa(dadosEmpresa, formData)
+
     salvar(formData)
-      .then(() => {
+      .then(async (salvo) => {
         setSalvoComSucesso(true)
+
+        // Se houve alterações reais, registra auditoria imutável
+        if (alteracoes.length > 0) {
+          try {
+            await registrarAuditoriaDadosEmpresa({
+              empresaId: empresaVinculadaId,
+              userId: user?.id,
+              origemAjuste: 'pagina_dados_empresa',
+              nomeEmpresa: salvo.nomeEmpresa,
+              cnpj: salvo.cnpj,
+              alteracoes,
+              snapshotAnterior: dadosEmpresa,
+              snapshotNovo: salvo,
+              descricao: `Ajuste cadastral realizado em Dados da Empresa (${alteracoes.length} campo(s) alterado(s))`,
+            })
+            // Recarrega rastro
+            listarAuditoriaDadosEmpresa({
+              empresaId: empresaVinculadaId || undefined,
+              userId: user?.id || undefined,
+            }).then((h) => setHistoricoAuditoria(h))
+          } catch (e) {
+            console.warn('Erro ao gravar auditoria na página Dados da Empresa:', e)
+          }
+        }
         // Se usuário veio do onboarding ou está no fluxo de onboarding, marca passo 1 como concluído
         if (user?.id) {
           import('@/services/onboarding').then(({ salvarProgressoOnboarding }) => {

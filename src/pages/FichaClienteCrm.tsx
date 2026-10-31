@@ -6,6 +6,9 @@ import type { CrmFichaAgregada, StatusComercialCrm, CrmInteracaoRecord } from '@
 import { STATUS_COMERCIAIS_CRM } from '@/types/crm'
 import { ModalRegistrarInteracao } from '@/components/crm/ModalRegistrarInteracao'
 import { ModalConvidarCliente } from '@/components/clientes/ModalConvidarCliente'
+import { AbaHistoricoCadastral } from '@/components/crm/AbaHistoricoCadastral'
+import { listarAuditoriaDadosEmpresa } from '@/services/historicoDadosEmpresa'
+import type { HistoricoDadosEmpresaRegistro } from '@/types/historicoDadosEmpresa'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,7 +16,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 
-type AbaCrm = 'resumo' | 'diagnosticos' | 'simulacoes' | 'creditos' | 'reunioes' | 'interacoes'
+type AbaCrm =
+  | 'resumo'
+  | 'diagnosticos'
+  | 'simulacoes'
+  | 'creditos'
+  | 'reunioes'
+  | 'interacoes'
+  | 'historico_cadastral'
 
 export default function FichaClienteCrm() {
   const { id } = useParams<{ id: string }>()
@@ -36,6 +46,8 @@ export default function FichaClienteCrm() {
   const [ficha, setFicha] = useState<CrmFichaAgregada | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [abaAtiva, setAbaAtiva] = useState<AbaCrm>('resumo')
+  const [historicoCadastral, setHistoricoCadastral] = useState<HistoricoDadosEmpresaRegistro[]>([])
+  const [carregandoHistoricoCadastral, setCarregandoHistoricoCadastral] = useState(false)
 
   // Modais
   const [modalInteracaoAberta, setModalInteracaoAberta] = useState(false)
@@ -68,6 +80,18 @@ export default function FichaClienteCrm() {
 
       setFicha(data)
       setFormStatus(data.crmCliente.status_comercial)
+
+      // Carrega auditoria cadastral da empresa vinculada
+      if (data.empresa?.id || data.crmCliente.id) {
+        setCarregandoHistoricoCadastral(true)
+        listarAuditoriaDadosEmpresa({
+          empresaId: data.empresa?.id,
+          clienteId: data.crmCliente.id,
+        })
+          .then((hist) => setHistoricoCadastral(hist))
+          .catch((e) => console.warn('Erro ao carregar auditoria cadastral da ficha:', e))
+          .finally(() => setCarregandoHistoricoCadastral(false))
+      }
       setFormValor(
         data.crmCliente.valor_mensal_servico ? String(data.crmCliente.valor_mensal_servico) : '',
       )
@@ -401,6 +425,10 @@ export default function FichaClienteCrm() {
               {
                 id: 'interacoes',
                 label: `Timeline & Interações (${ficha.interacoes.length})`,
+              },
+              {
+                id: 'historico_cadastral',
+                label: `Rastro Cadastral (${historicoCadastral.length})`,
               },
             ].map((aba) => (
               <button
@@ -1069,6 +1097,25 @@ export default function FichaClienteCrm() {
               </div>
             )}
           </div>
+        )}
+
+        {/* ABA 7: RASTRO CADASTRAL (AUDITORIA IMUTÁVEL DE DADOS DA EMPRESA) */}
+        {abaAtiva === 'historico_cadastral' && (
+          <AbaHistoricoCadastral
+            historico={historicoCadastral}
+            carregando={carregandoHistoricoCadastral}
+            onAtualizar={() => {
+              if (ficha?.empresa?.id || ficha?.crmCliente.id) {
+                setCarregandoHistoricoCadastral(true)
+                listarAuditoriaDadosEmpresa({
+                  empresaId: ficha.empresa?.id,
+                  clienteId: ficha.crmCliente.id,
+                })
+                  .then((hist) => setHistoricoCadastral(hist))
+                  .finally(() => setCarregandoHistoricoCadastral(false))
+              }
+            }}
+          />
         )}
       </div>
 

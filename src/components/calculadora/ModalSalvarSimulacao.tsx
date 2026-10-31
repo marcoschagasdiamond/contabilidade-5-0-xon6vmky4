@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useToast } from '@/hooks/use-toast'
 import { salvarSimulacao } from '@/services/simulacoesCalculadora'
 import { registrarSimulacaoUsada, LIMITE_SIMULACOES_GRATUITO } from '@/services/freemium'
@@ -48,9 +49,17 @@ export function ModalSalvarSimulacao({
   resultados,
   onSalvoComSucesso,
 }: ModalSalvarSimulacaoProps) {
-  const { user, isAuthenticated, isPremium, podeSimular, simulacoesUsadas, recarregarUsuario } =
-    useAuth()
+  const {
+    user,
+    isAuthenticated,
+    isPremium,
+    podeSimular,
+    simulacoesUsadas,
+    recarregarUsuario,
+    isEmpresario,
+  } = useAuth()
   const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
+  const { dadosEmpresa } = useDadosEmpresa()
   const { toast } = useToast()
 
   const [nome, setNome] = useState('')
@@ -67,11 +76,13 @@ export function ModalSalvarSimulacao({
       setNome(sugestao)
       if (clienteAtivo) {
         setEmpresa(clienteAtivo.nome)
+      } else if (isEmpresario && dadosEmpresa.nomeEmpresa) {
+        setEmpresa(dadosEmpresa.nomeEmpresa)
       } else if (parametros.empresa && !empresa) {
         setEmpresa(parametros.empresa)
       }
     }
-  }, [open, parametros.tipoAtividade, parametros.empresa])
+  }, [open, parametros.tipoAtividade, parametros.empresa, isEmpresario, dadosEmpresa.nomeEmpresa])
 
   const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -237,17 +248,32 @@ export function ModalSalvarSimulacao({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="empresa-simulacao" className="text-xs font-semibold text-slate-700">
-              Empresa (opcional para o relatório)
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="empresa-simulacao" className="text-xs font-semibold text-slate-700">
+                Empresa (alimenta o parecer técnico)
+              </Label>
+              {isEmpresario && (
+                <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                  Somente Leitura • Cadastro Oficial
+                </span>
+              )}
+            </div>
             <div className="relative">
               <Building2 className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3 pointer-events-none" />
               <Input
                 id="empresa-simulacao"
                 placeholder="Ex.: Diamond Soluções Digitais Ltda"
-                value={empresa}
+                value={
+                  isEmpresario ? clienteAtivo?.nome || dadosEmpresa.nomeEmpresa || empresa : empresa
+                }
                 onChange={(e) => setEmpresa(e.target.value)}
-                className="text-xs pl-8"
+                disabled={isEmpresario}
+                readOnly={isEmpresario}
+                className={`text-xs pl-8 ${
+                  isEmpresario
+                    ? 'bg-slate-100/90 text-slate-700 border-slate-300 cursor-not-allowed select-none'
+                    : ''
+                }`}
               />
             </div>
           </div>

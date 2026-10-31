@@ -66,6 +66,7 @@ import {
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import { BannerIdentificacaoEmpresaBloqueada } from '@/components/dadosEmpresa/BannerIdentificacaoEmpresaBloqueada'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { createDiagnostico } from '@/services/diagnosticos'
 import { registrarSnapshotSeClienteAtivo } from '@/services/historicoRelatorios'
@@ -112,6 +113,7 @@ export default function Diagnostico() {
     podeBaixarPdfDiagnostico,
     diagnosticosUsados,
     recarregarUsuario,
+    isEmpresario,
   } = useAuth()
   const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
   const [paywallModalOpen, setPaywallModalOpen] = useState(false)
@@ -1042,7 +1044,37 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
         {/* ETAPA 1: SOBRE A EMPRESA */}
         {/* ========================================================= */}
         {etapa === 1 && (
-          <div className="bg-white rounded-[24px] p-6 sm:p-10 shadow-xl border border-slate-200">
+          <div className="space-y-6">
+            <BannerIdentificacaoEmpresaBloqueada
+              origemModulo="diagnostico"
+              dadosAtuais={{
+                nomeEmpresa: formData.empresa,
+                cnpj: formData.cnpj,
+                cidade: formData.cidade,
+                uf: formData.ufOrigem,
+                email: formData.email,
+                telefone: formData.telefone,
+                contato: formData.nome,
+              }}
+              onDadosAtualizados={(dadosNovos) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  empresa: dadosNovos.nomeEmpresa || prev.empresa,
+                  cnpj: dadosNovos.cnpj || prev.cnpj,
+                  nome: dadosNovos.nomeContato || prev.nome,
+                  email: dadosNovos.email || prev.email,
+                  telefone: dadosNovos.telefone || prev.telefone,
+                  ufOrigem: dadosNovos.ufOrigem || prev.ufOrigem,
+                  cidade: dadosNovos.cidade || prev.cidade,
+                  segmento: (dadosNovos.segmento as SegmentoEmpresa) || prev.segmento,
+                  regimeAtual: dadosNovos.regimeAtual || prev.regimeAtual,
+                  funcionarios: dadosNovos.funcionarios || prev.funcionarios,
+                  emissaoNf: dadosNovos.emissaoNf || prev.emissaoNf,
+                }))
+              }}
+            />
+
+            <div className="bg-white rounded-[24px] p-6 sm:p-10 shadow-xl border border-slate-200">
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-semibold text-[#145A32] uppercase tracking-wider block">
@@ -1062,9 +1094,16 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
             <div className="space-y-5">
               {/* Nome do Contato */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Seu Nome Completo *
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Seu Nome Completo *
+                  </label>
+                  {isEmpresario && (
+                    <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                      Somente Leitura
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={formData.nome}
@@ -1073,8 +1112,14 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     if (errors.nome) setErrors((prev) => ({ ...prev, nome: undefined }))
                   }}
                   placeholder="Ex: Carlos Eduardo Silva"
-                  className={`w-full px-4 py-3 rounded-xl border text-sm text-slate-900 bg-slate-50/50 input-focus-ring ${
-                    errors.nome ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
+                  disabled={isEmpresario}
+                  readOnly={isEmpresario}
+                  className={`w-full px-4 py-3 rounded-xl border text-sm ${
+                    isEmpresario
+                      ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
+                      : errors.nome
+                      ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
+                      : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
                   }`}
                 />
                 {errors.nome && (
@@ -1085,9 +1130,16 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               {/* Razão Social / Nome da Empresa e CNPJ da Empresa */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Nome da Empresa *
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Nome da Empresa *
+                    </label>
+                    {isEmpresario && (
+                      <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                        Somente Leitura
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={formData.empresa}
@@ -1096,8 +1148,14 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                       if (errors.empresa) setErrors((prev) => ({ ...prev, empresa: undefined }))
                     }}
                     placeholder="Ex: Inova Tecnologia & Consultoria Ltda"
-                    className={`w-full px-4 py-3 rounded-xl border text-sm text-slate-900 bg-slate-50/50 input-focus-ring ${
-                      errors.empresa ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
+                    disabled={isEmpresario}
+                    readOnly={isEmpresario}
+                    className={`w-full px-4 py-3 rounded-xl border text-sm ${
+                      isEmpresario
+                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
+                        : errors.empresa
+                        ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
+                        : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
                     }`}
                   />
                   {errors.empresa && (
@@ -1110,7 +1168,13 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       CNPJ da Empresa *
                     </label>
-                    <span className="text-[11px] text-slate-400">14 dígitos</span>
+                    {isEmpresario ? (
+                      <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                        Somente Leitura
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-400">14 dígitos</span>
+                    )}
                   </div>
                   <input
                     type="text"
@@ -1118,8 +1182,14 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     onChange={handleCnpjChange}
                     maxLength={18}
                     placeholder="00.000.000/0000-00"
-                    className={`w-full px-4 py-3 rounded-xl border text-sm text-slate-900 bg-slate-50/50 input-focus-ring ${
-                      errors.cnpj ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
+                    disabled={isEmpresario}
+                    readOnly={isEmpresario}
+                    className={`w-full px-4 py-3 rounded-xl border text-sm font-mono ${
+                      isEmpresario
+                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
+                        : errors.cnpj
+                        ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
+                        : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
                     }`}
                   />
                   {errors.cnpj && (
@@ -1160,7 +1230,12 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                         }
                       })
                     }}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                    disabled={isEmpresario}
+                    className={`w-full px-4 py-3 rounded-xl border border-slate-200 text-sm ${
+                      isEmpresario
+                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                        : 'text-slate-900 bg-slate-50/50 input-focus-ring'
+                    }`}
                   >
                     {LISTA_UFS_ICMS.map((ufItem) => (
                       <option key={ufItem.uf} value={ufItem.uf}>
@@ -1187,7 +1262,12 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   <select
                     value={formData.cidade}
                     onChange={(e) => setFormData((prev) => ({ ...prev, cidade: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 input-focus-ring"
+                    disabled={isEmpresario}
+                    className={`w-full px-4 py-3 rounded-xl border border-slate-200 text-sm ${
+                      isEmpresario
+                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                        : 'text-slate-900 bg-slate-50/50 input-focus-ring'
+                    }`}
                   >
                     {CIDADES_ISS_MAPA.filter(
                       (cid) => cid.uf === formData.ufOrigem || cid.id === 'outra',
@@ -1320,9 +1400,16 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               {/* Contatos em 2 colunas */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    E-mail Corporativo *
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      E-mail Corporativo *
+                    </label>
+                    {isEmpresario && (
+                      <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                        Somente Leitura
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="email"
                     value={formData.email}
@@ -1331,8 +1418,14 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                       if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }))
                     }}
                     placeholder="carlos@empresa.com.br"
-                    className={`w-full px-4 py-3 rounded-xl border text-sm text-slate-900 bg-slate-50/50 input-focus-ring ${
-                      errors.email ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
+                    disabled={isEmpresario}
+                    readOnly={isEmpresario}
+                    className={`w-full px-4 py-3 rounded-xl border text-sm ${
+                      isEmpresario
+                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
+                        : errors.email
+                        ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
+                        : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
                     }`}
                   />
                   {errors.email && (
@@ -1341,16 +1434,29 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Telefone / WhatsApp *
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Telefone / WhatsApp *
+                    </label>
+                    {isEmpresario && (
+                      <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                        Somente Leitura
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="tel"
                     value={formData.telefone}
                     onChange={handlePhoneChange}
                     placeholder="+55 (11) 99999-9999"
-                    className={`w-full px-4 py-3 rounded-xl border text-sm text-slate-900 bg-slate-50/50 input-focus-ring ${
-                      errors.telefone ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
+                    disabled={isEmpresario}
+                    readOnly={isEmpresario}
+                    className={`w-full px-4 py-3 rounded-xl border text-sm ${
+                      isEmpresario
+                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
+                        : errors.telefone
+                        ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
+                        : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
                     }`}
                   />
                   {errors.telefone && (

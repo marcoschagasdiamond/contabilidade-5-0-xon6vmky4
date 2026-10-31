@@ -38,6 +38,8 @@ import {
 } from '@/types/calculadoraIbsCbs'
 import { Slider } from '@/components/ui/slider'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
+import { BannerIdentificacaoEmpresaBloqueada } from '@/components/dadosEmpresa/BannerIdentificacaoEmpresaBloqueada'
 import { ModalCliente } from '@/components/clientes/ModalCliente'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -65,6 +67,7 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
     selecionarClienteAtivo,
     recarregarClientes,
   } = useClienteAtivo()
+  const { dadosEmpresa } = useDadosEmpresa()
   const [modalNovoClienteAberto, setModalNovoClienteAberto] = React.useState(false)
   const [modalImportarFaturamentoAberto, setModalImportarFaturamentoAberto] = React.useState(false)
 
@@ -164,6 +167,20 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
           </Button>
         </div>
       </div>
+
+      {/* BLOCO 3: BANNER DE IDENTIFICAÇÃO BLOQUEADA (SOMENTE LEITURA PARA EMPRESÁRIO COM BOTÃO CORRIGIR DADOS) */}
+      <BannerIdentificacaoEmpresaBloqueada
+        origemModulo="calculadora"
+        dadosAtuais={{
+          nomeEmpresa: clienteAtivo?.nome || dadosEmpresa.nomeEmpresa,
+          cnpj: clienteAtivo?.cnpj_cpf || dadosEmpresa.cnpj,
+          cidade: clienteAtivo?.cidade || dadosEmpresa.cidade,
+          uf: clienteAtivo?.uf || dadosEmpresa.ufOrigem,
+          email: clienteAtivo?.email || dadosEmpresa.email,
+          telefone: clienteAtivo?.telefone || dadosEmpresa.telefone,
+          contato: clienteAtivo?.contato_principal || dadosEmpresa.nomeContato,
+        }}
+      />
 
       {/* BLOCO DE PREENCHIMENTO ASSISTIDO (LC 214/2025) */}
       <Card className="border border-[#D4AF37]/50 shadow-md bg-gradient-to-br from-white via-slate-50 to-amber-50/20 overflow-hidden">

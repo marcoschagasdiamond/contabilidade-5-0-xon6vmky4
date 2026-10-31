@@ -2,6 +2,8 @@ import React from 'react'
 import type { ConfiguracoesRecuperador } from '@/types/recuperadorCreditos'
 import { formatarMoeda, parseInputMoeda } from '@/lib/calculadoraUtils'
 import { LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
+import { useAuth } from '@/context/AuthContext'
+import { BannerIdentificacaoEmpresaBloqueada } from '@/components/dadosEmpresa/BannerIdentificacaoEmpresaBloqueada'
 
 interface Props {
   configuracoes: ConfiguracoesRecuperador
@@ -52,6 +54,8 @@ export const OPCOES_SEGMENTO_RECUPERADOR = [
 ] as const
 
 export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange }: Props) {
+  const { isEmpresario } = useAuth()
+
   const handleChangeAnoFaturamento = (index: number, valor: number) => {
     const novosAnos = [...configuracoes.anosFaturamento]
     novosAnos[index] = {
@@ -98,6 +102,31 @@ export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange
         </div>
       )}
 
+      {/* BANNER DE TRAVA IDENTIFICAÇÃO CADASTRAL PARA EMPRESÁRIO COM BOTÃO CORRIGIR DADOS */}
+      <BannerIdentificacaoEmpresaBloqueada
+        origemModulo="recuperador"
+        dadosAtuais={{
+          nomeEmpresa: configuracoes.empresa,
+          cnpj: configuracoes.cnpj,
+          uf: configuracoes.uf,
+        }}
+        onDadosAtualizados={(dadosNovos) => {
+          onChange({
+            ...configuracoes,
+            empresa: dadosNovos.nomeEmpresa || configuracoes.empresa,
+            cnpj: dadosNovos.cnpj || configuracoes.cnpj,
+            uf: dadosNovos.ufOrigem || configuracoes.uf,
+            segmento: dadosNovos.segmento || configuracoes.segmento,
+            regimeAtual:
+              dadosNovos.regimeAtual === 'Lucro Real' ||
+              dadosNovos.regimeAtual === 'Lucro Presumido' ||
+              dadosNovos.regimeAtual === 'Simples Nacional'
+                ? dadosNovos.regimeAtual
+                : configuracoes.regimeAtual,
+          })
+        }}
+      />
+
       {/* CARD 1: PERFIL DO CLIENTE & REGIME ATUAL */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -119,24 +148,50 @@ export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-5 text-xs">
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Empresa / Razão Social</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block font-bold text-slate-700">Empresa / Razão Social</label>
+              {isEmpresario && (
+                <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                  Somente Leitura
+                </span>
+              )}
+            </div>
             <input
               type="text"
               value={configuracoes.empresa}
               onChange={(e) => onChange({ ...configuracoes, empresa: e.target.value })}
               placeholder="Ex: Indústria Aliança S.A."
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+              disabled={isEmpresario}
+              readOnly={isEmpresario}
+              className={`w-full px-3 py-2 rounded-xl border border-slate-200 font-medium ${
+                isEmpresario
+                  ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                  : 'bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]'
+              }`}
             />
           </div>
 
           <div>
-            <label className="block font-bold text-slate-700 mb-1">CNPJ</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block font-bold text-slate-700">CNPJ</label>
+              {isEmpresario && (
+                <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                  Somente Leitura
+                </span>
+              )}
+            </div>
             <input
               type="text"
               value={configuracoes.cnpj}
               onChange={(e) => onChange({ ...configuracoes, cnpj: e.target.value })}
               placeholder="00.000.000/0001-00"
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+              disabled={isEmpresario}
+              readOnly={isEmpresario}
+              className={`w-full px-3 py-2 rounded-xl border border-slate-200 font-medium font-mono ${
+                isEmpresario
+                  ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                  : 'bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]'
+              }`}
             />
           </div>
 
@@ -201,11 +256,23 @@ export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange
           </div>
 
           <div>
-            <label className="block font-bold text-slate-700 mb-1">UF de Domicílio</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block font-bold text-slate-700">UF de Domicílio</label>
+              {isEmpresario && (
+                <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                  Somente Leitura
+                </span>
+              )}
+            </div>
             <select
               value={configuracoes.uf}
               onChange={(e) => onChange({ ...configuracoes, uf: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+              disabled={isEmpresario}
+              className={`w-full px-3 py-2 rounded-xl border border-slate-200 font-semibold ${
+                isEmpresario
+                  ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                  : 'bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]'
+              }`}
             >
               {configuracoes.uf &&
                 !LISTA_UFS_ICMS.some(

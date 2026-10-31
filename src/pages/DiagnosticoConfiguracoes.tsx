@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import { BannerIdentificacaoEmpresaBloqueada } from '@/components/dadosEmpresa/BannerIdentificacaoEmpresaBloqueada'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
@@ -39,7 +40,7 @@ export default function DiagnosticoConfiguracoes() {
   const { toast } = useToast()
   const { dadosEmpresa, salvar: salvarDadosContext, temDadosSalvos } = useDadosEmpresa()
   const { clienteAtivo, clienteAtivoId, recarregarClientes } = useClienteAtivo()
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading, isEmpresario } = useAuth()
 
   // Estado local do formulário espelhando o Módulo 1 da Calculadora e Passo 1 do Diagnóstico
   const [formData, setFormData] = useState({
@@ -331,6 +332,32 @@ export default function DiagnosticoConfiguracoes() {
 
       {/* CONTAINER DO FORMULÁRIO */}
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10 space-y-8">
+        {/* BANNER DE TRAVA IDENTIFICAÇÃO CADASTRAL PARA EMPRESÁRIO COM BOTÃO CORRIGIR DADOS */}
+        <BannerIdentificacaoEmpresaBloqueada
+          origemModulo="diagnostico"
+          dadosAtuais={{
+            nomeEmpresa: formData.nomeEmpresa,
+            cnpj: formData.cnpj,
+            cidade: formData.cidade,
+            uf: formData.ufOrigem,
+            contato: formData.nomeContato,
+          }}
+          onDadosAtualizados={(dadosNovos) => {
+            setFormData((prev) => ({
+              ...prev,
+              nomeEmpresa: dadosNovos.nomeEmpresa || prev.nomeEmpresa,
+              cnpj: dadosNovos.cnpj ? formatarCNPJ(dadosNovos.cnpj) : prev.cnpj,
+              nomeContato: dadosNovos.nomeContato || prev.nomeContato,
+              ufOrigem: dadosNovos.ufOrigem || prev.ufOrigem,
+              cidade: dadosNovos.cidade || prev.cidade,
+              segmento: dadosNovos.segmento || prev.segmento,
+              regimeAtual: dadosNovos.regimeAtual || prev.regimeAtual,
+              funcionarios: dadosNovos.funcionarios || prev.funcionarios,
+              emissaoNf: dadosNovos.emissaoNf || prev.emissaoNf,
+            }))
+          }}
+        />
+
         <div className="bg-white rounded-[26px] p-6 sm:p-10 border border-slate-200 shadow-xl space-y-8">
           {/* SEÇÃO 1: IDENTIFICAÇÃO E CADASTRO */}
           <div className="space-y-6">
@@ -358,9 +385,16 @@ export default function DiagnosticoConfiguracoes() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Nome da Empresa */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Razão Social / Nome da Empresa *
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Razão Social / Nome da Empresa *
+                  </label>
+                  {isEmpresario && (
+                    <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                      Somente Leitura
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={formData.nomeEmpresa}
@@ -368,7 +402,13 @@ export default function DiagnosticoConfiguracoes() {
                     setFormData((prev) => ({ ...prev, nomeEmpresa: e.target.value }))
                   }
                   placeholder="Ex: Diamond Tech Soluções Ltda"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+                  disabled={isEmpresario}
+                  readOnly={isEmpresario}
+                  className={`w-full px-4 py-3 rounded-xl border border-slate-200 text-sm ${
+                    isEmpresario
+                      ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                      : 'text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]'
+                  }`}
                 />
                 {erros.nomeEmpresa && (
                   <p className="mt-1 text-xs text-rose-600 font-medium">{erros.nomeEmpresa}</p>
@@ -377,16 +417,29 @@ export default function DiagnosticoConfiguracoes() {
 
               {/* CNPJ */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  CNPJ (com máscara)
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    CNPJ (com máscara)
+                  </label>
+                  {isEmpresario && (
+                    <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                      Somente Leitura
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={formData.cnpj}
                   onChange={handleCnpjChange}
                   maxLength={18}
                   placeholder="00.000.000/0000-00"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37] font-mono"
+                  disabled={isEmpresario}
+                  readOnly={isEmpresario}
+                  className={`w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-mono ${
+                    isEmpresario
+                      ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                      : 'text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]'
+                  }`}
                 />
                 {erros.cnpj && (
                   <p className="mt-1 text-xs text-rose-600 font-medium">{erros.cnpj}</p>
@@ -395,9 +448,16 @@ export default function DiagnosticoConfiguracoes() {
 
               {/* Nome do Contato / Sócio */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Contato / Responsável
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Contato / Responsável
+                  </label>
+                  {isEmpresario && (
+                    <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                      Somente Leitura
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={formData.nomeContato}
@@ -405,16 +465,29 @@ export default function DiagnosticoConfiguracoes() {
                     setFormData((prev) => ({ ...prev, nomeContato: e.target.value }))
                   }
                   placeholder="Ex: Carlos Eduardo Silva"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+                  disabled={isEmpresario}
+                  readOnly={isEmpresario}
+                  className={`w-full px-4 py-3 rounded-xl border border-slate-200 text-sm ${
+                    isEmpresario
+                      ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                      : 'text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]'
+                  }`}
                 />
               </div>
 
               {/* UF & Cidade */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    UF de Origem (ICMS: {obterAliquotaIcmsUf(formData.ufOrigem).toFixed(1)}%)
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      UF (ICMS: {obterAliquotaIcmsUf(formData.ufOrigem).toFixed(1)}%)
+                    </label>
+                    {isEmpresario && (
+                      <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                        Leitura
+                      </span>
+                    )}
+                  </div>
                   <select
                     value={formData.ufOrigem}
                     onChange={(e) => {
@@ -430,7 +503,12 @@ export default function DiagnosticoConfiguracoes() {
                         }
                       })
                     }}
-                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+                    disabled={isEmpresario}
+                    className={`w-full px-3 py-3 rounded-xl border border-slate-200 text-sm ${
+                      isEmpresario
+                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                        : 'text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]'
+                    }`}
                   >
                     {LISTA_UFS_ICMS.map((ufItem) => (
                       <option key={ufItem.uf} value={ufItem.uf}>
@@ -441,13 +519,25 @@ export default function DiagnosticoConfiguracoes() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Cidade / ISS ({obterAliquotaISS(formData.cidade).aliquota.toFixed(1)}%)
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Cidade / ISS ({obterAliquotaISS(formData.cidade).aliquota.toFixed(1)}%)
+                    </label>
+                    {isEmpresario && (
+                      <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                        Leitura
+                      </span>
+                    )}
+                  </div>
                   <select
                     value={formData.cidade}
                     onChange={(e) => setFormData((prev) => ({ ...prev, cidade: e.target.value }))}
-                    className="w-full px-3 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+                    disabled={isEmpresario}
+                    className={`w-full px-3 py-3 rounded-xl border border-slate-200 text-sm ${
+                      isEmpresario
+                        ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none'
+                        : 'text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]'
+                    }`}
                   >
                     {CIDADES_ISS_MAPA.filter(
                       (c) => c.uf === formData.ufOrigem || c.id === 'outra',
