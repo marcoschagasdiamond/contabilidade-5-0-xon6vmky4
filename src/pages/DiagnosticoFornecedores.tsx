@@ -30,6 +30,7 @@ import {
   type FornecedorDiagnostico,
   type FornecedorDiagnosticoRecord,
 } from '@/services/fornecedores'
+import { listarHistoricoCotacoes, type HistoricoCotacaoRecord } from '@/services/historicoCotacoes'
 import { gerarPdfParecerFornecedores } from '@/lib/pdfParecerFornecedores'
 import pb from '@/lib/pocketbase/client'
 
@@ -82,6 +83,9 @@ export default function DiagnosticoFornecedores() {
   const [gerandoPdf, setGerandoPdf] = useState(false)
   const [resultadoComparador, setResultadoComparador] =
     useState<ResultadoComparadorCotacoes | null>(null)
+  const [historicoCotacoesCarteira, setHistoricoCotacoesCarteira] = useState<
+    HistoricoCotacaoRecord[]
+  >([])
 
   // Filtro visual de regime na listagem
   const [filtroRegime, setFiltroRegime] = useState<string>('todos')
@@ -96,6 +100,12 @@ export default function DiagnosticoFornecedores() {
         clienteId: clienteAtivoId,
         userId: authUserId,
       })
+
+      const histRecords = await listarHistoricoCotacoes({
+        clienteId: clienteAtivoId,
+        userId: authUserId,
+      })
+      setHistoricoCotacoesCarteira(histRecords)
 
       if (records.length > 0) {
         setFornecedores(records)
@@ -286,6 +296,7 @@ export default function DiagnosticoFornecedores() {
           regimeAtual: dadosEmpresa.regimeAtual,
         },
         resultadoComparador,
+        historicoCotacoesCarteira,
       )
       toast({
         title: 'Parecer Gerado!',
@@ -661,6 +672,9 @@ export default function DiagnosticoFornecedores() {
           anoTransicao={anoLocal}
           regimeComprador={regimeLocal}
           onComparacaoAlterada={(res) => setResultadoComparador(res)}
+          fornecedoresCadastrados={fornecedores}
+          onFornecedorCadastrado={handleSalvarFornecedor}
+          onCotacaoSalvaNoHistorico={carregarDados}
         />
 
         {/* COMPARATIVO COMPLETO DE TODOS OS ANOS DA TRANSIÇÃO (2026–2033) */}

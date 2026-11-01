@@ -10,17 +10,47 @@ import {
   type ResultadoComparadorCotacoes,
 } from '@/lib/calculoComparadorCotacoes'
 
+import { ModalSalvarCotacaoVencedora } from './ModalSalvarCotacaoVencedora'
+import type { FornecedorDiagnostico } from '@/services/fornecedores'
+import {
+  registrarCotacaoHistorico,
+  obterUltimaCotacaoVencedora,
+  type HistoricoCotacaoRecord,
+} from '@/services/historicoCotacoes'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import { useAuth } from '@/context/AuthContext'
+import { useToast } from '@/hooks/use-toast'
+import pb from '@/lib/pocketbase/client'
+
 interface CardComparadorCotacoesProps {
   anoTransicao: AnoBaseSimulacao
   regimeComprador: RegimeComprador
   onComparacaoAlterada?: (resultado: ResultadoComparadorCotacoes) => void
+  fornecedoresCadastrados?: FornecedorDiagnostico[]
+  onFornecedorCadastrado?: (
+    fornecedor: Omit<FornecedorDiagnostico, 'id' | 'created' | 'updated'>,
+  ) => Promise<void>
+  onCotacaoSalvaNoHistorico?: () => void
 }
 
 export function CardComparadorCotacoes({
   anoTransicao,
   regimeComprador,
   onComparacaoAlterada,
+  fornecedoresCadastrados = [],
+  onFornecedorCadastrado,
+  onCotacaoSalvaNoHistorico,
 }: CardComparadorCotacoesProps) {
+  const { toast } = useToast()
+  const { user } = useAuth()
+  const { clienteAtivoId } = useClienteAtivo()
+
+  // Modal de salvar cotação vencedora
+  const [modalSalvarAberto, setModalSalvarAberto] = useState(false)
+  const [ultimaCotacaoReferencia, setUltimaCotacaoReferencia] =
+    useState<HistoricoCotacaoRecord | null>(null)
+  const [carregandoReferencia, setCarregandoReferencia] = useState(false)
+
   // Quantidade de cotações avaliadas: 2 ou 3
   const [qtdCotacoes, setQtdCotacoes] = useState<2 | 3>(2)
 
@@ -100,6 +130,130 @@ export function CardComparadorCotacoes({
     onComparacaoAlterada,
   ])
 
+  // Carrega última cotação vencedora para pré-preenchimento
+  const carregarUltimaReferencia = React.useCallback(async () => {
+    try {
+      const authUserId = pb.authStore.record?.id || user?.id
+      const ult = await obterUltimaCotacaoVencedora({
+        clienteId: clienteAtivoId,
+        userId: authUserId,
+      })
+      setUltimaCotacaoReferencia(ult)
+    } catch {
+      /* intentionally ignored */
+    }
+  }, [clienteAtivoId, user?.id])
+
+  React.useEffect(() => {
+    carregarUltimaReferencia()
+  }, [carregarUltimaReferencia])
+
+  // Aplica a última cotação vencedora como referência pré-preenchida
+  const handleUsarUltimaVencedora = (destino: 'A' | 'B' | 'C' = 'A') => {
+    if (!ultimaCotacaoReferencia) return
+
+    const nova: CotacaoItemInput = {
+      id: `cotacao-${destino.toLowerCase()}`,
+      identificador: destino,
+      fornecedorNome: `${ultimaCotacaoReferencia.fornecedor_nome} (Última Vencedora)`,
+      preco: ultimaCotacaoReferencia.preco_informado,
+      regime: ultimaCotacaoReferencia.regime,
+      aliquotaSimplesCustom: ultimaCotacaoReferencia.percentual_efetivo_simples ?? 4.5,
+    }
+
+    if (destino === 'A') setCotacaoA(nova)
+    else if (destino === 'B') setCotacaoB(nova)
+    else if (destino === 'C') setCotacaoC(nova)
+
+    toast({
+      title: 'Referência Carregada!',
+      description: `Cotação vencedora de ${ultimaCotacaoReferencia.fornecedor_nome} (R$ ${ultimaCotacaoReferencia.preco_informado.toFixed(2)}) aplicada na Cotação ${destino}.`,
+    })
+  }
+
+  // Ação de salvar cotação vencedora no banco
+  const handleConfirmarSalvarVencedora = async (dados: {
+    fornecedorId?: string
+    fornecedorNome: string
+    descricaoItem: string
+    observacoes?: string
+    cadastrarFornecedorNaCarteira: boolean
+    dadosNovoFornecedor?: {
+      nome: string
+      cnpj?: string
+      volumeCompras?: number
+    }
+  }) => {
+    const authUserId = pb.authStore.record?.id || user?.id
+    const vencedora = resultado.melhorCotacao
+
+    // 1. Se pediu para cadastrar na carteira rapidamente
+    let fornecedorIdFinal = dados.fornecedorId
+    if (
+      dados.cadastrarFornecedorNaCarteira &&
+      dados.dadosNovoFornecedor &&
+      onFornecedorCadastrado
+    ) {
+      try {
+        await onFornecedorCadastrado({
+          nome: dados.dadosNovoFornecedor.nome,
+          cnpj: dados.dadosNovoFornecedor.cnpj,
+          regime: vencedora.regime,
+          volume_compras: dados.dadosNovoFornecedor.volumeCompras || vencedora.precoBruto,
+          classificacao_credito: classificacaoItem,
+          percentual_credito_parcial:
+            classificacaoItem === 'parcial' ? percentualCreditoParcial : undefined,
+          descricao_item: dados.descricaoItem,
+          aliquota_simples_informada:
+            vencedora.regime === 'simples_nacional' ? vencedora.aliquotaEfetivaAplicada : undefined,
+          ativo: true,
+        })
+      } catch (e) {
+        console.warn('Aviso: falha ao cadastrar fornecedor na carteira:', e)
+      }
+    }
+
+    // 2. Registra na coleção historico_cotacoes_fornecedores
+    const payload = {
+      user_id: authUserId || undefined,
+      cliente_id: clienteAtivoId || undefined,
+      fornecedor_id: fornecedorIdFinal || undefined,
+      fornecedor_nome: dados.fornecedorNome,
+      descricao_item: dados.descricaoItem,
+      preco_informado: vencedora.precoBruto,
+      regime: vencedora.regime,
+      percentual_efetivo_simples:
+        vencedora.regime === 'simples_nacional' ? vencedora.aliquotaEfetivaAplicada : undefined,
+      custo_liquido_calculado: vencedora.custoLiquido,
+      credito_calculado: vencedora.creditoRecuperavel,
+      eh_vencedora: true,
+      ano_transicao: anoTransicao,
+      regime_comprador: regimeComprador,
+      classificacao_item: classificacaoItem,
+      observacoes: dados.observacoes,
+      dados_comparacao_json: {
+        identificador: vencedora.identificador,
+        aliquota_efetiva: vencedora.aliquotaEfetivaAplicada,
+        diferenca_economia: resultado.diferencaCustoLiquidoMoeda,
+        segunda_colocada: resultado.segundaMelhorCotacao?.fornecedorNome,
+        break_evens: resultado.breakEvens,
+        veredito: resultado.vereditoDireto,
+      },
+    }
+
+    await registrarCotacaoHistorico(payload)
+
+    toast({
+      title: 'Cotação Vencedora Salva!',
+      description: `A cotação de ${dados.fornecedorNome} foi registrada no histórico com sucesso.`,
+    })
+
+    await carregarUltimaReferencia()
+    if (onCotacaoSalvaNoHistorico) {
+      onCotacaoSalvaNoHistorico()
+    }
+  }
+
   // Helpers de atualização
   const atualizarCotacao = (id: 'A' | 'B' | 'C', campo: keyof CotacaoItemInput, valor: any) => {
     if (id === 'A') setCotacaoA((prev) => ({ ...prev, [campo]: valor }))
@@ -125,31 +279,58 @@ export function CardComparadorCotacoes({
           </p>
         </div>
 
-        {/* CONTROLE 2 OU 3 COTAÇÕES */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 shrink-0 self-start">
-          <span className="text-[11px] font-bold text-slate-500 px-2">Cotações:</span>
-          <button
-            type="button"
-            onClick={() => setQtdCotacoes(2)}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-              qtdCotacoes === 2
-                ? 'bg-[#07132B] text-[#D4AF37] shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            2 Opções (A vs B)
-          </button>
-          <button
-            type="button"
-            onClick={() => setQtdCotacoes(3)}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-              qtdCotacoes === 3
-                ? 'bg-[#07132B] text-[#D4AF37] shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            3 Opções (A, B e C)
-          </button>
+        {/* AÇÕES DE CABEÇALHO: REFERÊNCIA PRÉ-PREENCHIDA E CONTROLE 2/3 COTAÇÕES */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 shrink-0 self-start">
+          {ultimaCotacaoReferencia && (
+            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl">
+              <span className="text-[11px] text-amber-900 font-bold">
+                Última Vencedora ({ultimaCotacaoReferencia.fornecedor_nome}):
+              </span>
+              <button
+                type="button"
+                onClick={() => handleUsarUltimaVencedora('A')}
+                title="Pré-preencher na Cotação A como base de comparação"
+                className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#07132B] text-[#D4AF37] hover:bg-[#0c224c]"
+              >
+                Usar como Cotação A
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUsarUltimaVencedora('B')}
+                title="Pré-preencher na Cotação B como base de comparação"
+                className="px-2 py-0.5 rounded text-[10px] font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+              >
+                Usar como B
+              </button>
+            </div>
+          )}
+
+          {/* CONTROLE 2 OU 3 COTAÇÕES */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+            <span className="text-[11px] font-bold text-slate-500 px-2">Cotações:</span>
+            <button
+              type="button"
+              onClick={() => setQtdCotacoes(2)}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                qtdCotacoes === 2
+                  ? 'bg-[#07132B] text-[#D4AF37] shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              2 Opções (A vs B)
+            </button>
+            <button
+              type="button"
+              onClick={() => setQtdCotacoes(3)}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                qtdCotacoes === 3
+                  ? 'bg-[#07132B] text-[#D4AF37] shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              3 Opções (A, B e C)
+            </button>
+          </div>
         </div>
       </div>
 
@@ -514,8 +695,39 @@ export function CardComparadorCotacoes({
           <div className="pt-2 border-t border-slate-700 text-[11px] text-slate-400">
             {resultado.explicacaoRegimes}
           </div>
+
+          {/* BOTÃO E AÇÃO PARA SALVAR COTAÇÃO VENCEDORA NO HISTÓRICO */}
+          <div className="pt-3 border-t border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="text-xs text-slate-300">
+              <span className="text-emerald-400 font-bold">Vencedora Apurada:</span>{' '}
+              {resultado.melhorCotacao.fornecedorNome} ({resultado.melhorCotacao.identificador}) —
+              Custo Líquido R${' '}
+              {resultado.melhorCotacao.custoLiquido.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => setModalSalvarAberto(true)}
+              className="px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wide bg-[#D4AF37] hover:bg-[#c29f2c] text-[#07132B] shadow-md transition-all shrink-0 text-center"
+            >
+              Salvar Cotação Vencedora no Histórico
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* MODAL PARA SALVAR COTAÇÃO VENCEDORA */}
+      <ModalSalvarCotacaoVencedora
+        aberto={modalSalvarAberto}
+        onOpenChange={setModalSalvarAberto}
+        cotacaoVencedora={resultado.melhorCotacao}
+        fornecedoresCadastrados={fornecedoresCadastrados}
+        anoTransicao={anoTransicao}
+        regimeComprador={regimeComprador}
+        classificacaoItem={classificacaoItem}
+        onSalvar={handleConfirmarSalvarVencedora}
+      />
     </div>
   )
 }

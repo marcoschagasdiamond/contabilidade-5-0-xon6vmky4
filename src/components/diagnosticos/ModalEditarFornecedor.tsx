@@ -14,6 +14,10 @@ import type {
   RegimeFornecedor,
   ClassificacaoCreditoItem,
 } from '@/services/fornecedores'
+import { listarHistoricoCotacoes, type HistoricoCotacaoRecord } from '@/services/historicoCotacoes'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import { useAuth } from '@/context/AuthContext'
+import pb from '@/lib/pocketbase/client'
 
 export interface ModalEditarFornecedorProps {
   aberto: boolean
@@ -50,6 +54,38 @@ export function ModalEditarFornecedor({
       : '',
   )
   const [erro, setErro] = useState<string | null>(null)
+  const { clienteAtivoId } = useClienteAtivo()
+  const { user } = useAuth()
+  const [historicoCotacoes, setHistoricoCotacoes] = useState<HistoricoCotacaoRecord[]>([])
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false)
+
+  // Carrega histórico de cotações associadas a este fornecedor
+  React.useEffect(() => {
+    if (!aberto || !fornecedorInicial) {
+      setHistoricoCotacoes([])
+      return
+    }
+
+    const buscarHistorico = async () => {
+      setCarregandoHistorico(true)
+      try {
+        const authUserId = pb.authStore.record?.id || user?.id
+        const cotacoes = await listarHistoricoCotacoes({
+          clienteId: clienteAtivoId,
+          userId: authUserId,
+          fornecedorId: fornecedorInicial.id || undefined,
+          fornecedorNome: fornecedorInicial.nome,
+        })
+        setHistoricoCotacoes(cotacoes)
+      } catch (e) {
+        console.warn('Erro ao carregar histórico de cotações do fornecedor:', e)
+      } finally {
+        setCarregandoHistorico(false)
+      }
+    }
+
+    buscarHistorico()
+  }, [aberto, fornecedorInicial, clienteAtivoId, user?.id])
 
   // Atualiza estado quando abre com fornecedorInicial diferente
   React.useEffect(() => {
@@ -313,6 +349,104 @@ export function ModalEditarFornecedor({
               className="text-xs border-slate-200"
             />
           </div>
+
+          {/* SEÇÃO: HISTÓRICO DE COTAÇÕES VENCEDORAS DESTE FORNECEDOR */}
+          {fornecedorInicial && (
+            <div className="pt-3 border-t border-slate-200 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono font-extrabold uppercase text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded">
+                    HISTÓRICO DE COTAÇÕES
+                  </span>
+                  <h4 className="text-xs font-heading font-extrabold text-slate-900 mt-1">
+                    Cotações Vencedoras Registradas ({historicoCotacoes.length})
+                  </h4>
+                </div>
+                {carregandoHistorico && (
+                  <span className="text-[10px] text-slate-400">Carregando histórico...</span>
+                )}
+              </div>
+
+              {historicoCotacoes.length === 0 ? (
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                  <p className="text-[11px] text-slate-500">
+                    Nenhuma cotação vencedora salva no histórico deste fornecedor ainda. Ao utilizar
+                    o <strong>Comparador de Cotações</strong>, você pode salvar os vereditos aqui.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {historicoCotacoes.map((cot) => {
+                    const dataFmt = cot.data_cotacao
+                      ? new Date(cot.data_cotacao).toLocaleDateString('pt-BR')
+                      : cot.created
+                        ? new Date(cot.created).toLocaleDateString('pt-BR')
+                        : 'Recente'
+
+                    return (
+                      <div
+                        key={cot.id}
+                        className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1 hover:border-slate-300 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-800">
+                            {cot.descricao_item || 'Item / Insumo'}
+                          </span>
+                          <span className="text-[10px] font-mono font-bold text-slate-400">
+                            {dataFmt}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-[11px] pt-1 border-t border-slate-200/60">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">
+                              Preço Informado:
+                            </span>
+                            <span className="font-mono font-bold text-slate-900">
+                              R${' '}
+                              {cot.preco_informado.toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2,
+                              })}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Regime:</span>
+                            <span className="font-semibold text-slate-700">
+                              {cot.regime === 'simples_nacional'
+                                ? `Simples (${cot.percentual_efetivo_simples?.toFixed(1) || 4.5}%)`
+                                : cot.regime === 'lucro_presumido'
+                                  ? 'Lucro Presumido'
+                                  : 'Lucro Real'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Custo Líquido:</span>
+                            <span className="font-mono font-black text-emerald-700">
+                              R${' '}
+                              {cot.custo_liquido_calculado.toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2,
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        {cot.eh_vencedora && (
+                          <div className="pt-1 flex items-center justify-between text-[10px]">
+                            <span className="font-bold text-emerald-700">
+                              ★ Cotação Vencedora da Comparação
+                            </span>
+                            {cot.ano_transicao && (
+                              <span className="text-slate-500 font-mono">
+                                Transição: {cot.ano_transicao}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Footer do Modal */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">

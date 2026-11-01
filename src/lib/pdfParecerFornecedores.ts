@@ -18,6 +18,7 @@ import {
   rotuloRegimeFornecedor,
   calcularComparadorCotacoes,
 } from './calculoComparadorCotacoes'
+import type { HistoricoCotacaoFornecedor } from '@/services/historicoCotacoes'
 
 export interface DadosEmpresaPdfFornecedores {
   nomeEmpresa: string
@@ -32,6 +33,7 @@ export function gerarPdfParecerFornecedores(
   resumo: ResumoCarteiraFornecedores,
   empresa: DadosEmpresaPdfFornecedores,
   comparadorAtivo?: ResultadoComparadorCotacoes | null,
+  historicoCotacoes?: HistoricoCotacaoFornecedor[] | null,
 ): void {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -593,30 +595,111 @@ export function gerarPdfParecerFornecedores(
 
   // Box do Veredito Executivo
   doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2])
-  doc.roundedRect(14, y, 182, 38, 2, 2, 'F')
+  doc.roundedRect(14, y, 182, 34, 2, 2, 'F')
   doc.setDrawColor(goldColor[0], goldColor[1], goldColor[2])
-  doc.roundedRect(14, y, 182, 38, 2, 2, 'S')
+  doc.roundedRect(14, y, 182, 34, 2, 2, 'S')
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8.5)
   doc.setTextColor(goldColor[0], goldColor[1], goldColor[2])
-  doc.text('VEREDITO EXECUTIVO DIAMOND GROUP • RECOMENDAÇÃO DE COMPRA', 18, y + 7)
+  doc.text('VEREDITO EXECUTIVO DIAMOND GROUP • RECOMENDAÇÃO DE COMPRA', 18, y + 6)
 
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7.8)
+  doc.setFontSize(7.5)
   doc.setTextColor(255, 255, 255)
   const linhasVeredito = doc.splitTextToSize(comparador.vereditoDireto, 174)
-  doc.text(linhasVeredito, 18, y + 13)
+  doc.text(linhasVeredito, 18, y + 12)
 
-  doc.setFontSize(7.2)
+  doc.setFontSize(7)
   doc.setTextColor(210, 220, 235)
   const linhasRec = doc.splitTextToSize(comparador.recomendacaoDetalhada, 174)
-  doc.text(linhasRec, 18, y + 21)
+  doc.text(linhasRec, 18, y + 19)
 
-  doc.setFontSize(6.8)
+  doc.setFontSize(6.5)
   doc.setTextColor(goldColor[0], goldColor[1], goldColor[2])
   const linhasReg = doc.splitTextToSize(comparador.explicacaoRegimes, 174)
-  doc.text(linhasReg, 18, y + 33)
+  doc.text(linhasReg, 18, y + 29)
+
+  y += 38
+
+  // SEÇÃO: HISTÓRICO DE COTAÇÕES VENCEDORAS REGISTRADAS
+  const listaHist =
+    historicoCotacoes && historicoCotacoes.length > 0
+      ? historicoCotacoes
+      : [
+          {
+            fornecedor_nome: comparador.melhorCotacao.fornecedorNome,
+            descricao_item: descItem,
+            preco_informado: comparador.melhorCotacao.precoBruto,
+            regime: comparador.melhorCotacao.regime,
+            percentual_efetivo_simples: comparador.melhorCotacao.aliquotaEfetivaAplicada,
+            custo_liquido_calculado: comparador.melhorCotacao.custoLiquido,
+            credito_calculado: comparador.melhorCotacao.creditoRecuperavel,
+            eh_vencedora: true,
+            data_cotacao: new Date().toISOString().split('T')[0],
+          },
+        ]
+
+  if (listaHist.length > 0) {
+    doc.setFontSize(8.5)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2])
+    doc.text('HISTÓRICO DE COTAÇÕES VENCEDORAS REGISTRADAS NA CARTEIRA', 14, y)
+    y += 3.5
+
+    const histRows = listaHist.slice(0, 6).map((h) => {
+      const dataFmt = h.data_cotacao
+        ? new Date(h.data_cotacao).toLocaleDateString('pt-BR')
+        : 'Recente'
+      const regimeDesc =
+        h.regime === 'simples_nacional'
+          ? `Simples (${h.percentual_efetivo_simples?.toFixed(1) || 4.5}%)`
+          : h.regime === 'lucro_presumido'
+            ? 'Lucro Presumido'
+            : 'Lucro Real'
+
+      return [
+        dataFmt,
+        h.fornecedor_nome,
+        h.descricao_item || 'Item / Mercadoria',
+        regimeDesc,
+        `R$ ${h.preco_informado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        `R$ ${(h.credito_calculado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        `R$ ${h.custo_liquido_calculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        '★ Vencedora',
+      ]
+    })
+
+    autoTable(doc, {
+      startY: y,
+      head: [
+        [
+          'Data',
+          'Fornecedor',
+          'Item / Insumo',
+          'Regime',
+          'Preço Face',
+          'Crédito Ganho',
+          'Custo Líquido',
+          'Resultado',
+        ],
+      ],
+      body: histRows,
+      theme: 'grid',
+      styles: { fontSize: 6.5, cellPadding: 1.8 },
+      headStyles: { fillColor: [7, 19, 43], textColor: [255, 255, 255], fontStyle: 'bold' },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 16 },
+        1: { fontStyle: 'bold', cellWidth: 38 },
+        2: { cellWidth: 32 },
+        3: { cellWidth: 24 },
+        4: { halign: 'right', cellWidth: 20 },
+        5: { halign: 'right', cellWidth: 18, textColor: [46, 204, 113] },
+        6: { halign: 'right', cellWidth: 20, fontStyle: 'bold' },
+        7: { halign: 'center', cellWidth: 14, fontStyle: 'bold', textColor: [7, 19, 43] },
+      },
+    })
+  }
 
   renderizarRodapeEscritorioPdf(doc, 3, 3)
 
