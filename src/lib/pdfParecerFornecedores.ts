@@ -13,6 +13,11 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { renderizarRodapeEscritorioPdf } from './pdfIdentidadeEscritorio'
 import type { ResumoCarteiraFornecedores } from './calculoFornecedores'
+import {
+  type ResultadoComparadorCotacoes,
+  rotuloRegimeFornecedor,
+  calcularComparadorCotacoes,
+} from './calculoComparadorCotacoes'
 
 export interface DadosEmpresaPdfFornecedores {
   nomeEmpresa: string
@@ -26,6 +31,7 @@ export interface DadosEmpresaPdfFornecedores {
 export function gerarPdfParecerFornecedores(
   resumo: ResumoCarteiraFornecedores,
   empresa: DadosEmpresaPdfFornecedores,
+  comparadorAtivo?: ResultadoComparadorCotacoes | null,
 ): void {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -316,7 +322,7 @@ export function gerarPdfParecerFornecedores(
     },
   })
 
-  renderizarRodapeEscritorioPdf(doc, 1, 2)
+  renderizarRodapeEscritorioPdf(doc, 1, 3)
 
   // PÁGINA 2: EVOLUÇÃO ANO A ANO 2026-2033 E PARECER CONCLUSIVO
   doc.addPage()
@@ -418,7 +424,201 @@ export function gerarPdfParecerFornecedores(
     textY += linhas.length * 4 + 2
   })
 
-  renderizarRodapeEscritorioPdf(doc, 2, 2)
+  // Se não houver comparador ativo passado, gera o comparador padrão representativo do usuário
+  const comparador =
+    comparadorAtivo ||
+    calcularComparadorCotacoes(
+      [
+        {
+          id: 'a',
+          identificador: 'A',
+          fornecedorNome: 'Fornecedor A (Simples Nacional)',
+          preco: 92,
+          regime: 'simples_nacional',
+          aliquotaSimplesCustom: 4.5,
+        },
+        {
+          id: 'b',
+          identificador: 'B',
+          fornecedorNome: 'Fornecedor B (Lucro Presumido)',
+          preco: 100,
+          regime: 'lucro_presumido',
+          aliquotaSimplesCustom: 4.5,
+        },
+      ],
+      {
+        anoTransicao: resumo.anoSelecionado,
+        regimeComprador: resumo.regimeComprador,
+        classificacaoItem: 'integral',
+        percentualCreditoParcial: 50,
+      },
+    )
+
+  renderizarRodapeEscritorioPdf(doc, 2, 3)
+
+  // PÁGINA 3: COMPARAÇÃO DE COTAÇÕES & PREÇO DE EQUILÍBRIO (BREAK-EVEN)
+  doc.addPage()
+
+  // Header página 3
+  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2])
+  doc.rect(0, 0, 210, 22, 'F')
+  doc.setFillColor(goldColor[0], goldColor[1], goldColor[2])
+  doc.rect(0, 22, 210, 1, 'F')
+
+  doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.text('COMPARAÇÃO DE COTAÇÕES • PREÇO NOMINAL VS. CUSTO LÍQUIDO', 14, 11)
+  doc.setFontSize(7.5)
+  doc.setTextColor(goldColor[0], goldColor[1], goldColor[2])
+  doc.text('DECISÃO TÁTICA DE COMPRA SOB A LC 214/2025 • ANÁLISE DE BREAK-EVEN', 14, 17)
+
+  y = 30
+
+  // Seção 5: Título
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2])
+  doc.text('5. ANÁLISE COMPARATIVA DE COTAÇÕES DE FORNECEDORES', 14, y)
+  y += 4
+
+  // Box com parâmetros da cotação
+  doc.setFillColor(245, 247, 250)
+  doc.roundedRect(14, y, 182, 14, 2, 2, 'F')
+  doc.setDrawColor(210, 215, 225)
+  doc.roundedRect(14, y, 182, 14, 2, 2, 'S')
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.5)
+  doc.setTextColor(70, 80, 90)
+  const descItem =
+    comparador.configuracao.classificacaoItem === 'integral'
+      ? 'Crédito Integral (100%)'
+      : comparador.configuracao.classificacaoItem === 'parcial'
+        ? `Crédito Parcial (${comparador.configuracao.percentualCreditoParcial || 50}%)`
+        : 'Não Gera Crédito (Insumo Vedado)'
+
+  doc.text(
+    `Classificação do Item: ${descItem}   |   Regime do Adquirente: ${regimeFormatado}   |   Ano de Referência: ${comparador.configuracao.anoTransicao}`,
+    18,
+    y + 6,
+  )
+  doc.text(
+    comparador.volumeMensalInformado
+      ? `Volume Mensal Informado: R$ ${comparador.configuracao.volumeMensal?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}   |   Economia Anualizada: R$ ${comparador.economiaAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/ano`
+      : 'Critério de Avaliação: Custo Líquido de Aquisição = Preço Pago de Compra − Crédito Tributário Recuperável',
+    18,
+    y + 11,
+  )
+
+  y += 18
+
+  // Tabela das cotações comparadas
+  const cotacoesTableRows = comparador.cotacoes.map((c) => {
+    const isMelhor = c.identificador === comparador.melhorCotacao.identificador
+    return [
+      `Cotação ${c.identificador}`,
+      c.fornecedorNome,
+      c.regimeRotulo,
+      `${c.aliquotaEfetivaAplicada.toFixed(1)}%`,
+      `R$ ${c.precoBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      `R$ ${c.creditoRecuperavel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      `R$ ${c.custoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      isMelhor ? 'RECOMENDADA (Menor Custo)' : 'Opção Alternativa',
+    ]
+  })
+
+  autoTable(doc, {
+    startY: y,
+    head: [
+      [
+        'Item',
+        'Fornecedor',
+        'Regime Tributário',
+        'Alíq. Efetiva',
+        'Preço de Face',
+        'Crédito Ganho',
+        'Custo Líquido',
+        'Status',
+      ],
+    ],
+    body: cotacoesTableRows,
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2 },
+    headStyles: { fillColor: [7, 19, 43], textColor: [255, 255, 255], fontStyle: 'bold' },
+    columnStyles: {
+      0: { fontStyle: 'bold', halign: 'center', cellWidth: 16 },
+      1: { cellWidth: 38, fontStyle: 'bold' },
+      2: { cellWidth: 26 },
+      3: { halign: 'center', cellWidth: 18 },
+      4: { halign: 'right', cellWidth: 22 },
+      5: { halign: 'right', cellWidth: 20, textColor: [46, 204, 113], fontStyle: 'bold' },
+      6: { halign: 'right', cellWidth: 22, fontStyle: 'bold' },
+      7: { cellWidth: 20, fontStyle: 'bold', halign: 'center' },
+    },
+  })
+
+  // @ts-expect-error
+  y = doc.lastAutoTable.finalY + 8
+
+  // Seção de Preços de Equilíbrio (Break-Even)
+  doc.setFontSize(8.5)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2])
+  doc.text('PREÇO DE EQUILÍBRIO (BREAK-EVEN): A PARTIR DE QUE PREÇO A OUTRA OPÇÃO COMPENSA', 14, y)
+  y += 4
+
+  const breakEvenRows = comparador.breakEvens.map((b) => [
+    `${b.nomeBase} (${b.base}) vs ${b.nomeComparada} (${b.comparada})`,
+    `R$ ${b.precoMaximoBaseParaEquiparar.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    b.descricaoBreakEven,
+  ])
+
+  autoTable(doc, {
+    startY: y,
+    head: [['Relação de Cotações', 'Preço Teto / Piso', 'Condição de Decisão']],
+    body: breakEvenRows,
+    theme: 'grid',
+    styles: { fontSize: 6.8, cellPadding: 2 },
+    headStyles: { fillColor: [7, 19, 43], textColor: [255, 255, 255], fontStyle: 'bold' },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 50 },
+      1: { fontStyle: 'bold', halign: 'right', cellWidth: 30, textColor: [7, 19, 43] },
+      2: { cellWidth: 102 },
+    },
+  })
+
+  // @ts-expect-error
+  y = doc.lastAutoTable.finalY + 8
+
+  // Box do Veredito Executivo
+  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2])
+  doc.roundedRect(14, y, 182, 38, 2, 2, 'F')
+  doc.setDrawColor(goldColor[0], goldColor[1], goldColor[2])
+  doc.roundedRect(14, y, 182, 38, 2, 2, 'S')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8.5)
+  doc.setTextColor(goldColor[0], goldColor[1], goldColor[2])
+  doc.text('VEREDITO EXECUTIVO DIAMOND GROUP • RECOMENDAÇÃO DE COMPRA', 18, y + 7)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.8)
+  doc.setTextColor(255, 255, 255)
+  const linhasVeredito = doc.splitTextToSize(comparador.vereditoDireto, 174)
+  doc.text(linhasVeredito, 18, y + 13)
+
+  doc.setFontSize(7.2)
+  doc.setTextColor(210, 220, 235)
+  const linhasRec = doc.splitTextToSize(comparador.recomendacaoDetalhada, 174)
+  doc.text(linhasRec, 18, y + 21)
+
+  doc.setFontSize(6.8)
+  doc.setTextColor(goldColor[0], goldColor[1], goldColor[2])
+  const linhasReg = doc.splitTextToSize(comparador.explicacaoRegimes, 174)
+  doc.text(linhasReg, 18, y + 33)
+
+  renderizarRodapeEscritorioPdf(doc, 3, 3)
 
   // Download do PDF
   const nomeSanitizado = (empresa.nomeEmpresa || 'Empresa')

@@ -6,6 +6,8 @@ import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav
 import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 import { ModalEditarFornecedor } from '@/components/diagnosticos/ModalEditarFornecedor'
 import { ModalImportarPlanilhaFornecedores } from '@/components/diagnosticos/ModalImportarPlanilhaFornecedores'
+import { CardComparadorCotacoes } from '@/components/diagnosticos/CardComparadorCotacoes'
+import { type ResultadoComparadorCotacoes } from '@/lib/calculoComparadorCotacoes'
 import { Button } from '@/components/ui/button'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
@@ -78,6 +80,8 @@ export default function DiagnosticoFornecedores() {
   const [modalImportarAberto, setModalImportarAberto] = useState(false)
   const [painelSucessoAberto, setPainelSucessoAberto] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
+  const [resultadoComparador, setResultadoComparador] =
+    useState<ResultadoComparadorCotacoes | null>(null)
 
   // Filtro visual de regime na listagem
   const [filtroRegime, setFiltroRegime] = useState<string>('todos')
@@ -271,14 +275,18 @@ export default function DiagnosticoFornecedores() {
   const handleGerarPdf = () => {
     setGerandoPdf(true)
     try {
-      gerarPdfParecerFornecedores(resumo, {
-        nomeEmpresa: dadosEmpresa.nomeEmpresa || 'Empresa Cadastrada',
-        cnpj: dadosEmpresa.cnpj,
-        cidade: dadosEmpresa.cidade,
-        uf: dadosEmpresa.ufOrigem,
-        segmento: dadosEmpresa.segmento,
-        regimeAtual: dadosEmpresa.regimeAtual,
-      })
+      gerarPdfParecerFornecedores(
+        resumo,
+        {
+          nomeEmpresa: dadosEmpresa.nomeEmpresa || 'Empresa Cadastrada',
+          cnpj: dadosEmpresa.cnpj,
+          cidade: dadosEmpresa.cidade,
+          uf: dadosEmpresa.ufOrigem,
+          segmento: dadosEmpresa.segmento,
+          regimeAtual: dadosEmpresa.regimeAtual,
+        },
+        resultadoComparador,
+      )
       toast({
         title: 'Parecer Gerado!',
         description: 'O download do PDF de Análise de Fornecedores foi iniciado.',
@@ -647,6 +655,13 @@ export default function DiagnosticoFornecedores() {
             </table>
           </div>
         </div>
+
+        {/* CARD SEPARADO: COMPARADOR DE COTAÇÕES (POSICIONADO APÓS O RANKING DA CARTEIRA) */}
+        <CardComparadorCotacoes
+          anoTransicao={anoLocal}
+          regimeComprador={regimeLocal}
+          onComparacaoAlterada={(res) => setResultadoComparador(res)}
+        />
 
         {/* COMPARATIVO COMPLETO DE TODOS OS ANOS DA TRANSIÇÃO (2026–2033) */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
