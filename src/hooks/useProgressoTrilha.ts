@@ -27,6 +27,8 @@ export interface ProgressoTrilhaDiagnosticos {
   etapa04: ProgressoEtapaInfo
   // Etapa 05: Enquadramento Completo
   etapa05: ProgressoEtapaInfo
+  // Etapa 06: Análise de Fornecedores
+  etapa06: ProgressoEtapaInfo
   // Helper rápido para checar se etapa 01 está preenchida/concluída
   etapa01Preenchida: boolean
   // Helper para checar se a trilha como um todo tem algum dado salvo
@@ -263,6 +265,53 @@ export function useProgressoTrilha(): ProgressoTrilhaDiagnosticos {
     }
   }, [diagnosticosLista])
 
+  // Avaliação da Etapa 06: Análise de Fornecedores
+  // Concluída quando há fornecedores cadastrados na coleção fornecedores_diagnostico
+  const [totalFornecedoresCadastrados, setTotalFornecedoresCadastrados] = useState<number>(0)
+
+  useEffect(() => {
+    let montado = true
+    async function checarFornecedores() {
+      if (!isAuthenticated) {
+        if (montado) setTotalFornecedoresCadastrados(0)
+        return
+      }
+      try {
+        const authUserId = pb.authStore.record?.id || user?.id
+        const filter = clienteAtivoId
+          ? `cliente_id = "${clienteAtivoId}"`
+          : authUserId
+            ? `user_id = "${authUserId}"`
+            : ''
+        const list = await pb.collection('fornecedores_diagnostico').getList(1, 1, {
+          filter: filter || undefined,
+        })
+        if (montado) setTotalFornecedoresCadastrados(list.totalItems)
+      } catch (_) {
+        if (montado) setTotalFornecedoresCadastrados(0)
+      }
+    }
+    checarFornecedores()
+    return () => {
+      montado = false
+    }
+  }, [isAuthenticated, user?.id, clienteAtivoId])
+
+  const etapa06Info = useMemo<ProgressoEtapaInfo>(() => {
+    if (totalFornecedoresCadastrados >= 1) {
+      return {
+        estado: 'concluida',
+        labelEstado: 'Concluída',
+        diagnosticoSalvo: null,
+      }
+    }
+    return {
+      estado: 'nao_iniciada',
+      labelEstado: 'Não iniciada',
+      diagnosticoSalvo: null,
+    }
+  }, [totalFornecedoresCadastrados])
+
   const etapa01Preenchida = etapa01Info.estado === 'concluida'
 
   const algumaEtapaIniciada = Boolean(
@@ -270,7 +319,8 @@ export function useProgressoTrilha(): ProgressoTrilhaDiagnosticos {
     etapa02Info.estado !== 'nao_iniciada' ||
     etapa03Info.estado !== 'nao_iniciada' ||
     etapa04Info.estado !== 'nao_iniciada' ||
-    etapa05Info.estado !== 'nao_iniciada',
+    etapa05Info.estado !== 'nao_iniciada' ||
+    etapa06Info.estado !== 'nao_iniciada',
   )
 
   // Etapa 00 (Apresentação 360°) reflete o início geral da esteira
@@ -297,6 +347,7 @@ export function useProgressoTrilha(): ProgressoTrilhaDiagnosticos {
     etapa03: etapa03Info,
     etapa04: etapa04Info,
     etapa05: etapa05Info,
+    etapa06: etapa06Info,
     etapa01Preenchida,
     algumaEtapaIniciada,
     recarregar: carregarDiagnosticosDoBackend,

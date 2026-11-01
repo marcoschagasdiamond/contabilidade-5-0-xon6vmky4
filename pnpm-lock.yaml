@@ -122,6 +122,9 @@ importers:
       jspdf:
         specifier: ^2.5.2
         version: 2.5.2
+      jspdf-autotable:
+        specifier: 5.0.9
+        version: 5.0.9(jspdf@2.5.2)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1784,6 +1787,11 @@ packages:
   jiti@1.21.7:
     resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
     hasBin: true
+
+  jspdf-autotable@5.0.9:
+    resolution: {integrity: sha512-wIOG2ggjG6Y7qvqjgFACZZeu+oHxoxrhwCn1lTMxjPhojLVVvu2U2yS2srVCYl0CXe6pqiG/jQMIIS0CFn1ssw==}
+    peerDependencies:
+      jspdf: ^2 || ^3 || ^4
 
   jspdf@2.5.2:
     resolution: {integrity: sha512-myeX9c+p7znDWPk0eTrujCzNjT+CXdXyk7YmJq5nD5V7uLLKmSXnlQ/Jn/kuo3X09Op70Apm0rQSnFWyGK8uEQ==}
@@ -3694,6 +3702,10 @@ snapshots:
   is-number@7.0.0: {}
 
   jiti@1.21.7: {}
+
+  jspdf-autotable@5.0.9(jspdf@2.5.2):
+    dependencies:
+      jspdf: 2.5.2
 
   jspdf@2.5.2:
     dependencies:

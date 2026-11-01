@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-31T05:49:33.755Z",
+  "generatedAt": "2026-11-01T15:21:07.690Z",
   "collections": [
     {
       "name": "users",
@@ -3031,6 +3031,132 @@
         "CREATE INDEX idx_relat_pers_empresa ON relatorios_personalizados (empresa_id)",
         "CREATE INDEX idx_relat_pers_created ON relatorios_personalizados (created DESC)",
         "CREATE INDEX idx_relat_pers_crm_cli ON relatorios_personalizados (crm_cliente_id)"
+      ]
+    },
+    {
+      "name": "fornecedores_diagnostico",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || user_id = @request.auth.id || user_id = '' || user_id = null || @request.auth.nivel_acesso = 'analista' || @request.auth.perfil = 'contador')",
+        "view": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || user_id = @request.auth.id || user_id = '' || user_id = null || @request.auth.nivel_acesso = 'analista' || @request.auth.perfil = 'contador')",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || user_id = @request.auth.id || user_id = '' || user_id = null || @request.auth.nivel_acesso = 'analista' || @request.auth.perfil = 'contador')",
+        "delete": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || user_id = @request.auth.id)"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "cliente_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "diagnostico_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "cnpj",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "regime",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["lucro_real", "lucro_presumido", "simples_nacional", "misto"]
+        },
+        {
+          "name": "proporcao_misto",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "volume_compras",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "classificacao_credito",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["integral", "parcial", "nao_gera"]
+        },
+        {
+          "name": "percentual_credito_parcial",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "descricao_item",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "aliquota_simples_informada",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "observacoes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "dados_extra_json",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_fornecedores_user ON fornecedores_diagnostico (user_id)",
+        "CREATE INDEX idx_fornecedores_cliente ON fornecedores_diagnostico (cliente_id)",
+        "CREATE INDEX idx_fornecedores_regime ON fornecedores_diagnostico (regime)",
+        "CREATE INDEX idx_fornecedores_created ON fornecedores_diagnostico (created DESC)"
       ]
     }
   ]

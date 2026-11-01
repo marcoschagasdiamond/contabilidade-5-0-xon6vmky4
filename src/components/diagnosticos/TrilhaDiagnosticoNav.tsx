@@ -10,6 +10,7 @@ export type PaginaDiagnostico =
   | 'transicao'
   | 'regimes'
   | 'enquadramento'
+  | 'fornecedores'
   | 'relatorio'
 
 export interface TrilhaDiagnosticoProps {
@@ -67,6 +68,14 @@ export const ETAPAS_TRILHA = [
     tag: 'Simulador com Ranking e PDF',
     rota: '/diagnostico',
     cor: '#10B981',
+  },
+  {
+    id: 'fornecedores' as const,
+    numero: '06',
+    nome: 'Análise de Fornecedores',
+    tag: 'Crédito Perdido • 2026–2033',
+    rota: '/diagnostico-fornecedores',
+    cor: '#D4AF37',
   },
 ]
 
@@ -160,7 +169,7 @@ export default function TrilhaDiagnosticoNav({
           aria-label="Trilha de Diagnósticos Tributários"
           className="pt-3 overflow-x-auto scrollbar-none"
         >
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-2.5 min-w-[760px] md:min-w-0">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 sm:gap-2.5 min-w-[880px] md:min-w-0">
             {ETAPAS_TRILHA.map((etapa) => {
               const isAtiva = paginaAtual === etapa.id
               return (

@@ -11,7 +11,7 @@ export default function DiagnosticosHub() {
   const navigate = useNavigate()
   const { temDadosSalvos, dadosEmpresa } = useDadosEmpresa()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
-  const { etapa00, etapa01, etapa02, etapa03, etapa04, etapa05 } = useProgressoTrilha()
+  const { etapa00, etapa01, etapa02, etapa03, etapa04, etapa05, etapa06 } = useProgressoTrilha()
 
   const obterCtaEtapa = (estado: EstadoEtapaTrilha, nomeAcao: string) => {
     if (estado === 'concluida') {
@@ -156,6 +156,27 @@ export default function DiagnosticosHub() {
       estado: etapa05.estado,
       labelEstado: etapa05.labelEstado,
       nomeAcao: 'Enquadramento',
+    },
+    {
+      numero: '06',
+      id: 'fornecedores',
+      nome: 'Análise de Fornecedores',
+      subtitulo: 'Crédito Perdido vs Ganho • Comparativo Simples vs Presumido vs Real',
+      parceria: 'Diagnóstico de Entrada sob a LC 214/2025',
+      descricao:
+        'Cadastre e analise sua carteira de compras: descubra exatamente o custo líquido de aquisição e o crédito perdido por fornecedor (~26,5% vs. 3–7% do Simples), com classificação por item que gera ou não gera crédito, ranking de gargalos e evolução de 2026 a 2033.',
+      beneficios: [
+        'Cadastro da carteira com regimes: Real, Presumido, Simples e Misto com proporção',
+        'Importação instantânea de planilhas de compras em formato CSV / XLSX',
+        'Classificação de produto: crédito integral, parcial ou não gera crédito (neutro)',
+        'Evolução de todos os anos da transição 2026–2033 em tabela, gráfico e Parecer em PDF',
+      ],
+      rota: '/diagnostico-fornecedores',
+      corAccent: '#D4AF37',
+      badge: 'Crédito Perdido • 2026–2033',
+      estado: etapa06.estado,
+      labelEstado: etapa06.labelEstado,
+      nomeAcao: 'Análise de Fornecedores',
     },
   ]
 

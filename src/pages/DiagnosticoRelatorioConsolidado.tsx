@@ -13,6 +13,7 @@ import { formatarCNPJ } from '@/lib/cnpj'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
 import { AvisoOrientativo } from '@/components/common/AvisoOrientativo'
+import { SecaoFornecedoresConsolidado } from '@/components/diagnosticos/SecaoFornecedoresConsolidado'
 import { QuadroMudancasPerfilConsolidado } from '@/components/diagnosticos/QuadroMudancasPerfilConsolidado'
 import {
   exportarPdfEtapaConfiguracoes,
@@ -61,6 +62,7 @@ export default function DiagnosticoRelatorioConsolidado() {
     | 'transicao'
     | 'regimes'
     | 'enquadramento'
+    | 'fornecedores'
   >(abaUrl as any)
 
   // Sincroniza aba se mudar na URL
@@ -456,6 +458,7 @@ export default function DiagnosticoRelatorioConsolidado() {
             { id: 'transicao' as const, label: '03. Transição Fiscal', badge: '2026–2033' },
             { id: 'regimes' as const, label: '04. Comparação Regimes', badge: 'Matriz 4' },
             { id: 'enquadramento' as const, label: '05. Enquadramento', badge: 'Parecer Final' },
+            { id: 'fornecedores' as const, label: '06. Fornecedores', badge: 'LC 214/2025' },
           ].map((tab) => {
             const isAtiva = abaAtiva === tab.id
             return (
@@ -1993,6 +1996,13 @@ export default function DiagnosticoRelatorioConsolidado() {
               </div>
             )}
           </div>
+        )}
+
+        {abaAtiva === 'fornecedores' && (
+          <SecaoFornecedoresConsolidado
+            clienteAtivoId={clienteAtivoId}
+            dadosEmpresa={temDadosSalvos ? dadosEmpresa : null}
+          />
         )}
       </div>
 

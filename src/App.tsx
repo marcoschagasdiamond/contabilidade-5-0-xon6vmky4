@@ -51,6 +51,7 @@ import DiagnosticoAutoavaliacao from './pages/DiagnosticoAutoavaliacao'
 import DiagnosticoTransicao from './pages/DiagnosticoTransicao'
 import DiagnosticoRegimes from './pages/DiagnosticoRegimes'
 import Diagnostico from './pages/Diagnostico'
+import DiagnosticoFornecedores from './pages/DiagnosticoFornecedores'
 import DiagnosticoRelatorioConsolidado from './pages/DiagnosticoRelatorioConsolidado'
 import CalculadoraIbsCbs from './pages/CalculadoraIbsCbs'
 import RecuperadorCreditos from './pages/RecuperadorCreditos'
@@ -426,6 +427,14 @@ const App = () => (
                   element={
                     <RotaAutenticada>
                       <Diagnostico />
+                    </RotaAutenticada>
+                  }
+                />
+                <Route
+                  path="/diagnostico-fornecedores"
+                  element={
+                    <RotaAutenticada>
+                      <DiagnosticoFornecedores />
                     </RotaAutenticada>
                   }
                 />
