@@ -1003,12 +1003,9 @@ export default function Legislacao() {
 
               {/* Rodapé informativo do Radar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-white/10 text-[11px] text-slate-400 font-mono">
-                <span>
-                  Sincronização: monitoramento semanal automático integrado com Câmara dos
-                  Deputados, TCU, Senado e LexML.
-                </span>
+                <span>Monitoramento semanal: Câmara, TCU, Senado e LexML.</span>
                 <span className="text-[#D4AF37]">
-                  Parâmetros refletidos automaticamente na Calculadora IBS/CBS.
+                  Parâmetros refletidos na Calculadora IBS/CBS.
                 </span>
               </div>
             </div>
@@ -1148,12 +1145,16 @@ export default function Legislacao() {
             </div>
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-4xl">
-            Teses tributárias pacificadas nos Tribunais Superiores com efeito vinculante ou
-            repercussão geral favorável ao contribuinte. As teses abaixo geram direito líquido e
-            certo ao levantamento e recuperação de indébito dos últimos 60 meses com atualização
-            oficial pela taxa SELIC.
-          </p>
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-4xl space-y-1">
+            <p>
+              Teses pacificadas no STF e STJ com efeito vinculante ou repercussão geral favorável ao
+              contribuinte.
+            </p>
+            <p className="text-slate-500 text-xs">
+              Possibilitam o levantamento e repetição/compensação de indébito dos últimos 60 meses
+              com atualização pela taxa SELIC.
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {JURISPRUDENCIAS_CHAVE_RECUPERACAO.map((tese) => {

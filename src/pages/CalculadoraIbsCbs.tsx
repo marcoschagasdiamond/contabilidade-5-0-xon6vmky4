@@ -380,7 +380,7 @@ function CalculadoraConteudo() {
       <DiamondHeader
         badge="DIAMOND GROUP • MOTOR TRIBUTÁRIO 5.0"
         titulo="Calculadora IBS / CBS Integrada"
-        subtitulo="Simulador completo da Reforma Tributária (EC 132/2023 e LC 214/2025) com 6 módulos conectados em tempo real: alíquotas do IVA Dual, apuração unitária, matriz comparativa de regimes, crédito financeiro irrestrito, cronograma de transição 2026-2033 e dashboard executivo."
+        subtitulo="Simulador completo da Reforma Tributária (EC 132/2023 e LC 214/2025) em 6 módulos integrados: alíquotas do IVA Dual, apuração unitária, comparativo de regimes, créditos, cronograma 2026–2033 e dashboard executivo."
         mostrarVoltar={true}
         mostrarDiagnosticoBtn={false}
       />
@@ -746,26 +746,26 @@ function CalculadoraConteudo() {
               />
             )}
 
-            {/* AVISO LEGAL DE ESTIMATIVA CONFORME ESPECIFICAÇÃO */}
+            {/* AVISO LEGAL E PREMISSAS */}
             <div className="mt-12 p-5 rounded-2xl bg-slate-100/80 border border-slate-200 text-slate-600 text-xs space-y-2">
               <div className="flex items-center gap-2 font-bold text-[#07132B] text-sm">
                 <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
                 Aviso Legal e Premissas de Simulação
               </div>
-              <p className="leading-relaxed">
-                As alíquotas e cálculos apresentados nesta calculadora são estimativas técnicas
-                baseadas no texto promulgado da Emenda Constitucional nº 132/2023, nas disposições
-                da Lei Complementar nº 214/2025 e nas notas técnicas do Ministério da Fazenda
-                (alíquota padrão de referência de 26,50%). As alíquotas definitivas do IBS e da CBS
-                estão sujeitas à fixação anual pelo Comitê Gestor do IBS (CGIBS) e pelo Senado
-                Federal, bem como a legislações estaduais e municipais específicas durante o período
-                de transição (2026–2033).
-              </p>
-              <p className="leading-relaxed text-slate-500">
-                Esta simulação tem finalidade exclusivamente consultiva, analítica e educacional.
-                Não substitui o planejamento tributário formal nem a auditoria contábil
-                individualizada para sua empresa.
-              </p>
+              <div className="space-y-1.5 text-xs text-slate-600 leading-relaxed">
+                <p>
+                  • Estimativas técnicas fundamentadas na EC nº 132/2023, na LC nº 214/2025 e na
+                  alíquota de referência de 26,50% do Ministério da Fazenda.
+                </p>
+                <p>
+                  • As alíquotas finais dependem de fixação pelo Comitê Gestor do IBS e Senado
+                  Federal durante a transição 2026–2033.
+                </p>
+                <p className="text-slate-500">
+                  • Ferramenta com finalidade analítica e consultiva; não substitui o planejamento
+                  contábil individualizado.
+                </p>
+              </div>
             </div>
           </main>
         </div>

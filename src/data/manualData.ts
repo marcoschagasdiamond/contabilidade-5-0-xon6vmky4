@@ -37,9 +37,10 @@ export const SECOES_MANUAL: SecaoManual[] = [
     resumo:
       'A Contabilidade 5.0 une site institucional, inteligência fiscal da Reforma (EC 132/2023 e LC 214/2025) e gestão contábil de ponta a ponta.',
     conteudo: [
-      'A Contabilidade 5.0 é uma plataforma de contabilidade digital construída em torno da Reforma Tributária (IBS/CBS — Emenda Constitucional 132/2023 e Lei Complementar 214/2025). Ela integra, em um único ecossistema, o site institucional com captação ativa de leads, ferramentas de análise tributária profunda (calculadoras, diagnósticos, relatórios em PDF) e gestão operacional e comercial do escritório (CRM, carteira de clientes, metas e agendamento de reuniões).',
-      'O sistema adota o padrão visual Diamond Group (Navy #07132B, Dourado #D4AF37, Verde #2ECC71), 100% em língua portuguesa e sem elementos gráficos decorativos desnecessários, priorizando sobriedade executiva, clareza numérica e precisão regulatória.',
-      'Diferente de sistemas legados focados apenas em obrigações acessórias passadas, a Contabilidade 5.0 é orientada para o futuro: projeta a travessia de 2026 a 2033, simula split payment, apura crédito sobre estoque, calcula custo líquido de aquisição de fornecedores e gera pareceres em PDF diagramados para apresentação executiva imediata.',
+      'A Contabilidade 5.0 é a plataforma corporativa orientada à Reforma Tributária (EC 132/2023 e LC 214/2025), unindo inteligência fiscal, geração de laudos técnicos e gestão operacional.',
+      'O ecossistema integra em um único ambiente: captação ativa de clientes, simuladores numéricos de IBS/CBS, esteira de diagnósticos 00 a 06 e CRM de atendimento.',
+      'Padrão visual Diamond Group (Navy #07132B, Dourado #D4AF37, Verde #2ECC71): sobriedade executiva, foco numérico rigoroso e ausência de elementos gráficos decorativos.',
+      'Projeta a travessia 2026–2033: calcula split payment, crédito sobre estoque, custo líquido de fornecedores e gera pareceres em PDF para tomada de decisão imediata.',
     ],
     itensDestaque: [
       {
@@ -68,9 +69,9 @@ export const SECOES_MANUAL: SecaoManual[] = [
     resumo:
       'Diferenciação clara entre a visão do cliente final e as ferramentas de gestão do analista contábil e dos administradores.',
     conteudo: [
-      'A plataforma adota controle granular de acessos por nível de permissão (campo nivel_acesso no cadastro de usuários), garantindo que cada usuário visualize as ferramentas adequadas à sua atuação no negócio.',
-      'O sistema conta com Modo Teste gratuito para que contadores e empresários possam experimentar as simulações e diagnósticos antes de efetivar sua assinatura mensal.',
-      'Abaixo, a tabela detalha o investimento mensal, o escopo operacional e as permissões de cada perfil:',
+      'O controle de acesso é segmentado pelo nível de permissão cadastrado (campo nivel_acesso), garantindo privacidade e separação funcional entre clientes e consultores.',
+      'O Modo Teste gratuito permite que empresários e analistas explorem as simulações e diagnósticos da trilha antes de efetivar a contratação.',
+      'A estrutura abaixo resume o investimento mensal, escopo e ferramentas disponíveis por categoria de usuário:',
     ],
     tabela: {
       cabecalhos: ['Perfil', 'Investimento', 'Escopo Principal de Atuação', 'Recursos Liberados'],
@@ -123,9 +124,9 @@ export const SECOES_MANUAL: SecaoManual[] = [
     resumo:
       'Estrutura institucional de alta conversão para atrair empresas que buscam segurança na Reforma Tributária.',
     conteudo: [
-      'O site institucional é a porta de entrada da plataforma, desenhado para transmitir credibilidade imediata e converter visitantes em leads qualificados para a consultoria contábil.',
-      'Possui página inicial completa, hub da Reforma Tributária com submódulos explicativos (Visão Geral, Calendário, Dicionário, Impacto por Setor, Exceções e Split Payment), blog informativo e formulários inteligentes de conversão.',
-      'O portfólio é estruturado em 12 serviços especializados, cada um apresentando rigorosamente os "5 Pilares 5.0" — identidade da marca Diamond Group:',
+      'Ambiente institucional desenhado para autoridade executiva e captação qualificada de empresas que buscam segurança na Reforma Tributária.',
+      'Conta com hub normativo com 6 submódulos da Reforma (Visão Geral, Calendário, Dicionário, Impacto por Setor, Exceções e Split Payment), blog e formulários diretos de conversão.',
+      'O portfólio reúne 12 serviços especializados, cada um estruturado rigorosamente nos "5 Pilares 5.0" característicos da Diamond Group:',
     ],
     itensDestaque: [
       {
@@ -154,14 +155,14 @@ export const SECOES_MANUAL: SecaoManual[] = [
     resumo:
       'Esteira completa que conduz a empresa do diagnóstico de maturidade à análise detalhada de fornecedores e emissão do parecer consolidado.',
     conteudo: [
-      'A Trilha de Diagnósticos é um fluxo guiado estruturado em 7 etapas sequenciais (00 a 06), acessíveis tanto de forma encadeada quanto individualmente no hub /diagnosticos. Cada etapa alimenta automaticamente as subsequentes:',
-      '• Etapa 00 — Diagnóstico 360° (/diagnostico-360): Matriz semáforo de 7 frentes de risco estruturais (Financeiro, Investimentos, Societário, Fiscal, Tributário, Jurídico e Operacional). Apura o índice de maturidade da empresa.',
-      '• Etapa 01 — Configurações (/diagnostico-configuracoes): Cadastro cadastral enxuto da empresa (CNPJ, UF, segmento, faturamento, folha, regime atual e ano de transição 2026–2033), que propaga dados para toda a esteira.',
-      '• Etapa 02 — Autoavaliação de 7 Riscos (/diagnostico-autoavaliacao): Questionário técnico com 14 perguntas objetivas (2 por frente estrutural) com pontuação média ponderada.',
-      '• Etapa 03 — Diagnóstico de Transição (/diagnostico-transicao): Avalia como a organização atravessará o cronograma de transição de 2026 a 2033 e seu grau de dependência de incentivos fiscais.',
-      '• Etapa 04 — Comparação (/diagnostico-regimes): Confronta o modelo tributário atual vigente (PIS/COFINS/ICMS/ISS/IRPJ/CSLL) com a nova mecânica IBS/CBS.',
-      '• Etapa 05 — Enquadramento (/diagnostico): Recomendação matemática do regime mais vantajoso (Simples Nacional vs. Lucro Presumido vs. Lucro Real), calculando a economia projetada e o Fator R.',
-      '• Etapa 06 — Análise de Fornecedores (/diagnostico-fornecedores): Ferramenta de inteligência de compras. Cadastra e importa fornecedores em regimes Lucro Real, Presumido, Simples ou Misto, classifica itens quanto à geração de créditos (integral, parcial ou nulo), calcula o Custo Líquido de Aquisição e o Crédito Perdido, gera ranking de risco de troca, traz o Comparador de Cotações com preço de equilíbrio e veredito, histórico da cotação vencedora e projeção comparativa 2026–2033.',
+      'A esteira modular conduz a organização em 7 etapas progressivas (00 a 06), integradas no hub /diagnosticos com propagação automática de parâmetros:',
+      '• Etapa 00 — Diagnóstico 360° (/diagnostico-360): matriz semáforo em 7 frentes (Financeiro, Investimentos, Societário, Fiscal, Tributário, Jurídico e Operacional).',
+      '• Etapa 01 — Configurações (/diagnostico-configuracoes): parâmetros centrais da empresa (CNPJ, UF, faturamento, compras e ano de transição 2026–2033).',
+      '• Etapa 02 — Autoavaliação 7 Riscos (/diagnostico-autoavaliacao): questionário técnico em 14 dimensões com score de maturidade e plano 30-60-90.',
+      '• Etapa 03 — Transição Fiscal (/diagnostico-transicao): avaliação de dependência de incentivos e roteiro prático para sistemas ERP e vendas.',
+      '• Etapa 04 — Comparação de Regime (/diagnostico-regimes): confronto dos tributos atuais (PIS/COFINS/ICMS/ISS) contra a incidência IBS/CBS.',
+      '• Etapa 05 — Enquadramento (/diagnostico): cálculo numérico do regime ótimo (Simples, Presumido ou Real) com análise do Fator R e laudo em PDF.',
+      '• Etapa 06 — Análise de Fornecedores (/diagnostico-fornecedores): auditoria de compras, crédito perdido por fornecedor do Simples, comparador de cotações com preço de equilíbrio e projeção 2026–2033.',
     ],
     itensDestaque: [
       {
@@ -185,14 +186,14 @@ export const SECOES_MANUAL: SecaoManual[] = [
     resumo:
       'Simula o impacto financeiro da EC 132/2023 ano a ano, calcula retenções em tempo real e analisa cenários com inteligência artificial.',
     conteudo: [
-      'A Calculadora IBS/CBS (/calculadora-ibs-cbs) é o motor tributário mais sofisticado da plataforma, dividido em 6 módulos funcionais:',
-      '• Módulo 1 — Configurações e Parâmetros: Definição da empresa, faturamento, folha, compras, ramos com alíquotas diferenciadas e ano da transição (fase-teste em 2026 com CBS 0,9% e IBS 0,1%; transição progressiva até 2033).',
-      '• Módulo 2 — Calculadora Simples: Cálculo rápido da carga estimada no novo sistema para diagnósticos ágeis.',
-      '• Módulo 3 — Comparativo de Regimes: Confronto detalhado entre Simples Nacional, Lucro Presumido e Lucro Real sob a ótica do IBS/CBS.',
-      '• Módulo 4 — Simulador de Créditos e Estoque: Apuração dos créditos tributários não cumulativos e tratamento do crédito sobre o estoque na virada da legislação.',
-      '• Módulo 5 — Transição e Cronograma 2026–2033: Evolução anual da alíquota de teste até a vigência plena em 2033.',
-      '• Módulo 6 — Dashboard Estratégico: Visão executiva integrada com Farol de Limites do Simples Nacional, impacto do Split Payment (retenção na fonte por liquidação financeira), alertas de risco e histórico de simulações salvas.',
-      'A Calculadora conta ainda com o Assistente de Análise por IA integrado ao Dashboard (agente nativo Skip Cloud) para tirar dúvidas tributárias em linguagem natural, além de suportar o parâmetro ?aplicar vindo do Radar Tributário para simular alíquotas provisórias.',
+      'Motor tributário avançado estruturado em 6 módulos interligados em tempo real:',
+      '• Módulo 1 — Configurações: empresa, receita, folha, compras e alíquotas diferenciadas no ano da transição.',
+      '• Módulo 2 — Calculadora Simples: apuração unitária ágil do novo imposto para diagnósticos imediatos.',
+      '• Módulo 3 — Comparativo de Regimes: confronto Simples vs. Presumido vs. Real sob o IVA Dual.',
+      '• Módulo 4 — Simulador de Créditos: crédito financeiro amplo e tratamento do saldo de estoque na virada da lei.',
+      '• Módulo 5 — Transição 2026–2033: evolução anual da fase-teste até a incidência plena em 2033.',
+      '• Módulo 6 — Dashboard Executivo: Farol de limites, impacto de Split Payment no caixa e histórico comparativo.',
+      'Assistente de IA integrado ao Dashboard para responder consultas técnicas e suporte ao parâmetro do Radar Tributário para testar alíquotas provisórias.',
     ],
     itensDestaque: [
       {
@@ -216,13 +217,13 @@ export const SECOES_MANUAL: SecaoManual[] = [
     resumo:
       'Levantamento administrativo de oportunidades fiscais retroativas com emissão de parecer técnico em PDF.',
     conteudo: [
-      'O Recuperador de Créditos (/recuperador-creditos) atua na esfera administrativa, identificando pagamentos a maior ou indevidos dos últimos 60 meses com base nas teses pacificadas e entendimentos da Receita Federal e tribunais superiores.',
-      'A ferramenta organiza a apuração em 4 grandes blocos tributários:',
-      '1. PIS e COFINS: Insumos na não-cumulatividade, exclusão do ICMS da base de cálculo, fretes, energia elétrica e créditos monofásicos para varejistas.',
-      '2. IRPJ e CSLL: Exclusão de benefícios fiscais, subvenções para investimento e deduções legais na sistemática do Lucro Real e Presumido.',
-      '3. Folha e Previdenciário: Verbas indenizatórias na base do INSS patronal (terço de férias, aviso prévio indenizado, primeiros 15 dias de afastamento).',
-      '4. Outros Tributos: ICMS-ST e taxas com bitributação comprovada.',
-      'A ferramenta aplica correção Selic acumulada sobre o montante recuperável e gera um parecer técnico estruturado em PDF com a fundamentação legal de cada tese.',
+      'Auditoria administrativa de indébitos fiscais dos últimos 60 meses, alinhada a decisões pacificadas do STF, STJ e Soluções de Consulta da Receita Federal.',
+      'A ferramenta estrutura a apuração em 4 blocos técnicos:',
+      '• PIS e COFINS: exclusão do ICMS e ISS da base, insumos não cumulativos, energia, fretes e monofásicos.',
+      '• IRPJ e CSLL: subvenções de ICMS, exclusão de benefícios fiscais e deduções legais no Lucro Real e Presumido.',
+      '• Folha e Previdenciário: verbas indenizatórias na base do INSS patronal (aviso prévio, terço de férias, primeiros 15 dias de afastamento).',
+      '• Outros Tributos: ressarcimento de ICMS-ST e taxas sem respaldo constitucional.',
+      'Aplica correção Selic mês a mês e gera parecer técnico em PDF pronto para instrução administrativa.',
     ],
     itensDestaque: [
       {
@@ -246,11 +247,11 @@ export const SECOES_MANUAL: SecaoManual[] = [
     resumo:
       'Radar normativo com aplicação de alíquotas na calculadora e explicador jurídico em linguagem simples.',
     conteudo: [
-      'O módulo de Legislação (/legislacao) mantém o escritório e seus clientes sempre alinhados às novidades legislativas federais e estaduais da Reforma Tributária.',
-      'É composto por dois pilares fundamentais:',
-      '• Radar de Alertas Tributários: Feed dinâmico de novas portarias, instruções normativas e resoluções do Comitê Gestor do IBS. Cada alerta relevante conta com o botão "Aplicar na Calculadora", que abre o simulador pré-carregando o parâmetro ?aplicar correspondente para testar o impacto imediato.',
-      '• Explicador de Legislação: Tradutor do texto jurídico para linguagem empresarial simples e direta, destacando o que muda na prática, prazos de adequação e setores impactados.',
-      'Adicionalmente, os administradores contam com uma aba de gestão em /admin para disparar comunicados por e-mail sobre novos alertas fiscais.',
+      'Monitoramento normativo federal, estadual e municipal com foco prático no ambiente da Reforma Tributária.',
+      'Estruturado em duas frentes complementares:',
+      '• Radar de Alertas: acompanhamento contínuo de normas e propostas com botão "Aplicar na Calculadora" para testar impactos de alíquotas na hora.',
+      '• Explicador de Legislação: síntese em linguagem empresarial direta sobre prazos, impactos operacionais e setores atingidos.',
+      'Os administradores contam com ferramenta no painel /admin para comunicar novos alertas fiscais a analistas e clientes.',
     ],
     itensDestaque: [
       {
@@ -274,10 +275,10 @@ export const SECOES_MANUAL: SecaoManual[] = [
     resumo:
       'Geração de pareceres técnicos em PDF de alta qualidade para apresentação a clientes e conselhos.',
     conteudo: [
-      'A plataforma oferece três modalidades complementares de relatórios em PDF:',
-      '1. Pareceres Individuais: Cada ferramenta (Calculadora IBS/CBS, Recuperador de Créditos, Fornecedores e cada etapa da trilha) possui botão próprio para emissão de seu respectivo parecer técnico especializado.',
-      '2. Relatório Consolidado da Trilha (/diagnostico-relatorio): Visão única que sintetiza o Diagnóstico 360°, a matriz de riscos, o cronograma de transição, a comparação de regimes e a análise de fornecedores.',
-      '3. Meus Relatórios (/meus-relatorios): Construtor inteligente de dossiês personalizados que permite ao usuário ou analista selecionar quais blocos deseja combinar (Calculadora + Recuperador + Diagnósticos), salvando versões históricas regeneráveis a qualquer momento.',
+      'Emissão de dossiês executivos em PDF com a identidade Diamond Group e personalização opcional do escritório contábil:',
+      '• Pareceres Técnicos Individuais: emissão direta em cada etapa (Calculadora, Recuperador, Fornecedores e Diagnósticos).',
+      '• Relatório Consolidado (/diagnostico-relatorio): visão 360° unificada agrupando riscos, transição fiscal, comparação de regimes e compras.',
+      '• Central Meus Relatórios (/meus-relatorios): montador modular de dossiês customizados com histórico de versões salvas.',
     ],
     itensDestaque: [
       {
@@ -301,11 +302,11 @@ export const SECOES_MANUAL: SecaoManual[] = [
     resumo:
       'Ferramental completo para o analista gerenciar prospecções, carteira de clientes, reuniões e metas de receita.',
     conteudo: [
-      'Para os perfis Analista, Admin e Master, a Contabilidade 5.0 atua como o sistema de gestão do escritório, centralizando as frentes comercial e operacional:',
-      '• CRM com Ficha em 6 Abas (/crm e /crm/cliente/:id): Pipeline comercial que organiza os clientes por estágio no funil de vendas. A ficha individual do cliente reúne: 1. Dados Cadastrais e Perfil; 2. Histórico de Diagnósticos; 3. Simulações da Calculadora; 4. Créditos Levantados; 5. Tarefas e Compromissos; 6. Anotações e Linha do Tempo.',
-      '• Carteira e Clientes (/carteira e /clientes): Gestão consolidada de todas as empresas atendidas pelo analista, com visão de faturamento global, regime tributário e relatórios emitidos.',
-      '• Agendamento de Reuniões (/agendamento): Sistema onde empresários e analistas podem agendar reuniões de diagnóstico ou acompanhamento mensal, registrando data, horário, pauta e link da videoconferência.',
-      '• Dashboard de Metas (/metas): Painel de controle que cruza dados do CRM para apurar em tempo real: captação de novos clientes, receita recorrente gerada, volume de créditos tributários recuperados e diagnósticos concluídos no mês.',
+      'Central de gestão para os perfis Analista, Admin e Master, integrando pipeline comercial e rotina consultiva:',
+      '• CRM em 6 Abas (/crm): funil por etapas e ficha com cadastro, diagnósticos, simulações, créditos, tarefas e anotações.',
+      '• Carteira de Clientes (/carteira): visão unificada de empresas atendidas, regimes, faturamento e relatórios gerados.',
+      '• Agendamento de Reuniões (/agendamento): calendário com pauta, horário e videoconferência para diagnósticos e reuniões mensais.',
+      '• Dashboard de Metas (/metas): apuração automática de novas contratações, receita recorrente, créditos recuperados e diagnósticos.',
     ],
     itensDestaque: [
       {
@@ -329,10 +330,10 @@ export const SECOES_MANUAL: SecaoManual[] = [
     resumo:
       'Ferramentas de governança corporativa, expansão white-label e intermediação de créditos judiciais e precatórios.',
     conteudo: [
-      'Os módulos corporativos atendem às lideranças do sistema e conferem poder de escala ao negócio:',
-      '• Painel Administrativo (/admin): Estruturado em abas estratégicas (Visão Global de Clientes, Analistas & Parceiros, Usuários & Permissões, Reuniões Agendadas, Fila do Mercado de Créditos e Radar Tributário). Apenas o perfil Master pode promover novos administradores.',
-      '• Back Office 5.0 White-Label (/servicos/back-office-50): Modelo de parceria comercial onde o escritório parceiro atua na ponta comercial e a Contabilidade 5.0 funciona como fábrica técnica de inteligência fiscal, processando diagnósticos com a marca do parceiro.',
-      '• Mercado de Créditos e Precatórios (/mercado-creditos): Balcão de liquidez para negociação de créditos tributários acumulados e precatórios judiciais. Os anúncios são mantidos anônimos entre os usuários e moderados de forma restrita pelo Admin e Master em /admin.',
+      'Ferramentas estratégicas de liderança, expansão de parcerias e liquidez de ativos fiscais:',
+      '• Painel Administrativo (/admin): controle global de analistas, usuários, permissões restritas e moderação da plataforma.',
+      '• Back Office 5.0 White-Label (/servicos/back-office-50): suporte técnico de retaguarda para escritórios parceiros atenderem com marca própria.',
+      '• Mercado de Créditos e Precatórios (/mercado-creditos): balcão confidencial para aproximação de compradores e cedentes de créditos fiscais e judiciais.',
     ],
     itensDestaque: [
       {
@@ -356,7 +357,7 @@ export const SECOES_MANUAL: SecaoManual[] = [
     resumo:
       'Por que o sistema se destaca no mercado contábil brasileiro e gera retorno financeiro imediato.',
     conteudo: [
-      'A adesão à Contabilidade 5.0 fundamenta-se em 7 vantagens e benefícios objetivos que transformam o escritório e a segurança do empresário:',
+      'Sete diferenciais objetivos que consolidam autoridade técnica, previsibilidade de receita e segurança fiscal na Reforma Tributária:',
     ],
     itensDestaque: [
       {

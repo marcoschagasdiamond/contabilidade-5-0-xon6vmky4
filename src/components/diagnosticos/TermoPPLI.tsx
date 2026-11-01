@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 export const TEXTO_RESUMO_PPLI =
-  'PPLI — Private Placement Life Insurance (seguro de vida de colocação privada): apólice estruturada offshore (1291 Group, Suíça) que permite alocar o patrimônio em carteira de investimentos customizada em banco internacional, com rendimento sem tributação brasileira sobre o seguro. Favorece a sucessão: partilha privativa (o segurado define o que cada herdeiro recebe), dispensa ITCMD e custos de partilha e pode gerar renda aos beneficiários. Proteção de ativos robusta, confidencialidade e reconhecimento pelos sistemas legais; a seguradora não custodia os ativos — o proprietário mantém total domínio sobre carteira, gestão e beneficiários. Estruturação via Diamond Investments.'
+  'Apólice offshore (1291 Group, Suíça) para alocação patrimonial internacional com diferimento tributário. Garante sucessão privativa sem ITCMD e total domínio sobre a carteira.'
 
 interface TermoPPLIProps {
   children?: React.ReactNode
@@ -67,26 +67,16 @@ export function TermoPPLI({ children = 'PPLI', className = '' }: TermoPPLIProps)
 
             <p className="text-xs sm:text-[13px] leading-relaxed text-slate-200">
               <strong className="text-white font-bold">
-                PPLI — Private Placement Life Insurance
+                PPLI (Private Placement Life Insurance):
               </strong>{' '}
-              (seguro de vida de colocação privada): apólice estruturada offshore (1291 Group,
-              Suíça) que permite alocar o patrimônio em carteira de investimentos customizada em
-              banco internacional, com rendimento sem tributação brasileira sobre o seguro.
+              apólice de seguro de vida offshore (1291 Group, Suíça) para gestão patrimonial
+              internacional com diferimento fiscal sobre rendimentos.
             </p>
 
             <p className="text-xs sm:text-[13px] leading-relaxed text-slate-300">
-              <strong className="text-emerald-300 font-semibold">Favorece a sucessão:</strong>{' '}
-              partilha privativa (o segurado define o que cada herdeiro recebe), dispensa ITCMD e
-              custos de partilha e pode gerar renda aos beneficiários.
-            </p>
-
-            <p className="text-xs sm:text-[13px] leading-relaxed text-slate-300">
-              <strong className="text-emerald-300 font-semibold">
-                Proteção de ativos robusta, confidencialidade e reconhecimento pelos sistemas
-                legais;
-              </strong>{' '}
-              a seguradora não custodia os ativos — o proprietário mantém total domínio sobre
-              carteira, gestão e beneficiários. Estruturação via Diamond Investments.
+              <strong className="text-emerald-300 font-semibold">Vantagens:</strong> sucessão
+              privativa sem incidência de ITCMD, blindagem de ativos e total controle da carteira
+              pelo titular.
             </p>
           </div>
         </TooltipContent>

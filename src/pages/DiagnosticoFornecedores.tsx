@@ -755,16 +755,14 @@ export default function DiagnosticoFornecedores() {
           </div>
 
           {regimeLocal === 'simples_nacional' ? (
-            <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 space-y-1.5">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 space-y-1">
               <p className="text-xs font-bold text-slate-800">
-                Aviso: Comprador no Simples Nacional não aproveita créditos tributários
+                Aviso: Comprador no Simples Nacional
               </p>
               <p className="text-xs leading-relaxed text-slate-600">
-                Como sua empresa está enquadrada no Simples Nacional tradicional nesta simulação,
-                não há créditos da não-cumulatividade a aproveitar na entrada. Portanto, o risco de
-                troca por defasagem na transferência de crédito tributário fica neutro/inaplicável.
-                Para empresas que migrarem para o Lucro Real ou Presumido, este ranking aponta os
-                fornecedores mais urgentes para troca de fornecedor ou renegociação de preços.
+                No Simples tradicional não há aproveitamento de créditos de entrada. Para empresas
+                no Lucro Real ou Presumido, este ranking prioriza os fornecedores mais críticos para
+                renegociação ou substituição imediata.
               </p>
             </div>
           ) : rankingRiscoTroca.length === 0 ? (

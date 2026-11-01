@@ -345,11 +345,38 @@ export default function Manual() {
                   </p>
                 </div>
 
-                {/* TEXTO CORRIDO */}
-                <div className="mt-5 space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
-                  {secao.conteudo.map((p, idx) => (
-                    <p key={idx}>{p}</p>
-                  ))}
+                {/* TEXTO CORRIDO E LISTAS COM MARCADORES PADRONIZADOS */}
+                <div className="mt-5 space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                  {secao.conteudo.map((p, idx) => {
+                    const isBullet = p.startsWith('• ')
+                    if (isBullet) {
+                      const semBullet = p.slice(2)
+                      const partes = semBullet.split(': ')
+                      const rotulo = partes.length > 1 ? partes[0] : null
+                      const textoResto = partes.length > 1 ? partes.slice(1).join(': ') : semBullet
+
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-start gap-2.5 p-2 rounded-lg bg-white/[0.02] border border-white/5 hover:border-[#D4AF37]/30 transition-colors"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] shrink-0 mt-2" />
+                          <div className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                            {rotulo && (
+                              <strong className="text-white font-semibold mr-1.5">{rotulo}:</strong>
+                            )}
+                            <span className="text-slate-300">{textoResto}</span>
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <p key={idx} className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                        {p}
+                      </p>
+                    )
+                  })}
                 </div>
 
                 {/* TABELA OPCIONAL (EX: TABELA DE PERFIS) */}

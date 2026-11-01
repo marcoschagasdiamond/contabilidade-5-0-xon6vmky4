@@ -21,9 +21,9 @@ export const EXPLICACOES_CLASSIFICACAO_CREDITO: Record<
     subtitulo: '100% da base tributável',
     resumoCurto: 'Crédito pleno de IBS/CBS',
     explicacao:
-      'A compra permite aproveitar todo o crédito destacado na nota, como matéria-prima, insumos e mercadorias para revenda. A diferença de regime entre fornecedores importa.',
+      'Permite creditar 100% do IBS/CBS destacado na aquisição de insumos, matérias-primas e revenda. O regime do fornecedor define o custo líquido final.',
     destaqueDecisao:
-      'A diferença de regime (Lucro Real vs. Simples Nacional) é decisiva para o custo líquido final.',
+      'Fornecedores no Lucro Real transferem crédito integral; no Simples, o crédito é reduzido.',
   },
   parcial: {
     id: 'parcial',
@@ -31,9 +31,8 @@ export const EXPLICACOES_CLASSIFICACAO_CREDITO: Record<
     subtitulo: '% informado da base',
     resumoCurto: 'Fração do crédito aproveitada',
     explicacao:
-      'A compra permite aproveitar apenas uma fração do crédito (percentual definido por você). Parte do imposto vira custo.',
-    destaqueDecisao:
-      'Você define o percentual creditável: o saldo restante integra o custo de aquisição da empresa.',
+      'Aproveita apenas o percentual informado na aquisição; a parcela não creditável vira custo. Ideal para bens de uso misto ou regras setoriais.',
+    destaqueDecisao: 'O saldo não creditado compõe o custo de aquisição da sua empresa.',
   },
   nao_gera: {
     id: 'nao_gera',
@@ -41,9 +40,8 @@ export const EXPLICACOES_CLASSIFICACAO_CREDITO: Record<
     subtitulo: 'Item sem direito a crédito',
     resumoCurto: 'Item vedado ou neutro',
     explicacao:
-      'A compra não dá direito a crédito (ex.: itens isentos, alíquota zero ou de uso pessoal). Nesse caso a decisão entre fornecedores é só por preço — não há diferença de crédito.',
-    destaqueDecisao:
-      'Nesse caso a decisão entre fornecedores é só por preço — não há diferença de crédito.',
+      'Item sem apropriação de crédito por vedação legal, isenção ou consumo final. A escolha do fornecedor recai exclusivamente sobre o preço nominal.',
+    destaqueDecisao: 'Comparação puramente comercial, sem efeito tributário na entrada.',
   },
 }
 

@@ -43,12 +43,11 @@ export default function DiagnosticosHub() {
         subtitulo: 'Apresentação do Serviço & Matriz das 7 Frentes Estruturais',
         parceria: 'Diamond Group & Grupo Baumgartener',
         descricao:
-          'Card de apresentação do serviço de inteligência corporativa com a matriz completa das 7 frentes: Financeiro & Crédito, Investimentos & Wealth, Societário & Parcerias (Risco Hub), Fiscal & Contábil, Tributário, Jurídico e Operacional, Humano & Cultura. Base metodológica para estancar perdas e blindar a operação.',
+          'Apresentação corporativa e matriz de maturidade em 7 frentes estruturais: Financeiro, Investimentos, Societário, Fiscal, Tributário, Jurídico e Operacional.',
         beneficios: [
-          'Apresentação institucional completa e matriz das 7 frentes',
-          'Conceito de Reestruturação no Agora e Governança no Amanhã',
-          'Foco nos 7 pilares estruturais e novo ambiente tributário',
-          'Porta de entrada oficial da Trilha Guiada de Inteligência',
+          'Visão integrada das 7 frentes corporativas',
+          'Reestruturação no Agora e Governança no Amanhã',
+          'Porta de entrada da Trilha de Diagnósticos',
         ],
         rota: '/diagnostico-360',
         corAccent: '#D4AF37',
@@ -64,12 +63,11 @@ export default function DiagnosticosHub() {
         subtitulo: 'Parâmetros Base • Espelhado com Calculadora IBS/CBS',
         parceria: 'Central de Propagação para os 4 Diagnósticos',
         descricao:
-          'Defina a razão social, CNPJ com máscara, UF e cidade, segmento (10 opções homologadas), regime atual, quadro de funcionários, perfil de clientes NF (B2B/B2C), slider de atividade mista (0–100%) e o ano da transição (2026–2033). Conectado à Carteira de Clientes.',
+          'Cadastro central enxuto: CNPJ, UF, segmento, regime atual, compras e ano de transição (2026–2033). Propaga parâmetros para toda a esteira.',
         beneficios: [
-          'Seletor Carteira • Cliente Ativo no Diagnóstico integrado',
-          'Propagação automática para as páginas com badge de origem',
-          'Reaproveitamento bidirecional contínuo com Módulo 1 da Calculadora',
-          'Persistência segura vinculada a cada laudo e cliente_id',
+          'Propagação automática para as etapas e calculadora',
+          'Integração direta com a Carteira de Clientes',
+          'Persistência segura vinculada a cada laudo',
         ],
         rota: '/diagnostico-configuracoes',
         corAccent: '#D4AF37',
@@ -85,12 +83,11 @@ export default function DiagnosticosHub() {
         subtitulo: '14 Respostas • Matriz Semáforo & Plano de Ação 30-60-90',
         parceria: 'Ferramenta Interativa Diamond Intelligence',
         descricao:
-          'Ferramenta dedicada para autoavaliação interativa nas 7 frentes (2 dimensões por frente: Exposição & Vulnerabilidade e Proteção & Controle, totalizando 14 respostas). Calcula score médio por frente, gera a Matriz Semáforo de Riscos e Oportunidades e o Plano de Ação 30-60-90.',
+          'Autoavaliação técnica em 14 dimensões (Exposição e Controle por frente). Apura o score de maturidade, semáforo de riscos e plano 30-60-90.',
         beneficios: [
-          '14 respostas pontuais (Exposição/Vulnerabilidade e Proteção/Controle)',
-          'Score médio por frente e classificação de risco imediata',
-          'Matriz Semáforo de Riscos e Oportunidades consolidada',
-          'Plano de Ação 30-60-90 com salvamento na conta e vínculo ao Cliente',
+          'Questionário objetivo em 14 respostas pontuais',
+          'Matriz Semáforo de Riscos por frente',
+          'Plano de Ação 30-60-90 vinculado à empresa',
         ],
         rota: '/diagnostico-autoavaliacao',
         corAccent: '#2ECC71',
@@ -106,12 +103,11 @@ export default function DiagnosticosHub() {
         subtitulo: 'Roteiro de 40 Minutos • Farol de Urgência & ERP',
         parceria: 'Reforma Tributária do Consumo',
         descricao:
-          'Roteiro guiado em dois blocos operacionais (Negócio & Vendas / Operação & ERP) que gera laudo com farol de risco, 3 prioridades para os próximos 90 dias e solução recomendada.',
+          'Avaliação de impacto operacional em dois blocos (Negócio/Vendas e ERP/Caixa), com farol de urgência e prioridades para 90 dias.',
         beneficios: [
-          'Bloco A: Negócio, Regime & Vendas (20 min)',
-          'Bloco B: Operação, Sistema ERP & Caixa (20 min)',
-          'Laudo Executivo com Farol de Urgência (Verde, Amarelo e Vermelho)',
-          'As 3 prioridades estratégicas para os próximos 90 dias',
+          'Análise de dependência de incentivos e ERP',
+          'Farol de Urgência em 3 níveis de prioridade',
+          'Recomendações práticas para os próximos 90 dias',
         ],
         rota: '/diagnostico-transicao',
         corAccent: '#F59E0B',
@@ -127,12 +123,11 @@ export default function DiagnosticosHub() {
         subtitulo: 'Decisão Estratégica • 4 Modelos Societários & IVA Dual',
         parceria: 'Simples Tradicional vs Híbrido vs Presumido vs Real vs IVA Dual',
         descricao:
-          'Sistema unificado integrando o fluxo estratégico de decisão (Simples Tradicional, Híbrido ou Regime Regular) com a matriz numérica dos 4 regimes societários, ranking de economia e simulação de split payment.',
+          'Confronto matemático entre o sistema atual (PIS/COFINS/ICMS/ISS) e o IBS/CBS nos modelos Simples Tradicional, Híbrido, Presumido e Real.',
         beneficios: [
-          'Fluxo de decisão interativo em 4 perguntas estratégicas',
-          'Ranking financeiro completo dos 4 regimes com apuração líquida',
-          'Simulação de Split Payment e impacto no capital de giro',
-          'Os 3 cenários práticos mais comuns de mercado (estudos de caso)',
+          'Árvore de decisão em 4 perguntas estratégicas',
+          'Ranking financeiro dos 4 regimes tributários',
+          'Simulação de Split Payment no capital de giro',
         ],
         rota: '/diagnostico-regimes',
         corAccent: '#3B82F6',
@@ -148,12 +143,11 @@ export default function DiagnosticosHub() {
         subtitulo: 'Wizard Completo com Relatório Executivo',
         parceria: 'Simulador Integrado com PDF',
         descricao:
-          'O wizard aprofundado com seletor de ano-base (2027 a 2033), detalhamento de créditos, ranking de regimes, análise setorial e geração instantânea de parecer e relatório executivo em PDF para download.',
+          'Simulador de enquadramento tributário com cálculo do Fator R, economia anual estimada e emissão de relatório técnico em PDF.',
         beneficios: [
-          'Wizard de 4 passos com validação e cálculo em tempo real',
-          'Seletor dinâmico do ano-base da transição (2027–2033)',
-          'Geração e download de Relatório Executivo em PDF',
-          'Salvamento automático no histórico e visível no painel admin',
+          'Cálculo do regime mais econômico em tempo real',
+          'Seletor do ano-base de transição (2027–2033)',
+          'Emissão de Relatório Executivo diagramado em PDF',
         ],
         rota: '/diagnostico',
         corAccent: '#10B981',
@@ -169,12 +163,11 @@ export default function DiagnosticosHub() {
         subtitulo: 'Crédito Perdido vs Ganho • Comparativo Simples vs Presumido vs Real',
         parceria: 'Diagnóstico de Entrada sob a LC 214/2025',
         descricao:
-          'Cadastre e analise sua carteira de compras: descubra exatamente o custo líquido de aquisição e o crédito perdido por fornecedor (~26,5% vs. 3–7% do Simples), com classificação por item que gera ou não gera crédito, ranking de gargalos e evolução de 2026 a 2033.',
+          'Auditoria de compras: custo líquido real, crédito perdido por fornecedor do Simples (~26,5% vs 3–7%), ranking de gargalos e comparador de cotações.',
         beneficios: [
-          'Cadastro da carteira com regimes: Real, Presumido, Simples e Misto com proporção',
-          'Importação instantânea de planilhas de compras em formato CSV / XLSX',
-          'Classificação de produto: crédito integral, parcial ou não gera crédito (neutro)',
-          'Evolução de todos os anos da transição 2026–2033 em tabela, gráfico e Parecer em PDF',
+          'Cálculo do Custo Líquido de Aquisição e Crédito Perdido',
+          'Comparador de Cotações com preço de equilíbrio',
+          'Evolução comparativa de todos os anos 2026–2033',
         ],
         rota: '/diagnostico-fornecedores',
         corAccent: '#D4AF37',
@@ -423,17 +416,16 @@ export default function DiagnosticosHub() {
               Reestruturação no Agora, Governança no Amanhã
             </h2>
 
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-              A <strong>Reestruturação de Empresas</strong> é o processo de redesenhar a forma como
-              a empresa opera, se financia ou se organiza societariamente para resolver crises,
-              eliminar ineficiências ou destravar valor. Ela atua no <em>"agora"</em>.
-            </p>
-
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-              A <strong>Governança</strong> cria processos e controles pelo qual a empresa é
-              administrada e monitorada. Se a reestruturação arruma a casa, a governança garante que
-              ela não bagunce de novo. Ela atua no <em>"amanhã"</em>.
-            </p>
+            <div className="space-y-3 text-slate-300 text-sm sm:text-base leading-relaxed">
+              <p>
+                <strong className="text-white">Reestruturação (Agora):</strong> redesenha operação,
+                finanças e societário para estancar perdas e destravar valor imediato.
+              </p>
+              <p>
+                <strong className="text-white">Governança (Amanhã):</strong> implanta processos e
+                controles contínuos para manter a disciplina fiscal e a solidez construída.
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-white/10">
               <div className="p-4 rounded-xl bg-white/5 border border-white/10">

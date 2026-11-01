@@ -166,12 +166,9 @@ export default function BpoContabil() {
               </p>
 
               <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal mb-8 max-w-2xl">
-                O BPO (Business Process Outsourcing) transfere para nossa equipe de especialistas
-                toda a rotina operacional da sua empresa — fiscal, folha, contas a pagar/receber e
-                faturamento — enquanto você acompanha tudo em tempo real através do painel do
-                cliente. O diferencial 5.0: não é apenas terceirização de mão de obra, é a operação
-                rodando sobre tecnologia avançada, automação de dados, indicadores gerenciais e
-                alertas preditivos antes de qualquer vencimento.
+                Operação fiscal, departamento pessoal, faturamento e contas a pagar/receber
+                executadas por especialistas com monitoramento em tempo real, automação e
+                indicadores gerenciais.
               </p>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">

@@ -158,10 +158,9 @@ export default function AssessoriaTributaria() {
               </h1>
 
               <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal mb-8 max-w-2xl">
-                Assessoria tributária de alta complexidade: recuperação de créditos fiscais
-                estratégicos, saneamento de tributos da folha de pagamento, negociação estruturada
-                de passivos com a PGFN e defesa fiscal preventiva via auditoria de SPED dos últimos
-                5 anos.
+                Assessoria tributária de alta complexidade: recuperação de créditos, saneamento de
+                tributos da folha, negociação com a PGFN e auditoria preventiva de SPED (últimos 5
+                anos).
               </p>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
@@ -212,12 +211,12 @@ export default function AssessoriaTributaria() {
             <h2 className="font-heading font-bold text-2xl sm:text-4xl text-slate-900 tracking-tight mb-4">
               Inteligência tributária de ponta a ponta para proteger o caixa e blindar o patrimônio
             </h2>
-            <p className="text-base text-slate-600 leading-relaxed">
-              O sistema tributário brasileiro penaliza empresas que não auditam suas próprias
-              declarações. Nossa equipe combina juristas, auditores e analistas seniores para
-              resgatar valores pagos a maior, renegociar passivos paralisantes e construir defesas
-              fiscais antes mesmo da intimação formal.
-            </p>
+            <div className="space-y-2 text-base text-slate-600 leading-relaxed">
+              <p>
+                Identificamos recolhimentos indevidos, renegociamos passivos e construímos defesas
+                fiscais antes da notificação do Fisco.
+              </p>
+            </div>
           </div>
 
           {/* 4 Benefícios Estratégicos */}
