@@ -987,7 +987,7 @@ export default function Legislacao() {
                               </Link>
                             ) : (
                               <Link
-                                to="/calculadora-ibs-cbs"
+                                to={`/calculadora-ibs-cbs?aplicar=${encodeURIComponent(String(notif.tributo || 'cbs').toLowerCase())}&aliquota=${encodeURIComponent(String(notif.aliquota || '11.3468'))}&ano=${encodeURIComponent(String(notif.ano || '2027'))}`}
                                 className="inline-flex items-center text-[11px] font-bold text-[#D4AF37] hover:underline"
                               >
                                 Aplicar na Calculadora →

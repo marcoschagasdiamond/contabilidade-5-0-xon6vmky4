@@ -391,6 +391,11 @@ interface CalculadoraContextType {
   notificacoesRadar: NotificacaoTributaria[]
   carregandoRadar: boolean
   recarregarParametrosRadar: () => Promise<void>
+
+  // Parâmetro Temporário do Radar de Alertas
+  parametroRadarTemporario: { aplicar: string; aliquota: number; ano: number } | null
+  aplicarAliquotaRadarTemporaria: (aplicar: string, aliquota: number, ano: number) => void
+  limparParametroRadarTemporario: () => void
 }
 
 const CalculadoraContext = createContext<CalculadoraContextType | undefined>(undefined)
@@ -411,6 +416,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const [parametrosRadar, setParametrosRadar] = useState<ParametroTributario[]>([])
   const [notificacoesRadar, setNotificacoesRadar] = useState<NotificacaoTributaria[]>([])
   const [carregandoRadar, setCarregandoRadar] = useState<boolean>(true)
+  const [parametroRadarTemporario, setParametroRadarTemporario] = useState<{
+    aplicar: string
+    aliquota: number
+    ano: number
+  } | null>(null)
 
   const recarregarParametrosRadar = async () => {
     try {
@@ -625,8 +635,110 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   const resetConfig = () => setConfig(CONFIGURACOES_PADRAO)
 
+  // Aplica alíquota temporária do Radar Tributário (ex.: proposta TCU CBS 11,3468% em 2027)
+  const aplicarAliquotaRadarTemporaria = (aplicar: string, aliquota: number, ano: number) => {
+    const aplicarNorm = String(aplicar || 'cbs')
+      .toLowerCase()
+      .trim()
+    const aliqNum = Number(aliquota) || 0
+    const anoNum = Number(ano) || 2027
+
+    setParametroRadarTemporario({
+      aplicar: aplicarNorm,
+      aliquota: aliqNum,
+      ano: anoNum,
+    })
+
+    const dadosFaseAno =
+      CRONOGRAMA_FASES_TRANSICAO[anoNum as AnoTransicaoIbsCbs] || CRONOGRAMA_FASES_TRANSICAO[2027]
+
+    setConfig((prev) => {
+      let novaCbs = prev.cbsPadrao
+      let novoIbs = prev.ibsPadrao
+
+      if (aplicarNorm.includes('ibs')) {
+        novoIbs = aliqNum
+      } else if (aplicarNorm.includes('iva') || aplicarNorm.includes('dual')) {
+        // divide proporcional ou aplica como total
+        novaCbs = Number((aliqNum * (8.8 / 26.5)).toFixed(4))
+        novoIbs = Number((aliqNum * (17.7 / 26.5)).toFixed(4))
+      } else {
+        // default: CBS
+        novaCbs = aliqNum
+      }
+
+      const totalIva = Number((novaCbs + novoIbs).toFixed(4))
+      const etiquetaRadar = `Radar Tributário (Proposta TCU) · ${aliqNum}% (${aplicarNorm.toUpperCase()}) · fase ${anoNum}`
+
+      const novasEtiquetas: OrigemCamposAliquota = {
+        ...(prev.etiquetasOrigem || {}),
+        cbsPadrao: aplicarNorm.includes('ibs')
+          ? prev.etiquetasOrigem?.cbsPadrao || dadosFaseAno.etiquetaOrigem
+          : etiquetaRadar,
+        ibsPadrao: aplicarNorm.includes('ibs')
+          ? etiquetaRadar
+          : prev.etiquetasOrigem?.ibsPadrao || dadosFaseAno.etiquetaOrigem,
+        totalIvaDual: etiquetaRadar,
+      }
+
+      return {
+        ...prev,
+        cbsPadrao: novaCbs,
+        ibsPadrao: novoIbs,
+        totalIvaDual: totalIva,
+        anoTransicao:
+          typeof anoNum === 'number' && anoNum in CRONOGRAMA_FASES_TRANSICAO
+            ? (anoNum as AnoTransicaoIbsCbs)
+            : prev.anoTransicao,
+        etiquetasOrigem: novasEtiquetas,
+      }
+    })
+
+    if (anoNum in CRONOGRAMA_FASES_TRANSICAO) {
+      setAnoOperacaoState(anoNum as AnoTransicaoIbsCbs)
+      setAnoTransicaoDashboardState(anoNum as AnoTransicaoIbsCbs)
+      setEditadoLocalmente((prev) => ({
+        ...prev,
+        modulo2AnoOperacao: false,
+        dashboardAnoTransicao: false,
+      }))
+    }
+  }
+
+  // Limpa alíquota temporária e restaura valor oficial vigente da LC 214/2025 para o ano ativo
+  const limparParametroRadarTemporario = () => {
+    setParametroRadarTemporario(null)
+    setConfig((prev) => {
+      const anoAtual = prev.anoTransicao || 2027
+      const dadosFase = CRONOGRAMA_FASES_TRANSICAO[anoAtual] || CRONOGRAMA_FASES_TRANSICAO[2027]
+
+      // Alíquotas oficiais da LC 214/2025 permanecem intactas no cronograma
+      const cbsOficial = dadosFase.aliquotaCbs
+      const ibsOficial = dadosFase.aliquotaIbs
+      const totalOficial = Number((cbsOficial + ibsOficial).toFixed(2))
+
+      const novasEtiquetas: OrigemCamposAliquota = {
+        ...(prev.etiquetasOrigem || {}),
+        cbsPadrao: dadosFase.etiquetaOrigem,
+        ibsPadrao: dadosFase.etiquetaOrigem,
+        totalIvaDual: dadosFase.etiquetaOrigem,
+      }
+
+      return {
+        ...prev,
+        cbsPadrao: cbsOficial,
+        ibsPadrao: ibsOficial,
+        totalIvaDual: totalOficial,
+        etiquetasOrigem: novasEtiquetas,
+      }
+    })
+  }
+
   // Reseta em cascata todos os dados de entrada, cálculos e sincronizações
   const limparDashboard = () => {
+    // Limpa parâmetro temporário do Radar
+    setParametroRadarTemporario(null)
+
     // 1. Reseta configurações gerais do Módulo 1 (alíquotas de referência, etc.)
     setConfig(CONFIGURACOES_PADRAO)
 
@@ -1148,6 +1260,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   // Função para restaurar integralmente o estado da calculadora a partir de uma simulação salva
   const restaurarSimulacao = (p: ParametrosSimulacaoCalculadora) => {
+    // Ao restaurar uma simulação salva, limpa eventual parâmetro temporário ativo do Radar
+    setParametroRadarTemporario(null)
     if (p.config) {
       // Compatibilidade retroativa com simulações antigas que não tinham anoTransicao ou presetSetor
       const tipoAtivRestaurado = normalizarTipoAtividade(p.tipoAtividade || p.config.tipoAtividade)
@@ -2793,6 +2907,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         notificacoesRadar,
         carregandoRadar,
         recarregarParametrosRadar,
+
+        // Parâmetro Temporário do Radar de Alertas
+        parametroRadarTemporario,
+        aplicarAliquotaRadarTemporaria,
+        limparParametroRadarTemporario,
       }}
     >
       {children}

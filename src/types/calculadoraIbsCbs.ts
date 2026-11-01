@@ -1275,6 +1275,12 @@ export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {
   lucroPresumidoIpi: 5.0,
 }
 
+export interface ParametroRadarTemporario {
+  aplicar: string
+  aliquota: number
+  ano: number
+}
+
 export interface CategoriaDespesaCredito {
   id: string
   nome: string

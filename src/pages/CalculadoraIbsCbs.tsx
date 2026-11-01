@@ -119,6 +119,9 @@ function CalculadoraConteudo() {
     obterSnapshotParametros,
     obterSnapshotResultados,
     restaurarSimulacao,
+    parametroRadarTemporario,
+    aplicarAliquotaRadarTemporaria,
+    limparParametroRadarTemporario,
   } = useCalculadoraIbsCbs()
   const { user, isPremium, podeSimular, simulacoesUsadas, simulacoesRestantes } = useAuth()
   const { clienteAtivo } = useClienteAtivo()
@@ -144,6 +147,47 @@ function CalculadoraConteudo() {
   const [simulacaoCarregadaViaLink, setSimulacaoCarregadaViaLink] = useState(false)
   const [empresaLink, setEmpresaLink] = useState<string>('')
   const [avisoRamoLegado, setAvisoRamoLegado] = useState<string | null>(null)
+
+  // Leitura dos parâmetros temporários do Radar de Alertas (?aplicar=&aliquota=&ano=)
+  React.useEffect(() => {
+    const aplicar = searchParams.get('aplicar')
+    const aliquotaRaw = searchParams.get('aliquota')
+    const anoRaw = searchParams.get('ano')
+
+    if (aplicar || aliquotaRaw) {
+      const aliqNum = parseFloat(String(aliquotaRaw || '11.3468').replace(',', '.'))
+      const anoNum = parseInt(String(anoRaw || '2027'), 10) || 2027
+      const aplicarTipo = String(aplicar || 'cbs').toLowerCase()
+
+      aplicarAliquotaRadarTemporaria(aplicarTipo, aliqNum, anoNum)
+
+      toast({
+        title: 'Alíquota do Radar Aplicada',
+        description: `Alíquota temporária de ${aliqNum.toFixed(4).replace('.', ',')}% (${aplicarTipo.toUpperCase()}) aplicada para o ano ${anoNum}.`,
+      })
+    }
+  }, [searchParams, aplicarAliquotaRadarTemporaria, toast])
+
+  // Cleanup ao desmontar a página: restaura automaticamente os valores oficiais da LC 214/2025
+  React.useEffect(() => {
+    return () => {
+      limparParametroRadarTemporario()
+    }
+  }, [limparParametroRadarTemporario])
+
+  const handleDescartarAliquotaRadar = () => {
+    limparParametroRadarTemporario()
+    // Remove os parâmetros da URL sem recarregar
+    const novosParams = new URLSearchParams(searchParams)
+    novosParams.delete('aplicar')
+    novosParams.delete('aliquota')
+    novosParams.delete('ano')
+    setSearchParams(novosParams, { replace: true })
+    toast({
+      title: 'Alíquota Oficial Restaurada',
+      description: 'Valores oficiais da LC 214/2025 foram restabelecidos na Calculadora.',
+    })
+  }
 
   React.useEffect(() => {
     const rawParam = searchParams.get('simulacao')
@@ -421,6 +465,43 @@ function CalculadoraConteudo() {
           </div>
         </div>
       </div>
+
+      {/* BANNER INFORMATIVO: ALÍQUOTA APLICADA DO RADAR TRIBUTÁRIO */}
+      {parametroRadarTemporario && (
+        <div className="bg-gradient-to-r from-[#07132B] via-[#0D1D3A] to-[#07132B] text-white border-b-2 border-[#D4AF37] py-3 px-4 sm:px-6 shadow-md animate-fade-in">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37] animate-pulse shrink-0 mt-0.5 sm:mt-0" />
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-extrabold text-[#D4AF37] uppercase tracking-wider text-[11px]">
+                    Radar Tributário Ativo
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40">
+                    {parametroRadarTemporario.aplicar.toUpperCase()}:{' '}
+                    {parametroRadarTemporario.aliquota.toFixed(4).replace('.', ',')}% (Fase{' '}
+                    {parametroRadarTemporario.ano})
+                  </span>
+                </div>
+                <p className="text-slate-200 text-xs mt-0.5 font-medium">
+                  Alíquota aplicada do Radar Tributário: referência TCU (proposta) — editável. O
+                  valor oficial da LC 214/2025 permanece intacto.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={handleDescartarAliquotaRadar}
+                className="px-3 py-1.5 rounded-lg bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] font-extrabold text-xs transition-colors shadow-sm cursor-pointer"
+                title="Descartar e restaurar a alíquota oficial imediatamente"
+              >
+                Restaurar Alíquota Oficial LC 214
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ETAPA 6: BANNER SUTIL QUANDO CARREGADO VIA LINK COMPARTILHADO */}
       {simulacaoCarregadaViaLink && (
