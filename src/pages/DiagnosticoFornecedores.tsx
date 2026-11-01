@@ -19,6 +19,7 @@ import {
   type RegimeComprador,
   normalizarRegimeComprador,
   calcularResumoCarteiraFornecedores,
+  calcularRankingRiscoTroca,
   obterAliquotasCreditoPorAno,
 } from '@/lib/calculoFornecedores'
 import {
@@ -239,6 +240,11 @@ export default function DiagnosticoFornecedores() {
   const resumo = useMemo(() => {
     return calcularResumoCarteiraFornecedores(fornecedores, anoLocal, regimeLocal)
   }, [fornecedores, anoLocal, regimeLocal])
+
+  // Ranking de Risco de Troca (top 5 fornecedores com maior urgência de troca/renegociação)
+  const rankingRiscoTroca = useMemo(() => {
+    return calcularRankingRiscoTroca(resumo.detalhamentoPorFornecedor)
+  }, [resumo.detalhamentoPorFornecedor])
 
   // Filtragem da tabela
   const fornecedoresExibidos = useMemo(() => {
@@ -730,6 +736,107 @@ export default function DiagnosticoFornecedores() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* SEGUNDO RANKING: RANKING DE RISCO DE TROCA (RENEGOCIAÇÃO / SUBSTITUIÇÃO DE FORNECEDORES) */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider block">
+                Inteligência Comercial & Suprimentos
+              </span>
+              <h2 className="text-lg font-heading font-extrabold text-slate-900">
+                Ranking de Risco de Troca
+              </h2>
+            </div>
+            <span className="text-xs text-slate-500 font-medium">
+              Prioridade de renegociação ponderando regime, volume e aproveitamento de crédito
+            </span>
+          </div>
+
+          {regimeLocal === 'simples_nacional' ? (
+            <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 space-y-1.5">
+              <p className="text-xs font-bold text-slate-800">
+                Aviso: Comprador no Simples Nacional não aproveita créditos tributários
+              </p>
+              <p className="text-xs leading-relaxed text-slate-600">
+                Como sua empresa está enquadrada no Simples Nacional tradicional nesta simulação,
+                não há créditos da não-cumulatividade a aproveitar na entrada. Portanto, o risco de
+                troca por defasagem na transferência de crédito tributário fica neutro/inaplicável.
+                Para empresas que migrarem para o Lucro Real ou Presumido, este ranking aponta os
+                fornecedores mais urgentes para troca de fornecedor ou renegociação de preços.
+              </p>
+            </div>
+          ) : rankingRiscoTroca.length === 0 ? (
+            <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-xs">
+              Nenhum fornecedor com compras ativas em itens geradores de crédito atende aos
+              critérios para pontuação de risco no momento.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold">
+                    <th className="py-2.5 px-3">Posição</th>
+                    <th className="py-2.5 px-3">Fornecedor</th>
+                    <th className="py-2.5 px-3">Regime</th>
+                    <th className="py-2.5 px-3 text-right">Volume Comprado</th>
+                    <th className="py-2.5 px-3 text-right">Crédito Perdido Estimado</th>
+                    <th className="py-2.5 px-3 text-center">Urgência</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {rankingRiscoTroca.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-3 font-mono font-bold text-slate-400">#{idx + 1}</td>
+                      <td className="py-3 px-3 font-bold text-slate-800">
+                        {item.fornecedor.nome}
+                        {item.fornecedor.cnpj && (
+                          <span className="block text-[10px] text-slate-400 font-mono font-normal">
+                            {item.fornecedor.cnpj}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700">
+                          {item.fornecedor.regime === 'lucro_real'
+                            ? 'Lucro Real'
+                            : item.fornecedor.regime === 'lucro_presumido'
+                              ? 'Lucro Presumido'
+                              : item.fornecedor.regime === 'simples_nacional'
+                                ? 'Simples Nacional'
+                                : `Misto (${item.fornecedor.proporcao_misto || 50}%)`}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-bold text-slate-800">
+                        R${' '}
+                        {item.resultadoCalculo.volumeCompras.toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-black text-rose-600">
+                        R${' '}
+                        {item.resultadoCalculo.creditoPerdido.toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        {item.urgencia === 'alta' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-100 text-rose-800 border border-rose-200">
+                            {item.rotuloUrgencia}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-200">
+                            {item.rotuloUrgencia}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* CARD SEPARADO: COMPARADOR DE COTAÇÕES (POSICIONADO APÓS O RANKING DA CARTEIRA) */}

@@ -405,3 +405,98 @@ export function calcularResumoCarteiraFornecedores(
     evolucaoAnos,
   }
 }
+
+export type NivelUrgenciaRiscoTroca = 'alta' | 'media'
+
+export interface ItemRankingRiscoTroca {
+  fornecedor: FornecedorDiagnostico
+  resultadoCalculo: ResultadoCalculoFornecedor
+  scoreRisco: number
+  urgencia: NivelUrgenciaRiscoTroca
+  rotuloUrgencia: string
+  fatorRegime: number
+  fatorItem: number
+}
+
+/**
+ * Calcula o Ranking de Risco de Troca (fornecedores com maior urgência de renegociação/troca).
+ * Combina 3 fatores:
+ * 1. Regime do fornecedor menos favorável à transferência de crédito:
+ *    - Simples Nacional = 1.0
+ *    - Misto = 0.75
+ *    - Lucro Presumido = 0.25
+ *    - Lucro Real = 0.15
+ * 2. Volume de compras (normalizado pelo maior volume da carteira com item que gera crédito).
+ * 3. Item que gera crédito:
+ *    - integral = 1.0
+ *    - parcial = proporção informada (ex: 0.5 a 0.7)
+ *    - nao_gera = 0.0 (fornecedor cujos itens NÃO geram crédito NÃO entra nesse ranking).
+ *
+ * Pontuação = (Score Regime * 0.45 + Score Volume * 0.40 + Score Item * 0.15) * 100
+ * Retorna os top 5 ordenados por pontuação decrescente.
+ */
+export function calcularRankingRiscoTroca(
+  detalhamento: ResultadoCalculoFornecedor[],
+): ItemRankingRiscoTroca[] {
+  // 1. Filtrar estritamente quem gera crédito (itens não_gera pontuam zero e não entram no ranking)
+  const candidatos = detalhamento.filter((item) => {
+    return (
+      item.fornecedor.classificacao_credito !== 'nao_gera' &&
+      item.fatorProduto > 0 &&
+      item.volumeCompras > 0
+    )
+  })
+
+  if (candidatos.length === 0) return []
+
+  const maxVolume = Math.max(...candidatos.map((c) => c.volumeCompras), 1)
+
+  const pontuados: ItemRankingRiscoTroca[] = candidatos.map((item) => {
+    // Fator 1: Regime do fornecedor menos favorável à transferência de crédito
+    let fatorRegime = 0.2
+    if (item.fornecedor.regime === 'simples_nacional') {
+      fatorRegime = 1.0
+    } else if (item.fornecedor.regime === 'misto') {
+      const pctMistoSimples = (100 - (item.fornecedor.proporcao_misto ?? 50)) / 100
+      fatorRegime = 0.4 + 0.6 * pctMistoSimples // ~0.70 a 0.85
+    } else if (item.fornecedor.regime === 'lucro_presumido') {
+      fatorRegime = 0.3
+    } else {
+      fatorRegime = 0.15
+    }
+
+    // Fator 2: Volume de compras (normalizado 0 a 1)
+    const fatorVolume = Math.min(1, Math.max(0, item.volumeCompras / maxVolume))
+
+    // Fator 3: Item que gera crédito (integral = 1.0, parcial = fatorProduto)
+    const fatorItem = item.fatorProduto
+
+    // Pontuação composta (0 a 100)
+    // O crédito perdido efetivo também ganha peso natural pela combinação de regime desfavorável + alto volume + item que gera crédito
+    const scoreRisco = (fatorRegime * 0.45 + fatorVolume * 0.4 + fatorItem * 0.15) * 100
+
+    const urgencia: NivelUrgenciaRiscoTroca = scoreRisco >= 50 ? 'alta' : 'media'
+    const rotuloUrgencia = urgencia === 'alta' ? 'Prioridade alta' : 'Prioridade média'
+
+    return {
+      fornecedor: item.fornecedor,
+      resultadoCalculo: item,
+      scoreRisco: Math.round(scoreRisco * 10) / 10,
+      urgencia,
+      rotuloUrgencia,
+      fatorRegime,
+      fatorItem,
+    }
+  })
+
+  // Ordena por score decrescente e desempata por crédito perdido e volume
+  pontuados.sort((a, b) => {
+    if (b.scoreRisco !== a.scoreRisco) return b.scoreRisco - a.scoreRisco
+    if (b.resultadoCalculo.creditoPerdido !== a.resultadoCalculo.creditoPerdido) {
+      return b.resultadoCalculo.creditoPerdido - a.resultadoCalculo.creditoPerdido
+    }
+    return b.resultadoCalculo.volumeCompras - a.resultadoCalculo.volumeCompras
+  })
+
+  return pontuados.slice(0, 5)
+}
