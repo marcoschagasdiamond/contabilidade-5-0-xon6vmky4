@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
@@ -43,19 +43,25 @@ export default function DiagnosticoFornecedores() {
   const { dadosEmpresa, temDadosSalvos } = useDadosEmpresa()
 
   // 1. Herança das Configurações (Etapa 01): Ano da transição e Regime Atual
+  // Dependências primitivas estáveis para evitar recriação desnecessária
+  const rawAnoTransicao = (dadosEmpresa as any)?.anoBaseTransicao
+  const regimeAtualEmpresa = dadosEmpresa?.regimeAtual
+
   const anoHerdado: AnoBaseSimulacao = useMemo(() => {
-    const rawAno = (dadosEmpresa as any)?.anoBaseTransicao
-    if (rawAno && ANOS_SIMULACAO_DISPONIVEIS.includes(Number(rawAno) as AnoBaseSimulacao)) {
-      return Number(rawAno) as AnoBaseSimulacao
+    if (
+      rawAnoTransicao &&
+      ANOS_SIMULACAO_DISPONIVEIS.includes(Number(rawAnoTransicao) as AnoBaseSimulacao)
+    ) {
+      return Number(rawAnoTransicao) as AnoBaseSimulacao
     }
     return 2027
-  }, [dadosEmpresa])
+  }, [rawAnoTransicao])
 
   const regimeHerdado: RegimeComprador = useMemo(() => {
-    return normalizarRegimeComprador(dadosEmpresa.regimeAtual)
-  }, [dadosEmpresa.regimeAtual])
+    return normalizarRegimeComprador(regimeAtualEmpresa)
+  }, [regimeAtualEmpresa])
 
-  // 2. Estado local com Override nesta etapa (sem afetar Etapa 01 nem demais etapas)
+  // 2. Estado local com Override nesta etapa (sem escrever de volta no contexto)
   const [anoLocal, setAnoLocal] = useState<AnoBaseSimulacao>(anoHerdado)
   const [regimeLocal, setRegimeLocal] = useState<RegimeComprador>(regimeHerdado)
   const [anoCustomizado, setAnoCustomizado] = useState(false)
@@ -64,17 +70,17 @@ export default function DiagnosticoFornecedores() {
   // Sincroniza se o usuário não tiver feito override manual
   useEffect(() => {
     if (!anoCustomizado) {
-      setAnoLocal(anoHerdado)
+      setAnoLocal((prev) => (prev === anoHerdado ? prev : anoHerdado))
     }
   }, [anoHerdado, anoCustomizado])
 
   useEffect(() => {
     if (!regimeCustomizado) {
-      setRegimeLocal(regimeHerdado)
+      setRegimeLocal((prev) => (prev === regimeHerdado ? prev : regimeHerdado))
     }
   }, [regimeHerdado, regimeCustomizado])
 
-  // 3. Fornecedores cadastrados
+  // 3. Fornecedores cadastrados com guarda de "já está carregando" e comparação profunda
   const [carregando, setCarregando] = useState(true)
   const [fornecedores, setFornecedores] = useState<FornecedorDiagnostico[]>([])
   const [modalEditarAberto, setModalEditarAberto] = useState(false)
@@ -92,90 +98,142 @@ export default function DiagnosticoFornecedores() {
   const [filtroRegime, setFiltroRegime] = useState<string>('todos')
   const [buscaNome, setBuscaNome] = useState('')
 
+  // Guarda de requisição em voo e chave de cache para busca de dados
+  const reqEmVooRef = useRef(false)
+  const chaveUltimaBuscaRef = useRef<string>('')
+  const fornecedoresJsonRef = useRef<string>('')
+  const historicoJsonRef = useRef<string>('')
+
+  // IDs estáveis primitivos para evitar dependências instáveis
+  const authUserId = user?.id || pb.authStore.record?.id || ''
+  const clienteIdEstavel = clienteAtivoId || ''
+
   // Carrega fornecedores do PocketBase ou dados de demonstração
-  const carregarDados = useCallback(async () => {
-    setCarregando(true)
-    try {
-      const authUserId = pb.authStore.record?.id || user?.id
-      const records = await listarFornecedores({
-        clienteId: clienteAtivoId,
-        userId: authUserId,
-      })
-
-      const histRecords = await listarHistoricoCotacoes({
-        clienteId: clienteAtivoId,
-        userId: authUserId,
-      })
-      setHistoricoCotacoesCarteira(histRecords)
-
-      if (records.length > 0) {
-        setFornecedores(records)
-      } else {
-        // Se ainda não houver nenhum no banco, semeia uma carteira demonstrativa rica de 6 fornecedores
-        const demo: FornecedorDiagnostico[] = [
-          {
-            nome: 'Siderúrgica Nacional de Aços S.A.',
-            cnpj: '11.222.333/0001-44',
-            regime: 'lucro_real',
-            volume_compras: 1200000,
-            classificacao_credito: 'integral',
-            descricao_item: 'Bobinas de aço e matéria-prima primária',
-          },
-          {
-            nome: 'Distribuidora Paulista de Químicos Ltda',
-            cnpj: '22.333.444/0001-55',
-            regime: 'lucro_presumido',
-            volume_compras: 750000,
-            classificacao_credito: 'integral',
-            descricao_item: 'Solventes e polímeros industriais',
-          },
-          {
-            nome: 'Comercial Embalagens Express ME',
-            cnpj: '33.444.555/0001-66',
-            regime: 'simples_nacional',
-            volume_compras: 480000,
-            classificacao_credito: 'integral',
-            descricao_item: 'Caixas de papelão e rótulos personalizados',
-          },
-          {
-            nome: 'Cooperativa Agrícola Mista Vale Verde',
-            cnpj: '44.555.666/0001-77',
-            regime: 'misto',
-            proporcao_misto: 60,
-            volume_compras: 390000,
-            classificacao_credito: 'integral',
-            descricao_item: 'Insumos agrícolas consorciados',
-          },
-          {
-            nome: 'Papelaria & Escritório Alpha Comércio',
-            cnpj: '55.666.777/0001-88',
-            regime: 'simples_nacional',
-            volume_compras: 95000,
-            classificacao_credito: 'nao_gera',
-            descricao_item: 'Material de escritório e copa (sem crédito)',
-          },
-          {
-            nome: 'Transportes e Cargas Rápidas Eireli',
-            cnpj: '66.777.888/0001-99',
-            regime: 'lucro_real',
-            volume_compras: 260000,
-            classificacao_credito: 'parcial',
-            percentual_credito_parcial: 70,
-            descricao_item: 'Frete e logística com crédito parcial',
-          },
-        ]
-        setFornecedores(demo)
+  const carregarDados = useCallback(
+    async (forcar = false) => {
+      const chaveAtual = `${authUserId}:${clienteIdEstavel}`
+      if (!forcar && (reqEmVooRef.current || chaveUltimaBuscaRef.current === chaveAtual)) {
+        return
       }
-    } catch (err) {
-      console.warn('Erro ao carregar carteira de fornecedores:', err)
-    } finally {
-      setCarregando(false)
-    }
-  }, [clienteAtivoId, user?.id])
+
+      reqEmVooRef.current = true
+      setCarregando(true)
+      try {
+        const [records, histRecords] = await Promise.all([
+          listarFornecedores({
+            clienteId: clienteIdEstavel || undefined,
+            userId: authUserId || undefined,
+          }),
+          listarHistoricoCotacoes({
+            clienteId: clienteIdEstavel || undefined,
+            userId: authUserId || undefined,
+          }),
+        ])
+
+        chaveUltimaBuscaRef.current = chaveAtual
+
+        // Sincroniza histórico de cotações apenas se mudou
+        const novoHistJson = JSON.stringify(histRecords)
+        if (historicoJsonRef.current !== novoHistJson) {
+          historicoJsonRef.current = novoHistJson
+          setHistoricoCotacoesCarteira(histRecords)
+        }
+
+        if (records.length > 0) {
+          const novosFornecedoresJson = JSON.stringify(records)
+          if (fornecedoresJsonRef.current !== novosFornecedoresJson) {
+            fornecedoresJsonRef.current = novosFornecedoresJson
+            setFornecedores(records)
+          }
+        } else {
+          // Se ainda não houver nenhum no banco, semeia carteira demonstrativa
+          const demo: FornecedorDiagnostico[] = [
+            {
+              nome: 'Siderúrgica Nacional de Aços S.A.',
+              cnpj: '11.222.333/0001-44',
+              regime: 'lucro_real',
+              volume_compras: 1200000,
+              classificacao_credito: 'integral',
+              descricao_item: 'Bobinas de aço e matéria-prima primária',
+            },
+            {
+              nome: 'Distribuidora Paulista de Químicos Ltda',
+              cnpj: '22.333.444/0001-55',
+              regime: 'lucro_presumido',
+              volume_compras: 750000,
+              classificacao_credito: 'integral',
+              descricao_item: 'Solventes e polímeros industriais',
+            },
+            {
+              nome: 'Comercial Embalagens Express ME',
+              cnpj: '33.444.555/0001-66',
+              regime: 'simples_nacional',
+              volume_compras: 480000,
+              classificacao_credito: 'integral',
+              descricao_item: 'Caixas de papelão e rótulos personalizados',
+            },
+            {
+              nome: 'Cooperativa Agrícola Mista Vale Verde',
+              cnpj: '44.555.666/0001-77',
+              regime: 'misto',
+              proporcao_misto: 60,
+              volume_compras: 390000,
+              classificacao_credito: 'integral',
+              descricao_item: 'Insumos agrícolas consorciados',
+            },
+            {
+              nome: 'Papelaria & Escritório Alpha Comércio',
+              cnpj: '55.666.777/0001-88',
+              regime: 'simples_nacional',
+              volume_compras: 95000,
+              classificacao_credito: 'nao_gera',
+              descricao_item: 'Material de escritório e copa (sem crédito)',
+            },
+            {
+              nome: 'Transportes e Cargas Rápidas Eireli',
+              cnpj: '66.777.888/0001-99',
+              regime: 'lucro_real',
+              volume_compras: 260000,
+              classificacao_credito: 'parcial',
+              percentual_credito_parcial: 70,
+              descricao_item: 'Frete e logística com crédito parcial',
+            },
+          ]
+          const demoJson = JSON.stringify(demo)
+          if (fornecedoresJsonRef.current !== demoJson) {
+            fornecedoresJsonRef.current = demoJson
+            setFornecedores(demo)
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar carteira de fornecedores:', err)
+      } finally {
+        reqEmVooRef.current = false
+        setCarregando(false)
+      }
+    },
+    [authUserId, clienteIdEstavel],
+  )
 
   useEffect(() => {
     carregarDados()
   }, [carregarDados])
+
+  // Callback memoizado para receber alterações do comparador sem loop
+  const handleComparacaoAlterada = useCallback((res: ResultadoComparadorCotacoes) => {
+    setResultadoComparador((prev) => {
+      if (!prev) return res
+      if (
+        prev.melhorCotacao?.identificador === res.melhorCotacao?.identificador &&
+        prev.melhorCotacao?.custoLiquido === res.melhorCotacao?.custoLiquido &&
+        prev.diferencaCustoLiquidoMoeda === res.diferencaCustoLiquidoMoeda &&
+        prev.economiaAnual === res.economiaAnual
+      ) {
+        return prev
+      }
+      return res
+    })
+  }, [])
 
   // 4. Executa cálculo completo da carteira
   const resumo = useMemo(() => {
@@ -199,10 +257,9 @@ export default function DiagnosticoFornecedores() {
     data: Omit<FornecedorDiagnostico, 'id' | 'created' | 'updated'>,
   ) => {
     try {
-      const authUserId = pb.authStore.record?.id || user?.id
       const payload = {
         ...data,
-        cliente_id: clienteAtivoId || undefined,
+        cliente_id: clienteIdEstavel || undefined,
         user_id: authUserId || undefined,
       }
 
@@ -219,7 +276,7 @@ export default function DiagnosticoFornecedores() {
           description: `${data.nome} foi adicionado à carteira.`,
         })
       }
-      await carregarDados()
+      await carregarDados(true)
       setPainelSucessoAberto(true)
     } catch (err) {
       // Fallback local se erro de rede
@@ -259,10 +316,9 @@ export default function DiagnosticoFornecedores() {
     lista: Array<Omit<FornecedorDiagnostico, 'id' | 'created' | 'updated'>>,
   ) => {
     try {
-      const authUserId = pb.authStore.record?.id || user?.id
       const comVinculos = lista.map((f) => ({
         ...f,
-        cliente_id: clienteAtivoId || undefined,
+        cliente_id: clienteIdEstavel || undefined,
         user_id: authUserId || undefined,
       }))
 
@@ -271,7 +327,7 @@ export default function DiagnosticoFornecedores() {
         title: 'Planilha Importada!',
         description: `${lista.length} fornecedores importados com sucesso.`,
       })
-      await carregarDados()
+      await carregarDados(true)
       setPainelSucessoAberto(true)
     } catch (err) {
       setFornecedores((prev) => [...lista, ...prev])
@@ -316,9 +372,9 @@ export default function DiagnosticoFornecedores() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 antialiased pt-20 sm:pt-24 pb-20">
-      {/* NAVEGAÇÃO DA TRILHA */}
+      {/* NAVEGAÇÃO DA TRILHA (Etapa 06: fornecedores) */}
       <TrilhaDiagnosticoNav
-        paginaAtual="hub"
+        paginaAtual="fornecedores"
         nomeEmpresa={dadosEmpresa.nomeEmpresa}
         temDadosSalvos={temDadosSalvos}
       />
@@ -680,10 +736,10 @@ export default function DiagnosticoFornecedores() {
         <CardComparadorCotacoes
           anoTransicao={anoLocal}
           regimeComprador={regimeLocal}
-          onComparacaoAlterada={(res) => setResultadoComparador(res)}
+          onComparacaoAlterada={handleComparacaoAlterada}
           fornecedoresCadastrados={fornecedores}
           onFornecedorCadastrado={handleSalvarFornecedor}
-          onCotacaoSalvaNoHistorico={carregarDados}
+          onCotacaoSalvaNoHistorico={() => carregarDados(true)}
         />
 
         {/* COMPARATIVO COMPLETO DE TODOS OS ANOS DA TRANSIÇÃO (2026–2033) */}

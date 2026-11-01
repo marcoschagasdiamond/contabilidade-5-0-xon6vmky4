@@ -111,19 +111,13 @@ export function CardComparadorCotacoes({
 
   // Cálculo reativo completo
   const resultado = useMemo(() => {
-    const res = calcularComparadorCotacoes(cotacoesAtivas, {
+    return calcularComparadorCotacoes(cotacoesAtivas, {
       anoTransicao,
       regimeComprador,
       classificacaoItem,
       percentualCreditoParcial,
       volumeMensal: volumeMensalNum,
     })
-
-    if (onComparacaoAlterada) {
-      onComparacaoAlterada(res)
-    }
-
-    return res
   }, [
     cotacoesAtivas,
     anoTransicao,
@@ -131,8 +125,18 @@ export function CardComparadorCotacoes({
     classificacaoItem,
     percentualCreditoParcial,
     volumeMensalNum,
-    onComparacaoAlterada,
   ])
+
+  // Notifica o componente pai sobre mudanças no resultado apenas quando os dados relevantes mudarem
+  const ultimoResultadoRef = React.useRef<string>('')
+  React.useEffect(() => {
+    if (!onComparacaoAlterada) return
+    const chaveAtual = `${resultado.melhorCotacao?.identificador}:${resultado.melhorCotacao?.custoLiquido}:${resultado.diferencaCustoLiquidoMoeda}:${resultado.economiaAnual}`
+    if (ultimoResultadoRef.current !== chaveAtual) {
+      ultimoResultadoRef.current = chaveAtual
+      onComparacaoAlterada(resultado)
+    }
+  }, [resultado, onComparacaoAlterada])
 
   // Carrega última cotação vencedora para pré-preenchimento
   const carregarUltimaReferencia = React.useCallback(async () => {
