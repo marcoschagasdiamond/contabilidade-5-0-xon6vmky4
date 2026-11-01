@@ -38,18 +38,25 @@ export function CardExplicacaoLegislacao({
   const [erro, setErro] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Checa se já temos cache conhecido na montagem (silencioso)
+  // Checa se já temos cache conhecido na montagem (silencioso com debounce leve por card)
   useEffect(() => {
     let ativo = true
-    buscarExplicacaoEmCache(norma.chave_norma)
-      .then((res) => {
-        if (ativo && res && res.o_que_e) {
-          setExplicacao(res)
-        }
-      })
-      .catch(() => {})
+    const timer = setTimeout(() => {
+      if (!ativo || !norma.chave_norma) return
+      buscarExplicacaoEmCache(norma.chave_norma)
+        .then((res) => {
+          if (ativo && res && res.o_que_e) {
+            setExplicacao((prev) =>
+              prev?.id === res.id && prev?.updated === res.updated ? prev : res,
+            )
+          }
+        })
+        .catch(() => {})
+    }, 100)
+
     return () => {
       ativo = false
+      clearTimeout(timer)
     }
   }, [norma.chave_norma])
 

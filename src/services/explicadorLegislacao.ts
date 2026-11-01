@@ -115,38 +115,133 @@ export function extrairTresBlocos(texto: string): {
   }
 }
 
+// ============================================================================
+// CACHE LOCAL EM MEMÓRIA & STORAGE COM CONTROLE DE CONCORRÊNCIA E FILA SEQUENCIAL
+// ============================================================================
+
+const CACHE_MEMORIA_EXPLICACOES = new Map<string, ExplicacaoNorma | null>()
+const STORAGE_PREFIX_EXPLICACAO = 'c50_explicacao_norma_'
+
+function lerExplicacaoStorage(chave: string): ExplicacaoNorma | null {
+  try {
+    if (typeof window === 'undefined') return null
+    const item = window.localStorage.getItem(STORAGE_PREFIX_EXPLICACAO + chave)
+    if (!item) return null
+    const parsed = JSON.parse(item) as ExplicacaoNorma
+    if (parsed && parsed.o_que_e) {
+      return parsed
+    }
+  } catch {
+    /* ignorado silenciosamente */
+  }
+  return null
+}
+
+function salvarExplicacaoStorage(chave: string, dados: ExplicacaoNorma): void {
+  try {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(STORAGE_PREFIX_EXPLICACAO + chave, JSON.stringify(dados))
+  } catch {
+    /* ignorado se quota cheia */
+  }
+}
+
+// Controle de concorrência: no máximo 2 requisições ao backend em paralelo para não gerar erro 429
+const MAX_CONCORRENCIA_EXPLICADOR = 2
+let requisicoesAtivasExplicador = 0
+const filaRequisicoesExplicador: Array<() => void> = []
+
+function executarNaFilaExplicador<T>(fn: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const tarefa = () => {
+      requisicoesAtivasExplicador++
+      fn()
+        .then(resolve)
+        .catch(reject)
+        .finally(() => {
+          requisicoesAtivasExplicador--
+          const proxima = filaRequisicoesExplicador.shift()
+          if (proxima) {
+            // Pequeno espaçamento (debounce/stagger de 120ms) entre saídas de lote
+            setTimeout(proxima, 120)
+          }
+        })
+    }
+
+    if (requisicoesAtivasExplicador < MAX_CONCORRENCIA_EXPLICADOR) {
+      tarefa()
+    } else {
+      filaRequisicoesExplicador.push(tarefa)
+    }
+  })
+}
+
+// Mapa de promessas em voo para deduplicar requisições concorrentes pela mesma norma
+const promessasEmVoo = new Map<string, Promise<ExplicacaoNorma | null>>()
+
 /**
- * Consulta cache no backend (PocketBase) por chave da norma
+ * Consulta cache local em memória, localStorage e backend (PocketBase) por chave da norma.
+ * Não refaz chamada se já estiver no cache local ou se houver requisição em voo pela mesma chave.
  */
 export async function buscarExplicacaoEmCache(chave: string): Promise<ExplicacaoNorma | null> {
   if (!chave) return null
 
-  // 1. Tentar via SDK PocketBase direto na coleção
-  try {
-    const record = await pb
-      .collection('explicacoes_legislacao')
-      .getFirstListItem<ExplicacaoNorma>(`chave_norma = "${chave.replace(/"/g, '')}"`)
-    if (record && record.o_que_e) {
-      return record
-    }
-  } catch {
-    /* intentionally ignored */
+  // 1. Memória ultra-rápida (síncrona)
+  if (CACHE_MEMORIA_EXPLICACOES.has(chave)) {
+    return CACHE_MEMORIA_EXPLICACOES.get(chave) || null
   }
 
-  // 2. Tentar via endpoint backend dedicado
-  try {
-    const res = await pb.send<{ encontrado: boolean; item: ExplicacaoNorma | null }>(
-      `/backend/v1/legislacao/explicacao/${encodeURIComponent(chave)}`,
-      { method: 'GET' },
-    )
-    if (res?.encontrado && res?.item) {
-      return res.item
-    }
-  } catch (err) {
-    console.warn('[Explicador] Erro ao consultar cache:', err)
+  // 2. LocalStorage do navegador
+  const doStorage = lerExplicacaoStorage(chave)
+  if (doStorage && doStorage.o_que_e) {
+    CACHE_MEMORIA_EXPLICACOES.set(chave, doStorage)
+    return doStorage
   }
 
-  return null
+  // 3. Deduplicação em voo: se já está consultando esta chave, reutiliza a mesma Promise
+  if (promessasEmVoo.has(chave)) {
+    return promessasEmVoo.get(chave)!
+  }
+
+  const consultaPromise = executarNaFilaExplicador(async () => {
+    // 3.1. Tentar via SDK PocketBase direto na coleção
+    try {
+      const record = await pb
+        .collection('explicacoes_legislacao')
+        .getFirstListItem<ExplicacaoNorma>(`chave_norma = "${chave.replace(/"/g, '')}"`)
+      if (record && record.o_que_e) {
+        CACHE_MEMORIA_EXPLICACOES.set(chave, record)
+        salvarExplicacaoStorage(chave, record)
+        return record
+      }
+    } catch {
+      /* intentionally ignored */
+    }
+
+    // 3.2. Tentar via endpoint backend dedicado
+    try {
+      const res = await pb.send<{ encontrado: boolean; item: ExplicacaoNorma | null }>(
+        `/backend/v1/legislacao/explicacao/${encodeURIComponent(chave)}`,
+        { method: 'GET' },
+      )
+      if (res?.encontrado && res?.item) {
+        CACHE_MEMORIA_EXPLICACOES.set(chave, res.item)
+        salvarExplicacaoStorage(chave, res.item)
+        return res.item
+      }
+    } catch (err) {
+      console.warn('[Explicador] Erro ao consultar cache:', err)
+    }
+
+    // Marca como null em memória temporariamente para não retentar repetidamente na mesma sessão
+    CACHE_MEMORIA_EXPLICACOES.set(chave, null)
+    return null
+  }).finally(() => {
+    promessasEmVoo.delete(chave)
+  })
+
+  promessasEmVoo.set(chave, consultaPromise)
+  return consultaPromise
 }
 
 /**
@@ -287,7 +382,11 @@ export async function gerarExplicacaoNorma(
     texto_completo: resultadoFinal,
   }
 
-  // 4. Salva no cache do backend (não bloqueante)
+  // 4. Salva imediatamente no cache local em memória e localStorage
+  CACHE_MEMORIA_EXPLICACOES.set(chave, explicacaoFinal)
+  salvarExplicacaoStorage(chave, explicacaoFinal)
+
+  // 5. Salva no cache do backend (não bloqueante)
   salvarExplicacaoNoCache(explicacaoFinal).catch((cacheErr) => {
     console.warn('[Explicador] Falha silenciosa ao salvar cache em background:', cacheErr)
   })

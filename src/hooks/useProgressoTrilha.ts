@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
@@ -49,33 +49,65 @@ export function useProgressoTrilha(): ProgressoTrilhaDiagnosticos {
   const [carregando, setCarregando] = useState(true)
   const [diagnosticosLista, setDiagnosticosLista] = useState<DiagnosticoRecord[]>([])
 
-  const carregarDiagnosticosDoBackend = useCallback(async () => {
-    if (!isAuthenticated) {
-      setDiagnosticosLista([])
-      setCarregando(false)
-      return
-    }
+  const reqEmVooDiagnosticosRef = useRef(false)
+  const chaveUltimaBuscaDiagnosticosRef = useRef<string>('')
 
-    try {
-      const authUserId = pb.authStore.record?.id || user?.id
+  const carregarDiagnosticosDoBackend = useCallback(
+    async (forcar = false) => {
+      if (!isAuthenticated) {
+        chaveUltimaBuscaDiagnosticosRef.current = ''
+        setDiagnosticosLista((prev) => (prev.length === 0 ? prev : []))
+        setCarregando(false)
+        return
+      }
+
+      const authUserId = pb.authStore.record?.id || user?.id || ''
       const filter = clienteAtivoId
         ? `cliente_id = "${clienteAtivoId}"`
         : authUserId
           ? `user_id = "${authUserId}"`
           : ''
 
-      const registros = await pb.collection('diagnosticos').getFullList<DiagnosticoRecord>({
-        filter: filter || undefined,
-        sort: '-created',
-      })
-      setDiagnosticosLista(registros)
-    } catch (err) {
-      console.warn('Erro ao carregar lista de diagnósticos para progresso da trilha:', err)
-      setDiagnosticosLista([])
-    } finally {
-      setCarregando(false)
-    }
-  }, [isAuthenticated, user?.id, clienteAtivoId])
+      const chaveAtual = `${authUserId}:${clienteAtivoId || ''}`
+
+      if (
+        !forcar &&
+        (reqEmVooDiagnosticosRef.current || chaveUltimaBuscaDiagnosticosRef.current === chaveAtual)
+      ) {
+        return
+      }
+
+      reqEmVooDiagnosticosRef.current = true
+      try {
+        const registros = await pb.collection('diagnosticos').getFullList<DiagnosticoRecord>({
+          filter: filter || undefined,
+          sort: '-created',
+        })
+
+        chaveUltimaBuscaDiagnosticosRef.current = chaveAtual
+        setDiagnosticosLista((prev) => {
+          // Guarda de igualdade para evitar re-render se os IDs e tamanhos forem os mesmos
+          if (
+            prev.length === registros.length &&
+            prev.every(
+              (p, idx) => p.id === registros[idx]?.id && p.updated === registros[idx]?.updated,
+            )
+          ) {
+            return prev
+          }
+          return registros
+        })
+      } catch (err) {
+        console.warn('Erro ao carregar lista de diagnósticos para progresso da trilha:', err)
+        chaveUltimaBuscaDiagnosticosRef.current = chaveAtual
+        setDiagnosticosLista((prev) => (prev.length === 0 ? prev : []))
+      } finally {
+        reqEmVooDiagnosticosRef.current = false
+        setCarregando(false)
+      }
+    },
+    [isAuthenticated, user?.id, clienteAtivoId],
+  )
 
   useEffect(() => {
     carregarDiagnosticosDoBackend()
@@ -265,40 +297,86 @@ export function useProgressoTrilha(): ProgressoTrilhaDiagnosticos {
     }
   }, [diagnosticosLista])
 
-  // Avaliação da Etapa 06: Análise de Fornecedores
+  // Avaliação da Etapa 06: Análise de Fornecedores e Cotações
   // Concluída quando há fornecedores cadastrados na coleção fornecedores_diagnostico
+  // ou histórico de cotações salvo na coleção historico_cotacoes_fornecedores
   const [totalFornecedoresCadastrados, setTotalFornecedoresCadastrados] = useState<number>(0)
+  const [totalCotacoesCadastradas, setTotalCotacoesCadastradas] = useState<number>(0)
+
+  const authUserId = user?.id || pb.authStore.record?.id || ''
+  const userIdEstavel = isAuthenticated ? authUserId : ''
+  const clienteIdEstavel = clienteAtivoId || ''
+
+  // Cache e controle de requisições em voo para evitar refetch desnecessário
+  const reqEmVooEtapa06Ref = useRef(false)
+  const chaveUltimaBuscaEtapa06Ref = useRef<string>('')
 
   useEffect(() => {
     let montado = true
-    async function checarFornecedores() {
-      if (!isAuthenticated) {
-        if (montado) setTotalFornecedoresCadastrados(0)
-        return
-      }
+    const chaveAtual = `${userIdEstavel}:${clienteIdEstavel}`
+
+    if (!isAuthenticated) {
+      chaveUltimaBuscaEtapa06Ref.current = ''
+      setTotalFornecedoresCadastrados((prev) => (prev === 0 ? prev : 0))
+      setTotalCotacoesCadastradas((prev) => (prev === 0 ? prev : 0))
+      return
+    }
+
+    // Se já buscou para esta chave de usuário/cliente ou já está carregando, evita refetch
+    if (reqEmVooEtapa06Ref.current || chaveUltimaBuscaEtapa06Ref.current === chaveAtual) {
+      return
+    }
+
+    async function checarDadosEtapa06() {
+      reqEmVooEtapa06Ref.current = true
       try {
-        const authUserId = pb.authStore.record?.id || user?.id
-        const filter = clienteAtivoId
-          ? `cliente_id = "${clienteAtivoId}"`
-          : authUserId
-            ? `user_id = "${authUserId}"`
+        const filter = clienteIdEstavel
+          ? `cliente_id = "${clienteIdEstavel}"`
+          : userIdEstavel
+            ? `user_id = "${userIdEstavel}"`
             : ''
-        const list = await pb.collection('fornecedores_diagnostico').getList(1, 1, {
-          filter: filter || undefined,
-        })
-        if (montado) setTotalFornecedoresCadastrados(list.totalItems)
+
+        const [listFornecedores, listCotacoes] = await Promise.all([
+          pb.collection('fornecedores_diagnostico').getList(1, 1, {
+            filter: filter || undefined,
+          }),
+          pb
+            .collection('historico_cotacoes_fornecedores')
+            .getList(1, 1, {
+              filter: filter || undefined,
+            })
+            .catch(() => ({ totalItems: 0 })),
+        ])
+
+        if (montado) {
+          chaveUltimaBuscaEtapa06Ref.current = chaveAtual
+          setTotalFornecedoresCadastrados((prev) =>
+            prev === listFornecedores.totalItems ? prev : listFornecedores.totalItems,
+          )
+          setTotalCotacoesCadastradas((prev) =>
+            prev === listCotacoes.totalItems ? prev : listCotacoes.totalItems,
+          )
+        }
       } catch (_) {
-        if (montado) setTotalFornecedoresCadastrados(0)
+        if (montado) {
+          chaveUltimaBuscaEtapa06Ref.current = chaveAtual
+          setTotalFornecedoresCadastrados((prev) => (prev === 0 ? prev : 0))
+          setTotalCotacoesCadastradas((prev) => (prev === 0 ? prev : 0))
+        }
+      } finally {
+        reqEmVooEtapa06Ref.current = false
       }
     }
-    checarFornecedores()
+
+    checarDadosEtapa06()
+
     return () => {
       montado = false
     }
-  }, [isAuthenticated, user?.id, clienteAtivoId])
+  }, [isAuthenticated, userIdEstavel, clienteIdEstavel])
 
   const etapa06Info = useMemo<ProgressoEtapaInfo>(() => {
-    if (totalFornecedoresCadastrados >= 1) {
+    if (totalFornecedoresCadastrados >= 1 || totalCotacoesCadastradas >= 1) {
       return {
         estado: 'concluida',
         labelEstado: 'Concluída',
@@ -310,7 +388,7 @@ export function useProgressoTrilha(): ProgressoTrilhaDiagnosticos {
       labelEstado: 'Não iniciada',
       diagnosticoSalvo: null,
     }
-  }, [totalFornecedoresCadastrados])
+  }, [totalFornecedoresCadastrados, totalCotacoesCadastradas])
 
   const etapa01Preenchida = etapa01Info.estado === 'concluida'
 
@@ -350,6 +428,8 @@ export function useProgressoTrilha(): ProgressoTrilhaDiagnosticos {
     etapa06: etapa06Info,
     etapa01Preenchida,
     algumaEtapaIniciada,
-    recarregar: carregarDiagnosticosDoBackend,
+    recarregar: useCallback(async () => {
+      await carregarDiagnosticosDoBackend(true)
+    }, [carregarDiagnosticosDoBackend]),
   }
 }

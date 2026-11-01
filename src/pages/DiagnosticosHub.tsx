@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
@@ -13,7 +13,7 @@ export default function DiagnosticosHub() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { etapa00, etapa01, etapa02, etapa03, etapa04, etapa05, etapa06 } = useProgressoTrilha()
 
-  const obterCtaEtapa = (estado: EstadoEtapaTrilha, nomeAcao: string) => {
+  const obterCtaEtapa = useCallback((estado: EstadoEtapaTrilha, nomeAcao: string) => {
     if (estado === 'concluida') {
       return `Revisar ${nomeAcao}`
     }
@@ -21,164 +21,186 @@ export default function DiagnosticosHub() {
       return `Continuar ${nomeAcao}`
     }
     return `Iniciar ${nomeAcao}`
-  }
+  }, [])
 
   // Se o visitante ainda não preencheu os Dados da Empresa, redireciona com ?destino=/diagnosticos
+  // Usa valores primitivos estáveis para evitar laços de navegação
+  const authCarregando = Boolean(authLoading)
+  const empresaSalva = Boolean(temDadosSalvos)
+
   useEffect(() => {
-    if (!authLoading && !temDadosSalvos) {
+    if (!authCarregando && !empresaSalva) {
       navigate('/dados-empresa?destino=' + encodeURIComponent('/diagnosticos'), { replace: true })
     }
-  }, [authLoading, temDadosSalvos, navigate])
+  }, [authCarregando, empresaSalva, navigate])
 
-  const diagnosticosCards = [
-    {
-      numero: '00',
-      id: '360',
-      nome: 'Diagnóstico 360°',
-      subtitulo: 'Apresentação do Serviço & Matriz das 7 Frentes Estruturais',
-      parceria: 'Diamond Group & Grupo Baumgartener',
-      descricao:
-        'Card de apresentação do serviço de inteligência corporativa com a matriz completa das 7 frentes: Financeiro & Crédito, Investimentos & Wealth, Societário & Parcerias (Risco Hub), Fiscal & Contábil, Tributário, Jurídico e Operacional, Humano & Cultura. Base metodológica para estancar perdas e blindar a operação.',
-      beneficios: [
-        'Apresentação institucional completa e matriz das 7 frentes',
-        'Conceito de Reestruturação no Agora e Governança no Amanhã',
-        'Foco nos 7 pilares estruturais e novo ambiente tributário',
-        'Porta de entrada oficial da Trilha Guiada de Inteligência',
-      ],
-      rota: '/diagnostico-360',
-      corAccent: '#D4AF37',
-      badge: 'Apresentação do Serviço • 7 Frentes',
-      estado: etapa00.estado,
-      labelEstado: etapa00.labelEstado,
-      nomeAcao: 'Trilha',
-    },
-    {
-      numero: '01',
-      id: 'configuracoes',
-      nome: 'Configurações dos Diagnósticos',
-      subtitulo: 'Parâmetros Base • Espelhado com Calculadora IBS/CBS',
-      parceria: 'Central de Propagação para os 4 Diagnósticos',
-      descricao:
-        'Defina a razão social, CNPJ com máscara, UF e cidade, segmento (10 opções homologadas), regime atual, quadro de funcionários, perfil de clientes NF (B2B/B2C), slider de atividade mista (0–100%) e o ano da transição (2026–2033). Conectado à Carteira de Clientes.',
-      beneficios: [
-        'Seletor Carteira • Cliente Ativo no Diagnóstico integrado',
-        'Propagação automática para as páginas com badge de origem',
-        'Reaproveitamento bidirecional contínuo com Módulo 1 da Calculadora',
-        'Persistência segura vinculada a cada laudo e cliente_id',
-      ],
-      rota: '/diagnostico-configuracoes',
-      corAccent: '#D4AF37',
-      badge: 'Parâmetros Base • Propagação Ativa',
-      estado: etapa01.estado,
-      labelEstado: etapa01.labelEstado,
-      nomeAcao: 'Configurações',
-    },
-    {
-      numero: '02',
-      id: 'autoavaliacao',
-      nome: 'Autoavaliação das 7 Frentes na Sua Empresa',
-      subtitulo: '14 Respostas • Matriz Semáforo & Plano de Ação 30-60-90',
-      parceria: 'Ferramenta Interativa Diamond Intelligence',
-      descricao:
-        'Ferramenta dedicada para autoavaliação interativa nas 7 frentes (2 dimensões por frente: Exposição & Vulnerabilidade e Proteção & Controle, totalizando 14 respostas). Calcula score médio por frente, gera a Matriz Semáforo de Riscos e Oportunidades e o Plano de Ação 30-60-90.',
-      beneficios: [
-        '14 respostas pontuais (Exposição/Vulnerabilidade e Proteção/Controle)',
-        'Score médio por frente e classificação de risco imediata',
-        'Matriz Semáforo de Riscos e Oportunidades consolidada',
-        'Plano de Ação 30-60-90 com salvamento na conta e vínculo ao Cliente',
-      ],
-      rota: '/diagnostico-autoavaliacao',
-      corAccent: '#2ECC71',
-      badge: 'Ferramenta Interativa • 14 Respostas',
-      estado: etapa02.estado,
-      labelEstado: etapa02.labelEstado,
-      nomeAcao: 'Autoavaliação',
-    },
-    {
-      numero: '03',
-      id: 'transicao',
-      nome: 'Diagnóstico de Transição Fiscal',
-      subtitulo: 'Roteiro de 40 Minutos • Farol de Urgência & ERP',
-      parceria: 'Reforma Tributária do Consumo',
-      descricao:
-        'Roteiro guiado em dois blocos operacionais (Negócio & Vendas / Operação & ERP) que gera laudo com farol de risco, 3 prioridades para os próximos 90 dias e solução recomendada.',
-      beneficios: [
-        'Bloco A: Negócio, Regime & Vendas (20 min)',
-        'Bloco B: Operação, Sistema ERP & Caixa (20 min)',
-        'Laudo Executivo com Farol de Urgência (Verde, Amarelo e Vermelho)',
-        'As 3 prioridades estratégicas para os próximos 90 dias',
-      ],
-      rota: '/diagnostico-transicao',
-      corAccent: '#F59E0B',
-      badge: 'Roteiro 40 min • Farol de Risco',
-      estado: etapa03.estado,
-      labelEstado: etapa03.labelEstado,
-      nomeAcao: 'Transição Fiscal',
-    },
-    {
-      numero: '04',
-      id: 'regimes',
-      nome: 'Diagnóstico de Comparação de Regime',
-      subtitulo: 'Decisão Estratégica • 4 Modelos Societários & IVA Dual',
-      parceria: 'Simples Tradicional vs Híbrido vs Presumido vs Real vs IVA Dual',
-      descricao:
-        'Sistema unificado integrando o fluxo estratégico de decisão (Simples Tradicional, Híbrido ou Regime Regular) com a matriz numérica dos 4 regimes societários, ranking de economia e simulação de split payment.',
-      beneficios: [
-        'Fluxo de decisão interativo em 4 perguntas estratégicas',
-        'Ranking financeiro completo dos 4 regimes com apuração líquida',
-        'Simulação de Split Payment e impacto no capital de giro',
-        'Os 3 cenários práticos mais comuns de mercado (estudos de caso)',
-      ],
-      rota: '/diagnostico-regimes',
-      corAccent: '#3B82F6',
-      badge: 'Comparador + Matriz 4 Regimes',
-      estado: etapa04.estado,
-      labelEstado: etapa04.labelEstado,
-      nomeAcao: 'Comparação de Regime',
-    },
-    {
-      numero: '05',
-      id: 'enquadramento',
-      nome: 'Diagnóstico de Enquadramento Completo',
-      subtitulo: 'Wizard Completo com Relatório Executivo',
-      parceria: 'Simulador Integrado com PDF',
-      descricao:
-        'O wizard aprofundado com seletor de ano-base (2027 a 2033), detalhamento de créditos, ranking de regimes, análise setorial e geração instantânea de parecer e relatório executivo em PDF para download.',
-      beneficios: [
-        'Wizard de 4 passos com validação e cálculo em tempo real',
-        'Seletor dinâmico do ano-base da transição (2027–2033)',
-        'Geração e download de Relatório Executivo em PDF',
-        'Salvamento automático no histórico e visível no painel admin',
-      ],
-      rota: '/diagnostico',
-      corAccent: '#10B981',
-      badge: 'Parecer Executivo + PDF',
-      estado: etapa05.estado,
-      labelEstado: etapa05.labelEstado,
-      nomeAcao: 'Enquadramento',
-    },
-    {
-      numero: '06',
-      id: 'fornecedores',
-      nome: 'Análise de Fornecedores',
-      subtitulo: 'Crédito Perdido vs Ganho • Comparativo Simples vs Presumido vs Real',
-      parceria: 'Diagnóstico de Entrada sob a LC 214/2025',
-      descricao:
-        'Cadastre e analise sua carteira de compras: descubra exatamente o custo líquido de aquisição e o crédito perdido por fornecedor (~26,5% vs. 3–7% do Simples), com classificação por item que gera ou não gera crédito, ranking de gargalos e evolução de 2026 a 2033.',
-      beneficios: [
-        'Cadastro da carteira com regimes: Real, Presumido, Simples e Misto com proporção',
-        'Importação instantânea de planilhas de compras em formato CSV / XLSX',
-        'Classificação de produto: crédito integral, parcial ou não gera crédito (neutro)',
-        'Evolução de todos os anos da transição 2026–2033 em tabela, gráfico e Parecer em PDF',
-      ],
-      rota: '/diagnostico-fornecedores',
-      corAccent: '#D4AF37',
-      badge: 'Crédito Perdido • 2026–2033',
-      estado: etapa06.estado,
-      labelEstado: etapa06.labelEstado,
-      nomeAcao: 'Análise de Fornecedores',
-    },
-  ]
+  const diagnosticosCards = useMemo(
+    () => [
+      {
+        numero: '00',
+        id: '360',
+        nome: 'Diagnóstico 360°',
+        subtitulo: 'Apresentação do Serviço & Matriz das 7 Frentes Estruturais',
+        parceria: 'Diamond Group & Grupo Baumgartener',
+        descricao:
+          'Card de apresentação do serviço de inteligência corporativa com a matriz completa das 7 frentes: Financeiro & Crédito, Investimentos & Wealth, Societário & Parcerias (Risco Hub), Fiscal & Contábil, Tributário, Jurídico e Operacional, Humano & Cultura. Base metodológica para estancar perdas e blindar a operação.',
+        beneficios: [
+          'Apresentação institucional completa e matriz das 7 frentes',
+          'Conceito de Reestruturação no Agora e Governança no Amanhã',
+          'Foco nos 7 pilares estruturais e novo ambiente tributário',
+          'Porta de entrada oficial da Trilha Guiada de Inteligência',
+        ],
+        rota: '/diagnostico-360',
+        corAccent: '#D4AF37',
+        badge: 'Apresentação do Serviço • 7 Frentes',
+        estado: etapa00.estado,
+        labelEstado: etapa00.labelEstado,
+        nomeAcao: 'Trilha',
+      },
+      {
+        numero: '01',
+        id: 'configuracoes',
+        nome: 'Configurações dos Diagnósticos',
+        subtitulo: 'Parâmetros Base • Espelhado com Calculadora IBS/CBS',
+        parceria: 'Central de Propagação para os 4 Diagnósticos',
+        descricao:
+          'Defina a razão social, CNPJ com máscara, UF e cidade, segmento (10 opções homologadas), regime atual, quadro de funcionários, perfil de clientes NF (B2B/B2C), slider de atividade mista (0–100%) e o ano da transição (2026–2033). Conectado à Carteira de Clientes.',
+        beneficios: [
+          'Seletor Carteira • Cliente Ativo no Diagnóstico integrado',
+          'Propagação automática para as páginas com badge de origem',
+          'Reaproveitamento bidirecional contínuo com Módulo 1 da Calculadora',
+          'Persistência segura vinculada a cada laudo e cliente_id',
+        ],
+        rota: '/diagnostico-configuracoes',
+        corAccent: '#D4AF37',
+        badge: 'Parâmetros Base • Propagação Ativa',
+        estado: etapa01.estado,
+        labelEstado: etapa01.labelEstado,
+        nomeAcao: 'Configurações',
+      },
+      {
+        numero: '02',
+        id: 'autoavaliacao',
+        nome: 'Autoavaliação das 7 Frentes na Sua Empresa',
+        subtitulo: '14 Respostas • Matriz Semáforo & Plano de Ação 30-60-90',
+        parceria: 'Ferramenta Interativa Diamond Intelligence',
+        descricao:
+          'Ferramenta dedicada para autoavaliação interativa nas 7 frentes (2 dimensões por frente: Exposição & Vulnerabilidade e Proteção & Controle, totalizando 14 respostas). Calcula score médio por frente, gera a Matriz Semáforo de Riscos e Oportunidades e o Plano de Ação 30-60-90.',
+        beneficios: [
+          '14 respostas pontuais (Exposição/Vulnerabilidade e Proteção/Controle)',
+          'Score médio por frente e classificação de risco imediata',
+          'Matriz Semáforo de Riscos e Oportunidades consolidada',
+          'Plano de Ação 30-60-90 com salvamento na conta e vínculo ao Cliente',
+        ],
+        rota: '/diagnostico-autoavaliacao',
+        corAccent: '#2ECC71',
+        badge: 'Ferramenta Interativa • 14 Respostas',
+        estado: etapa02.estado,
+        labelEstado: etapa02.labelEstado,
+        nomeAcao: 'Autoavaliação',
+      },
+      {
+        numero: '03',
+        id: 'transicao',
+        nome: 'Diagnóstico de Transição Fiscal',
+        subtitulo: 'Roteiro de 40 Minutos • Farol de Urgência & ERP',
+        parceria: 'Reforma Tributária do Consumo',
+        descricao:
+          'Roteiro guiado em dois blocos operacionais (Negócio & Vendas / Operação & ERP) que gera laudo com farol de risco, 3 prioridades para os próximos 90 dias e solução recomendada.',
+        beneficios: [
+          'Bloco A: Negócio, Regime & Vendas (20 min)',
+          'Bloco B: Operação, Sistema ERP & Caixa (20 min)',
+          'Laudo Executivo com Farol de Urgência (Verde, Amarelo e Vermelho)',
+          'As 3 prioridades estratégicas para os próximos 90 dias',
+        ],
+        rota: '/diagnostico-transicao',
+        corAccent: '#F59E0B',
+        badge: 'Roteiro 40 min • Farol de Risco',
+        estado: etapa03.estado,
+        labelEstado: etapa03.labelEstado,
+        nomeAcao: 'Transição Fiscal',
+      },
+      {
+        numero: '04',
+        id: 'regimes',
+        nome: 'Diagnóstico de Comparação de Regime',
+        subtitulo: 'Decisão Estratégica • 4 Modelos Societários & IVA Dual',
+        parceria: 'Simples Tradicional vs Híbrido vs Presumido vs Real vs IVA Dual',
+        descricao:
+          'Sistema unificado integrando o fluxo estratégico de decisão (Simples Tradicional, Híbrido ou Regime Regular) com a matriz numérica dos 4 regimes societários, ranking de economia e simulação de split payment.',
+        beneficios: [
+          'Fluxo de decisão interativo em 4 perguntas estratégicas',
+          'Ranking financeiro completo dos 4 regimes com apuração líquida',
+          'Simulação de Split Payment e impacto no capital de giro',
+          'Os 3 cenários práticos mais comuns de mercado (estudos de caso)',
+        ],
+        rota: '/diagnostico-regimes',
+        corAccent: '#3B82F6',
+        badge: 'Comparador + Matriz 4 Regimes',
+        estado: etapa04.estado,
+        labelEstado: etapa04.labelEstado,
+        nomeAcao: 'Comparação de Regime',
+      },
+      {
+        numero: '05',
+        id: 'enquadramento',
+        nome: 'Diagnóstico de Enquadramento Completo',
+        subtitulo: 'Wizard Completo com Relatório Executivo',
+        parceria: 'Simulador Integrado com PDF',
+        descricao:
+          'O wizard aprofundado com seletor de ano-base (2027 a 2033), detalhamento de créditos, ranking de regimes, análise setorial e geração instantânea de parecer e relatório executivo em PDF para download.',
+        beneficios: [
+          'Wizard de 4 passos com validação e cálculo em tempo real',
+          'Seletor dinâmico do ano-base da transição (2027–2033)',
+          'Geração e download de Relatório Executivo em PDF',
+          'Salvamento automático no histórico e visível no painel admin',
+        ],
+        rota: '/diagnostico',
+        corAccent: '#10B981',
+        badge: 'Parecer Executivo + PDF',
+        estado: etapa05.estado,
+        labelEstado: etapa05.labelEstado,
+        nomeAcao: 'Enquadramento',
+      },
+      {
+        numero: '06',
+        id: 'fornecedores',
+        nome: 'Análise de Fornecedores',
+        subtitulo: 'Crédito Perdido vs Ganho • Comparativo Simples vs Presumido vs Real',
+        parceria: 'Diagnóstico de Entrada sob a LC 214/2025',
+        descricao:
+          'Cadastre e analise sua carteira de compras: descubra exatamente o custo líquido de aquisição e o crédito perdido por fornecedor (~26,5% vs. 3–7% do Simples), com classificação por item que gera ou não gera crédito, ranking de gargalos e evolução de 2026 a 2033.',
+        beneficios: [
+          'Cadastro da carteira com regimes: Real, Presumido, Simples e Misto com proporção',
+          'Importação instantânea de planilhas de compras em formato CSV / XLSX',
+          'Classificação de produto: crédito integral, parcial ou não gera crédito (neutro)',
+          'Evolução de todos os anos da transição 2026–2033 em tabela, gráfico e Parecer em PDF',
+        ],
+        rota: '/diagnostico-fornecedores',
+        corAccent: '#D4AF37',
+        badge: 'Crédito Perdido • 2026–2033',
+        estado: etapa06.estado,
+        labelEstado: etapa06.labelEstado,
+        nomeAcao: 'Análise de Fornecedores',
+      },
+    ],
+    [
+      etapa00.estado,
+      etapa00.labelEstado,
+      etapa01.estado,
+      etapa01.labelEstado,
+      etapa02.estado,
+      etapa02.labelEstado,
+      etapa03.estado,
+      etapa03.labelEstado,
+      etapa04.estado,
+      etapa04.labelEstado,
+      etapa05.estado,
+      etapa05.labelEstado,
+      etapa06.estado,
+      etapa06.labelEstado,
+    ],
+  )
 
   if (authLoading || !temDadosSalvos) {
     return (
