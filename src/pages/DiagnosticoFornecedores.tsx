@@ -7,6 +7,7 @@ import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucess
 import { ModalEditarFornecedor } from '@/components/diagnosticos/ModalEditarFornecedor'
 import { ModalImportarPlanilhaFornecedores } from '@/components/diagnosticos/ModalImportarPlanilhaFornecedores'
 import { CardComparadorCotacoes } from '@/components/diagnosticos/CardComparadorCotacoes'
+import { TooltipExplicacaoCredito } from '@/components/diagnosticos/TooltipExplicacaoCredito'
 import { type ResultadoComparadorCotacoes } from '@/lib/calculoComparadorCotacoes'
 import { Button } from '@/components/ui/button'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
@@ -625,11 +626,19 @@ export default function DiagnosticoFornecedores() {
                       </span>
                     </td>
                     <td className="py-3 px-3 text-slate-600">
-                      {item.fornecedor.classificacao_credito === 'integral'
-                        ? 'Integral (100%)'
-                        : item.fornecedor.classificacao_credito === 'parcial'
-                          ? `Parcial (${item.fornecedor.percentual_credito_parcial || 50}%)`
-                          : 'Não gera (0%)'}
+                      <div className="inline-flex items-center gap-1.5">
+                        <span>
+                          {item.fornecedor.classificacao_credito === 'integral'
+                            ? 'Integral (100%)'
+                            : item.fornecedor.classificacao_credito === 'parcial'
+                              ? `Parcial (${item.fornecedor.percentual_credito_parcial || 50}%)`
+                              : 'Não gera (0%)'}
+                        </span>
+                        <TooltipExplicacaoCredito
+                          tipo={item.fornecedor.classificacao_credito || 'integral'}
+                          className="opacity-70 hover:opacity-100"
+                        />
+                      </div>
                     </td>
                     <td className="py-3 px-3 text-right font-mono font-bold text-slate-800">
                       R$ {item.volumeCompras.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -898,11 +907,19 @@ export default function DiagnosticoFornecedores() {
                       </span>
                     </td>
                     <td className="py-3 px-3 text-slate-600">
-                      {item.fornecedor.classificacao_credito === 'integral'
-                        ? 'Integral (100%)'
-                        : item.fornecedor.classificacao_credito === 'parcial'
-                          ? `Parcial (${item.fornecedor.percentual_credito_parcial || 50}%)`
-                          : 'Não gera crédito'}
+                      <div className="inline-flex items-center gap-1.5">
+                        <span>
+                          {item.fornecedor.classificacao_credito === 'integral'
+                            ? 'Integral (100%)'
+                            : item.fornecedor.classificacao_credito === 'parcial'
+                              ? `Parcial (${item.fornecedor.percentual_credito_parcial || 50}%)`
+                              : 'Não gera crédito'}
+                        </span>
+                        <TooltipExplicacaoCredito
+                          tipo={item.fornecedor.classificacao_credito || 'integral'}
+                          className="opacity-70 hover:opacity-100"
+                        />
+                      </div>
                     </td>
                     <td className="py-3 px-3 text-right font-mono font-bold text-slate-800">
                       R$ {item.volumeCompras.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}

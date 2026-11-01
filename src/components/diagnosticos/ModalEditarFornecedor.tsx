@@ -14,6 +14,10 @@ import type {
   RegimeFornecedor,
   ClassificacaoCreditoItem,
 } from '@/services/fornecedores'
+import {
+  TooltipExplicacaoCredito,
+  EXPLICACOES_CLASSIFICACAO_CREDITO,
+} from '@/components/diagnosticos/TooltipExplicacaoCredito'
 import { listarHistoricoCotacoes, type HistoricoCotacaoRecord } from '@/services/historicoCotacoes'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { useAuth } from '@/context/AuthContext'
@@ -278,41 +282,64 @@ export function ModalEditarFornecedor({
 
           {/* Classificação do Item / Produto */}
           <div className="space-y-1.5 pt-2 border-t border-slate-100">
-            <Label className="text-xs font-bold text-slate-700">
-              Classificação de Crédito do Item *
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-bold text-slate-700">
+                Classificação de Crédito do Item *
+              </Label>
+              <span className="text-[11px] text-slate-400 font-normal">
+                Passe o mouse ou toque no <strong className="text-slate-600">?</strong> para
+                entender
+              </span>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {[
-                {
-                  id: 'integral' as const,
-                  titulo: 'Gera Crédito Integral',
-                  sub: '100% da base tributável',
-                },
-                {
-                  id: 'parcial' as const,
-                  titulo: 'Crédito Parcial',
-                  sub: '% informado da base',
-                },
-                {
-                  id: 'nao_gera' as const,
-                  titulo: 'Não Gera Crédito',
-                  sub: 'Item sem direito a crédito',
-                },
-              ].map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setClassificacaoCredito(c.id)}
-                  className={`p-2.5 rounded-xl border text-left transition-all ${
-                    classificacaoCredito === c.id
-                      ? 'bg-[#07132B] text-white border-[#07132B]'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <p className="text-xs font-bold">{c.titulo}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">{c.sub}</p>
-                </button>
-              ))}
+              {(['integral', 'parcial', 'nao_gera'] as ClassificacaoCreditoItem[]).map((tipoId) => {
+                const info = EXPLICACOES_CLASSIFICACAO_CREDITO[tipoId]
+                const ativo = classificacaoCredito === tipoId
+
+                return (
+                  <div
+                    key={tipoId}
+                    onClick={() => setClassificacaoCredito(tipoId)}
+                    className={`relative p-2.5 rounded-xl border text-left transition-all cursor-pointer select-none flex flex-col justify-between ${
+                      ativo
+                        ? 'bg-[#07132B] text-white border-[#07132B] ring-1 ring-[#D4AF37]/50'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-1.5">
+                      <p
+                        className={`text-xs font-bold leading-tight ${
+                          ativo ? 'text-white' : 'text-slate-800'
+                        }`}
+                      >
+                        {info.titulo}
+                      </p>
+                      <TooltipExplicacaoCredito
+                        tipo={tipoId}
+                        className={
+                          ativo
+                            ? 'bg-[#0c224c] text-[#D4AF37] border-[#D4AF37]/40 hover:bg-[#D4AF37] hover:text-[#07132B]'
+                            : ''
+                        }
+                      />
+                    </div>
+                    <p
+                      className={`text-[10px] mt-1.5 ${
+                        ativo ? 'text-slate-300' : 'text-slate-400'
+                      }`}
+                    >
+                      {info.subtitulo}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+            {/* Explicação contextual da opção atualmente selecionada */}
+            <div className="mt-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 text-[11px] leading-relaxed">
+              <span className="font-bold text-slate-800">
+                {EXPLICACOES_CLASSIFICACAO_CREDITO[classificacaoCredito].titulo}:
+              </span>{' '}
+              {EXPLICACOES_CLASSIFICACAO_CREDITO[classificacaoCredito].explicacao}
             </div>
           </div>
 

@@ -13,6 +13,10 @@ import {
 import { ModalSalvarCotacaoVencedora } from './ModalSalvarCotacaoVencedora'
 import type { FornecedorDiagnostico } from '@/services/fornecedores'
 import {
+  TooltipExplicacaoCredito,
+  EXPLICACOES_CLASSIFICACAO_CREDITO,
+} from './TooltipExplicacaoCredito'
+import {
   registrarCotacaoHistorico,
   obterUltimaCotacaoVencedora,
   type HistoricoCotacaoRecord,
@@ -338,9 +342,15 @@ export function CardComparadorCotacoes({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
         {/* Parâmetro 1: Classificação do Item Adquirido */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 block">
-            Classificação do Item / Insumo
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-700 block">
+              Classificação do Item / Insumo
+            </label>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-slate-400">Ajuda:</span>
+              <TooltipExplicacaoCredito tipo={classificacaoItem} />
+            </div>
+          </div>
           <select
             value={classificacaoItem}
             onChange={(e) => setClassificacaoItem(e.target.value as ClassificacaoCreditoItem)}
@@ -366,10 +376,10 @@ export function CardComparadorCotacoes({
               <span className="text-xs text-slate-500 font-bold">%</span>
             </div>
           )}
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-500 leading-snug">
             {classificacaoItem === 'nao_gera'
-              ? 'Item vedado: decisão estritamente pelo menor preço.'
-              : 'Gera crédito de acordo com o regime tributário de cada fornecedor.'}
+              ? EXPLICACOES_CLASSIFICACAO_CREDITO.nao_gera.destaqueDecisao
+              : EXPLICACOES_CLASSIFICACAO_CREDITO[classificacaoItem].explicacao}
           </p>
         </div>
 
