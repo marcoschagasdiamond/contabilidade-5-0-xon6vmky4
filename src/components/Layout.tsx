@@ -454,6 +454,13 @@ export default function Layout() {
                           </Link>
                         )}
                         <Link
+                          to="/manual"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:text-white hover:bg-white/10 transition-colors font-bold"
+                        >
+                          Manual do Sistema
+                        </Link>
+                        <Link
                           to="/minha-conta"
                           onClick={() => setIsUserMenuOpen(false)}
                           className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
@@ -669,6 +676,13 @@ export default function Layout() {
                           Dados do Escritório (Adquirente)
                         </Link>
                       )}
+                      <Link
+                        to="/manual"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block py-2 px-3 rounded-lg text-[#D4AF37] hover:text-white hover:bg-white/10 transition-colors font-bold"
+                      >
+                        Manual do Sistema
+                      </Link>
                       <Link
                         to="/minha-conta"
                         onClick={() => setIsMobileMenuOpen(false)}
@@ -1073,6 +1087,13 @@ export default function Layout() {
                     className="text-slate-400 hover:text-[#D4AF37] transition-colors underline"
                   >
                     Dados da Empresa
+                  </Link>
+                  <span>•</span>
+                  <Link
+                    to="/manual"
+                    className="text-slate-400 hover:text-[#D4AF37] transition-colors underline"
+                  >
+                    Manual
                   </Link>
                   <span>•</span>
                   <Link

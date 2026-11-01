@@ -60,6 +60,7 @@ import MeusRelatorios from './pages/MeusRelatorios'
 import DadosEmpresa from './pages/DadosEmpresa'
 import Planos from './pages/Planos'
 import Agendamento from './pages/Agendamento'
+import Manual from './pages/Manual'
 import NotFound from './pages/NotFound'
 import { analistaPossuiEscritorioPreenchido, gateEscritorioDispensado } from './services/escritorio'
 
@@ -288,6 +289,14 @@ const App = () => (
                   element={
                     <RotaAutenticada>
                       <Agendamento />
+                    </RotaAutenticada>
+                  }
+                />
+                <Route
+                  path="/manual"
+                  element={
+                    <RotaAutenticada>
+                      <Manual />
                     </RotaAutenticada>
                   }
                 />
