@@ -18,6 +18,7 @@ import {
 import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { ModalMigrarParaAnalista } from '@/components/ModalMigrarParaAnalista'
+import { BotaoEChatSuporte } from '@/components/suporte/BotaoEChatSuporte'
 import {
   listarNotificacoesTributarias,
   marcarNotificacaoComoLida,
@@ -836,6 +837,9 @@ export default function Layout() {
       <main className="flex-1 min-h-screen">
         <Outlet />
       </main>
+
+      {/* BOTÃO FLUTUANTE E CHAT NATIVO DE SUPORTE 5.0 (PARA USUÁRIOS LOGADOS) */}
+      <BotaoEChatSuporte />
 
       {/* FOOTER */}
       <footer className="bg-[#0A1A13] text-white pt-16 pb-12 border-t border-white/10">
