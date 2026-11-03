@@ -13,6 +13,8 @@ export interface TeseRecuperacaoDefinicao {
   justificativaRisco: string
   percentualEstimadoPadrao: number // % sobre a base (faturamento ou folha)
   regimesElegiveis: ('Lucro Real' | 'Lucro Presumido' | 'Simples Nacional')[]
+  // Indicação textual (UI/PDF) de relação com a tese EST-04 — não afeta cálculo
+  relacionadaEst04?: boolean
 }
 
 export interface FaturamentoAno {

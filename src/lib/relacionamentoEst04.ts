@@ -1,4 +1,8 @@
-import type { ModuloTributo, TeseSelecaoUsuario } from '@/types/recuperadorCreditos'
+import type {
+  ModuloTributo,
+  TeseRecuperacaoDefinicao,
+  TeseSelecaoUsuario,
+} from '@/types/recuperadorCreditos'
 
 /**
  * Camada de relacionamento da tese EST-04 "Cancelamento de NF-e e Devoluções (Estornos)"
@@ -97,4 +101,20 @@ export function listarTesesRelacionadasEst04(
  */
 export function isTeseCancelamentoAtiva(selecao: Record<string, TeseSelecaoUsuario>): boolean {
   return (selecao[TESE_CANCELAMENTO_ID]?.ativa ?? false) === true
+}
+
+/**
+ * ANOTA (não filtra) a lista completa de teses elegíveis com a indicação
+ * `relacionadaEst04`, preservando TODAS as teses do checklist.
+ * Quando EST-04 não está ativa, todas ficam com `relacionadaEst04: false`.
+ * A própria EST-04 nunca é marcada como relacionada a si mesma.
+ */
+export function marcarTesesRelacionadasEst04(
+  teses: TeseRecuperacaoDefinicao[],
+  est04Ativa: boolean,
+): TeseRecuperacaoDefinicao[] {
+  return teses.map((t) => ({
+    ...t,
+    relacionadaEst04: est04Ativa && t.id !== TESE_CANCELAMENTO_ID,
+  }))
 }

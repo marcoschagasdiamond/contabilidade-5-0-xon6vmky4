@@ -109,7 +109,7 @@ export function BlocoIrpjCsllRecuperador({
                             {selecao.ncmReferencia ? `(${selecao.ncmReferencia})` : ''}
                           </span>
                         )}
-                        {est04Ativa && relacaoEst04 && (
+                        {relacaoEst04 && (
                           <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-slate-100 text-[#07132B] border border-[#D4AF37]/60 shadow-xs">
                             Relacionada à EST-04
                           </span>

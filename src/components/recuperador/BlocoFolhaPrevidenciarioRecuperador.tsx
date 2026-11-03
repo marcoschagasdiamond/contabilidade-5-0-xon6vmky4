@@ -6,7 +6,7 @@ import type {
   ResultadoTese,
 } from '@/types/recuperadorCreditos'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
-import { isTeseCancelamentoAtiva, obterRelacaoComCancelamento } from '@/lib/relacionamentoEst04'
+import { obterRelacaoComCancelamento } from '@/lib/relacionamentoEst04'
 
 interface Props {
   tesesDefinicoes: TeseRecuperacaoDefinicao[]
@@ -37,10 +37,6 @@ export default function BlocoFolhaPrevidenciarioRecuperador({
     const res = mapaResultados[t.id]
     return acc + (res?.ativa ? res.totalCorrigido : 0)
   }, 0)
-
-  // Camada de relacionamento com a tese EST-04 (Cancelamento de NF-e e Devoluções):
-  // apenas indicação textual — não altera seleção nem cálculo.
-  const est04Ativa = isTeseCancelamentoAtiva(tesesSelecionadas)
 
   return (
     <div className="space-y-6">
@@ -78,7 +74,7 @@ export default function BlocoFolhaPrevidenciarioRecuperador({
             const ativa = selecao.ativa
             const farol = selecao.farol
 
-            const relacaoEst04 = obterRelacaoComCancelamento(tese)
+            const relacaoEst04 = tese.relacionadaEst04 ? obterRelacaoComCancelamento(tese) : null
 
             return (
               <div
@@ -109,7 +105,7 @@ export default function BlocoFolhaPrevidenciarioRecuperador({
                             {selecao.ncmReferencia ? `(${selecao.ncmReferencia})` : ''}
                           </span>
                         )}
-                        {est04Ativa && relacaoEst04 && (
+                        {relacaoEst04 && (
                           <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-slate-100 text-[#07132B] border border-[#D4AF37]/60 shadow-xs">
                             Relacionada à EST-04
                           </span>
