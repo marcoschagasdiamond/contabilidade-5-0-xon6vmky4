@@ -282,11 +282,16 @@ export function gerarPdfParecerFornecedores(
           ? `Parcial (${r.fornecedor.percentual_credito_parcial || 50}%)`
           : 'Não gera (0%)'
 
+    const infoNcm = r.fornecedor.ncm
+      ? `NCM ${r.fornecedor.ncm}${r.fornecedor.ncm_classificado_auto ? ' (Auto LC 214)' : ''}`
+      : 'Classif. Manual'
+
     return [
       `#${idx + 1}`,
       r.fornecedor.nome,
       regLabel,
       classLabel,
+      infoNcm,
       `R$ ${r.volumeCompras.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       `R$ ${r.creditoAproveitavel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       `R$ ${r.custoLiquidoAquisicao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
@@ -302,6 +307,7 @@ export function gerarPdfParecerFornecedores(
         'Fornecedor',
         'Regime',
         'Classificação Item',
+        'Origem NCM',
         'Volume Compras',
         'Crédito Ganho',
         'Custo Líquido',
@@ -310,17 +316,18 @@ export function gerarPdfParecerFornecedores(
     ],
     body: rankingRows,
     theme: 'grid',
-    styles: { fontSize: 6.8, cellPadding: 1.8 },
+    styles: { fontSize: 6.5, cellPadding: 1.6 },
     headStyles: { fillColor: [7, 19, 43], textColor: [255, 255, 255], fontStyle: 'bold' },
     columnStyles: {
-      0: { halign: 'center', cellWidth: 8 },
-      1: { cellWidth: 38, fontStyle: 'bold' },
-      2: { cellWidth: 24 },
-      3: { cellWidth: 22 },
-      4: { halign: 'right', cellWidth: 23 },
-      5: { halign: 'right', cellWidth: 21 },
-      6: { halign: 'right', cellWidth: 22 },
-      7: { halign: 'right', cellWidth: 24, textColor: [200, 30, 30], fontStyle: 'bold' },
+      0: { halign: 'center', cellWidth: 7 },
+      1: { cellWidth: 34, fontStyle: 'bold' },
+      2: { cellWidth: 20 },
+      3: { cellWidth: 21 },
+      4: { cellWidth: 24, fontStyle: 'bold', textColor: [7, 19, 43] },
+      5: { halign: 'right', cellWidth: 19 },
+      6: { halign: 'right', cellWidth: 18 },
+      7: { halign: 'right', cellWidth: 19 },
+      8: { halign: 'right', cellWidth: 20, textColor: [200, 30, 30], fontStyle: 'bold' },
     },
   })
 
@@ -500,8 +507,12 @@ export function gerarPdfParecerFornecedores(
         ? `Crédito Parcial (${comparador.configuracao.percentualCreditoParcial || 50}%)`
         : 'Não Gera Crédito (Insumo Vedado)'
 
+  const totalNcmClassificados = resumo.detalhamentoPorFornecedor.filter(
+    (item) => item.fornecedor.ncm,
+  ).length
+
   doc.text(
-    `Classificação do Item: ${descItem}   |   Regime do Adquirente: ${regimeFormatado}   |   Ano de Referência: ${comparador.configuracao.anoTransicao}`,
+    `Classificação do Item: ${descItem}   |   Regime do Adquirente: ${regimeFormatado}   |   Itens com NCM: ${totalNcmClassificados} de ${resumo.totalFornecedores}`,
     18,
     y + 6,
   )

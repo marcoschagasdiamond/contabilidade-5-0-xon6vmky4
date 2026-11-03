@@ -18,6 +18,8 @@ import {
   TooltipExplicacaoCredito,
   EXPLICACOES_CLASSIFICACAO_CREDITO,
 } from '@/components/diagnosticos/TooltipExplicacaoCredito'
+import { CampoNcmAutocomplete } from '@/components/diagnosticos/CampoNcmAutocomplete'
+import { buscarNcmPorCodigo, type ItemNcmCurado } from '@/data/tabelaNcmLc214'
 import { listarHistoricoCotacoes, type HistoricoCotacaoRecord } from '@/services/historicoCotacoes'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { useAuth } from '@/context/AuthContext'
@@ -56,6 +58,13 @@ export function ModalEditarFornecedor({
     fornecedorInicial?.aliquota_simples_informada
       ? String(fornecedorInicial.aliquota_simples_informada)
       : '',
+  )
+  const [ncm, setNcm] = useState(fornecedorInicial?.ncm || '')
+  const [itemNcmCurado, setItemNcmCurado] = useState<ItemNcmCurado | null>(() => {
+    return fornecedorInicial?.ncm ? buscarNcmPorCodigo(fornecedorInicial.ncm) : null
+  })
+  const [ncmClassificadoAuto, setNcmClassificadoAuto] = useState<boolean>(
+    Boolean(fornecedorInicial?.ncm_classificado_auto),
   )
   const [erro, setErro] = useState<string | null>(null)
   const { clienteAtivoId } = useClienteAtivo()
@@ -107,6 +116,9 @@ export function ModalEditarFornecedor({
           ? String(fornecedorInicial.aliquota_simples_informada)
           : '',
       )
+      setNcm(fornecedorInicial.ncm || '')
+      setNcmClassificadoAuto(Boolean(fornecedorInicial.ncm_classificado_auto))
+      setItemNcmCurado(fornecedorInicial.ncm ? buscarNcmPorCodigo(fornecedorInicial.ncm) : null)
     } else {
       setNome('')
       setCnpj('')
@@ -117,9 +129,41 @@ export function ModalEditarFornecedor({
       setPercentualCreditoParcial(50)
       setDescricaoItem('')
       setAliquotaSimplesInformada('')
+      setNcm('')
+      setNcmClassificadoAuto(false)
+      setItemNcmCurado(null)
     }
     setErro(null)
   }, [fornecedorInicial, aberto])
+
+  // Ao selecionar um NCM curado, pré-preenche automaticamente a classificação
+  const handleNcmSelecionado = (item: ItemNcmCurado) => {
+    setItemNcmCurado(item)
+    setNcm(item.codigo)
+    setClassificacaoCredito(item.classificacaoSugerida)
+    if (item.percentualCreditoSugerido) {
+      setPercentualCreditoParcial(item.percentualCreditoSugerido)
+    }
+    if (!descricaoItem.trim()) {
+      setDescricaoItem(item.descricao)
+    }
+    setNcmClassificadoAuto(true)
+  }
+
+  // Ao alterar NCM livremente
+  const handleChangeNcm = (codigo: string) => {
+    setNcm(codigo)
+    if (!codigo) {
+      setItemNcmCurado(null)
+      setNcmClassificadoAuto(false)
+    } else {
+      const achado = buscarNcmPorCodigo(codigo)
+      setItemNcmCurado(achado)
+      if (achado) {
+        setNcmClassificadoAuto(true)
+      }
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -146,6 +190,8 @@ export function ModalEditarFornecedor({
         regime === 'simples_nacional' && aliquotaSimplesInformada
           ? parseFloat(aliquotaSimplesInformada) || undefined
           : undefined,
+      ncm: ncm.trim() || undefined,
+      ncm_classificado_auto: ncm.trim() ? ncmClassificadoAuto : false,
       ativo: true,
     }
 
@@ -280,12 +326,29 @@ export function ModalEditarFornecedor({
             </div>
           )}
 
+          {/* Campo NCM com busca/autocomplete LC 214/2025 */}
+          <div className="pt-2 border-t border-slate-100">
+            <CampoNcmAutocomplete
+              ncmValor={ncm}
+              onChangeNcm={handleChangeNcm}
+              onNcmSelecionado={handleNcmSelecionado}
+              itemNcmAtual={itemNcmCurado}
+            />
+          </div>
+
           {/* Classificação do Item / Produto */}
           <div className="space-y-1.5 pt-2 border-t border-slate-100">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-bold text-slate-700">
-                Classificação de Crédito do Item *
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-bold text-slate-700">
+                  Classificação de Crédito do Item *
+                </Label>
+                {ncmClassificadoAuto && (
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-[#07132B] text-[#D4AF37]">
+                    Sugerido via NCM
+                  </span>
+                )}
+              </div>
               <span className="text-[11px] text-slate-400 font-normal">
                 Passe o mouse ou toque no <strong className="text-slate-600">?</strong> para
                 entender

@@ -18,6 +18,8 @@ export interface FornecedorDiagnostico {
   percentual_credito_parcial?: number // 0-100 (se classificação == 'parcial')
   descricao_item?: string
   aliquota_simples_informada?: number // Alíquota declarada do Simples (padrão 3 a 7%)
+  ncm?: string // Código NCM do item (ex: 1006.30.21 ou 10063021)
+  ncm_classificado_auto?: boolean // Se a classificação do item foi sugerida automaticamente via tabela NCM
   observacoes?: string
   ativo?: boolean
   dados_extra_json?: Record<string, any>

@@ -76,6 +76,8 @@ export function ModalImportarPlanilhaFornecedores({
       percentual_credito_parcial: f.percentual_credito_parcial,
       descricao_item: f.descricao_item,
       aliquota_simples_informada: f.aliquota_simples_informada,
+      ncm: f.ncm,
+      ncm_classificado_auto: f.ncm_classificado_auto,
       observacoes: f.observacoes,
       ativo: true,
     }))
@@ -188,8 +190,20 @@ export function ModalImportarPlanilhaFornecedores({
                 {previewFornecedores.map((f, idx) => (
                   <div key={idx} className="p-2.5 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-bold text-slate-800 truncate">{f.nome}</p>
-                      <p className="text-[11px] text-slate-500">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-slate-800 truncate">{f.nome}</p>
+                        {f.ncm && (
+                          <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-bold">
+                            NCM {f.ncm}
+                          </span>
+                        )}
+                        {f.ncm_classificado_auto && (
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#07132B] text-[#D4AF37] font-bold">
+                            Auto LC 214
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
                         Regime: <strong className="text-slate-700">{f.regime}</strong> • Item:{' '}
                         <strong className="text-slate-700">{f.classificacao_credito}</strong>
                       </p>

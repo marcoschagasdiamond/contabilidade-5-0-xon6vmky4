@@ -14,6 +14,7 @@ import type {
   RegimeFornecedor,
   ClassificacaoCreditoItem,
 } from '@/services/fornecedores'
+import { buscarNcmPorCodigo, formatarCodigoNcm } from '@/data/tabelaNcmLc214'
 
 export interface FornecedorImportadoPreview {
   nome: string
@@ -25,6 +26,8 @@ export interface FornecedorImportadoPreview {
   percentual_credito_parcial?: number
   descricao_item?: string
   aliquota_simples_informada?: number
+  ncm?: string
+  ncm_classificado_auto?: boolean
   observacoes?: string
   valido: boolean
   avisos: string[]
@@ -135,6 +138,12 @@ export function mapearLinhasParaFornecedores(
     'descrição',
     'item',
   ])
+  const colNcm = encontrarColuna(colunas, [
+    'ncm',
+    'codigo_ncm',
+    'código_ncm',
+    'classificacao_fiscal',
+  ])
 
   const lista: FornecedorImportadoPreview[] = []
 
@@ -171,15 +180,46 @@ export function mapearLinhasParaFornecedores(
     const cnpj = colCnpj ? (l[colCnpj] || '').trim() : undefined
     const descricaoItem = colItem ? (l[colItem] || '').trim() : undefined
 
+    // Leitura e classificação automática via NCM (se informado)
+    const ncmRaw = colNcm ? (l[colNcm] || '').trim() : undefined
+    let ncmFormatado: string | undefined = undefined
+    let ncmClassificadoAuto = false
+    let classificacaoFinal = classificacao
+    let pctParcialFinal = pctParcial
+
+    if (ncmRaw) {
+      const itemCurado = buscarNcmPorCodigo(ncmRaw)
+      ncmFormatado = formatarCodigoNcm(ncmRaw)
+
+      if (itemCurado) {
+        // Classificação automática conforme tabela curada LC 214/2025
+        classificacaoFinal = itemCurado.classificacaoSugerida
+        if (itemCurado.percentualCreditoSugerido) {
+          pctParcialFinal = itemCurado.percentualCreditoSugerido
+        }
+        ncmClassificadoAuto = true
+        avisos.push(
+          `Classificado via NCM ${formatarCodigoNcm(itemCurado.codigoLimpo)} (${itemCurado.categoriaRotulo})`,
+        )
+      } else {
+        // Código NCM informado não está na base curada: mantém classificação manual da planilha/padrão
+        avisos.push(
+          `NCM ${ncmFormatado} não consta na base curada LC 214: mantida classificação manual.`,
+        )
+      }
+    }
+
     lista.push({
       nome: nomeRaw,
       cnpj,
       regime,
       proporcao_misto: proporcaoMisto,
       volume_compras: volume,
-      classificacao_credito: classificacao,
-      percentual_credito_parcial: pctParcial,
+      classificacao_credito: classificacaoFinal,
+      percentual_credito_parcial: pctParcialFinal,
       descricao_item: descricaoItem,
+      ncm: ncmFormatado || ncmRaw,
+      ncm_classificado_auto: ncmClassificadoAuto,
       valido: volume > 0,
       avisos,
     })
@@ -222,14 +262,14 @@ export function processarCsvFornecedores(
  */
 export function gerarCsvModeloFornecedores(): string {
   const cabecalho =
-    'Nome do Fornecedor;CNPJ;Regime;Volume de Compras;Classificacao do Item;Percentual Credito;Descricao do Item\n'
+    'Nome do Fornecedor;CNPJ;Regime;Volume de Compras;NCM;Classificacao do Item;Percentual Credito;Descricao do Item\n'
   const linhas = [
-    'Fornecedor Matéria-Prima Alpha Ltda;12.345.678/0001-90;Lucro Real;1500000;integral;100;Insumos industriais diretos',
-    'Distribuidora Beta Presumido S/A;23.456.789/0001-01;Lucro Presumido;850000;integral;100;Embalagens e caixas',
-    'Comercial Gamma Simples ME;34.567.890/0001-12;Simples Nacional;620000;integral;100;Peças de reposição e componentes',
-    'Cooperativa Delta Mista;45.678.901/0001-23;Misto;480000;integral;60;Fornecimento consorciado',
-    'Papelaria e Escritório Epsilon Eireli;56.789.012/0001-34;Simples Nacional;120000;nao_gera;0;Material de consumo e expediente',
-    'Transportadora Zeta Logística;67.890.123/0001-45;Lucro Real;340000;parcial;70;Frete sobre insumos e transferências',
+    'Fornecedor Matéria-Prima Alpha Ltda;12.345.678/0001-90;Lucro Real;1500000;7208.39.10;integral;100;Bobinas de aço laminadas',
+    'Distribuidora Beta Alimentos S/A;23.456.789/0001-01;Lucro Presumido;850000;1006.30.21;integral;100;Arroz parboilizado cesta básica',
+    'Hortifruti Gamma Simples ME;34.567.890/0001-12;Simples Nacional;620000;0702.00.00;parcial;40;Tomates frescos com redução 60%',
+    'Distribuidora de Bebidas Delta;45.678.901/0001-23;Lucro Real;480000;2202.10.00;nao_gera;0;Refrigerantes monofásicos/IS',
+    'Agropecuária Vale Verde;56.789.012/0001-34;Lucro Real;920000;3102.10.10;integral;100;Ureia e fertilizantes agrícolas',
+    'Papelaria e Escritório Epsilon Eireli;67.890.123/0001-45;Simples Nacional;120000;;nao_gera;0;Material de consumo e expediente',
   ]
   return cabecalho + linhas.join('\n')
 }

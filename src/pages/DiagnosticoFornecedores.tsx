@@ -669,7 +669,17 @@ export default function DiagnosticoFornecedores() {
                   <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3 px-3 font-mono font-bold text-slate-400">#{idx + 1}</td>
                     <td className="py-3 px-3 font-bold text-slate-800">
-                      {item.fornecedor.nome}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span>{item.fornecedor.nome}</span>
+                        {item.fornecedor.ncm && (
+                          <span
+                            className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-[#07132B] text-[#D4AF37]"
+                            title={`NCM ${item.fornecedor.ncm}`}
+                          >
+                            NCM {item.fornecedor.ncm}
+                          </span>
+                        )}
+                      </div>
                       {item.fornecedor.cnpj && (
                         <span className="block text-[10px] text-slate-400 font-mono font-normal">
                           {item.fornecedor.cnpj}
@@ -1049,9 +1059,27 @@ export default function DiagnosticoFornecedores() {
                 {fornecedoresExibidos.map((item, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3 px-3 font-bold text-slate-800">
-                      {item.fornecedor.nome}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span>{item.fornecedor.nome}</span>
+                        {item.fornecedor.ncm && (
+                          <span
+                            className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold ${
+                              item.fornecedor.ncm_classificado_auto
+                                ? 'bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/30'
+                                : 'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}
+                            title={
+                              item.fornecedor.ncm_classificado_auto
+                                ? `NCM ${item.fornecedor.ncm} (Classificado via LC 214/2025)`
+                                : `NCM ${item.fornecedor.ncm} (Classificação manual)`
+                            }
+                          >
+                            NCM {item.fornecedor.ncm}
+                          </span>
+                        )}
+                      </div>
                       {item.fornecedor.descricao_item && (
-                        <span className="block text-[10px] text-slate-400 font-normal">
+                        <span className="block text-[10px] text-slate-400 font-normal mt-0.5">
                           {item.fornecedor.descricao_item}
                         </span>
                       )}
