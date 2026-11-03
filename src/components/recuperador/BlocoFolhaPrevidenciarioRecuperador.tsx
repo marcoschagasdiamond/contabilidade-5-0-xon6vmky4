@@ -96,6 +96,12 @@ export default function BlocoFolhaPrevidenciarioRecuperador({
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-[#07132B] text-[#D4AF37]">
                           {tese.codigo}
                         </span>
+                        {selecao.origem === 'ncm_sugerido' && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/40 shadow-xs">
+                            Sugerido via NCM{' '}
+                            {selecao.ncmReferencia ? `(${selecao.ncmReferencia})` : ''}
+                          </span>
+                        )}
                         <h4 className="text-xs font-bold text-[#07132B]">{tese.titulo}</h4>
                       </div>
                       <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded inline-block mb-1.5 border border-emerald-200">

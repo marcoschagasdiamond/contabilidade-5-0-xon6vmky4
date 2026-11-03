@@ -44,6 +44,10 @@ import ModuloDashboardRecuperador from '@/components/recuperador/ModuloDashboard
 import { ModalSalvarRecuperador } from '@/components/recuperador/ModalSalvarRecuperador'
 import { ListaSimulacoesRecuperador } from '@/components/recuperador/ListaSimulacoesRecuperador'
 import { ModalExportarDadosSimulacao } from '@/components/calculadora/ModalExportarDadosSimulacao'
+import { ModalImportarPlanilhaRecuperador } from '@/components/recuperador/ModalImportarPlanilhaRecuperador'
+import { type SugestaoNcmRecuperador } from '@/lib/ncmRecuperadorCreditos'
+import { type ResultadoImportacaoPlanilhaRecuperador } from '@/lib/importacaoRecuperadorPlanilha'
+import { formatarCodigoNcm } from '@/data/tabelaNcmLc214'
 
 type ModuloRecuperadorId =
   | 'configuracoes'
@@ -296,6 +300,7 @@ export default function RecuperadorCreditos() {
   const [modalPdfAberto, setModalPdfAberto] = useState(false)
   const [modalExportarDadosAberto, setModalExportarDadosAberto] = useState(false)
   const [modalLimparAberto, setModalLimparAberto] = useState(false)
+  const [modalImportarPlanilhaAberto, setModalImportarPlanilhaAberto] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
   // Simulações salvas
@@ -451,6 +456,70 @@ export default function RecuperadorCreditos() {
         ...atualizacao,
       },
     }))
+  }
+
+  // Sugestão automática de teses via NCM com override manual irrestrito
+  const handleAplicarSugestaoNcm = (sug: SugestaoNcmRecuperador) => {
+    const codFormatado = formatarCodigoNcm(sug.itemCurado.codigoLimpo)
+
+    setTesesSelecionadas((prev) => {
+      const novas = { ...prev }
+      sug.tesesSugeridasIds.forEach((tId) => {
+        novas[tId] = {
+          ...(novas[tId] || { teseId: tId, farol: 'verde', percentualBaseCustomizado: undefined }),
+          teseId: tId,
+          ativa: true,
+          origem: 'ncm_sugerido',
+          ncmReferencia: codFormatado,
+        }
+      })
+      return novas
+    })
+
+    toast({
+      title: 'Teses sugeridas via NCM (LC 214/2025)',
+      description: `NCM ${codFormatado} (${sug.categoriaRotulo}): teses ativadas automaticamente com badge 'Sugerido via NCM'. Seleção manual livre.`,
+    })
+  }
+
+  // Importação de planilha CSV/XLSX com coluna NCM
+  const handleImportacaoPlanilhaSucesso = (resultado: ResultadoImportacaoPlanilhaRecuperador) => {
+    setTesesSelecionadas((prev) => {
+      const novas = { ...prev }
+      resultado.todosNcmSugeridos.forEach((sug) => {
+        const codFormatado = formatarCodigoNcm(sug.itemCurado.codigoLimpo)
+        sug.tesesSugeridasIds.forEach((tId) => {
+          novas[tId] = {
+            ...(novas[tId] || {
+              teseId: tId,
+              farol: 'verde',
+              percentualBaseCustomizado: undefined,
+            }),
+            teseId: tId,
+            ativa: true,
+            origem: 'ncm_sugerido',
+            ncmReferencia: codFormatado,
+          }
+        })
+      })
+      return novas
+    })
+
+    if (resultado.todosNcmSugeridos.length > 0) {
+      const primeiro = resultado.todosNcmSugeridos[0]
+      setConfiguracoes((prev) => ({
+        ...prev,
+        ncm: primeiro.itemCurado.codigo,
+        ncmDescricao: primeiro.itemCurado.descricao,
+        ncmCategoriaRotulo: primeiro.categoriaRotulo,
+        ncmOrigemSugerida: true,
+      }))
+    }
+
+    toast({
+      title: 'Planilha com NCM importada',
+      description: `${resultado.totalLidas} itens lidos (${resultado.totalSugeridasAuto} sugeridos via NCM). Teses aplicadas com badge 'Sugerido via NCM'.`,
+    })
   }
 
   const handleLimparDashboard = () => {
@@ -709,6 +778,8 @@ export default function RecuperadorCreditos() {
               <ModuloConfiguracoesRecuperador
                 configuracoes={configuracoes}
                 onChange={setConfiguracoes}
+                onNcmSugerido={handleAplicarSugestaoNcm}
+                onAbrirImportacaoPlanilha={() => setModalImportarPlanilhaAberto(true)}
               />
             )}
 
@@ -868,6 +939,13 @@ export default function RecuperadorCreditos() {
           parametros: parametrosAtuais,
           resultados: resultadosAtuais,
         }}
+      />
+
+      {/* MODAL IMPORTAR PLANILHA CSV / XLSX COM COLUNA NCM */}
+      <ModalImportarPlanilhaRecuperador
+        aberto={modalImportarPlanilhaAberto}
+        onOpenChange={setModalImportarPlanilhaAberto}
+        onImportarSucesso={handleImportacaoPlanilhaSucesso}
       />
     </div>
   )

@@ -42,26 +42,8 @@ export function gerarCsvRecuperador(dados: DadosParaExportacaoRecuperador): stri
   const { nomeAnalise, empresa, cnpj, dataRegistro, parametros, resultados } = dados
   const linhas: string[] = []
 
-  const adicionarLinha = (
-    col1: string,
-    col2: any = '',
-    col3: any = '',
-    col4: any = '',
-    col5: any = '',
-    col6: any = '',
-    col7: any = '',
-  ) => {
-    linhas.push(
-      [
-        escaparCsv(col1),
-        escaparCsv(col2),
-        escaparCsv(col3),
-        escaparCsv(col4),
-        escaparCsv(col5),
-        escaparCsv(col6),
-        escaparCsv(col7),
-      ].join(';'),
-    )
+  const adicionarLinha = (...colunas: any[]) => {
+    linhas.push(colunas.map((col) => escaparCsv(col)).join(';'))
   }
 
   const cfg = parametros.configuracoes
@@ -126,6 +108,12 @@ export function gerarCsvRecuperador(dados: DadosParaExportacaoRecuperador): stri
   adicionarLinha('Regime Tributário Declarado', cfg.regimeAtual)
   adicionarLinha('Segmento / Ramo de Atividade', cfg.segmento || 'Não informado')
   adicionarLinha('UF de Origem', cfg.uf || 'SP')
+  adicionarLinha(
+    'NCM Informado (LC 214/2025)',
+    cfg.ncm
+      ? `${cfg.ncm} (${cfg.ncmCategoriaRotulo || 'Curado'}) - ${cfg.ncmOrigemSugerida ? 'Sugerido via NCM' : 'Manual'}`
+      : 'Não informado (Manual)',
+  )
   adicionarLinha('Período Auditado (Escopo)', periodoAuditadoTexto)
   adicionarLinha('')
 
@@ -255,6 +243,7 @@ export function gerarCsvRecuperador(dados: DadosParaExportacaoRecuperador): stri
   adicionarLinha(
     'Código / Tese',
     'Módulo Tributário',
+    'Origem da Seleção',
     'Farol de Risco',
     'Status na Simulação',
     'Original 60 Meses (R$)',
@@ -270,9 +259,14 @@ export function gerarCsvRecuperador(dados: DadosParaExportacaoRecuperador): stri
           : t.modulo === 'irpj_csll'
             ? 'IRPJ/CSLL'
             : 'ICMS/ISS/Outros'
+    const origemTexto =
+      t.origem === 'ncm_sugerido'
+        ? `Sugerido via NCM${t.ncmReferencia ? ` (${t.ncmReferencia})` : ''}`
+        : 'Manual'
     adicionarLinha(
       `${t.titulo} [${t.fundamento}]`,
       moduloNome,
+      origemTexto,
       t.farol.toUpperCase(),
       t.ativa ? 'ATIVA' : 'INATIVA',
       formatarMoeda(t.valorOriginalTotal),

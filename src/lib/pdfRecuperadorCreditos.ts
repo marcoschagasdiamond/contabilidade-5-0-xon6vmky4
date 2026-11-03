@@ -242,7 +242,19 @@ export function gerarParecerRecuperadorPDF(options: GerarPdfRecuperadorOptions):
   doc.setFont('helvetica', 'normal')
   doc.text('SELIC acumulada por competência (60m)', col2X + 42, currentY + 31)
 
-  currentY += 44
+  if (parametros.configuracoes.ncm) {
+    doc.setFont('helvetica', 'bold')
+    doc.text('NCM LC 214/2025:', margin + 4, currentY + 37)
+    doc.setFont('helvetica', 'normal')
+    doc.text(
+      `${parametros.configuracoes.ncm} • ${parametros.configuracoes.ncmCategoriaRotulo || 'Curado'} (${parametros.configuracoes.ncmOrigemSugerida ? 'Sugerido via NCM' : 'Manual'})`,
+      margin + 35,
+      currentY + 37,
+    )
+    currentY += 50
+  } else {
+    currentY += 44
+  }
 
   // =========================================================================
   // REQUISITO (A): RESUMO EXECUTIVO NO TOPO
@@ -431,10 +443,11 @@ export function gerarParecerRecuperadorPDF(options: GerarPdfRecuperadorOptions):
     doc.setFillColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
     doc.rect(margin, currentY, contentWidth, 6, 'F')
     doc.setTextColor(255, 255, 255)
-    doc.setFontSize(6.5)
+    doc.setFontSize(6.3)
     doc.setFont('helvetica', 'bold')
     doc.text('Tese Tributária / Previdenciária & Base Legal Citada', margin + 3, currentY + 4.2)
-    doc.text('Farol', margin + 104, currentY + 4.2)
+    doc.text('Origem', margin + 88, currentY + 4.2)
+    doc.text('Farol', margin + 106, currentY + 4.2)
     doc.text('Original (60m)', margin + 120, currentY + 4.2)
     doc.text('SELIC', margin + 144, currentY + 4.2)
     doc.text('Total Corrigido', margin + 162, currentY + 4.2)
@@ -461,15 +474,26 @@ export function gerarParecerRecuperadorPDF(options: GerarPdfRecuperadorOptions):
         t.ativa ? COR_TEXTO[1] : COR_MUTED[1],
         t.ativa ? COR_TEXTO[2] : COR_MUTED[2],
       )
-      const titTrunc = t.titulo.length > 56 ? t.titulo.slice(0, 54) + '...' : t.titulo
+      const titTrunc = t.titulo.length > 46 ? t.titulo.slice(0, 44) + '...' : t.titulo
       doc.text(titTrunc, margin + 3, currentY + 4)
+
+      // Indicação de Origem (Sugerido via NCM vs Manual)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(5.8)
+      if (t.origem === 'ncm_sugerido') {
+        doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+        doc.text('Sugerido via NCM', margin + 88, currentY + 4)
+      } else {
+        doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+        doc.text('Manual', margin + 88, currentY + 4)
+      }
 
       // Base Legal Citada (Requisito c)
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(5.8)
       doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
       const fundamentoTexto = t.fundamento
-        ? `Base Legal: ${t.fundamento}`
+        ? `Base Legal: ${t.fundamento}${t.ncmReferencia ? ` • Ref. NCM ${t.ncmReferencia}` : ''}`
         : 'Base Legal: Legislação Tributária Vigente'
       const fundTrunc =
         fundamentoTexto.length > 68 ? fundamentoTexto.slice(0, 66) + '...' : fundamentoTexto

@@ -4,10 +4,15 @@ import { formatarMoeda, parseInputMoeda } from '@/lib/calculadoraUtils'
 import { LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
 import { useAuth } from '@/context/AuthContext'
 import { BannerIdentificacaoEmpresaBloqueada } from '@/components/dadosEmpresa/BannerIdentificacaoEmpresaBloqueada'
+import { CampoNcmAutocomplete } from '@/components/diagnosticos/CampoNcmAutocomplete'
+import { buscarNcmPorCodigo, formatarCodigoNcm, type ItemNcmCurado } from '@/data/tabelaNcmLc214'
+import { sugerirTesesPorItemNcm, type SugestaoNcmRecuperador } from '@/lib/ncmRecuperadorCreditos'
 
 interface Props {
   configuracoes: ConfiguracoesRecuperador
   onChange: (novasConfigs: ConfiguracoesRecuperador) => void
+  onNcmSugerido?: (sugestao: SugestaoNcmRecuperador) => void
+  onAbrirImportacaoPlanilha?: () => void
 }
 
 export const OPCOES_SEGMENTO_RECUPERADOR = [
@@ -53,8 +58,67 @@ export const OPCOES_SEGMENTO_RECUPERADOR = [
   },
 ] as const
 
-export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange }: Props) {
+export default function ModuloConfiguracoesRecuperador({
+  configuracoes,
+  onChange,
+  onNcmSugerido,
+  onAbrirImportacaoPlanilha,
+}: Props) {
   const { isEmpresario } = useAuth()
+
+  const itemNcmCurado = React.useMemo(() => {
+    return configuracoes.ncm ? buscarNcmPorCodigo(configuracoes.ncm) : null
+  }, [configuracoes.ncm])
+
+  const handleNcmSelecionado = (item: ItemNcmCurado) => {
+    const sug = sugerirTesesPorItemNcm(item)
+    onChange({
+      ...configuracoes,
+      ncm: item.codigo,
+      ncmDescricao: item.descricao,
+      ncmCategoriaRotulo: item.categoriaRotulo,
+      ncmOrigemSugerida: true,
+    })
+    if (onNcmSugerido) {
+      onNcmSugerido(sug)
+    }
+  }
+
+  const handleChangeNcm = (codigo: string) => {
+    if (!codigo) {
+      onChange({
+        ...configuracoes,
+        ncm: '',
+        ncmDescricao: '',
+        ncmCategoriaRotulo: '',
+        ncmOrigemSugerida: false,
+      })
+      return
+    }
+
+    const item = buscarNcmPorCodigo(codigo)
+    if (item) {
+      const sug = sugerirTesesPorItemNcm(item)
+      onChange({
+        ...configuracoes,
+        ncm: item.codigo,
+        ncmDescricao: item.descricao,
+        ncmCategoriaRotulo: item.categoriaRotulo,
+        ncmOrigemSugerida: true,
+      })
+      if (onNcmSugerido) {
+        onNcmSugerido(sug)
+      }
+    } else {
+      onChange({
+        ...configuracoes,
+        ncm: codigo,
+        ncmDescricao: '',
+        ncmCategoriaRotulo: '',
+        ncmOrigemSugerida: false,
+      })
+    }
+  }
 
   const handleChangeAnoFaturamento = (index: number, valor: number) => {
     const novosAnos = [...configuracoes.anosFaturamento]
@@ -144,6 +208,72 @@ export default function ModuloConfiguracoesRecuperador({ configuracoes, onChange
               Regime Atual: {configuracoes.regimeAtual}
             </span>
           </div>
+        </div>
+
+        {/* SEÇÃO NCM DO PRODUTO / INSUMO PRINCIPAL COM AUTOCOMPLETE DA LC 214/2025 */}
+        <div className="mt-5 p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span className="text-xs font-bold text-[#07132B] uppercase tracking-wide block">
+                Classificação NCM do Produto / Insumo (LC 214/2025)
+              </span>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Informe o NCM para sugerir automaticamente as teses aplicáveis (monofásicos, insumos
+                agropecuários, cesta básica e reduções 60%/30%). A seleção manual permanece possível
+                com override irrestrito.
+              </p>
+            </div>
+            {onAbrirImportacaoPlanilha && (
+              <button
+                type="button"
+                onClick={onAbrirImportacaoPlanilha}
+                className="px-3 py-1.5 rounded-lg bg-[#07132B] text-white border border-[#D4AF37]/50 text-xs font-bold hover:bg-[#0c224c] transition-colors shrink-0 shadow-sm"
+              >
+                Importar Planilha com NCM
+              </button>
+            )}
+          </div>
+
+          <CampoNcmAutocomplete
+            ncmValor={configuracoes.ncm || ''}
+            onChangeNcm={handleChangeNcm}
+            onNcmSelecionado={handleNcmSelecionado}
+            itemNcmAtual={itemNcmCurado}
+          />
+
+          {configuracoes.ncm && (
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-slate-700">
+                  NCM Atual: <strong>{formatarCodigoNcm(configuracoes.ncm)}</strong>
+                </span>
+                {configuracoes.ncmOrigemSugerida ? (
+                  <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-[#07132B] text-[#D4AF37]">
+                    Sugerido via NCM
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded text-[10px] bg-slate-200 text-slate-700 font-semibold">
+                    Manual (Fora da Base Curada)
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...configuracoes,
+                    ncm: '',
+                    ncmDescricao: '',
+                    ncmCategoriaRotulo: '',
+                    ncmOrigemSugerida: false,
+                  })
+                }
+                className="text-[11px] text-slate-400 hover:text-rose-600 underline font-semibold transition-colors"
+              >
+                Remover NCM (Manter Manual)
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-5 text-xs">

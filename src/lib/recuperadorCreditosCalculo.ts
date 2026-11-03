@@ -725,6 +725,8 @@ export function calcularRecuperadorCreditos(
       correcaoSelicTotal: teseSelicTotal,
       totalCorrigido: teseCorrigidoTotal,
       apuracaoPorAno,
+      origem: selecao.origem || 'manual',
+      ncmReferencia: selecao.ncmReferencia,
     })
   })
 

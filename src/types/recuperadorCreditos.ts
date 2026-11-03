@@ -43,6 +43,11 @@ export interface ConfiguracoesRecuperador {
   regimeAplicado?: string
   origemPreenchimento?: 'empresa_ativa' | 'calculadora_ibs_cbs' | 'dados_empresa' | 'manual'
   avisoOrigem?: string
+  // NCM informado do produto/insumo principal da empresa (LC 214/2025)
+  ncm?: string
+  ncmDescricao?: string
+  ncmCategoriaRotulo?: string
+  ncmOrigemSugerida?: boolean
 }
 
 export interface TeseSelecaoUsuario {
@@ -51,6 +56,9 @@ export interface TeseSelecaoUsuario {
   farol: FarolRisco
   percentualBaseCustomizado?: number
   observacaoAnalista?: string
+  // Indicação de origem da seleção: manual ou sugerida via NCM
+  origem?: 'manual' | 'ncm_sugerido'
+  ncmReferencia?: string
 }
 
 export interface ParametrosRecuperador {
@@ -84,6 +92,8 @@ export interface ResultadoTese {
   moduloRecuperador?: ModuloTributo
   dataJulgamento?: string
   linkOficial?: string
+  origem?: 'manual' | 'ncm_sugerido'
+  ncmReferencia?: string
   etiquetas?: {
     tributos?: string[]
     segmentos?: string[]
