@@ -21,16 +21,11 @@ export function CampoNcmAutocomplete({
   onNcmSelecionado,
   itemNcmAtual,
 }: CampoNcmAutocompleteProps) {
-  const [termoBusca, setTermoBusca] = useState(ncmValor || '')
   const [dropdownAberto, setDropdownAberto] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Sincroniza se o valor externo mudar
-  useEffect(() => {
-    setTermoBusca(ncmValor || '')
-  }, [ncmValor])
-
-  const sugestoes = buscarSugestoesNcm(termoBusca, 10)
+  const termoBusca = ncmValor || ''
+  const sugestoes = React.useMemo(() => buscarSugestoesNcm(termoBusca, 10), [termoBusca])
 
   // Fecha dropdown ao clicar fora
   useEffect(() => {
@@ -45,7 +40,6 @@ export function CampoNcmAutocomplete({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
-    setTermoBusca(val)
     onChangeNcm(val)
     setDropdownAberto(true)
 
@@ -57,7 +51,6 @@ export function CampoNcmAutocomplete({
   }
 
   const handleSelecionarItem = (item: ItemNcmCurado) => {
-    setTermoBusca(item.codigo)
     onChangeNcm(item.codigo)
     onNcmSelecionado(item)
     setDropdownAberto(false)
@@ -87,7 +80,6 @@ export function CampoNcmAutocomplete({
           <button
             type="button"
             onClick={() => {
-              setTermoBusca('')
               onChangeNcm('')
               setDropdownAberto(false)
             }}

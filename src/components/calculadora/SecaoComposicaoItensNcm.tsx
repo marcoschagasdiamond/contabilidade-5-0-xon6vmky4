@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,6 +34,96 @@ import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { type AnoTransicaoIbsCbs } from '@/types/calculadoraIbsCbs'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 
+interface ItemComposicaoRowProps {
+  item: ItemComposicaoCalculadora
+  anoAtivo: AnoTransicaoIbsCbs
+  totalIvaDual: number
+  onTratamentoChange: (id: string, novoTrat: TratamentoTributarioNcm) => void
+  onRemover: (id: string) => void
+}
+
+const ItemComposicaoRow = memo(function ItemComposicaoRow({
+  item,
+  anoAtivo,
+  totalIvaDual,
+  onTratamentoChange,
+  onRemover,
+}: ItemComposicaoRowProps) {
+  const aliq = calcularAliquotaEfetivaItemComposicao(item, anoAtivo, totalIvaDual)
+
+  const handleSelectTratamento = useCallback(
+    (novoTrat: string) => {
+      onTratamentoChange(item.id, novoTrat as TratamentoTributarioNcm)
+    },
+    [item.id, onTratamentoChange],
+  )
+
+  const handleExcluir = useCallback(() => {
+    onRemover(item.id)
+  }, [item.id, onRemover])
+
+  return (
+    <TableRow className="hover:bg-slate-50/80">
+      <TableCell className="font-medium text-slate-900 max-w-[220px]">
+        <span className="block truncate">{item.descricao}</span>
+        {item.anexoReferencia && (
+          <span className="text-[10px] text-slate-400 block truncate">{item.anexoReferencia}</span>
+        )}
+      </TableCell>
+
+      <TableCell className="font-mono text-slate-700">
+        {item.ncmFormatado || item.ncm || '—'}
+      </TableCell>
+
+      <TableCell>
+        <Select value={item.tratamentoTributario} onValueChange={handleSelectTratamento}>
+          <SelectTrigger className="h-7 text-xs bg-transparent border-slate-200 w-[210px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {OPCOES_TRATAMENTO_NCM.map((op) => (
+              <SelectItem key={op.id} value={op.id} className="text-xs">
+                {op.rotulo}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </TableCell>
+
+      <TableCell className="text-center">
+        {item.origem === 'ncm_sugerido' ? (
+          <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-[10px] font-semibold">
+            Sugerido via NCM
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-slate-500 text-[10px]">
+            Manual
+          </Badge>
+        )}
+      </TableCell>
+
+      <TableCell className="text-right font-mono font-semibold text-slate-900">
+        {formatarMoeda(item.valor)}
+      </TableCell>
+
+      <TableCell className="text-right font-mono font-bold text-[#D4AF37]">
+        {aliq.toFixed(2)}%
+      </TableCell>
+
+      <TableCell className="text-center">
+        <button
+          type="button"
+          onClick={handleExcluir}
+          className="text-xs text-rose-500 hover:text-rose-700 hover:underline cursor-pointer"
+          title="Remover item da composição"
+        >
+          Excluir
+        </button>
+      </TableCell>
+    </TableRow>
+  )
+})
+
 export function SecaoComposicaoItensNcm() {
   const {
     itensComposicao,
@@ -60,20 +150,18 @@ export function SecaoComposicaoItensNcm() {
   const anoAtivo: AnoTransicaoIbsCbs = config.anoTransicao || 2033
 
   // Ao selecionar um item NCM da lista de sugestões curadas (mesmo padrão do ModalEditarFornecedor)
-  const handleNcmSelecionado = (item: ItemNcmCurado) => {
+  const handleNcmSelecionado = useCallback((item: ItemNcmCurado) => {
     setItemNcmCurado(item)
     setNovoNcm(item.codigo)
     const classif = classificarNcmParaCalculadora(item.codigo)
     setNovoTratamento(classif.tratamento)
     setNovoOrigem(classif.origem)
     setNovoAnexo(classif.anexoReferencia || item.anexoReferencia || '')
-    if (!novoDescricao) {
-      setNovoDescricao(item.descricao)
-    }
-  }
+    setNovoDescricao((prevDesc) => (!prevDesc ? item.descricao : prevDesc))
+  }, [])
 
   // Ao alterar o texto do NCM livremente no input
-  const handleChangeNcm = (codigo: string) => {
+  const handleChangeNcm = useCallback((codigo: string) => {
     setNovoNcm(codigo)
     if (!codigo) {
       setItemNcmCurado(null)
@@ -87,69 +175,99 @@ export function SecaoComposicaoItensNcm() {
       setNovoTratamento(classif.tratamento)
       setNovoOrigem(classif.origem)
       setNovoAnexo(classif.anexoReferencia || achado?.anexoReferencia || '')
-      if (!novoDescricao && achado) {
-        setNovoDescricao(achado.descricao)
+      if (achado) {
+        setNovoDescricao((prevDesc) => (!prevDesc ? achado.descricao : prevDesc))
       }
     }
-  }
+  }, [])
 
-  const handleAdicionarItem = (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
-    const valorNum = Number(novoValor.replace(/\D/g, '')) / 100
-    if (!novoDescricao && !novoNcm) return
-    if (valorNum <= 0) return
+  const handleAdicionarItem = useCallback(
+    (e?: React.FormEvent) => {
+      if (e) e.preventDefault()
+      const valorNum = Number(novoValor.replace(/\D/g, '')) / 100
+      if (!novoDescricao && !novoNcm) return
+      if (valorNum <= 0) return
 
-    const classif = novoNcm ? classificarNcmParaCalculadora(novoNcm) : null
+      const classif = novoNcm ? classificarNcmParaCalculadora(novoNcm) : null
 
-    adicionarItemComposicao({
-      descricao: novoDescricao || (novoNcm ? `Item NCM ${novoNcm}` : 'Item sem descrição'),
-      ncm: novoNcm || undefined,
-      ncmFormatado: novoNcm || undefined,
-      ncmClassificadoAuto: classif?.itemCurado !== null,
-      tratamentoTributario: novoTratamento,
-      reducaoPercentual:
-        novoTratamento === 'cesta_basica_zero'
-          ? 100
-          : novoTratamento === 'reducao_60' || novoTratamento === 'insumo_agro'
-            ? 60
-            : novoTratamento === 'reducao_30'
-              ? 30
-              : 0,
-      valor: valorNum,
-      origem: novoOrigem,
-      anexoReferencia: novoAnexo || undefined,
-    })
+      adicionarItemComposicao({
+        descricao: novoDescricao || (novoNcm ? `Item NCM ${novoNcm}` : 'Item sem descrição'),
+        ncm: novoNcm || undefined,
+        ncmFormatado: novoNcm || undefined,
+        ncmClassificadoAuto: classif?.itemCurado !== null,
+        tratamentoTributario: novoTratamento,
+        reducaoPercentual:
+          novoTratamento === 'cesta_basica_zero'
+            ? 100
+            : novoTratamento === 'reducao_60' || novoTratamento === 'insumo_agro'
+              ? 60
+              : novoTratamento === 'reducao_30'
+                ? 30
+                : 0,
+        valor: valorNum,
+        origem: novoOrigem,
+        anexoReferencia: novoAnexo || undefined,
+      })
 
-    // Limpa campos
-    setNovoDescricao('')
-    setNovoNcm('')
-    setItemNcmCurado(null)
-    setNovoValor('')
-    setNovoTratamento('geral')
-    setNovoOrigem('manual')
-    setNovoAnexo('')
-  }
+      // Limpa campos
+      setNovoDescricao('')
+      setNovoNcm('')
+      setItemNcmCurado(null)
+      setNovoValor('')
+      setNovoTratamento('geral')
+      setNovoOrigem('manual')
+      setNovoAnexo('')
+    },
+    [
+      novoValor,
+      novoDescricao,
+      novoNcm,
+      novoTratamento,
+      novoOrigem,
+      novoAnexo,
+      adicionarItemComposicao,
+    ],
+  )
+
+  // Callbacks estáveis para cada linha da tabela
+  const handleTratamentoItemChange = useCallback(
+    (id: string, novoTrat: TratamentoTributarioNcm) => {
+      atualizarItemComposicao(id, {
+        tratamentoTributario: novoTrat,
+        origem: 'manual',
+      })
+    },
+    [atualizarItemComposicao],
+  )
+
+  const handleRemoverItem = useCallback(
+    (id: string) => {
+      removerItemComposicao(id)
+    },
+    [removerItemComposicao],
+  )
 
   // Resumo analítico da composição atual
-  const resumo = calcularResumoComposicaoNcm(itensComposicao, anoAtivo, config.totalIvaDual || 26.5)
+  const totalIvaDual = config.totalIvaDual || 26.5
+  const resumo = calcularResumoComposicaoNcm(itensComposicao, anoAtivo, totalIvaDual)
 
   // Sincroniza o total de faturamento dos itens com o campo geral do Módulo 1 se desejado
-  const handleAplicarTotalNoFaturamento = () => {
+  const handleAplicarTotalNoFaturamento = useCallback(() => {
     if (resumo.totalFaturamento > 0) {
       updateConfig({ faturamentoMensal: resumo.totalFaturamento })
     }
-  }
+  }, [resumo.totalFaturamento, updateConfig])
 
-  const handleConfirmarImportacao = (
-    novosItens: ItemComposicaoCalculadora[],
-    substituir: boolean,
-  ) => {
-    if (substituir) {
-      setItensComposicao(novosItens)
-    } else {
-      setItensComposicao((prev) => [...prev, ...novosItens])
-    }
-  }
+  const handleConfirmarImportacao = useCallback(
+    (novosItens: ItemComposicaoCalculadora[], substituir: boolean) => {
+      if (substituir) {
+        setItensComposicao(novosItens)
+      } else {
+        setItensComposicao((prev) => [...prev, ...novosItens])
+      }
+    },
+    [setItensComposicao],
+  )
 
   return (
     <Card className="border-slate-200 shadow-md overflow-hidden">
@@ -391,87 +509,16 @@ export function SecaoComposicaoItensNcm() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {itensComposicao.map((item) => {
-                    const aliq = calcularAliquotaEfetivaItemComposicao(
-                      item,
-                      anoAtivo,
-                      config.totalIvaDual || 26.5,
-                    )
-                    const opTrat = OPCOES_TRATAMENTO_NCM.find(
-                      (o) => o.id === item.tratamentoTributario,
-                    )
-
-                    return (
-                      <TableRow key={item.id} className="hover:bg-slate-50/80">
-                        <TableCell className="font-medium text-slate-900 max-w-[220px]">
-                          <span className="block truncate">{item.descricao}</span>
-                          {item.anexoReferencia && (
-                            <span className="text-[10px] text-slate-400 block truncate">
-                              {item.anexoReferencia}
-                            </span>
-                          )}
-                        </TableCell>
-
-                        <TableCell className="font-mono text-slate-700">
-                          {item.ncmFormatado || item.ncm || '—'}
-                        </TableCell>
-
-                        <TableCell>
-                          <Select
-                            value={item.tratamentoTributario}
-                            onValueChange={(novoTrat) => {
-                              atualizarItemComposicao(item.id, {
-                                tratamentoTributario: novoTrat as TratamentoTributarioNcm,
-                                origem: 'manual',
-                              })
-                            }}
-                          >
-                            <SelectTrigger className="h-7 text-xs bg-transparent border-slate-200 w-[210px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {OPCOES_TRATAMENTO_NCM.map((op) => (
-                                <SelectItem key={op.id} value={op.id} className="text-xs">
-                                  {op.rotulo}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-
-                        <TableCell className="text-center">
-                          {item.origem === 'ncm_sugerido' ? (
-                            <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-[10px] font-semibold">
-                              Sugerido via NCM
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-slate-500 text-[10px]">
-                              Manual
-                            </Badge>
-                          )}
-                        </TableCell>
-
-                        <TableCell className="text-right font-mono font-semibold text-slate-900">
-                          {formatarMoeda(item.valor)}
-                        </TableCell>
-
-                        <TableCell className="text-right font-mono font-bold text-[#D4AF37]">
-                          {aliq.toFixed(2)}%
-                        </TableCell>
-
-                        <TableCell className="text-center">
-                          <button
-                            type="button"
-                            onClick={() => removerItemComposicao(item.id)}
-                            className="text-xs text-rose-500 hover:text-rose-700 hover:underline cursor-pointer"
-                            title="Remover item da composição"
-                          >
-                            Excluir
-                          </button>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
+                  {itensComposicao.map((item) => (
+                    <ItemComposicaoRow
+                      key={item.id}
+                      item={item}
+                      anoAtivo={anoAtivo}
+                      totalIvaDual={totalIvaDual}
+                      onTratamentoChange={handleTratamentoItemChange}
+                      onRemover={handleRemoverItem}
+                    />
+                  ))}
                 </TableBody>
               </Table>
             </div>

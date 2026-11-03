@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react'
+import React, { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react'
 import {
   ConfiguracoesGerais,
   CONFIGURACOES_PADRAO,
@@ -1140,30 +1140,31 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     import('@/lib/ncmCalculadora').ItemComposicaoCalculadora[]
   >(() => config.itensComposicao || [])
 
-  const adicionarItemComposicao = (
-    item: Omit<import('@/lib/ncmCalculadora').ItemComposicaoCalculadora, 'id'>,
-  ) => {
-    const novo: import('@/lib/ncmCalculadora').ItemComposicaoCalculadora = {
-      ...item,
-      id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    }
-    setItensComposicao((prev) => [...prev, novo])
-  }
+  const adicionarItemComposicao = useCallback(
+    (item: Omit<import('@/lib/ncmCalculadora').ItemComposicaoCalculadora, 'id'>) => {
+      const novo: import('@/lib/ncmCalculadora').ItemComposicaoCalculadora = {
+        ...item,
+        id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      }
+      setItensComposicao((prev) => [...prev, novo])
+    },
+    [],
+  )
 
-  const atualizarItemComposicao = (
-    id: string,
-    updates: Partial<import('@/lib/ncmCalculadora').ItemComposicaoCalculadora>,
-  ) => {
-    setItensComposicao((prev) => prev.map((it) => (it.id === id ? { ...it, ...updates } : it)))
-  }
+  const atualizarItemComposicao = useCallback(
+    (id: string, updates: Partial<import('@/lib/ncmCalculadora').ItemComposicaoCalculadora>) => {
+      setItensComposicao((prev) => prev.map((it) => (it.id === id ? { ...it, ...updates } : it)))
+    },
+    [],
+  )
 
-  const removerItemComposicao = (id: string) => {
+  const removerItemComposicao = useCallback((id: string) => {
     setItensComposicao((prev) => prev.filter((it) => it.id !== id))
-  }
+  }, [])
 
-  const limparItensComposicao = () => {
+  const limparItensComposicao = useCallback(() => {
     setItensComposicao([])
-  }
+  }, [])
 
   const [despesasCreditos, setDespesasCreditos] =
     useState<CategoriaDespesaCredito[]>(gerarCategoriasIniciais)
