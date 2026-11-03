@@ -29,7 +29,7 @@ import {
   type ItemComposicaoCalculadora,
   type TratamentoTributarioNcm,
 } from '@/lib/ncmCalculadora'
-import { formatarMoeda } from '@/lib/regimes'
+import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { type AnoTransicaoIbsCbs } from '@/types/calculadoraIbsCbs'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 

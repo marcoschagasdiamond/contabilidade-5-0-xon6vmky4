@@ -26,7 +26,7 @@ import {
   type ItemComposicaoImportadoPreview,
   type ResultadoImportacaoComposicaoNcm,
 } from '@/lib/ncmCalculadora'
-import { formatarMoeda } from '@/lib/regimes'
+import { formatarMoeda } from '@/lib/calculadoraUtils'
 
 interface ModalImportarComposicaoNcmProps {
   aberto: boolean
