@@ -374,6 +374,20 @@ export const TESES_RECUPERADOR: TeseRecuperacaoDefinicao[] = [
     percentualEstimadoPadrao: 0.8,
     regimesElegiveis: ['Lucro Real', 'Lucro Presumido', 'Simples Nacional'],
   },
+  {
+    id: 'tese_cancelamento_nf_devolucoes_estornos',
+    modulo: 'outros_tributos',
+    codigo: 'EST-04',
+    titulo: 'Cancelamento de NF-e e Devoluções (Estornos)',
+    fundamento: 'LC 214/2025 art. 10 e art. 45 §13 (LC 227/2026); art. 301',
+    descricao:
+      'Revisão de débitos recolhidos sobre operações desfeitas: NF-e cancelada fora do prazo com imposto mantido, estornos não realizados e devoluções sem tratamento fiscal correto. No IBS/CBS (LC 214/2025), o fato gerador é o fornecimento/entrega (art. 10) e a apuração assistida do CG-IBS cruza as notas das duas empresas; o art. 45, §13 (incluído pela LC 227/2026) rege o ajuste após o pagamento e o art. 301 pune em 66% o crédito indevido não estornado.',
+    riscoPadrao: 'amarelo',
+    justificativaRisco:
+      'Tese factual: depende da prova do cancelamento extemporâneo e da ausência de estorno na escrituração (PIS/Cofins, ICMS e IPI no sistema atual; vinculação débito-crédito no IBS/CBS). Risco moderado.',
+    percentualEstimadoPadrao: 0.6,
+    regimesElegiveis: ['Lucro Real', 'Lucro Presumido', 'Simples Nacional'],
+  },
 ]
 
 export const CONFIGURACOES_PADRAO: ConfiguracoesRecuperador = {

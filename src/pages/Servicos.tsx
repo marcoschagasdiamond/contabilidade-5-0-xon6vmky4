@@ -260,6 +260,25 @@ export default function Servicos() {
         'https://img.usecurling.com/p/700/500?q=legal%20financial%20documents%20court%20credits&color=blue',
       reverse: true,
     },
+    {
+      id: 'cancelamento-nf-ibs-cbs',
+      category: 'Reforma Tributária & Conformidade Fiscal',
+      title: 'Cancelamento de NF no IBS/CBS',
+      subtitle:
+        'Notas canceladas, estornos e devoluções com segurança no sistema atual e na apuração assistida do CG-IBS.',
+      description:
+        'Consultoria especializada no tratamento do imposto quando a nota fiscal é cancelada, no sistema atual e no IBS/CBS (LC 214/2025 e apuração assistida do CG-IBS). Fato gerador na entrega (art. 10), vinculação débito-crédito, ajustes de competência e blindagem contra a sanção de 66% do art. 301 — com atenção especial ao split payment e à transição ICMS/ISS até 2033.',
+      features: [
+        'Fato gerador no fornecimento/entrega, não na emissão (art. 10 da LC 214/2025)',
+        'Vinculação cronológica débito-crédito na apuração assistida do CG-IBS',
+        'Ajustes de competência, notas de crédito e estornos (gEstornoCred e gPagAntecipado)',
+        'Estornos corretos no sistema atual: NF-e de estorno, CFOP inversa, PIS/Cofins, ICMS e IPI',
+        'Blindagem contra a sanção de 66% do art. 301 da LC 214/2025',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=invoice%20cancellation%20tax%20compliance%20paperwork&color=blue',
+      reverse: false,
+    },
   ]
 
   return (
@@ -497,6 +516,15 @@ export default function Servicos() {
                     {service.id === 'negociacao-creditos-precatorios' && (
                       <Link
                         to="/servicos/negociacao-creditos-precatorios"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] border border-[#D4AF37] transition-all duration-200 hover:-translate-y-0.5 shadow-sm font-bold"
+                      >
+                        <span>Ver Página Completa & Pilares 5.0</span>
+                      </Link>
+                    )}
+
+                    {service.id === 'cancelamento-nf-ibs-cbs' && (
+                      <Link
+                        to="/servicos/cancelamento-nf-ibs-cbs"
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] border border-[#D4AF37] transition-all duration-200 hover:-translate-y-0.5 shadow-sm font-bold"
                       >
                         <span>Ver Página Completa & Pilares 5.0</span>
