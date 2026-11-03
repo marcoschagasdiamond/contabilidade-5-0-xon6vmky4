@@ -67,7 +67,7 @@ const gerarParecerComEstesAtivos = (idsAtivos: string[]): FakeDocJsPdf => {
   gerarParecerRecuperadorPDF({
     nomeAnalise: 'Análise EST-04',
     parametros,
-    resultados: calcularRecuperadorCreditos(parametros),
+    resultados: calcularRecuperadorCreditos(parametros, { filtrarPorSetor: false }),
     clienteNome: 'Cliente Teste',
     empresa: 'Indústria Teste Ltda',
     cnpj: '12.345.678/0001-90',

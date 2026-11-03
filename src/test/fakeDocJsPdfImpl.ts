@@ -4,7 +4,7 @@
  * Registra TODAS as chamadas de desenho em um log auditável (`calls`), replicando
  * apenas os detalhes usados pelos geradores de PDF do projeto: splitTextToSize,
  * internal.pageSize (A4 210x297 mm), internal.pages, getNumberOfPages, setPage,
- * addPage, save, getImageProperties e os setters de estado gráfico.
+ * addPage, save, getImageProperties, setLineWidth e os setters de estado gráfico.
  */
 import type { FakeDocJsPdf, FakePdfCall, FakeGState } from './fakeDocJsPdfTypes'
 
@@ -76,6 +76,7 @@ export function gerarFakeDocJsPdf(): FakeDocJsPdf {
       registrar('setFontSize', tamanho)
     },
     setCharSpace: (v: number) => registrar('setCharSpace', v),
+    setLineWidth: (v: number) => registrar('setLineWidth', v),
     setGState: (gs: FakeGState) => registrar('setGState', gs),
     setProperties: (props: Record<string, unknown>) => registrar('setProperties', props),
 

@@ -4,7 +4,7 @@
  * `FakePdfCall` registra cada chamada de desenho; `FakeDocJsPdf` descreve a
  * superfície mínima replicada do jsPDF (text/lines/rect/roundedRect/triangle/
  * link/save/addPage/setPage/getNumberOfPages/splitTextToSize/getTextWidth/
- * getImageProperties/setGState/setProperties/charSpace/internal).
+ * setLineWidth/getImageProperties/setGState/setProperties/charSpace/internal).
  */
 export interface FakePdfCall {
   kind: string
@@ -60,6 +60,7 @@ export interface FakeDocJsPdf {
   setCharSpace: (v: number) => void
   setGState: (gs: FakeGState) => void
   setProperties: (props: Record<string, unknown>) => void
+  setLineWidth: (v: number) => void
   getTextWidth: (texto: string) => number
   splitTextToSize: (texto: string, maxWidth: number, options?: { fontSize?: number }) => string[]
   getImageProperties: (arquivo: string) => { width: number; height: number; fileType: string }
