@@ -851,7 +851,8 @@ export default function RecuperadorCreditos() {
                   } else if (
                     teseId.startsWith('tese_icms_') ||
                     teseId.startsWith('tese_iss_') ||
-                    teseId.startsWith('tese_itcmd_')
+                    teseId.startsWith('tese_itcmd_') ||
+                    teseId.startsWith('tese_cancelamento_')
                   ) {
                     setModuloAtivo('outros_tributos')
                   }

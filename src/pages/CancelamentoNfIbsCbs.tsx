@@ -22,7 +22,7 @@ export default function CancelamentoNfIbsCbs() {
       badge: 'Pilar 03 • Eficiência Fiscal',
       title: 'Estornos, Devoluções e Ajustes de Competência',
       description:
-        'Orientação sobre o instrumento correto em cada situação: nota de crédito, Ajuste de Competência com gEstornoCred, devolução formal e distrato de pagamento antecipado com gPagAntecipado para não debitar em doble. Notas de débito e crédito passam a ser instrumento de apuração.',
+        'Orientação sobre o instrumento correto em cada situação: nota de crédito, Ajuste de Competência com gEstornoCred, devolução formal e distrato de pagamento antecipado com gPagAntecipado para não debitar em dobro. Notas de débito e crédito passam a ser instrumento de apuração.',
     },
     {
       id: 'controle-duplo-regime',

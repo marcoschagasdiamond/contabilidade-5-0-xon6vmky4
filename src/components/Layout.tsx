@@ -933,6 +933,15 @@ export default function Layout() {
                 </li>
                 <li>
                   <Link
+                    to="/servicos/cancelamento-nf-ibs-cbs"
+                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
+                    Cancelamento de NF no IBS/CBS
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     to="/reforma-tributaria"
                     className="text-slate-400 hover:text-[#F59E0B] transition-colors flex items-center gap-1.5 font-medium"
                   >
