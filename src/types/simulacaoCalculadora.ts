@@ -49,6 +49,9 @@ export interface ParametrosSimulacaoCalculadora {
   percentualExportacao: number
   ufOrigem: string
 
+  // Composição detalhada por Itens / Insumos com NCM (Fase 3)
+  itensComposicao?: import('@/lib/ncmCalculadora').ItemComposicaoCalculadora[]
+
   // Módulo 4 - Simulador de Créditos
   despesasCreditos: CategoriaDespesaCredito[]
 

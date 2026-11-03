@@ -46,6 +46,7 @@ import {
   ModalImportarFaturamento,
   type DadosFaturamentoImportados,
 } from '@/components/calculadora/ModalImportarFaturamento'
+import { SecaoComposicaoItensNcm } from '@/components/calculadora/SecaoComposicaoItensNcm'
 
 import {
   PainelProximosPassosCalculadora,
@@ -1133,6 +1134,9 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
           </div>
         </CardContent>
       </Card>
+
+      {/* Composição Detalhada por Itens e Código NCM (Fase 3 - LC 214/2025) */}
+      <SecaoComposicaoItensNcm />
 
       {/* Grid de Configurações */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

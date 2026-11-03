@@ -152,6 +152,25 @@ interface CalculadoraContextType {
   origemDadosEmpresa: boolean
   restaurarDadosEmpresaNoModulo: (modulo: 2 | 3 | 4 | 5) => void
 
+  // Composição detalhada por Itens / NCM (Fase 3)
+  itensComposicao: import('@/lib/ncmCalculadora').ItemComposicaoCalculadora[]
+  setItensComposicao: (
+    itens:
+      | import('@/lib/ncmCalculadora').ItemComposicaoCalculadora[]
+      | ((
+          prev: import('@/lib/ncmCalculadora').ItemComposicaoCalculadora[],
+        ) => import('@/lib/ncmCalculadora').ItemComposicaoCalculadora[]),
+  ) => void
+  adicionarItemComposicao: (
+    item: Omit<import('@/lib/ncmCalculadora').ItemComposicaoCalculadora, 'id'>,
+  ) => void
+  atualizarItemComposicao: (
+    id: string,
+    updates: Partial<import('@/lib/ncmCalculadora').ItemComposicaoCalculadora>,
+  ) => void
+  removerItemComposicao: (id: string) => void
+  limparItensComposicao: () => void
+
   // Flags de controle de edição manual local nos módulos downstream
   editadoLocalmente: {
     modulo2AnoOperacao: boolean
@@ -741,6 +760,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
     // 1. Reseta configurações gerais do Módulo 1 (alíquotas de referência, etc.)
     setConfig(CONFIGURACOES_PADRAO)
+    setItensComposicao([])
 
     // 2. Módulo 2: Calculadora Simples
     setValorOperacaoState(0)
@@ -1115,6 +1135,36 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     }))
   }
 
+  // Composição detalhada por Itens / Insumos com NCM (Fase 3)
+  const [itensComposicao, setItensComposicao] = useState<
+    import('@/lib/ncmCalculadora').ItemComposicaoCalculadora[]
+  >(() => config.itensComposicao || [])
+
+  const adicionarItemComposicao = (
+    item: Omit<import('@/lib/ncmCalculadora').ItemComposicaoCalculadora, 'id'>,
+  ) => {
+    const novo: import('@/lib/ncmCalculadora').ItemComposicaoCalculadora = {
+      ...item,
+      id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    }
+    setItensComposicao((prev) => [...prev, novo])
+  }
+
+  const atualizarItemComposicao = (
+    id: string,
+    updates: Partial<import('@/lib/ncmCalculadora').ItemComposicaoCalculadora>,
+  ) => {
+    setItensComposicao((prev) => prev.map((it) => (it.id === id ? { ...it, ...updates } : it)))
+  }
+
+  const removerItemComposicao = (id: string) => {
+    setItensComposicao((prev) => prev.filter((it) => it.id !== id))
+  }
+
+  const limparItensComposicao = () => {
+    setItensComposicao([])
+  }
+
   const [despesasCreditos, setDespesasCreditos] =
     useState<CategoriaDespesaCredito[]>(gerarCategoriasIniciais)
 
@@ -1205,7 +1255,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const obterSnapshotParametros = (): ParametrosSimulacaoCalculadora => {
     const perfil = isAuthenticated ? carregarDadosEmpresa() : DADOS_EMPRESA_PADRAO
     return {
-      config,
+      config: {
+        ...config,
+        itensComposicao,
+      },
+      itensComposicao,
       anoTransicao: config.anoTransicao,
       presetSetor: config.presetSetor,
       valorOperacao,
@@ -1283,8 +1337,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         anoTransicao: p.anoTransicao || p.config.anoTransicao,
         presetSetor: (p.presetSetor || p.config.presetSetor) as PresetSetorIbsCbs | undefined,
         etiquetasOrigem: p.config.etiquetasOrigem,
+        itensComposicao: p.itensComposicao || p.config.itensComposicao || [],
       }
       setConfig(configRestaurada)
+      if (p.itensComposicao && Array.isArray(p.itensComposicao)) {
+        setItensComposicao(p.itensComposicao)
+      } else if (p.config.itensComposicao && Array.isArray(p.config.itensComposicao)) {
+        setItensComposicao(p.config.itensComposicao)
+      }
     } else if (p.tipoAtividade) {
       const tipoAtivRestaurado = normalizarTipoAtividade(p.tipoAtividade)
       setConfig((prev) => ({
@@ -2882,6 +2942,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         setRegimeAtualFiltro,
         anoTransicaoDashboard,
         setAnoTransicaoDashboard,
+
+        // Composição detalhada por Itens / NCM (Fase 3)
+        itensComposicao,
+        setItensComposicao,
+        adicionarItemComposicao,
+        atualizarItemComposicao,
+        removerItemComposicao,
+        limparItensComposicao,
 
         origemDadosEmpresa,
         restaurarDadosEmpresaNoModulo,

@@ -1233,6 +1233,9 @@ export interface ConfiguracoesGerais {
   lucroPresumidoIcms: number // 18.0%
   lucroPresumidoIss: number // 3.0%
   lucroPresumidoIpi: number // 5.0%
+
+  // Composição detalhada por Itens / Insumos com NCM (Fase 3)
+  itensComposicao?: import('@/lib/ncmCalculadora').ItemComposicaoCalculadora[]
 }
 
 export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {
@@ -1273,6 +1276,7 @@ export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {
   lucroPresumidoIcms: 18.0,
   lucroPresumidoIss: 3.0,
   lucroPresumidoIpi: 5.0,
+  itensComposicao: [],
 }
 
 export interface ParametroRadarTemporario {
