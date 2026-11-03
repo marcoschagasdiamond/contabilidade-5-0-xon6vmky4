@@ -13,6 +13,11 @@ import {
   isAno2026,
   isAno2026OuAtual,
 } from '@/types/calculadoraIbsCbs'
+import {
+  calcularAliquotaEfetivaItemComposicao,
+  OPCOES_TRATAMENTO_NCM,
+  type ItemComposicaoCalculadora,
+} from '@/lib/ncmCalculadora'
 import { extrairConclusaoDeSimulacao, derivarFatoresExplicativos } from '@/lib/conclusaoAnalitica'
 import type { ResponsavelTecnicoDados } from '@/components/calculadora/ModalGerarPdf'
 import {
@@ -992,6 +997,123 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   // Nota orientativa curta no rodapé do Bloco 5 (Cronograma da Transição)
   const hNotaBloco5 = desenharNotaCurtaPDF(doc, margin, currentY, contentWidth)
   currentY += hNotaBloco5 + 6
+
+  // ==========================================
+  // BLOCO 5.1: ITENS DA COMPOSIÇÃO CLASSIFICADOS VIA NCM (LC 214/2025)
+  // Tabela com coluna "Origem" ("Sugerido via NCM" vs "Manual"), código NCM e anexo LC 214/2025
+  // Só aparece se houver itens com NCM informado na composição
+  // ==========================================
+  const itensComposicaoRaw: ItemComposicaoCalculadora[] =
+    parametros.itensComposicao || parametros.config?.itensComposicao || []
+  const itensComNcm = itensComposicaoRaw.filter((it) =>
+    Boolean(it.ncm && String(it.ncm).trim().length > 0),
+  )
+
+  if (itensComNcm.length > 0) {
+    verificarQuebraPagina(40)
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9.5)
+    doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.text('ITENS DA COMPOSIÇÃO CLASSIFICADOS VIA NCM (LC 214/2025)', margin, currentY + 3)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(6.8)
+    doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+    doc.text(
+      'Mapeamento dos itens de faturamento com código NCM, anexo legal da LC 214/2025 e origem da classificação.',
+      margin,
+      currentY + 7,
+    )
+
+    currentY += 9.5
+
+    // Cabeçalho da Tabela
+    doc.setFillColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+    doc.rect(margin, currentY, contentWidth, 6, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(6.5)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Item / Descrição & Anexo LC 214', margin + 3, currentY + 4.2)
+    doc.text('Código NCM', margin + 74, currentY + 4.2)
+    doc.text('Tratamento Tributário', margin + 98, currentY + 4.2)
+    doc.text('Origem', margin + 138, currentY + 4.2)
+    doc.text('Valor Mensal', margin + 162, currentY + 4.2)
+
+    currentY += 6
+
+    const anoAtivoFase =
+      parametros.anoTransicaoDashboard === 'atual'
+        ? 2033
+        : (parametros.anoTransicaoDashboard as any) || parametros.config?.anoTransicao || 2033
+    const aliqTotalIvaBase = parametros.config?.totalIvaDual || 26.5
+
+    itensComNcm.forEach((it, idx) => {
+      verificarQuebraPagina(10)
+
+      doc.setFillColor(
+        idx % 2 === 0 ? 255 : 248,
+        idx % 2 === 0 ? 255 : 250,
+        idx % 2 === 0 ? 255 : 252,
+      )
+      doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+      doc.rect(margin, currentY, contentWidth, 9.5, 'FD')
+
+      // Linha 1: Descrição do Item
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(6.8)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      const descTrunc = it.descricao.length > 40 ? it.descricao.slice(0, 38) + '...' : it.descricao
+      doc.text(descTrunc, margin + 3, currentY + 4)
+
+      // Linha 2: Anexo / Referência legal da LC 214/2025
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(5.8)
+      doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+      const anexoTxt = it.anexoReferencia
+        ? `Ref. Legal: ${it.anexoReferencia}`
+        : 'Ref. Legal: LC 214/2025 (Regime Geral)'
+      const anexoTrunc = anexoTxt.length > 55 ? anexoTxt.slice(0, 53) + '...' : anexoTxt
+      doc.text(anexoTrunc, margin + 3, currentY + 7.8)
+
+      // Código NCM
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(6.5)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      const ncmExibir = it.ncmFormatado || it.ncm || '—'
+      doc.text(ncmExibir, margin + 74, currentY + 5)
+
+      // Tratamento Tributário / Alíquota calculada
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(6.2)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      const opcTrat = OPCOES_TRATAMENTO_NCM.find((o) => o.id === it.tratamentoTributario)
+      const rotuloTrat = opcTrat?.rotulo ? opcTrat.rotulo.split('(')[0].trim() : 'Geral'
+      const aliqItem = calcularAliquotaEfetivaItemComposicao(it, anoAtivoFase, aliqTotalIvaBase)
+      doc.text(`${rotuloTrat} (${aliqItem.toFixed(1)}%)`, margin + 98, currentY + 5)
+
+      // Origem: Sugerido via NCM vs Manual (mesmo padrão do pdfRecuperadorCreditos)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(5.8)
+      if (it.origem === 'ncm_sugerido') {
+        doc.setTextColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+        doc.text('Sugerido via NCM', margin + 138, currentY + 5)
+      } else {
+        doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+        doc.text('Manual', margin + 138, currentY + 5)
+      }
+
+      // Valor Mensal
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(6.5)
+      doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
+      doc.text(formatarMoeda(it.valor), margin + 162, currentY + 5)
+
+      currentY += 9.5
+    })
+
+    currentY += 6
+  }
 
   // ==========================================
   // PÁGINA FINAL: CONCLUSÃO, RECOMENDAÇÃO EM TEXTO, OBSERVAÇÕES & ASSINATURA

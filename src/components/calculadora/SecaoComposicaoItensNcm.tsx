@@ -20,6 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { CampoNcmAutocomplete } from '@/components/diagnosticos/CampoNcmAutocomplete'
+import { buscarNcmPorCodigo, type ItemNcmCurado } from '@/data/tabelaNcmLc214'
 import { ModalImportarComposicaoNcm } from '@/components/calculadora/ModalImportarComposicaoNcm'
 import {
   classificarNcmParaCalculadora,
@@ -50,6 +51,7 @@ export function SecaoComposicaoItensNcm() {
   // Formulário do novo item manual
   const [novoDescricao, setNovoDescricao] = useState('')
   const [novoNcm, setNovoNcm] = useState('')
+  const [itemNcmCurado, setItemNcmCurado] = useState<ItemNcmCurado | null>(null)
   const [novoValor, setNovoValor] = useState<string>('')
   const [novoTratamento, setNovoTratamento] = useState<TratamentoTributarioNcm>('geral')
   const [novoOrigem, setNovoOrigem] = useState<'manual' | 'ncm_sugerido'>('manual')
@@ -57,21 +59,37 @@ export function SecaoComposicaoItensNcm() {
 
   const anoAtivo: AnoTransicaoIbsCbs = config.anoTransicao || 2033
 
-  // Quando o usuário seleciona um NCM via autocomplete
-  const handleNcmSelecionado = (codigo: string) => {
+  // Ao selecionar um item NCM da lista de sugestões curadas (mesmo padrão do ModalEditarFornecedor)
+  const handleNcmSelecionado = (item: ItemNcmCurado) => {
+    setItemNcmCurado(item)
+    setNovoNcm(item.codigo)
+    const classif = classificarNcmParaCalculadora(item.codigo)
+    setNovoTratamento(classif.tratamento)
+    setNovoOrigem(classif.origem)
+    setNovoAnexo(classif.anexoReferencia || item.anexoReferencia || '')
+    if (!novoDescricao) {
+      setNovoDescricao(item.descricao)
+    }
+  }
+
+  // Ao alterar o texto do NCM livremente no input
+  const handleChangeNcm = (codigo: string) => {
     setNovoNcm(codigo)
-    if (codigo) {
-      const classif = classificarNcmParaCalculadora(codigo)
-      setNovoTratamento(classif.tratamento)
-      setNovoOrigem(classif.origem)
-      setNovoAnexo(classif.anexoReferencia || '')
-      if (!novoDescricao && classif.itemCurado) {
-        setNovoDescricao(classif.itemCurado.descricao)
-      }
-    } else {
+    if (!codigo) {
+      setItemNcmCurado(null)
       setNovoTratamento('geral')
       setNovoOrigem('manual')
       setNovoAnexo('')
+    } else {
+      const achado = buscarNcmPorCodigo(codigo)
+      setItemNcmCurado(achado)
+      const classif = classificarNcmParaCalculadora(codigo)
+      setNovoTratamento(classif.tratamento)
+      setNovoOrigem(classif.origem)
+      setNovoAnexo(classif.anexoReferencia || achado?.anexoReferencia || '')
+      if (!novoDescricao && achado) {
+        setNovoDescricao(achado.descricao)
+      }
     }
   }
 
@@ -105,6 +123,7 @@ export function SecaoComposicaoItensNcm() {
     // Limpa campos
     setNovoDescricao('')
     setNovoNcm('')
+    setItemNcmCurado(null)
     setNovoValor('')
     setNovoTratamento('geral')
     setNovoOrigem('manual')
@@ -196,12 +215,13 @@ export function SecaoComposicaoItensNcm() {
             {/* Campo NCM com autocomplete curado */}
             <div className="md:col-span-4 min-w-0">
               <Label className="text-xs font-semibold text-slate-700 block mb-1">
-                Código NCM (Base Curada LC 214)
+                Código NCM (Base Curada LC 214/2025)
               </Label>
               <CampoNcmAutocomplete
-                valor={novoNcm}
-                onChange={handleNcmSelecionado}
-                placeholder="Ex: 1006.30.21, arroz, feijão..."
+                ncmValor={novoNcm}
+                onChangeNcm={handleChangeNcm}
+                onNcmSelecionado={handleNcmSelecionado}
+                itemNcmAtual={itemNcmCurado}
               />
             </div>
 
