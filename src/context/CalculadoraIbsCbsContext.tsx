@@ -441,7 +441,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     ano: number
   } | null>(null)
 
-  const recarregarParametrosRadar = async () => {
+  const recarregarParametrosRadar = useCallback(async () => {
     try {
       setCarregandoRadar(true)
       const [params, notifs] = await Promise.all([
@@ -455,11 +455,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     } finally {
       setCarregandoRadar(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     recarregarParametrosRadar()
-  }, [])
+  }, [recarregarParametrosRadar])
 
   // Parâmetros mais relevantes do Radar para o ano ativo (ex: 2027 CBS de 11,3468%)
   const parametroCbsAtivo = useMemo(() => {
@@ -514,7 +514,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     }
   })
 
-  const updateConfig = (novas: Partial<ConfiguracoesGerais>) => {
+  const updateConfig = useCallback((novas: Partial<ConfiguracoesGerais>) => {
     setConfig((prev) => {
       const next = { ...prev, ...novas }
       // Recalcular soma IVA Dual se CBS ou IBS mudar isoladamente sem passar totalIvaDual
@@ -650,82 +650,87 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     if (novas.aliquotaImpostoSeletivo !== undefined) {
       setAliquotaImpostoSeletivo(novas.aliquotaImpostoSeletivo)
     }
-  }
+  }, [])
 
-  const resetConfig = () => setConfig(CONFIGURACOES_PADRAO)
+  const resetConfig = useCallback(() => setConfig(CONFIGURACOES_PADRAO), [])
 
   // Aplica alíquota temporária do Radar Tributário (ex.: proposta TCU CBS 11,3468% em 2027)
-  const aplicarAliquotaRadarTemporaria = (aplicar: string, aliquota: number, ano: number) => {
-    const aplicarNorm = String(aplicar || 'cbs')
-      .toLowerCase()
-      .trim()
-    const aliqNum = Number(aliquota) || 0
-    const anoNum = Number(ano) || 2027
+  const aplicarAliquotaRadarTemporaria = useCallback(
+    (aplicar: string, aliquota: number, ano: number) => {
+      const aplicarNorm = String(aplicar || 'cbs')
+        .toLowerCase()
+        .trim()
+      const aliqNum = Number(aliquota) || 0
+      const anoNum = Number(ano) || 2027
 
-    setParametroRadarTemporario({
-      aplicar: aplicarNorm,
-      aliquota: aliqNum,
-      ano: anoNum,
-    })
+      setParametroRadarTemporario({
+        aplicar: aplicarNorm,
+        aliquota: aliqNum,
+        ano: anoNum,
+      })
 
-    const dadosFaseAno =
-      CRONOGRAMA_FASES_TRANSICAO[anoNum as AnoTransicaoIbsCbs] || CRONOGRAMA_FASES_TRANSICAO[2027]
+      const dadosFaseAno =
+        CRONOGRAMA_FASES_TRANSICAO[anoNum as AnoTransicaoIbsCbs] || CRONOGRAMA_FASES_TRANSICAO[2027]
 
-    setConfig((prev) => {
-      let novaCbs = prev.cbsPadrao
-      let novoIbs = prev.ibsPadrao
+      setConfig((prev) => {
+        let novaCbs = prev.cbsPadrao
+        let novoIbs = prev.ibsPadrao
 
-      if (aplicarNorm.includes('ibs')) {
-        novoIbs = aliqNum
-      } else if (aplicarNorm.includes('iva') || aplicarNorm.includes('dual')) {
-        // divide proporcional ou aplica como total
-        novaCbs = Number((aliqNum * (8.8 / 26.5)).toFixed(4))
-        novoIbs = Number((aliqNum * (17.7 / 26.5)).toFixed(4))
-      } else {
-        // default: CBS
-        novaCbs = aliqNum
+        if (aplicarNorm.includes('ibs')) {
+          novoIbs = aliqNum
+        } else if (aplicarNorm.includes('iva') || aplicarNorm.includes('dual')) {
+          // divide proporcional ou aplica como total
+          novaCbs = Number((aliqNum * (8.8 / 26.5)).toFixed(4))
+          novoIbs = Number((aliqNum * (17.7 / 26.5)).toFixed(4))
+        } else {
+          // default: CBS
+          novaCbs = aliqNum
+        }
+
+        const totalIva = Number((novaCbs + novoIbs).toFixed(4))
+        const etiquetaRadar = `Radar Tributário (Proposta TCU) · ${aliqNum}% (${aplicarNorm.toUpperCase()}) · fase ${anoNum}`
+
+        const novasEtiquetas: OrigemCamposAliquota = {
+          ...(prev.etiquetasOrigem || {}),
+          cbsPadrao: aplicarNorm.includes('ibs')
+            ? prev.etiquetasOrigem?.cbsPadrao || dadosFaseAno.etiquetaOrigem
+            : etiquetaRadar,
+          ibsPadrao: aplicarNorm.includes('ibs')
+            ? etiquetaRadar
+            : prev.etiquetasOrigem?.ibsPadrao || dadosFaseAno.etiquetaOrigem,
+          totalIvaDual: etiquetaRadar,
+        }
+
+        return {
+          ...prev,
+          cbsPadrao: novaCbs,
+          ibsPadrao: novoIbs,
+          totalIvaDual: totalIva,
+          anoTransicao:
+            typeof anoNum === 'number' && anoNum in CRONOGRAMA_FASES_TRANSICAO
+              ? (anoNum as AnoTransicaoIbsCbs)
+              : prev.anoTransicao,
+          etiquetasOrigem: novasEtiquetas,
+        }
+      })
+
+      if (anoNum in CRONOGRAMA_FASES_TRANSICAO) {
+        setAnoOperacaoState(anoNum as AnoTransicaoIbsCbs)
+        setAnoTransicaoDashboardState(anoNum as AnoTransicaoIbsCbs)
+        setEditadoLocalmente((prev) => ({
+          ...prev,
+          modulo2AnoOperacao: false,
+          dashboardAnoTransicao: false,
+        }))
       }
-
-      const totalIva = Number((novaCbs + novoIbs).toFixed(4))
-      const etiquetaRadar = `Radar Tributário (Proposta TCU) · ${aliqNum}% (${aplicarNorm.toUpperCase()}) · fase ${anoNum}`
-
-      const novasEtiquetas: OrigemCamposAliquota = {
-        ...(prev.etiquetasOrigem || {}),
-        cbsPadrao: aplicarNorm.includes('ibs')
-          ? prev.etiquetasOrigem?.cbsPadrao || dadosFaseAno.etiquetaOrigem
-          : etiquetaRadar,
-        ibsPadrao: aplicarNorm.includes('ibs')
-          ? etiquetaRadar
-          : prev.etiquetasOrigem?.ibsPadrao || dadosFaseAno.etiquetaOrigem,
-        totalIvaDual: etiquetaRadar,
-      }
-
-      return {
-        ...prev,
-        cbsPadrao: novaCbs,
-        ibsPadrao: novoIbs,
-        totalIvaDual: totalIva,
-        anoTransicao:
-          typeof anoNum === 'number' && anoNum in CRONOGRAMA_FASES_TRANSICAO
-            ? (anoNum as AnoTransicaoIbsCbs)
-            : prev.anoTransicao,
-        etiquetasOrigem: novasEtiquetas,
-      }
-    })
-
-    if (anoNum in CRONOGRAMA_FASES_TRANSICAO) {
-      setAnoOperacaoState(anoNum as AnoTransicaoIbsCbs)
-      setAnoTransicaoDashboardState(anoNum as AnoTransicaoIbsCbs)
-      setEditadoLocalmente((prev) => ({
-        ...prev,
-        modulo2AnoOperacao: false,
-        dashboardAnoTransicao: false,
-      }))
-    }
-  }
+    },
+    [],
+  )
 
   // Limpa alíquota temporária e restaura valor oficial vigente da LC 214/2025 para o ano ativo
-  const limparParametroRadarTemporario = () => {
+  const limparParametroRadarTemporario = useCallback(() => {
+    // Estado funcional: a restauração só depende do estado atual (ano/etiquetas),
+    // nunca de valores capturados no render — estável por renderização.
     setParametroRadarTemporario(null)
     setConfig((prev) => {
       const anoAtual = prev.anoTransicao || 2027
@@ -751,10 +756,10 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         etiquetasOrigem: novasEtiquetas,
       }
     })
-  }
+  }, [])
 
   // Reseta em cascata todos os dados de entrada, cálculos e sincronizações
-  const limparDashboard = () => {
+  const limparDashboard = useCallback(() => {
     // Limpa parâmetro temporário do Radar
     setParametroRadarTemporario(null)
 
@@ -816,9 +821,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       console.warn('[CalculadoraContext] Erro ao limpar dados empresa:', err)
     }
     setOrigemDadosEmpresa(false)
-  }
+  }, [])
 
-  const limparEtiquetaOrigem = (campo: keyof OrigemCamposAliquota) => {
+  const limparEtiquetaOrigem = useCallback((campo: keyof OrigemCamposAliquota) => {
     setConfig((prev) => {
       if (!prev.etiquetasOrigem || !prev.etiquetasOrigem[campo]) return prev
       const novaEtiqueta = { ...prev.etiquetasOrigem }
@@ -828,104 +833,107 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         etiquetasOrigem: novaEtiqueta,
       }
     })
-  }
+  }, [])
 
   // Preenchimento Assistido: Ano da transição ('atual' | 2026–2033)
-  const aplicarAnoTransicao = (ano: AnoTransicaoIbsCbs) => {
-    const dadosAno = CRONOGRAMA_FASES_TRANSICAO[ano]
-    if (!dadosAno) return
+  const aplicarAnoTransicao = useCallback(
+    (ano: AnoTransicaoIbsCbs) => {
+      const dadosAno = CRONOGRAMA_FASES_TRANSICAO[ano]
+      if (!dadosAno) return
 
-    // Se tiver alíquota oficial na coleção parametros_tributarios para o ano selecionado, integra como valor oficial/proposto
-    let cbsDinamica = dadosAno.aliquotaCbs
-    let etiquetaCbsDinamica = dadosAno.etiquetaOrigem
-    if (typeof ano === 'number' && parametrosRadar.length > 0) {
-      const paramCbs = parametrosRadar.find((p) => p.ano === ano && p.tributo === 'CBS')
-      if (paramCbs && paramCbs.aliquota) {
-        cbsDinamica = paramCbs.aliquota
-        etiquetaCbsDinamica = `${paramCbs.fonte} (${paramCbs.situacao}) · fase ${ano}`
-      }
-    }
-
-    setConfig((prev) => {
-      const cbs = cbsDinamica
-      const ibs = dadosAno.aliquotaIbs
-      const total = Number((cbs + ibs).toFixed(2))
-      const etiquetaFase = etiquetaCbsDinamica
-
-      // Se for ano atual (pré-reforma), alíquotas de IBS/CBS são 0%
-      let saudeAliq = Number((total * 0.4).toFixed(2)) // redução 60%
-      let transAliq = Number((total * 0.7).toFixed(2)) // redução 30%
-      let cestaAliq = 0
-
-      // Atualiza etiquetas de origem
-      const novasEtiquetas: OrigemCamposAliquota = {
-        ...(prev.etiquetasOrigem || {}),
-        cbsPadrao: etiquetaFase,
-        ibsPadrao: etiquetaFase,
-        totalIvaDual: etiquetaFase,
-      }
-
-      // Se já estava com preset de setor, atualiza o rótulo dos regimes diferenciados combinando preset + fase do ano
-      const presetAtivo = prev.presetSetor
-      if (presetAtivo && presetAtivo !== 'nenhum') {
-        const itemPreset = PRESETS_SETORES_LC214.find((p) => p.id === presetAtivo)
-        if (itemPreset) {
-          const etiquetaAno =
-            ano === 'atual'
-              ? `${itemPreset.titulo} · Sistema atual (pré-reforma)`
-              : `${itemPreset.etiquetaOrigem} · fase ${ano}`
-          if (itemPreset.grupo === 'reducao_60') {
-            novasEtiquetas.saudeEducacaoAliquota = etiquetaAno
-          } else if (itemPreset.grupo === 'reducao_30') {
-            novasEtiquetas.transporteAliquota = etiquetaAno
-          } else if (itemPreset.grupo === 'aliquota_zero') {
-            novasEtiquetas.cestaBasicaIsencao = etiquetaAno
-          } else if (itemPreset.id === 'padrao') {
-            novasEtiquetas.totalIvaDual = etiquetaFase
-          }
+      // Se tiver alíquota oficial na coleção parametros_tributarios para o ano selecionado, integra como valor oficial/proposto
+      let cbsDinamica = dadosAno.aliquotaCbs
+      let etiquetaCbsDinamica = dadosAno.etiquetaOrigem
+      if (typeof ano === 'number' && parametrosRadar.length > 0) {
+        const paramCbs = parametrosRadar.find((p) => p.ano === ano && p.tributo === 'CBS')
+        if (paramCbs && paramCbs.aliquota) {
+          cbsDinamica = paramCbs.aliquota
+          etiquetaCbsDinamica = `${paramCbs.fonte} (${paramCbs.situacao}) · fase ${ano}`
         }
-      } else {
-        // Sem preset específico, as faixas refletem a origem da fase selecionada
-        novasEtiquetas.saudeEducacaoAliquota =
-          ano === 'atual'
-            ? 'Sistema atual (pré-reforma)'
-            : `LC 214/2025 · redução 60% · fase ${ano}`
-        novasEtiquetas.transporteAliquota =
-          ano === 'atual'
-            ? 'Sistema atual (pré-reforma)'
-            : `LC 214/2025 · redução 30% · fase ${ano}`
-        novasEtiquetas.cestaBasicaIsencao =
-          ano === 'atual'
-            ? 'Sistema atual (pré-reforma)'
-            : `LC 214/2025 · alíquota zero · fase ${ano}`
       }
 
-      return {
+      setConfig((prev) => {
+        const cbs = cbsDinamica
+        const ibs = dadosAno.aliquotaIbs
+        const total = Number((cbs + ibs).toFixed(2))
+        const etiquetaFase = etiquetaCbsDinamica
+
+        // Se for ano atual (pré-reforma), alíquotas de IBS/CBS são 0%
+        let saudeAliq = Number((total * 0.4).toFixed(2)) // redução 60%
+        let transAliq = Number((total * 0.7).toFixed(2)) // redução 30%
+        let cestaAliq = 0
+
+        // Atualiza etiquetas de origem
+        const novasEtiquetas: OrigemCamposAliquota = {
+          ...(prev.etiquetasOrigem || {}),
+          cbsPadrao: etiquetaFase,
+          ibsPadrao: etiquetaFase,
+          totalIvaDual: etiquetaFase,
+        }
+
+        // Se já estava com preset de setor, atualiza o rótulo dos regimes diferenciados combinando preset + fase do ano
+        const presetAtivo = prev.presetSetor
+        if (presetAtivo && presetAtivo !== 'nenhum') {
+          const itemPreset = PRESETS_SETORES_LC214.find((p) => p.id === presetAtivo)
+          if (itemPreset) {
+            const etiquetaAno =
+              ano === 'atual'
+                ? `${itemPreset.titulo} · Sistema atual (pré-reforma)`
+                : `${itemPreset.etiquetaOrigem} · fase ${ano}`
+            if (itemPreset.grupo === 'reducao_60') {
+              novasEtiquetas.saudeEducacaoAliquota = etiquetaAno
+            } else if (itemPreset.grupo === 'reducao_30') {
+              novasEtiquetas.transporteAliquota = etiquetaAno
+            } else if (itemPreset.grupo === 'aliquota_zero') {
+              novasEtiquetas.cestaBasicaIsencao = etiquetaAno
+            } else if (itemPreset.id === 'padrao') {
+              novasEtiquetas.totalIvaDual = etiquetaFase
+            }
+          }
+        } else {
+          // Sem preset específico, as faixas refletem a origem da fase selecionada
+          novasEtiquetas.saudeEducacaoAliquota =
+            ano === 'atual'
+              ? 'Sistema atual (pré-reforma)'
+              : `LC 214/2025 · redução 60% · fase ${ano}`
+          novasEtiquetas.transporteAliquota =
+            ano === 'atual'
+              ? 'Sistema atual (pré-reforma)'
+              : `LC 214/2025 · redução 30% · fase ${ano}`
+          novasEtiquetas.cestaBasicaIsencao =
+            ano === 'atual'
+              ? 'Sistema atual (pré-reforma)'
+              : `LC 214/2025 · alíquota zero · fase ${ano}`
+        }
+
+        return {
+          ...prev,
+          cbsPadrao: cbs,
+          ibsPadrao: ibs,
+          totalIvaDual: total,
+          saudeEducacaoAliquota: saudeAliq,
+          transporteAliquota: transAliq,
+          cestaBasicaIsencao: cestaAliq,
+          anoTransicao: ano,
+          etiquetasOrigem: novasEtiquetas,
+        }
+      })
+
+      // PROPAGAÇÃO AUTOMÁTICA AO MÓDULO 2 (Ano da Operação/Transição) E AO MÓDULO 6 (Dashboard)
+      // Uma nova alteração no Módulo 1 repropaga o valor e redefine a flag de edição local
+      setAnoOperacaoState(ano)
+      setAnoTransicaoDashboardState(ano)
+      setEditadoLocalmente((prev) => ({
         ...prev,
-        cbsPadrao: cbs,
-        ibsPadrao: ibs,
-        totalIvaDual: total,
-        saudeEducacaoAliquota: saudeAliq,
-        transporteAliquota: transAliq,
-        cestaBasicaIsencao: cestaAliq,
-        anoTransicao: ano,
-        etiquetasOrigem: novasEtiquetas,
-      }
-    })
-
-    // PROPAGAÇÃO AUTOMÁTICA AO MÓDULO 2 (Ano da Operação/Transição) E AO MÓDULO 6 (Dashboard)
-    // Uma nova alteração no Módulo 1 repropaga o valor e redefine a flag de edição local
-    setAnoOperacaoState(ano)
-    setAnoTransicaoDashboardState(ano)
-    setEditadoLocalmente((prev) => ({
-      ...prev,
-      modulo2AnoOperacao: false,
-      dashboardAnoTransicao: false,
-    }))
-  }
+        modulo2AnoOperacao: false,
+        dashboardAnoTransicao: false,
+      }))
+    },
+    [parametrosRadar],
+  )
 
   // Preenchimento Assistido: Preset por Setor (LC 214/2025)
-  const aplicarPresetSetor = (preset: PresetSetorIbsCbs) => {
+  const aplicarPresetSetor = useCallback((preset: PresetSetorIbsCbs) => {
     if (preset === 'nenhum') {
       setConfig((prev) => ({
         ...prev,
@@ -990,7 +998,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       ...prev,
       modulo2RegimeOperacao: false,
     }))
-  }
+  }, [])
 
   // Flags para controle de edição manual local nos módulos downstream
   // Quando false, significa que o valor ainda é espelhado do Módulo 1 (ou foi atualizado por ele)
@@ -1027,47 +1035,47 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   )
 
   // Setters instrumentados que marcam edição local
-  const setValorOperacao = (v: number) => {
+  const setValorOperacao = useCallback((v: number) => {
     setEditadoLocalmente((prev) => ({ ...prev, modulo2ValorOperacao: true }))
     setValorOperacaoState(v)
-  }
-  const setRegimeOperacao = (r: RegimeDiferenciadoTipo) => {
+  }, [])
+  const setRegimeOperacao = useCallback((r: RegimeDiferenciadoTipo) => {
     setEditadoLocalmente((prev) => ({ ...prev, modulo2RegimeOperacao: true }))
     setRegimeOperacaoState(r)
-  }
-  const setAnoOperacao = (a: AnoTransicaoIbsCbs) => {
+  }, [])
+  const setAnoOperacao = useCallback((a: AnoTransicaoIbsCbs) => {
     setEditadoLocalmente((prev) => ({ ...prev, modulo2AnoOperacao: true }))
     setAnoOperacaoState(a)
-  }
-  const setPercentualComprasVendasSimples = (p: number) => {
+  }, [])
+  const setPercentualComprasVendasSimples = useCallback((p: number) => {
     setEditadoLocalmente((prev) => ({ ...prev, modulo2PercentualCompras: true }))
     setPercentualComprasVendasSimplesState(p)
-  }
+  }, [])
 
   // Módulo 3: Comparativo por Regime (inicializado a partir dos Dados da Empresa / Módulo 1)
   const [faturamentoMensal, setFaturamentoMensalState] = useState<number>(
     () => config.faturamentoMensal || perfilInicial.faturamentoMensal || 0,
   )
-  const setFaturamentoMensal = (v: number) => {
+  const setFaturamentoMensal = useCallback((v: number) => {
     setEditadoLocalmente((prev) => ({
       ...prev,
       modulo3Faturamento: true,
       dashboardFaturamento: true,
     }))
     setFaturamentoMensalState(v)
-  }
+  }, [])
   const [tipoAtividade, setTipoAtividadeState] = useState<TipoAtividadePrincipal>(() =>
     normalizarTipoAtividade(perfilInicial.tipoAtividade),
   )
 
-  const setTipoAtividade = (novoTipo: TipoAtividade) => {
+  const setTipoAtividade = useCallback((novoTipo: TipoAtividade) => {
     setEditadoLocalmente((prev) => ({
       ...prev,
       modulo3TipoAtividade: true,
       dashboardSetor: true,
     }))
     setTipoAtividadeState(normalizarTipoAtividade(novoTipo))
-  }
+  }, [])
   // Subatividades por ramo
   const [subatividadeServico, setSubatividadeServico] = useState<SubatividadeServico>(
     () => perfilInicial.subatividadeServico || 'servico_comum',
@@ -1097,14 +1105,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     useState<number>(
       () => config.percentualComprasVendas ?? perfilInicial.percentualComprasVendas ?? 0,
     )
-  const setPercentualComprasVendasComparativo = (p: number) => {
+  const setPercentualComprasVendasComparativo = useCallback((p: number) => {
     setEditadoLocalmente((prev) => ({
       ...prev,
       modulo3PercentualCompras: true,
       dashboardPercentualCompras: true,
     }))
     setPercentualComprasVendasComparativoState(p)
-  }
+  }, [])
   // Campos refinados do Módulo 3
   const [folhaPagamentoMensal, setFolhaPagamentoMensal] = useState<number>(
     () => perfilInicial.folhaPagamentoMensal || 0,
@@ -1169,38 +1177,41 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const [despesasCreditos, setDespesasCreditos] =
     useState<CategoriaDespesaCredito[]>(gerarCategoriasIniciais)
 
-  const updateDespesaCredito = (id: string, updates: Partial<CategoriaDespesaCredito>) => {
-    setEditadoLocalmente((prev) => ({ ...prev, modulo4Categorias: true }))
-    setDespesasCreditos((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updates } : item)),
-    )
-  }
+  const updateDespesaCredito = useCallback(
+    (id: string, updates: Partial<CategoriaDespesaCredito>) => {
+      setEditadoLocalmente((prev) => ({ ...prev, modulo4Categorias: true }))
+      setDespesasCreditos((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, ...updates } : item)),
+      )
+    },
+    [],
+  )
 
-  const resetDespesasCreditos = () => {
+  const resetDespesasCreditos = useCallback(() => {
     setEditadoLocalmente((prev) => ({ ...prev, modulo4Categorias: false }))
     setDespesasCreditos(CATEGORIAS_CREDITO_PADRAO)
-  }
+  }, [])
 
   // Módulo 5: Transição (faturamento anual = faturamentoMensal * 12)
   const [faturamentoAnualProjetado, setFaturamentoAnualProjetadoState] = useState<number>(
     () => (config.faturamentoMensal || perfilInicial.faturamentoMensal || 0) * 12,
   )
-  const setFaturamentoAnualProjetado = (v: number) => {
+  const setFaturamentoAnualProjetado = useCallback((v: number) => {
     setEditadoLocalmente((prev) => ({ ...prev, modulo5Faturamento: true }))
     setFaturamentoAnualProjetadoState(v)
-  }
+  }, [])
   const [setorTransicao, setSetorTransicaoState] = useState<TipoAtividadePrincipal>(() =>
     normalizarTipoAtividade(perfilInicial.tipoAtividade),
   )
 
-  const setSetorTransicao = (novoSector: TipoAtividade) => {
+  const setSetorTransicao = useCallback((novoSector: TipoAtividade) => {
     setEditadoLocalmente((prev) => ({
       ...prev,
       modulo5SetorTransicao: true,
       dashboardSetor: true,
     }))
     setSetorTransicaoState(normalizarTipoAtividade(novoSector))
-  }
+  }, [])
   // Etapa 5: Valor do estoque na virada (padrão estimado em ~1 a 2 meses de compras da empresa)
   const [valorEstoqueVirada, setValorEstoqueVirada] = useState<number>(() => {
     const fat = perfilInicial.faturamentoMensal || 0
@@ -1224,19 +1235,22 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     return 'Lucro Presumido'
   })
 
-  const setRegimeAtualFiltro = (r: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional') => {
-    setEditadoLocalmente((prev) => ({ ...prev, dashboardRegimeAtual: true }))
-    setRegimeAtualFiltroState(r)
-  }
+  const setRegimeAtualFiltro = useCallback(
+    (r: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional') => {
+      setEditadoLocalmente((prev) => ({ ...prev, dashboardRegimeAtual: true }))
+      setRegimeAtualFiltroState(r)
+    },
+    [],
+  )
 
   const [anoTransicaoDashboard, setAnoTransicaoDashboardState] = useState<AnoTransicaoIbsCbs>(
     () => config.anoTransicao || 2033,
   )
 
-  const setAnoTransicaoDashboard = (ano: AnoTransicaoIbsCbs) => {
+  const setAnoTransicaoDashboard = useCallback((ano: AnoTransicaoIbsCbs) => {
     setEditadoLocalmente((prev) => ({ ...prev, dashboardAnoTransicao: true }))
     setAnoTransicaoDashboardState(ano)
-  }
+  }, [])
 
   // Listener para sincronização automática se o usuário salvar dados em outra aba ou na página /dados-empresa
   React.useEffect(() => {
@@ -1253,7 +1267,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   }, [isAuthenticated])
 
   // Função para obter o snapshot dos parâmetros de entrada atuais
-  const obterSnapshotParametros = (): ParametrosSimulacaoCalculadora => {
+  const obterSnapshotParametros = useCallback((): ParametrosSimulacaoCalculadora => {
     const perfil = isAuthenticated ? carregarDadosEmpresa() : DADOS_EMPRESA_PADRAO
     return {
       config: {
@@ -1311,10 +1325,44 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         emissaoNf: perfil.emissaoNf,
       },
     }
-  }
+  }, [
+    config,
+    itensComposicao,
+    valorOperacao,
+    regimeOperacao,
+    anoOperacao,
+    percentualComprasVendasSimples,
+    faturamentoMensal,
+    tipoAtividade,
+    subatividadeServico,
+    subatividadeIndustria,
+    subatividadeComercio,
+    subatividadeAgro,
+    subatividadeConstrucao,
+    subatividadeLocacao,
+    subatividadeFoodService,
+    aliquotaImpostoSeletivo,
+    proporcaoServicoMisto,
+    percentualComprasVendasComparativo,
+    folhaPagamentoMensal,
+    margemLucroEstimada,
+    despesasComCreditosMensais,
+    percentualExportacao,
+    ufOrigem,
+    despesasCreditos,
+    faturamentoAnualProjetado,
+    setorTransicao,
+    valorEstoqueVirada,
+    taxaMensalCapitalGiro,
+    diasAntecipacaoSplit,
+    periodoDashboard,
+    regimeAtualFiltro,
+    anoTransicaoDashboard,
+    isAuthenticated,
+  ])
 
   // Função para restaurar integralmente o estado da calculadora a partir de uma simulação salva
-  const restaurarSimulacao = (p: ParametrosSimulacaoCalculadora) => {
+  const restaurarSimulacao = useCallback((p: ParametrosSimulacaoCalculadora) => {
     // Ao restaurar uma simulação salva, limpa eventual parâmetro temporário ativo do Radar
     setParametroRadarTemporario(null)
     if (p.config) {
@@ -1467,52 +1515,58 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         emissaoNf: p.configuracoesDiagnostico.emissaoNf,
       })
     }
-  }
+  }, [])
 
   // Função para restaurar os dados da empresa especificamente para um módulo
-  const restaurarDadosEmpresaNoModulo = (modulo: 2 | 3 | 4 | 5) => {
-    const p = isAuthenticated ? carregarDadosEmpresa() : DADOS_EMPRESA_PADRAO
-    if (modulo === 2) {
-      setValorOperacao(p.faturamentoMensal || 50000)
-      setPercentualComprasVendasSimples(p.percentualComprasVendas ?? 40)
-    } else if (modulo === 3) {
-      setFaturamentoMensal(p.faturamentoMensal || 0)
-      setTipoAtividade(normalizarTipoAtividade(p.tipoAtividade))
-      setSubatividadeServico(p.subatividadeServico || 'servico_comum')
-      setSubatividadeIndustria(p.subatividadeIndustria || 'industria_comum')
-      setSubatividadeComercio(p.subatividadeComercio || 'varejo_comum')
-      if ((p as any).subatividadeAgro) setSubatividadeAgro((p as any).subatividadeAgro)
-      if ((p as any).subatividadeConstrucao)
-        setSubatividadeConstrucao((p as any).subatividadeConstrucao)
-      if ((p as any).subatividadeLocacao) setSubatividadeLocacao((p as any).subatividadeLocacao)
-      if ((p as any).subatividadeFoodService)
-        setSubatividadeFoodService((p as any).subatividadeFoodService)
-      setProporcaoServicoMisto(p.proporcaoServicoMisto ?? 50)
-      setPercentualComprasVendasComparativo(p.percentualComprasVendas ?? 0)
-      setFolhaPagamentoMensal(p.folhaPagamentoMensal || 0)
-      setMargemLucroEstimada(p.margemLucroEstimada ?? 20)
-      setDespesasComCreditosMensais(p.despesasComCreditosMensais || 0)
-      setPercentualExportacao(p.percentualExportacao ?? 0)
-      setUfOrigem(p.ufOrigem || 'SP')
-    } else if (modulo === 4) {
-      const despesaPerfil = p.despesasComCreditosMensais || 0
-      if (!despesaPerfil) {
-        setDespesasCreditos(CATEGORIAS_CREDITO_PADRAO)
-      } else {
-        const somaPadrao = CATEGORIAS_CREDITO_PADRAO.reduce((acc, c) => acc + c.valorMensal, 0) || 1
-        const proporcao = despesaPerfil / somaPadrao
-        setDespesasCreditos(
-          CATEGORIAS_CREDITO_PADRAO.map((item) => ({
-            ...item,
-            valorMensal: Math.round(item.valorMensal * proporcao),
-          })),
-        )
+  // Reaproveita setters estáveis (useCallback []) e estado funcional — sem dependências voláteis
+  const restaurarDadosEmpresaNoModulo = useCallback(
+    (modulo: 2 | 3 | 4 | 5) => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const p = isAuthenticated ? carregarDadosEmpresa() : DADOS_EMPRESA_PADRAO
+      if (modulo === 2) {
+        setValorOperacao(p.faturamentoMensal || 50000)
+        setPercentualComprasVendasSimples(p.percentualComprasVendas ?? 40)
+      } else if (modulo === 3) {
+        setFaturamentoMensal(p.faturamentoMensal || 0)
+        setTipoAtividade(normalizarTipoAtividade(p.tipoAtividade))
+        setSubatividadeServico(p.subatividadeServico || 'servico_comum')
+        setSubatividadeIndustria(p.subatividadeIndustria || 'industria_comum')
+        setSubatividadeComercio(p.subatividadeComercio || 'varejo_comum')
+        if ((p as any).subatividadeAgro) setSubatividadeAgro((p as any).subatividadeAgro)
+        if ((p as any).subatividadeConstrucao)
+          setSubatividadeConstrucao((p as any).subatividadeConstrucao)
+        if ((p as any).subatividadeLocacao) setSubatividadeLocacao((p as any).subatividadeLocacao)
+        if ((p as any).subatividadeFoodService)
+          setSubatividadeFoodService((p as any).subatividadeFoodService)
+        setProporcaoServicoMisto(p.proporcaoServicoMisto ?? 50)
+        setPercentualComprasVendasComparativo(p.percentualComprasVendas ?? 0)
+        setFolhaPagamentoMensal(p.folhaPagamentoMensal || 0)
+        setMargemLucroEstimada(p.margemLucroEstimada ?? 20)
+        setDespesasComCreditosMensais(p.despesasComCreditosMensais || 0)
+        setPercentualExportacao(p.percentualExportacao ?? 0)
+        setUfOrigem(p.ufOrigem || 'SP')
+      } else if (modulo === 4) {
+        const despesaPerfil = p.despesasComCreditosMensais || 0
+        if (!despesaPerfil) {
+          setDespesasCreditos(CATEGORIAS_CREDITO_PADRAO)
+        } else {
+          const somaPadrao =
+            CATEGORIAS_CREDITO_PADRAO.reduce((acc, c) => acc + c.valorMensal, 0) || 1
+          const proporcao = despesaPerfil / somaPadrao
+          setDespesasCreditos(
+            CATEGORIAS_CREDITO_PADRAO.map((item) => ({
+              ...item,
+              valorMensal: Math.round(item.valorMensal * proporcao),
+            })),
+          )
+        }
+      } else if (modulo === 5) {
+        setFaturamentoAnualProjetado(p.faturamentoMensal ? p.faturamentoMensal * 12 : 0)
+        setSetorTransicao(normalizarTipoAtividade(p.tipoAtividade))
       }
-    } else if (modulo === 5) {
-      setFaturamentoAnualProjetado(p.faturamentoMensal ? p.faturamentoMensal * 12 : 0)
-      setSetorTransicao(normalizarTipoAtividade(p.tipoAtividade))
-    }
-  }
+    },
+    [isAuthenticated],
+  )
 
   // ==========================================
   // CÁLCULO MÓDULO 2 (Calculadora Simples)
@@ -2778,7 +2832,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   }, [regimeAtualFiltro, resultadoComparativo, anoTransicaoDashboard, config.anoTransicao])
 
   // Função para obter o snapshot dos resultados derivados atuais
-  const obterSnapshotResultados = (): ResultadosSimulacaoCalculadora => {
+  const obterSnapshotResultados = useCallback((): ResultadosSimulacaoCalculadora => {
     return {
       resultadoSimples,
       resultadoComparativo: {
@@ -2842,7 +2896,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       },
       resultadoDashboard,
     }
-  }
+  }, [])
 
   const origensPropagadas = useMemo(
     () => ({

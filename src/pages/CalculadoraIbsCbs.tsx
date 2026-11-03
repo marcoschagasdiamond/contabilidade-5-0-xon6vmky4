@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalculadoraProvider, useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
@@ -149,6 +149,16 @@ function CalculadoraConteudo() {
   const [avisoRamoLegado, setAvisoRamoLegado] = useState<string | null>(null)
 
   // Leitura dos parâmetros temporários do Radar de Alertas (?aplicar=&aliquota=&ano=)
+  // Depende de funções estáveis do provider (useCallback) — o efeito não roda a cada render.
+  const aplicarAliquotaRadarTemporariaRef = useRef(aplicarAliquotaRadarTemporaria)
+  const limparParametroRadarTemporarioRef = useRef(limparParametroRadarTemporario)
+  const toastRef = useRef(toast)
+  React.useEffect(() => {
+    aplicarAliquotaRadarTemporariaRef.current = aplicarAliquotaRadarTemporaria
+    limparParametroRadarTemporarioRef.current = limparParametroRadarTemporario
+    toastRef.current = toast
+  })
+
   React.useEffect(() => {
     const aplicar = searchParams.get('aplicar')
     const aliquotaRaw = searchParams.get('aliquota')
@@ -159,21 +169,23 @@ function CalculadoraConteudo() {
       const anoNum = parseInt(String(anoRaw || '2027'), 10) || 2027
       const aplicarTipo = String(aplicar || 'cbs').toLowerCase()
 
-      aplicarAliquotaRadarTemporaria(aplicarTipo, aliqNum, anoNum)
+      aplicarAliquotaRadarTemporariaRef.current(aplicarTipo, aliqNum, anoNum)
 
-      toast({
+      toastRef.current({
         title: 'Alíquota do Radar Aplicada',
         description: `Alíquota temporária de ${aliqNum.toFixed(4).replace('.', ',')}% (${aplicarTipo.toUpperCase()}) aplicada para o ano ${anoNum}.`,
       })
     }
-  }, [searchParams, aplicarAliquotaRadarTemporaria, toast])
+  }, [searchParams])
 
-  // Cleanup ao desmontar a página: restaura automaticamente os valores oficiais da LC 214/2025
+  // Cleanup ao desmontar a página: restaura automaticamente os valores oficiais da LC 214/2025.
+  // Array de dependências vazio + ref: a cleanup roda SOMENTE na desmontagem real da página,
+  // nunca a cada render (causa raiz do "Maximum update depth exceeded").
   React.useEffect(() => {
     return () => {
-      limparParametroRadarTemporario()
+      limparParametroRadarTemporarioRef.current()
     }
-  }, [limparParametroRadarTemporario])
+  }, [])
 
   const handleDescartarAliquotaRadar = () => {
     limparParametroRadarTemporario()
