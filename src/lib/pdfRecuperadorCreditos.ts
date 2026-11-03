@@ -12,6 +12,7 @@ import {
   adicionarBlocoAssinatura,
 } from '@/lib/pdfSimulacaoCalculadora'
 import { renderizarRodapeEscritorioPdf } from '@/lib/pdfIdentidadeEscritorio'
+import { listarTesesRelacionadasEst04 } from '@/lib/relacionamentoEst04'
 
 // Identidade visual Diamond Group (Navy / Dourado)
 export const COR_NAVY = [7, 19, 43] as const // #07132B
@@ -563,6 +564,74 @@ export function gerarParecerRecuperadorPDF(options: GerarPdfRecuperadorOptions):
     'Creditamento industrial de ICMS, ressarcimento ST, ISS uniprofissional e imunidades.',
     tesesOutrosTributos,
   )
+
+  // =========================================================================
+  // BLOCO: INTERAÇÃO COM DEMAIS TESES (EST-04 • CANCELAMENTO DE NF-E E DEVOLUÇÕES)
+  // Camada textual de encadeamento da fundamentação — NÃO altera valores calculados.
+  // Aparece somente quando EST-04 está ativa JUNTO com outras teses ativas.
+  // =========================================================================
+  const tesesRelacionadasEst04 = listarTesesRelacionadasEst04(
+    resultados.resultadosTeses.map((t) => ({ id: t.teseId, modulo: t.modulo, titulo: t.titulo })),
+    Object.fromEntries(
+      resultados.resultadosTeses.map((t) => [
+        t.teseId,
+        { teseId: t.teseId, ativa: t.ativa, farol: t.farol },
+      ]),
+    ),
+  )
+  // EST-04 precisa estar ativa para o bloco existir; quando ela não está ativa,
+  // nenhuma outra tese é considerada "relacionada" no parecer.
+  const est04AtivaNoParecer = resultados.resultadosTeses.some(
+    (t) => t.teseId === 'tese_cancelamento_nf_devolucoes_estornos' && t.ativa,
+  )
+  const tesesParaBlocoInteracao = est04AtivaNoParecer ? tesesRelacionadasEst04 : []
+
+  if (tesesParaBlocoInteracao.length > 0) {
+    verificarQuebraPagina(14 + tesesParaBlocoInteracao.length * 7, 'INTERAÇÃO COM DEMAIS TESES')
+
+    doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
+    doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+    const alturaCaixa = 12 + tesesParaBlocoInteracao.length * 6.4
+    doc.roundedRect(margin, currentY, contentWidth, alturaCaixa, 2, 2, 'FD')
+    doc.setFillColor(COR_DOURADO[0], COR_DOURADO[1], COR_DOURADO[2])
+    doc.rect(margin, currentY, 2.5, alturaCaixa, 'F')
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8.5)
+    doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+    doc.text(
+      'INTERAÇÃO COM DEMAIS TESES SELECIONADAS • EST-04 (CANCELAMENTO DE NF-E & DEVOLUÇÕES)',
+      margin + 6,
+      currentY + 6,
+    )
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(6.3)
+    doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+    doc.text(
+      'Encadeamento operacional da fundamentação: conciliação entre estornos/cancelamentos e as bases das teses listadas (sem alteração dos montantes apurados).',
+      margin + 6,
+      currentY + 10.5,
+    )
+
+    let yItem = currentY + 15.5
+    tesesParaBlocoInteracao.forEach((rel) => {
+      const linhasNota = doc.splitTextToSize(rel.notaInteracao, contentWidth - 12) as string[]
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(6.8)
+      doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+      doc.text(`${rel.codigo} • ${rel.titulo}`, margin + 6, yItem)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(6)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      const linhasVisiveis = linhasNota.slice(0, 3)
+      doc.text(linhasVisiveis, margin + 6, yItem + 3.2)
+      yItem += 3.2 + linhasVisiveis.length * 2.4 + 1.2
+    })
+
+    currentY += alturaCaixa + 6
+  }
 
   // =========================================================================
   // REQUISITO (B): DETALHAMENTO POR PERÍODO (EVOLUÇÃO TEMPORAL ANO A ANO)

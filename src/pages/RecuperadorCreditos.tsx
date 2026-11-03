@@ -30,6 +30,7 @@ import {
 } from '@/services/simulacoesRecuperador'
 import { gerarParecerRecuperadorPDF } from '@/lib/pdfRecuperadorCreditos'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
+import { isTeseCancelamentoAtiva, marcarTesesRelacionadasEst04 } from '@/lib/relacionamentoEst04'
 
 import { AvisoOrientativo } from '@/components/common/AvisoOrientativo'
 
@@ -448,6 +449,14 @@ export default function RecuperadorCreditos() {
     return calcularRecuperadorCreditos(parametrosAtuais, { filtrarPorSetor: true })
   }, [parametrosAtuais])
 
+  // Camada de relacionamento com a tese EST-04 (Cancelamento de NF-e e Devoluções):
+  // apenas indicação textual — não altera seleção nem cálculo.
+  const est04Ativa = isTeseCancelamentoAtiva(tesesSelecionadas)
+  const tesesElegiveisComRelacaoEst04 = React.useMemo(
+    () => marcarTesesRelacionadasEst04(tesesElegiveisSetor, est04Ativa),
+    [tesesElegiveisSetor, est04Ativa],
+  )
+
   const handleUpdateTese = (teseId: string, atualizacao: Partial<TeseSelecaoUsuario>) => {
     setTesesSelecionadas((prev) => ({
       ...prev,
@@ -785,7 +794,7 @@ export default function RecuperadorCreditos() {
 
             {moduloAtivo === 'pis_cofins' && (
               <BlocoPisCofinsRecuperador
-                tesesDefinicoes={tesesElegiveisSetor}
+                tesesDefinicoes={tesesElegiveisComRelacaoEst04}
                 tesesSelecionadas={tesesSelecionadas}
                 resultadosTeses={resultadosAtuais.resultadosTeses}
                 segmento={configuracoes.segmento}
@@ -795,7 +804,7 @@ export default function RecuperadorCreditos() {
 
             {moduloAtivo === 'folha' && (
               <BlocoFolhaPrevidenciarioRecuperador
-                tesesDefinicoes={tesesElegiveisSetor}
+                tesesDefinicoes={tesesElegiveisComRelacaoEst04}
                 tesesSelecionadas={tesesSelecionadas}
                 resultadosTeses={resultadosAtuais.resultadosTeses}
                 segmento={configuracoes.segmento}
@@ -805,7 +814,7 @@ export default function RecuperadorCreditos() {
 
             {moduloAtivo === 'irpj_csll' && (
               <BlocoIrpjCsllRecuperador
-                teses={tesesElegiveisSetor}
+                teses={tesesElegiveisComRelacaoEst04}
                 tesesConfiguradas={tesesSelecionadas}
                 onChangeTese={handleUpdateTese}
                 resultados={resultadosAtuais}
@@ -814,7 +823,7 @@ export default function RecuperadorCreditos() {
 
             {moduloAtivo === 'outros_tributos' && (
               <BlocoOutrosTributosRecuperador
-                teses={tesesElegiveisSetor}
+                teses={tesesElegiveisComRelacaoEst04}
                 tesesConfiguradas={tesesSelecionadas}
                 onChangeTese={handleUpdateTese}
                 resultados={resultadosAtuais}

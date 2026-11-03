@@ -4,6 +4,7 @@ import {
   ResultadosRecuperador,
 } from '@/types/recuperadorCreditos'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
+import { obterRelacaoComCancelamento } from '@/lib/relacionamentoEst04'
 
 interface BlocoOutrosTributosRecuperadorProps {
   teses: TeseRecuperacaoDefinicao[]
@@ -75,6 +76,8 @@ export function BlocoOutrosTributosRecuperador({
             const farol = selecao.farol || tese.riscoPadrao
             const res = listaPorTese.find((item) => item.teseId === tese.id)
 
+            const relacaoEst04 = tese.relacionadaEst04 ? obterRelacaoComCancelamento(tese) : null
+
             return (
               <div
                 key={tese.id}
@@ -102,6 +105,11 @@ export function BlocoOutrosTributosRecuperador({
                           <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/40 shadow-xs">
                             Sugerido via NCM{' '}
                             {selecao.ncmReferencia ? `(${selecao.ncmReferencia})` : ''}
+                          </span>
+                        )}
+                        {est04Ativa && relacaoEst04 && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-slate-100 text-[#07132B] border border-[#D4AF37]/60 shadow-xs">
+                            Relacionada à EST-04
                           </span>
                         )}
                         <h4 className="text-xs font-bold text-[#07132B]">{tese.titulo}</h4>

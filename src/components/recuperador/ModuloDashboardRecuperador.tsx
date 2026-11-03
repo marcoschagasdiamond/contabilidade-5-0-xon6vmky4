@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import type { ResultadosRecuperador, ConfiguracoesRecuperador } from '@/types/recuperadorCreditos'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
+import { obterRelacaoComCancelamento } from '@/lib/relacionamentoEst04'
 import { QuadroTesesContextuaisRecuperador } from './QuadroTesesContextuaisRecuperador'
 import { AvisoOrientativo } from '@/components/common/AvisoOrientativo'
 import { ModalLimparDashboard } from '@/components/common/ModalLimparDashboard'
@@ -35,6 +36,12 @@ export default function ModuloDashboardRecuperador({
   onSelecionarTese,
 }: Props) {
   const [modalLimparAberto, setModalLimparAberto] = useState(false)
+
+  // Camada de relacionamento com a tese EST-04 (Cancelamento de NF-e e Devoluções):
+  // apenas indicação textual na matriz de teses — não altera seleção nem cálculo.
+  const est04Ativa = resultados.resultadosTeses.some(
+    (t) => t.teseId === 'tese_cancelamento_nf_devolucoes_estornos' && t.ativa,
+  )
 
   // Faturamento total somado de 60 meses
   const faturamentoTotal60Meses = configuracoes?.anosFaturamento
@@ -482,6 +489,17 @@ export default function ModuloDashboardRecuperador({
                         <span className="text-[10px] text-slate-400 font-mono">
                           {tese.fundamento}
                         </span>
+                        {est04Ativa &&
+                          tese.teseId !== 'tese_cancelamento_nf_devolucoes_estornos' &&
+                          obterRelacaoComCancelamento({
+                            id: tese.teseId,
+                            modulo: tese.modulo,
+                            titulo: tese.titulo,
+                          }) && (
+                            <span className="mt-1 inline-block text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-slate-100 text-[#07132B] border border-[#D4AF37]/60">
+                              Relacionada à EST-04
+                            </span>
+                          )}
                       </td>
                       <td className="py-2.5 px-3 font-semibold text-slate-600">
                         {tese.modulo === 'pis_cofins'
