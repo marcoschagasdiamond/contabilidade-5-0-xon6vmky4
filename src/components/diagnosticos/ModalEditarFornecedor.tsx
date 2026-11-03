@@ -218,8 +218,18 @@ export function ModalEditarFornecedor({
             </div>
           )}
 
+          {/* Campo NCM com busca/autocomplete LC 214/2025 (no topo do formulário) */}
+          <div>
+            <CampoNcmAutocomplete
+              ncmValor={ncm}
+              onChangeNcm={handleChangeNcm}
+              onNcmSelecionado={handleNcmSelecionado}
+              itemNcmAtual={itemNcmCurado}
+            />
+          </div>
+
           {/* Nome e CNPJ */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 pt-2 border-t border-slate-100">
             <Label className="text-xs font-bold text-slate-700">Nome / Razão Social *</Label>
             <Input
               type="text"
@@ -325,16 +335,6 @@ export function ModalEditarFornecedor({
               />
             </div>
           )}
-
-          {/* Campo NCM com busca/autocomplete LC 214/2025 */}
-          <div className="pt-2 border-t border-slate-100">
-            <CampoNcmAutocomplete
-              ncmValor={ncm}
-              onChangeNcm={handleChangeNcm}
-              onNcmSelecionado={handleNcmSelecionado}
-              itemNcmAtual={itemNcmCurado}
-            />
-          </div>
 
           {/* Classificação do Item / Produto */}
           <div className="space-y-1.5 pt-2 border-t border-slate-100">

@@ -1046,6 +1046,7 @@ export default function DiagnosticoFornecedores() {
               <thead>
                 <tr className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold">
                   <th className="py-2.5 px-3">Fornecedor</th>
+                  <th className="py-2.5 px-3">NCM</th>
                   <th className="py-2.5 px-3">Regime</th>
                   <th className="py-2.5 px-3">Classificação Item</th>
                   <th className="py-2.5 px-3 text-right">Volume Compras</th>
@@ -1061,27 +1062,31 @@ export default function DiagnosticoFornecedores() {
                     <td className="py-3 px-3 font-bold text-slate-800">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span>{item.fornecedor.nome}</span>
-                        {item.fornecedor.ncm && (
-                          <span
-                            className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold ${
-                              item.fornecedor.ncm_classificado_auto
-                                ? 'bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/30'
-                                : 'bg-slate-100 text-slate-700 border border-slate-200'
-                            }`}
-                            title={
-                              item.fornecedor.ncm_classificado_auto
-                                ? `NCM ${item.fornecedor.ncm} (Classificado via LC 214/2025)`
-                                : `NCM ${item.fornecedor.ncm} (Classificação manual)`
-                            }
-                          >
-                            NCM {item.fornecedor.ncm}
-                          </span>
-                        )}
                       </div>
                       {item.fornecedor.descricao_item && (
                         <span className="block text-[10px] text-slate-400 font-normal mt-0.5">
                           {item.fornecedor.descricao_item}
                         </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 font-mono">
+                      {item.fornecedor.ncm ? (
+                        <span
+                          className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-bold ${
+                            item.fornecedor.ncm_classificado_auto
+                              ? 'bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/30'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200'
+                          }`}
+                          title={
+                            item.fornecedor.ncm_classificado_auto
+                              ? `NCM ${item.fornecedor.ncm} (Classificado via LC 214/2025)`
+                              : `NCM ${item.fornecedor.ncm} (Classificação manual)`
+                          }
+                        >
+                          {item.fornecedor.ncm}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-normal">—</span>
                       )}
                     </td>
                     <td className="py-3 px-3">
