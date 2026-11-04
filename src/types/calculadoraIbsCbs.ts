@@ -1236,6 +1236,14 @@ export interface ConfiguracoesGerais {
 
   // Composição detalhada por Itens / Insumos com NCM (Fase 3)
   itensComposicao?: import('@/lib/ncmCalculadora').ItemComposicaoCalculadora[]
+
+  // Bloco 4: Parâmetros Fiscais Avançados (Fase 2)
+  percentualComprasSemCredito?: number // 0 a 100%
+  saldoCredorAcumulado?: number // R$ abatido no primeiro ano de projeção
+  percentualVendasInterestaduais?: number // 0 a 100%
+  regimeEspecialAtual?: import('./dadosEmpresa').RegimeEspecialAtual // 'nenhum' | 'monofasico' | ...
+  perfilRetencaoSplit?: import('./dadosEmpresa').PerfilRetencaoSplit // 'nao' | 'parcial' | 'sim_todos'
+  percentualRetencaoSplit?: number // 0 a 100%
 }
 
 export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {
@@ -1277,6 +1285,13 @@ export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {
   lucroPresumidoIss: 3.0,
   lucroPresumidoIpi: 5.0,
   itensComposicao: [],
+
+  percentualComprasSemCredito: 0,
+  saldoCredorAcumulado: 0,
+  percentualVendasInterestaduais: 0,
+  regimeEspecialAtual: 'nenhum',
+  perfilRetencaoSplit: 'nao',
+  percentualRetencaoSplit: 0,
 }
 
 export interface ParametroRadarTemporario {

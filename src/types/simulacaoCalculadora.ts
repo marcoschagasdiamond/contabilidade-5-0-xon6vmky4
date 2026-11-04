@@ -75,6 +75,14 @@ export interface ParametrosSimulacaoCalculadora {
   cnpj?: string
   nomeContato?: string
 
+  // Bloco 4: Parâmetros Fiscais Avançados (Fase 2)
+  percentualComprasSemCredito?: number
+  saldoCredorAcumulado?: number
+  percentualVendasInterestaduais?: number
+  regimeEspecialAtual?: import('./dadosEmpresa').RegimeEspecialAtual
+  perfilRetencaoSplit?: import('./dadosEmpresa').PerfilRetencaoSplit
+  percentualRetencaoSplit?: number
+
   // Metadados de configurações sincronizadas dos diagnósticos
   configuracoesDiagnostico?: {
     regimeAtual?: string

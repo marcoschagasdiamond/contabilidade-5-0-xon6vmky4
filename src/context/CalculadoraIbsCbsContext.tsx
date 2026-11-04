@@ -149,9 +149,23 @@ interface CalculadoraContextType {
   anoTransicaoDashboard: AnoTransicaoIbsCbs
   setAnoTransicaoDashboard: (ano: AnoTransicaoIbsCbs) => void
 
+  // Parâmetros Fiscais Avançados (Fase 2) - Override local da Calculadora
+  percentualComprasSemCredito: number
+  setPercentualComprasSemCredito: (v: number) => void
+  saldoCredorAcumulado: number
+  setSaldoCredorAcumulado: (v: number) => void
+  percentualVendasInterestaduais: number
+  setPercentualVendasInterestaduais: (v: number) => void
+  regimeEspecialAtual: import('@/types/dadosEmpresa').RegimeEspecialAtual
+  setRegimeEspecialAtual: (r: import('@/types/dadosEmpresa').RegimeEspecialAtual) => void
+  perfilRetencaoSplit: import('@/types/dadosEmpresa').PerfilRetencaoSplit
+  setPerfilRetencaoSplit: (p: import('@/types/dadosEmpresa').PerfilRetencaoSplit) => void
+  percentualRetencaoSplit: number
+  setPercentualRetencaoSplit: (v: number) => void
+
   // Integração Dados da Empresa
   origemDadosEmpresa: boolean
-  restaurarDadosEmpresaNoModulo: (modulo: 2 | 3 | 4 | 5) => void
+  restaurarDadosEmpresaNoModulo: (modulo: 1 | 2 | 3 | 4 | 5 | 'split') => void
 
   // Composição detalhada por Itens / NCM (Fase 3)
   itensComposicao: import('@/lib/ncmCalculadora').ItemComposicaoCalculadora[]
@@ -189,6 +203,7 @@ interface CalculadoraContextType {
     dashboardSetor: boolean
     dashboardFaturamento: boolean
     dashboardPercentualCompras: boolean
+    fase2Parametros: boolean
   }
 
   // Rastreamento de origem de campos propagados automaticamente do Módulo 1
@@ -1019,7 +1034,64 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     dashboardSetor: false,
     dashboardFaturamento: false,
     dashboardPercentualCompras: false,
+    fase2Parametros: false,
   })
+
+  // Parâmetros Fiscais Avançados (Fase 2) - Override local da Calculadora com defaults neutros
+  const [percentualComprasSemCredito, setPercentualComprasSemCreditoState] = useState<number>(
+    () => config.percentualComprasSemCredito ?? perfilInicial.percentualComprasSemCredito ?? 0,
+  )
+  const setPercentualComprasSemCredito = useCallback((v: number) => {
+    setEditadoLocalmente((prev) => ({ ...prev, fase2Parametros: true }))
+    setPercentualComprasSemCreditoState(Math.max(0, Math.min(100, Number(v) || 0)))
+  }, [])
+
+  const [saldoCredorAcumulado, setSaldoCredorAcumuladoState] = useState<number>(
+    () => config.saldoCredorAcumulado ?? perfilInicial.saldoCredorAcumulado ?? 0,
+  )
+  const setSaldoCredorAcumulado = useCallback((v: number) => {
+    setEditadoLocalmente((prev) => ({ ...prev, fase2Parametros: true }))
+    setSaldoCredorAcumuladoState(Math.max(0, Number(v) || 0))
+  }, [])
+
+  const [percentualVendasInterestaduais, setPercentualVendasInterestaduaisState] = useState<number>(
+    () =>
+      config.percentualVendasInterestaduais ?? perfilInicial.percentualVendasInterestaduais ?? 0,
+  )
+  const setPercentualVendasInterestaduais = useCallback((v: number) => {
+    setEditadoLocalmente((prev) => ({ ...prev, fase2Parametros: true }))
+    setPercentualVendasInterestaduaisState(Math.max(0, Math.min(100, Number(v) || 0)))
+  }, [])
+
+  const [regimeEspecialAtual, setRegimeEspecialAtualState] = useState<
+    import('@/types/dadosEmpresa').RegimeEspecialAtual
+  >(() => config.regimeEspecialAtual ?? perfilInicial.regimeEspecialAtual ?? 'nenhum')
+  const setRegimeEspecialAtual = useCallback(
+    (r: import('@/types/dadosEmpresa').RegimeEspecialAtual) => {
+      setEditadoLocalmente((prev) => ({ ...prev, fase2Parametros: true }))
+      setRegimeEspecialAtualState(r)
+    },
+    [],
+  )
+
+  const [perfilRetencaoSplit, setPerfilRetencaoSplitState] = useState<
+    import('@/types/dadosEmpresa').PerfilRetencaoSplit
+  >(() => config.perfilRetencaoSplit ?? perfilInicial.perfilRetencaoSplit ?? 'nao')
+  const setPerfilRetencaoSplit = useCallback(
+    (p: import('@/types/dadosEmpresa').PerfilRetencaoSplit) => {
+      setEditadoLocalmente((prev) => ({ ...prev, fase2Parametros: true }))
+      setPerfilRetencaoSplitState(p)
+    },
+    [],
+  )
+
+  const [percentualRetencaoSplit, setPercentualRetencaoSplitState] = useState<number>(
+    () => config.percentualRetencaoSplit ?? perfilInicial.percentualRetencaoSplit ?? 0,
+  )
+  const setPercentualRetencaoSplit = useCallback((v: number) => {
+    setEditadoLocalmente((prev) => ({ ...prev, fase2Parametros: true }))
+    setPercentualRetencaoSplitState(Math.max(0, Math.min(100, Number(v) || 0)))
+  }, [])
 
   // Módulo 2: Calculadora Simples (inicializado a partir dos Dados da Empresa / Módulo 1)
   const [valorOperacao, setValorOperacaoState] = useState<number>(
@@ -1561,10 +1633,30 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   // Função para restaurar os dados da empresa especificamente para um módulo
   // Reaproveita setters estáveis (useCallback []) e estado funcional — sem dependências voláteis
   const restaurarDadosEmpresaNoModulo = useCallback(
-    (modulo: 2 | 3 | 4 | 5) => {
+    (modulo: 1 | 2 | 3 | 4 | 5 | 'split') => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
       const p = isAuthenticated ? carregarDadosEmpresa() : DADOS_EMPRESA_PADRAO
-      if (modulo === 2) {
+      if (modulo === 1) {
+        setPercentualComprasSemCreditoState(p.percentualComprasSemCredito ?? 0)
+        setSaldoCredorAcumuladoState(p.saldoCredorAcumulado ?? 0)
+        setPercentualVendasInterestaduaisState(p.percentualVendasInterestaduais ?? 0)
+        setRegimeEspecialAtualState(p.regimeEspecialAtual ?? 'nenhum')
+        setPerfilRetencaoSplitState(p.perfilRetencaoSplit ?? 'nao')
+        setPercentualRetencaoSplitState(p.percentualRetencaoSplit ?? 0)
+        setConfig((prev) => ({
+          ...prev,
+          percentualComprasSemCredito: p.percentualComprasSemCredito ?? 0,
+          saldoCredorAcumulado: p.saldoCredorAcumulado ?? 0,
+          percentualVendasInterestaduais: p.percentualVendasInterestaduais ?? 0,
+          regimeEspecialAtual: p.regimeEspecialAtual ?? 'nenhum',
+          perfilRetencaoSplit: p.perfilRetencaoSplit ?? 'nao',
+          percentualRetencaoSplit: p.percentualRetencaoSplit ?? 0,
+        }))
+        setEditadoLocalmente((prev) => ({
+          ...prev,
+          fase2Parametros: false,
+        }))
+      } else if (modulo === 2) {
         setValorOperacao(p.faturamentoMensal || 50000)
         setPercentualComprasVendasSimples(p.percentualComprasVendas ?? 40)
         setEditadoLocalmente((prev) => ({
@@ -1625,6 +1717,13 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
           ...prev,
           modulo5Faturamento: false,
           modulo5SetorTransicao: false,
+        }))
+      } else if (modulo === 'split') {
+        setPerfilRetencaoSplitState(p.perfilRetencaoSplit ?? 'nao')
+        setPercentualRetencaoSplitState(p.percentualRetencaoSplit ?? 0)
+        setEditadoLocalmente((prev) => ({
+          ...prev,
+          fase2Parametros: false,
         }))
       }
     },
@@ -1699,10 +1798,20 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     // Créditos = valor × percentual de compras × alíquota total padrão da fase
     const pctCompras = Math.max(0, percentualComprasVendasSimples) / 100
     // O crédito na aquisição ocorre na alíquota padrão plena da fase
-    const valorCreditos = valor * pctCompras * (totalIvaBase / 100)
+    const valorCreditosApurados = valor * pctCompras * (totalIvaBase / 100)
+
+    // Fase 2: Redução proporcional do crédito por compras sem direito a crédito
+    // Regra: crédito efetivo = crédito apurado × (1 − pctComprasSemCredito / 100)
+    // Neutralidade: se percentualComprasSemCredito === 0, fator = 1 (idêntico ao legado)
+    const fatorCreditoAproveitavel = Math.max(0, 1 - (percentualComprasSemCredito || 0) / 100)
+    const valorCreditos = valorCreditosApurados * fatorCreditoAproveitavel
 
     // A recolher = débito - créditos
-    const valorARecolher = Math.max(0, totalDebito - valorCreditos)
+    // Fase 2: Se houver saldo credor acumulado e for o primeiro ano (ou operação simples),
+    // o saldo credor pode abater o imposto a recolher até zerar (de forma não-negativa)
+    const saldoCredorDisponivel = Math.max(0, saldoCredorAcumulado || 0)
+    const valorARecolherAntesSaldo = Math.max(0, totalDebito - valorCreditos)
+    const valorARecolher = Math.max(0, valorARecolherAntesSaldo - saldoCredorDisponivel)
     const aliquotaEfetiva = valor > 0 ? (valorARecolher / valor) * 100 : 0
     const valorTotalNotaFiscal = valor // No IVA por fora com split payment, o valor bruto da operação é a base
 
@@ -1736,7 +1845,15 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       anoOperacao: ano,
       etiquetaLegalExibida,
     }
-  }, [config, valorOperacao, regimeOperacao, anoOperacao, percentualComprasVendasSimples])
+  }, [
+    config,
+    valorOperacao,
+    regimeOperacao,
+    anoOperacao,
+    percentualComprasVendasSimples,
+    percentualComprasSemCredito,
+    saldoCredorAcumulado,
+  ])
 
   // ==========================================
   // CÁLCULO MÓDULO 3 (Comparativo por Regime)
@@ -2275,10 +2392,25 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
     // Créditos plenos do IVA Dual:
     // a) Compras sobre vendas (comprasValor × taxa total do IVA Dual padrão - creditamento amplo)
-    const creditosComprasIbsCbs = (comprasValor * config.totalIvaDual) / 100
+    const creditosComprasIbsCbsBruto = (comprasValor * config.totalIvaDual) / 100
+    // Fase 2: Redução de créditos por compras sem direito a crédito
+    // Regra: crédito efetivo = crédito apurado × (1 − pctComprasSemCredito / 100)
+    const fatorCreditoAproveitavel = Math.max(0, 1 - (percentualComprasSemCredito || 0) / 100)
+    const creditosComprasIbsCbs = creditosComprasIbsCbsBruto * fatorCreditoAproveitavel
+
     // b) Despesas com créditos informadas (despesas × taxa total do IVA Dual padrão)
     const creditosDespesasIbsCbs = (despesasCreditos * config.totalIvaDual) / 100
     const ibsCbsCreditosTotal = creditosComprasIbsCbs + creditosDespesasIbsCbs
+
+    // Fase 2: Alocação interestadual (DIFAL / destino do IBS):
+    // percentualVendasInterestaduais aloca a parcela do imposto sobre operações interestaduais
+    // para o Estado de destino. Em termos de apuração líquida da empresa, o total recolhido
+    // permanece o mesmo princípio do IVA no destino, mas a distribuição da arrecadação é separada
+    const parcelaInterestadual =
+      (faturamentoInternoTributavel *
+        Math.min(100, Math.max(0, percentualVendasInterestaduais || 0))) /
+      100
+    const ibsDestinoEstimado = (parcelaInterestadual * aliquotaIbsEfetivaSaida) / 100
 
     const ibsCbsTotalEfetivo = Math.max(0, ibsCbsTotalNominal - ibsCbsCreditosTotal)
     const ibsCbsAliqEfetiva =
@@ -2436,6 +2568,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         sujeitoImpostoSeletivo: temImpostoSeletivo,
         isIcmsSubstituicaoTributaria: isIcmsSt,
         impactosDidaticosSubatividade: impactosDidaticos,
+        parcelaInterestadual,
+        ibsDestinoEstimado,
       },
     }
   }, [
@@ -2457,6 +2591,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     despesasComCreditosMensais,
     percentualExportacao,
     ufOrigem,
+    percentualComprasSemCredito,
+    percentualVendasInterestaduais,
   ])
 
   // ==========================================
@@ -2597,9 +2733,21 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     )
     const aliquotaSaidaEfetiva = aliqTotalIbsCbs * fatorReducao
 
+    // Fase 2: Split payment modulado pelo perfil de retenção e percentual de retenção
+    // Regra: quando o perfil de retenção indicar que clientes retêm, ajustar o split payment pelo % de retenção informado
+    // Se perfil = 'nao' ou 'nenhum', o padrão é a alíquota cheia legal do IVA (100% da alíquota da saída)
+    // Se perfil for sim ('sim' | 'parcial'), o percentual informado (ex: 20%) modula a retenção efetiva.
+    // Neutralidade: perfil 'nao' ou percentual = 0 preserva rigorosamente a retenção total integral.
+    let fatorAjusteRetencao = 1.0
+    if (perfilRetencaoSplit === 'sim' || perfilRetencaoSplit === 'parcial') {
+      if (percentualRetencaoSplit && percentualRetencaoSplit > 0) {
+        fatorAjusteRetencao = Math.min(1, Math.max(0, percentualRetencaoSplit / 100))
+      }
+    }
+
     // Retenção imediata no momento da nota / recebimento
     // Na prática do split payment inteligente, o sistema retém o valor apurado ou o débito destacado da nota
-    const retencaoMensalNota = (fatInterno * aliquotaSaidaEfetiva) / 100
+    const retencaoMensalNota = ((fatInterno * aliquotaSaidaEfetiva) / 100) * fatorAjusteRetencao
 
     // No sistema atual, o recolhimento se dá pela guia mensal (DAS no Simples dia 20, DARF PIS/COFINS dia 25, etc.)
     // Usamos o total efetivo apurado do regime atual selecionado
@@ -2647,6 +2795,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     diasAntecipacaoSplit,
     anoTransicaoDashboard,
     config.anoTransicao,
+    perfilRetencaoSplit,
+    percentualRetencaoSplit,
   ])
 
   // ==========================================
@@ -2782,12 +2932,39 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         aliqEfetivaAno = config.totalIvaDual
       }
 
+      // Fase 2: Modulação da trajetória conforme o Regime Especial Atual informado
+      // Regimes especiais (monofasico, st, zfm, ret):
+      // - monofasico / st: carga de PIS/COFINS e ICMS concentrada na origem; na transição há diluição gradual
+      //   (fator modulador suave: zfm desonera IPI/PIS/COFINS preservando incentivo regional; ret mantém alíquota unificada de 4%)
+      // Neutralidade: regimeEspecialAtual === 'nenhum' mantém exatamente 1.0 (idêntico ao legado)
+      if (regimeEspecialAtual === 'zfm') {
+        // Zona Franca de Manaus: manutenção do tratamento favorecido constitucional (art. 92-B)
+        // Reduz a alíquota em transição de IBS/CBS em 20% pela manutenção dos créditos de incentivo regional
+        if (typeof ano === 'number' && ano >= 2027) {
+          aliqEfetivaAno = Number((aliqEfetivaAno * 0.8).toFixed(2))
+        }
+      } else if (regimeEspecialAtual === 'ret') {
+        // Regime Especial de Tributação (RET Construção Civil - 4% unificado)
+        if (ano === 'atual' || ano === 2026) {
+          aliqEfetivaAno = Math.min(aliqEfetivaAno, 4.0)
+        }
+      } else if (regimeEspecialAtual === 'monofasico' || regimeEspecialAtual === 'st') {
+        // Monofásico / Substituição Tributária: alíquota concentrada na cadeia
+        // Durante a transição, a transição para CBS/IBS unificado é gradual
+        if (ano === 2027 || ano === 2028) {
+          aliqEfetivaAno = Number((aliqEfetivaAno * 0.95).toFixed(2))
+        }
+      }
+
       const impostoEstimado = (fatAnual * aliqEfetivaAno) / 100
       const diferencaAno = ano === 'atual' ? 0 : impostoEstimado - impostoAtual
 
       // Etapa 5: Crédito presumido de estoque abatido no primeiro ano de CBS plena (2027)
       const creditoEstoqueAno = ano === 2027 ? resultadoEstoque.economiaAno1 : 0
-      const impostoComCreditoEstoque = Math.max(0, impostoEstimado - creditoEstoqueAno)
+      // Fase 2: Saldo credor acumulado também é abatido no primeiro ano de transição plena (2027)
+      const saldoCredorAno = ano === 2027 ? Math.max(0, saldoCredorAcumulado || 0) : 0
+      const abatimentoAno1 = creditoEstoqueAno + saldoCredorAno
+      const impostoComCreditoEstoque = Math.max(0, impostoEstimado - abatimentoAno1)
 
       return {
         ano,
@@ -2807,7 +2984,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         alertaCritico,
       }
     })
-  }, [config, faturamentoAnualProjetado, setorTransicao, resultadoEstoque])
+  }, [
+    config,
+    faturamentoAnualProjetado,
+    setorTransicao,
+    resultadoEstoque,
+    regimeEspecialAtual,
+    saldoCredorAcumulado,
+  ])
 
   // ==========================================
   // CÁLCULO MÓDULO 6 (Dashboard KPIs)
