@@ -4,6 +4,7 @@ import { formatarMoeda, parseInputMoeda } from '@/lib/calculadoraUtils'
 import { LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
 import { useAuth } from '@/context/AuthContext'
 import { BannerIdentificacaoEmpresaBloqueada } from '@/components/dadosEmpresa/BannerIdentificacaoEmpresaBloqueada'
+import { BotaoRetornarDadosIniciais } from '@/components/common/BotaoRetornarDadosIniciais'
 import { CampoNcmAutocomplete } from '@/components/diagnosticos/CampoNcmAutocomplete'
 import { buscarNcmPorCodigo, formatarCodigoNcm, type ItemNcmCurado } from '@/data/tabelaNcmLc214'
 import { sugerirTesesPorItemNcm, type SugestaoNcmRecuperador } from '@/lib/ncmRecuperadorCreditos'
@@ -13,6 +14,8 @@ interface Props {
   onChange: (novasConfigs: ConfiguracoesRecuperador) => void
   onNcmSugerido?: (sugestao: SugestaoNcmRecuperador) => void
   onAbrirImportacaoPlanilha?: () => void
+  temDivergenciaMestre?: boolean
+  onRestaurarDadosMestres?: () => void
 }
 
 export const OPCOES_SEGMENTO_RECUPERADOR = [
@@ -63,6 +66,8 @@ export default function ModuloConfiguracoesRecuperador({
   onChange,
   onNcmSugerido,
   onAbrirImportacaoPlanilha,
+  temDivergenciaMestre,
+  onRestaurarDadosMestres,
 }: Props) {
   const { isEmpresario } = useAuth()
 
@@ -153,6 +158,24 @@ export default function ModuloConfiguracoesRecuperador({
 
   return (
     <div className="space-y-6">
+      {/* BOTÃO / AVISO DE RETORNO AOS DADOS INICIAIS QUANDO HOUVER ALTERAÇÃO MANUAL */}
+      {temDivergenciaMestre && onRestaurarDadosMestres && (
+        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-3 text-xs shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+            <span className="font-medium text-slate-700">
+              Dados alterados manualmente apenas neste módulo. Deseja restaurar os dados originais
+              do cadastro do cliente?
+            </span>
+          </div>
+          <BotaoRetornarDadosIniciais
+            onClick={onRestaurarDadosMestres}
+            rotulo="Retornar aos dados iniciais"
+            className="h-8 text-xs font-semibold bg-white text-slate-800 border-amber-300 hover:bg-amber-50 shadow-xs"
+          />
+        </div>
+      )}
+
       {/* BANNER DISCRETO DE PRÉ-PREENCHIMENTO (PADRÃO DIAMOND GROUP NAVY #07132B + DOURADO #D4AF37, SEM ÍCONES) */}
       {configuracoes.avisoOrigem && (
         <div className="p-3.5 rounded-2xl bg-[#07132B] text-white border border-[#D4AF37]/40 flex flex-wrap items-center justify-between gap-3 text-xs shadow-sm">

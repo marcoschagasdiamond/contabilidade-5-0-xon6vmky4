@@ -19,6 +19,7 @@ import {
   ClienteEmpresaRecord,
 } from '@/services/clientesEmpresas'
 import { useClienteAtivo } from './ClienteAtivoContext'
+import { notificarFonteMestraAtualizada } from '@/lib/fonteMestra'
 
 interface DadosEmpresaContextType {
   dadosEmpresa: DadosEmpresaPerfil
@@ -197,6 +198,7 @@ export function DadosEmpresaProvider({ children }: { children: React.ReactNode }
           setSalvoNoBanco(true)
           setEmpresaVinculadaId(rec.id)
           setIsSalvando(false)
+          notificarFonteMestraAtualizada()
           return perfilPersistido
         } catch (err) {
           console.error('Erro ao salvar empresa vinculada por ID:', err)
@@ -221,6 +223,7 @@ export function DadosEmpresaProvider({ children }: { children: React.ReactNode }
           setSalvoNoBanco(true)
           setEmpresaVinculadaId(rec.id)
           setIsSalvando(false)
+          notificarFonteMestraAtualizada()
           return perfilPersistido
         } catch (err) {
           console.error('Erro ao criar/atualizar empresa para o cliente ativo:', err)
@@ -237,15 +240,18 @@ export function DadosEmpresaProvider({ children }: { children: React.ReactNode }
           setSalvoNoBanco(true)
           setEmpresaVinculadaId(rec.id)
           setIsSalvando(false)
+          notificarFonteMestraAtualizada()
           return perfilPersistido
         } catch (err) {
           console.error('Erro ao salvar no banco:', err)
           setIsSalvando(false)
+          notificarFonteMestraAtualizada()
           return atualizado
         }
       }
 
       setIsSalvando(false)
+      notificarFonteMestraAtualizada()
       return atualizado
     },
     [user?.id, clienteAtivo, empresaVinculadaId],
@@ -264,6 +270,7 @@ export function DadosEmpresaProvider({ children }: { children: React.ReactNode }
         console.warn('Falha ao restaurar padrão no banco:', err),
       )
     }
+    notificarFonteMestraAtualizada()
   }, [user?.id, empresaVinculadaId])
 
   const limpar = useCallback(() => {
@@ -271,6 +278,7 @@ export function DadosEmpresaProvider({ children }: { children: React.ReactNode }
     setDadosEmpresa(DADOS_EMPRESA_PADRAO)
     setTemDadosSalvos(false)
     setEmpresaVinculadaId(null)
+    notificarFonteMestraAtualizada()
   }, [])
 
   return (

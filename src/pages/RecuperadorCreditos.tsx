@@ -5,6 +5,8 @@ import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/hooks/use-toast'
+import { useFonteMestraSync } from '@/hooks/useFonteMestraSync'
+import { camposDivergem } from '@/lib/fonteMestra'
 import { carregarDadosEmpresa, existeDadosEmpresaSalvos } from '@/types/dadosEmpresa'
 import { carregarSimulacoesLocais } from '@/services/simulacoesCalculadora'
 import { derivarAnosFaturamentoDeMensal } from '@/lib/recuperadorCreditosCalculo'
@@ -287,6 +289,9 @@ export default function RecuperadorCreditos() {
     }
     return 'dashboard'
   })
+  // Fonte Mestra: dados cadastrais sincronizados automaticamente
+  const dadosMestres = useFonteMestraSync()
+
   const [configuracoes, setConfiguracoes] = useState<ConfiguracoesRecuperador>(() =>
     derivarConfiguracoesIniciais(clienteAtivo),
   )
@@ -306,6 +311,72 @@ export default function RecuperadorCreditos() {
 
   // Simulações salvas
   const [simulacoes, setSimulacoes] = useState<SimulacaoRecuperador[]>([])
+
+  // Sincronização automática quando a Fonte Mestra mudar (sem sobrescrever se o usuário fez override local divergente)
+  useEffect(() => {
+    // Se não há cliente ativo e a fonte mestra foi atualizada, sincroniza automaticamente
+    if (!clienteAtivo && dadosMestres.nomeEmpresa) {
+      setConfiguracoes((prev) => {
+        // Se já está com dados de outra origem manual sem vínculo, atualiza os dados mestres
+        let regNormalizado: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional' =
+          'Lucro Presumido'
+        if (dadosMestres.regimeAtual?.includes('Real')) regNormalizado = 'Lucro Real'
+        else if (dadosMestres.regimeAtual?.includes('Simples')) regNormalizado = 'Simples Nacional'
+
+        const fatMensal = dadosMestres.faturamentoMensal || 0
+        const anosFat = derivarAnosFaturamentoDeMensal(fatMensal)
+
+        return {
+          ...prev,
+          empresa: dadosMestres.nomeEmpresa || prev.empresa,
+          cnpj: dadosMestres.cnpj || prev.cnpj,
+          uf: dadosMestres.ufOrigem || prev.uf,
+          segmento: dadosMestres.segmento || prev.segmento,
+          regimeAtual: regNormalizado,
+          aliquotaPisCofinsPadrao: regNormalizado === 'Lucro Real' ? 9.25 : 3.65,
+          faturamentoMensal: fatMensal,
+          percentualComprasVendas: dadosMestres.percentualComprasVendas || 0,
+          anosFaturamento: anosFat,
+          massaSalarialMensal: dadosMestres.folhaPagamentoMensal || 0,
+          anoTransicao: dadosMestres.anoBaseTransicao || 2033,
+          origemPreenchimento: 'dados_empresa',
+          avisoOrigem: 'Alimentado automaticamente pelos Dados da Empresa (Fonte Mestra)',
+        }
+      })
+    }
+  }, [dadosMestres, clienteAtivo])
+
+  // Identificação de divergência local (override manual no Recuperador em relação ao cadastro mestre)
+  const temDivergenciaMestre = React.useMemo(() => {
+    return (
+      camposDivergem(configuracoes.segmento, dadosMestres.segmento) ||
+      camposDivergem(configuracoes.regimeAtual, dadosMestres.regimeAtual) ||
+      camposDivergem(configuracoes.uf, dadosMestres.ufOrigem) ||
+      camposDivergem(configuracoes.faturamentoMensal, dadosMestres.faturamentoMensal) ||
+      camposDivergem(configuracoes.massaSalarialMensal, dadosMestres.folhaPagamentoMensal)
+    )
+  }, [
+    configuracoes.segmento,
+    configuracoes.regimeAtual,
+    configuracoes.uf,
+    configuracoes.faturamentoMensal,
+    configuracoes.massaSalarialMensal,
+    dadosMestres.segmento,
+    dadosMestres.regimeAtual,
+    dadosMestres.ufOrigem,
+    dadosMestres.faturamentoMensal,
+    dadosMestres.folhaPagamentoMensal,
+  ])
+
+  // Restaura os dados iniciais do cadastro do cliente neste módulo (seleção de teses permanece intacta)
+  const handleRestaurarDadosMestres = React.useCallback(() => {
+    const novasConfigs = derivarConfiguracoesIniciais(clienteAtivo)
+    setConfiguracoes(novasConfigs)
+    toast({
+      title: 'Dados restaurados',
+      description: 'As configurações do Recuperador retornaram aos dados do cadastro do cliente.',
+    })
+  }, [clienteAtivo, derivarConfiguracoesIniciais])
 
   // Se o cliente ativo mudar, sincroniza empresa/CNPJ/regime/faturamento com prioridade da Empresa Ativa
   useEffect(() => {
@@ -789,6 +860,8 @@ export default function RecuperadorCreditos() {
                 onChange={setConfiguracoes}
                 onNcmSugerido={handleAplicarSugestaoNcm}
                 onAbrirImportacaoPlanilha={() => setModalImportarPlanilhaAberto(true)}
+                temDivergenciaMestre={temDivergenciaMestre}
+                onRestaurarDadosMestres={handleRestaurarDadosMestres}
               />
             )}
 
@@ -923,6 +996,8 @@ export default function RecuperadorCreditos() {
         resultados={resultadosAtuais}
         onSalvoComSucesso={() => {
           recarregarSimulacoes()
+          // Ao concluir/salvar a análise, reverte os dados locais do módulo para o cadastro mestre do cliente
+          handleRestaurarDadosMestres()
         }}
       />
 

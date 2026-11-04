@@ -66,6 +66,7 @@ import {
   Building2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { BotaoRetornarDadosIniciais } from '@/components/common/BotaoRetornarDadosIniciais'
 import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
 import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
 
@@ -173,22 +174,17 @@ export default function Modulo3ComparativoRegimes({
               Módulo 3 • Comparativo por Regime
             </div>
 
-            {/* BADGE DE INTEGRAÇÃO COM DADOS DA EMPRESA */}
+            {/* BADGE DE INTEGRAÇÃO COM DADOS DA EMPRESA E BOTÃO RETORNAR */}
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                 <Sparkles className="w-3 h-3 text-emerald-400" />
                 Alimentado pelos Dados da Empresa
               </span>
-              <Button
-                size="sm"
-                variant="outline"
+              <BotaoRetornarDadosIniciais
                 onClick={() => restaurarDadosEmpresaNoModulo(3)}
-                className="h-7 text-xs bg-white/10 hover:bg-white/20 text-white border-white/20 gap-1"
-                title="Restaura faturamento, folha, margem, despesas com créditos, compras e UF a partir do perfil global"
-              >
-                <RotateCcw className="w-3 h-3" />
-                Restaurar dados da empresa
-              </Button>
+                rotulo="Retornar aos dados iniciais"
+                className="h-7 text-xs bg-white/10 hover:bg-white/20 text-white border-white/20"
+              />
             </div>
           </div>
 
@@ -213,15 +209,11 @@ export default function Modulo3ComparativoRegimes({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
+          <BotaoRetornarDadosIniciais
             onClick={() => restaurarDadosEmpresaNoModulo(3)}
-            className="h-6 px-2 text-xs font-semibold text-slate-700 hover:text-[#07132B]"
-          >
-            <RotateCcw className="w-3 h-3 mr-1" />
-            Restaurar dados
-          </Button>
+            rotulo="Retornar aos dados iniciais"
+            className="h-7 text-xs font-semibold bg-white text-slate-800 border-slate-300 hover:bg-slate-100"
+          />
           <Link
             to="/dados-empresa"
             className="text-xs font-bold text-[#07132B] hover:text-[#D4AF37] underline"

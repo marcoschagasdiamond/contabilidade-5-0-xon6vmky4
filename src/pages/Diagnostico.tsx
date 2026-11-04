@@ -87,6 +87,9 @@ import { Button } from '@/components/ui/button'
 import { carregarDadosEmpresa, existeDadosEmpresaSalvos } from '@/types/dadosEmpresa'
 import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import { BotaoRetornarDadosIniciais } from '@/components/common/BotaoRetornarDadosIniciais'
+import { useFonteMestraSync } from '@/hooks/useFonteMestraSync'
+import { camposDivergem } from '@/lib/fonteMestra'
 import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 
 interface FormErrors {
@@ -119,6 +122,9 @@ export default function Diagnostico() {
   const [paywallModalOpen, setPaywallModalOpen] = useState(false)
   const [paywallMotivo, setPaywallMotivo] = useState<'diagnostico' | 'pdf'>('diagnostico')
 
+  // Fonte Mestra: dados cadastrais sincronizados
+  const dadosMestres = useFonteMestraSync()
+
   // Carrega dados da empresa salvos para pré-preenchimento
   const perfilEmpresaInicial = React.useMemo(() => carregarDadosEmpresa(), [])
   const [temPerfilSalvo, setTemPerfilSalvo] = useState(() => existeDadosEmpresaSalvos())
@@ -132,6 +138,106 @@ export default function Diagnostico() {
     return () => {
       window.removeEventListener('contabilidade5_dados_empresa_updated', handleAtualizacaoPerfil)
     }
+  }, [])
+
+  // Sincronização automática com a fonte mestra (quando não houver edição manual do usuário no wizard)
+  useEffect(() => {
+    if (dadosMestres.nomeEmpresa && etapa === 1) {
+      setFormData((prev) => {
+        // Se os dados essenciais estão vazios ou batem com o perfil, atualiza
+        const fatAnual = dadosMestres.faturamentoMensal
+          ? dadosMestres.faturamentoMensal * 12
+          : prev.rbt12
+        const folhaAnual = dadosMestres.folhaPagamentoMensal
+          ? dadosMestres.folhaPagamentoMensal * 12
+          : prev.folha12
+        const folhaMensal = dadosMestres.folhaPagamentoMensal || prev.folhaMensal
+        return {
+          ...prev,
+          nome: prev.nome || dadosMestres.nomeContato || '',
+          email: prev.email || dadosMestres.email || '',
+          telefone: prev.telefone || dadosMestres.telefone || '',
+          empresa: prev.empresa || dadosMestres.nomeEmpresa || '',
+          cnpj: prev.cnpj || dadosMestres.cnpj || '',
+          cidade: prev.cidade || dadosMestres.cidade || 'sp-sao-paulo',
+          segmento: (dadosMestres.segmento as SegmentoEmpresa) || prev.segmento,
+          rbt12: fatAnual,
+          folha12: folhaAnual,
+          folhaMensal: folhaMensal,
+          despesasCreditos: dadosMestres.despesasComCreditosMensais || prev.despesasCreditos,
+          percentualExportacao: dadosMestres.percentualExportacao ?? prev.percentualExportacao,
+          ufOrigem: dadosMestres.ufOrigem || prev.ufOrigem,
+          margemLucro: dadosMestres.margemLucroEstimada ?? prev.margemLucro,
+          funcionarios: dadosMestres.funcionarios || prev.funcionarios,
+          emissaoNf: dadosMestres.emissaoNf || prev.emissaoNf,
+          atividadeMista:
+            typeof dadosMestres.atividadeMista === 'boolean'
+              ? dadosMestres.atividadeMista
+              : prev.atividadeMista,
+          regimeAtual: dadosMestres.regimeAtual || prev.regimeAtual,
+          anoBase: (dadosMestres.anoBaseTransicao as AnoBaseSimulacao) || prev.anoBase,
+        }
+      })
+    }
+  }, [dadosMestres, etapa])
+
+  // Detecção de divergência manual entre formData e Fonte Mestra
+  const temDivergenciaDiagnostico = React.useMemo(() => {
+    return (
+      camposDivergem(formData.segmento, dadosMestres.segmento) ||
+      camposDivergem(formData.regimeAtual, dadosMestres.regimeAtual) ||
+      camposDivergem(formData.ufOrigem, dadosMestres.ufOrigem) ||
+      camposDivergem(formData.empresa, dadosMestres.nomeEmpresa) ||
+      camposDivergem(formData.cnpj, dadosMestres.cnpj)
+    )
+  }, [
+    formData.segmento,
+    formData.regimeAtual,
+    formData.ufOrigem,
+    formData.empresa,
+    formData.cnpj,
+    dadosMestres.segmento,
+    dadosMestres.regimeAtual,
+    dadosMestres.ufOrigem,
+    dadosMestres.nomeEmpresa,
+    dadosMestres.cnpj,
+  ])
+
+  // Função para retornar aos dados iniciais da fonte mestra no Diagnóstico
+  const handleRestaurarDadosDiagnostico = React.useCallback(() => {
+    const p = carregarDadosEmpresa()
+    const fatAnual = p.faturamentoMensal ? p.faturamentoMensal * 12 : 600000
+    const folhaAnual = p.folhaPagamentoMensal ? p.folhaPagamentoMensal * 12 : 120000
+    const folhaMensal = p.folhaPagamentoMensal || 10000
+    setFormData({
+      nome: p.nomeContato || '',
+      email: p.email || '',
+      telefone: p.telefone || '',
+      empresa: p.nomeEmpresa || '',
+      cnpj: p.cnpj || '',
+      cidade: p.cidade || 'sp-sao-paulo',
+      segmento: (p.segmento as SegmentoEmpresa) || 'Serviços',
+      rbt12: fatAnual,
+      folha12: folhaAnual,
+      folhaMensal: folhaMensal,
+      despesasCreditos: p.despesasComCreditosMensais || 15000,
+      percentualExportacao: p.percentualExportacao ?? 0,
+      ufOrigem: p.ufOrigem || 'SP',
+      margemLucro: p.margemLucroEstimada ?? 25,
+      funcionarios: p.funcionarios || '1 a 5 funcionários',
+      emissaoNf: p.emissaoNf || 'Predominante para Pessoas Jurídicas (B2B)',
+      atividadeMista:
+        typeof p.atividadeMista === 'boolean' ? p.atividadeMista : p.tipoAtividade === 'misto',
+      regimeAtual: p.regimeAtual || 'Simples Nacional',
+      anoBase: (p.anoBaseTransicao as AnoBaseSimulacao) || 2026,
+    })
+    setRbt12Input(formatMoedaInput(fatAnual))
+    setFolha12Input(formatMoedaInput(folhaAnual))
+    setFolhaMensalInput(formatMoedaInput(folhaMensal))
+    toast({
+      title: 'Dados restaurados',
+      description: 'O Diagnóstico retornou aos dados originais do cadastro do cliente.',
+    })
   }, [])
 
   // Wizard state (etapa 1 a 4; etapa 5 = resultado)
@@ -760,6 +866,11 @@ export default function Diagnostico() {
         setAnoSimulacao(formData.anoBase)
         setEtapa(5)
         setSucessoTrilhaAberto(true)
+
+        // Ao concluir a análise, reverte os dados locais modificados do formulário para os dados do cadastro do cliente
+        if (temDivergenciaDiagnostico) {
+          handleRestaurarDadosDiagnostico()
+        }
         const wizardContainer = document.getElementById('wizard-diagnostico-container')
         if (wizardContainer) {
           wizardContainer.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -1075,7 +1186,23 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
             />
 
             <div className="bg-white rounded-[24px] p-6 sm:p-10 shadow-xl border border-slate-200">
-              <div className="mb-8">
+              <div className="mb-8 space-y-3">
+                {temDivergenciaDiagnostico && (
+                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-3 text-xs shadow-sm">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                      <span className="font-medium text-slate-700">
+                        Dados alterados manualmente apenas neste módulo. Deseja restaurar os dados
+                        originais do cadastro do cliente?
+                      </span>
+                    </div>
+                    <BotaoRetornarDadosIniciais
+                      onClick={handleRestaurarDadosDiagnostico}
+                      rotulo="Retornar aos dados iniciais"
+                      className="h-8 text-xs font-semibold bg-white text-slate-800 border-amber-300 hover:bg-amber-50 shadow-xs"
+                    />
+                  </div>
+                )}
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-semibold text-[#145A32] uppercase tracking-wider block">
                     Passo 1 • Identificação

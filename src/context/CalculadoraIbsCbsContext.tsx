@@ -51,6 +51,7 @@ import {
   DADOS_EMPRESA_PADRAO,
   STORAGE_EVENT,
 } from '@/types/dadosEmpresa'
+import { FONTE_MESTRA_EVENTO } from '@/lib/fonteMestra'
 import { useAuth } from '@/context/AuthContext'
 import type {
   ParametrosSimulacaoCalculadora,
@@ -1262,8 +1263,40 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       const p = carregarDadosEmpresa()
       setOrigemDadosEmpresa(existeDadosEmpresaSalvos())
     }
+    const handleFonteMestra = () => {
+      handleSync()
+      // Se não houver edições manuais locais nos módulos, propaga os novos valores mestres automaticamente
+      const p = carregarDadosEmpresa()
+      if (existeDadosEmpresaSalvos()) {
+        // Módulo 2: se não editado manualmente, sincroniza faturamento
+        setEditadoLocalmente((prev) => {
+          if (!prev.modulo2ValorOperacao && p.faturamentoMensal) {
+            setValorOperacaoState(p.faturamentoMensal)
+          }
+          if (!prev.modulo2PercentualCompras && p.percentualComprasVendas !== undefined) {
+            setPercentualComprasVendasSimplesState(p.percentualComprasVendas)
+          }
+          // Módulo 3: se não editado manualmente, sincroniza
+          if (!prev.modulo3Faturamento && p.faturamentoMensal) {
+            setFaturamentoMensalState(p.faturamentoMensal)
+          }
+          if (!prev.modulo3PercentualCompras && p.percentualComprasVendas !== undefined) {
+            setPercentualComprasVendasComparativoState(p.percentualComprasVendas)
+          }
+          if (!prev.modulo3TipoAtividade && p.tipoAtividade) {
+            setTipoAtividadeState(normalizarTipoAtividade(p.tipoAtividade))
+          }
+          return prev
+        })
+      }
+    }
+
     window.addEventListener(STORAGE_EVENT, handleSync)
-    return () => window.removeEventListener(STORAGE_EVENT, handleSync)
+    window.addEventListener(FONTE_MESTRA_EVENTO, handleFonteMestra)
+    return () => {
+      window.removeEventListener(STORAGE_EVENT, handleSync)
+      window.removeEventListener(FONTE_MESTRA_EVENTO, handleFonteMestra)
+    }
   }, [isAuthenticated])
 
   // Função para obter o snapshot dos parâmetros de entrada atuais
@@ -1526,6 +1559,13 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       if (modulo === 2) {
         setValorOperacao(p.faturamentoMensal || 50000)
         setPercentualComprasVendasSimples(p.percentualComprasVendas ?? 40)
+        setEditadoLocalmente((prev) => ({
+          ...prev,
+          modulo2ValorOperacao: false,
+          modulo2PercentualCompras: false,
+          modulo2AnoOperacao: false,
+          modulo2RegimeOperacao: false,
+        }))
       } else if (modulo === 3) {
         setFaturamentoMensal(p.faturamentoMensal || 0)
         setTipoAtividade(normalizarTipoAtividade(p.tipoAtividade))
@@ -1545,6 +1585,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         setDespesasComCreditosMensais(p.despesasComCreditosMensais || 0)
         setPercentualExportacao(p.percentualExportacao ?? 0)
         setUfOrigem(p.ufOrigem || 'SP')
+        setEditadoLocalmente((prev) => ({
+          ...prev,
+          modulo3Faturamento: false,
+          modulo3PercentualCompras: false,
+          modulo3TipoAtividade: false,
+        }))
       } else if (modulo === 4) {
         const despesaPerfil = p.despesasComCreditosMensais || 0
         if (!despesaPerfil) {
@@ -1560,9 +1606,18 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
             })),
           )
         }
+        setEditadoLocalmente((prev) => ({
+          ...prev,
+          modulo4Categorias: false,
+        }))
       } else if (modulo === 5) {
         setFaturamentoAnualProjetado(p.faturamentoMensal ? p.faturamentoMensal * 12 : 0)
         setSetorTransicao(normalizarTipoAtividade(p.tipoAtividade))
+        setEditadoLocalmente((prev) => ({
+          ...prev,
+          modulo5Faturamento: false,
+          modulo5SetorTransicao: false,
+        }))
       }
     },
     [isAuthenticated],
