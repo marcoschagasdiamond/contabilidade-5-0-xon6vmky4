@@ -15,6 +15,8 @@ import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
 import { AvisoOrientativo } from '@/components/common/AvisoOrientativo'
 import { SecaoFornecedoresConsolidado } from '@/components/diagnosticos/SecaoFornecedoresConsolidado'
 import { QuadroMudancasPerfilConsolidado } from '@/components/diagnosticos/QuadroMudancasPerfilConsolidado'
+import { SecaoDadosGerenciaisImportados } from '@/components/diagnosticos/SecaoDadosGerenciaisImportados'
+import { BadgeProvenienciaCampo } from '@/components/diagnosticos/BadgeProvenienciaCampo'
 import {
   exportarPdfEtapaConfiguracoes,
   exportarPdfEtapaAutoavaliacao,
@@ -1119,15 +1121,27 @@ export default function DiagnosticoRelatorioConsolidado() {
                         Intangíveis:{' '}
                         <strong>{dadosEmpresa.intangiveisRoyalties ? 'Sim' : 'Não'}</strong>
                       </span>
-                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono">
-                        Imobilizado (5a):{' '}
-                        <strong>
-                          R${' '}
-                          {Number(dadosEmpresa.imobilizadoUltimos5Anos || 0).toLocaleString(
-                            'pt-BR',
-                            { minimumFractionDigits: 2 },
-                          )}
-                        </strong>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono inline-flex items-center gap-1.5 flex-wrap">
+                        <span>
+                          Imobilizado (5a):{' '}
+                          <strong>
+                            R${' '}
+                            {Number(dadosEmpresa.imobilizadoUltimos5Anos || 0).toLocaleString(
+                              'pt-BR',
+                              { minimumFractionDigits: 2 },
+                            )}
+                          </strong>
+                        </span>
+                        {dadosEmpresa.documentoFiscalImportado?.origemCampos
+                          ?.imobilizadoUltimos5Anos && (
+                          <BadgeProvenienciaCampo
+                            origem={
+                              dadosEmpresa.documentoFiscalImportado.origemCampos
+                                .imobilizadoUltimos5Anos
+                            }
+                            variante="compacta"
+                          />
+                        )}
                       </span>
                     </div>
                   </div>
@@ -1143,22 +1157,61 @@ export default function DiagnosticoRelatorioConsolidado() {
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs text-slate-700">
-                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono">
-                        Compras s/ crédito:{' '}
-                        <strong>{dadosEmpresa.percentualComprasSemCredito ?? 0}%</strong>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono inline-flex items-center gap-1.5 flex-wrap">
+                        <span>
+                          Compras s/ crédito:{' '}
+                          <strong>{dadosEmpresa.percentualComprasSemCredito ?? 0}%</strong>
+                        </span>
+                        {dadosEmpresa.documentoFiscalImportado?.origemCampos
+                          ?.percentualComprasSemCredito && (
+                          <BadgeProvenienciaCampo
+                            origem={
+                              dadosEmpresa.documentoFiscalImportado.origemCampos
+                                .percentualComprasSemCredito
+                            }
+                            variante="compacta"
+                          />
+                        )}
                       </span>
-                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono">
-                        Saldo credor acumulado:{' '}
-                        <strong>
-                          R${' '}
-                          {Number(dadosEmpresa.saldoCredorAcumulado || 0).toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                          })}
-                        </strong>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono inline-flex items-center gap-1.5 flex-wrap">
+                        <span>
+                          Saldo credor acumulado:{' '}
+                          <strong>
+                            R${' '}
+                            {Number(dadosEmpresa.saldoCredorAcumulado || 0).toLocaleString(
+                              'pt-BR',
+                              {
+                                minimumFractionDigits: 2,
+                              },
+                            )}
+                          </strong>
+                        </span>
+                        {dadosEmpresa.documentoFiscalImportado?.origemCampos
+                          ?.saldoCredorAcumulado && (
+                          <BadgeProvenienciaCampo
+                            origem={
+                              dadosEmpresa.documentoFiscalImportado.origemCampos
+                                .saldoCredorAcumulado
+                            }
+                            variante="compacta"
+                          />
+                        )}
                       </span>
-                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono">
-                        Vendas interestaduais:{' '}
-                        <strong>{dadosEmpresa.percentualVendasInterestaduais ?? 0}%</strong>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono inline-flex items-center gap-1.5 flex-wrap">
+                        <span>
+                          Vendas interestaduais:{' '}
+                          <strong>{dadosEmpresa.percentualVendasInterestaduais ?? 0}%</strong>
+                        </span>
+                        {dadosEmpresa.documentoFiscalImportado?.origemCampos
+                          ?.percentualVendasInterestaduais && (
+                          <BadgeProvenienciaCampo
+                            origem={
+                              dadosEmpresa.documentoFiscalImportado.origemCampos
+                                .percentualVendasInterestaduais
+                            }
+                            variante="compacta"
+                          />
+                        )}
                       </span>
                       <span className="px-2 py-1 rounded bg-white border border-slate-200">
                         Regime especial:{' '}
@@ -1392,6 +1445,14 @@ export default function DiagnosticoRelatorioConsolidado() {
                 </div>
               )}
             </div>
+
+            {/* SEÇÃO DADOS GERENCIAIS DOS DOCUMENTOS IMPORTADOS (BALANCETE & EFDs) */}
+            {temDadosSalvos && dadosEmpresa.documentoFiscalImportado && (
+              <SecaoDadosGerenciaisImportados
+                documentoFiscal={dadosEmpresa.documentoFiscalImportado}
+                nomeEmpresa={dadosEmpresa.nomeEmpresa}
+              />
+            )}
 
             {/* SEÇÃO 2: AUTOAVALIAÇÃO DAS 7 FRENTES */}
             <div className="bg-white rounded-[24px] p-6 sm:p-8 border border-slate-200 shadow-md space-y-5">

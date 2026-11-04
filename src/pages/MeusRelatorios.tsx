@@ -77,6 +77,7 @@ export default function MeusRelatorios() {
     'diag_autoavaliacao',
     'diag_transicao',
     'diag_enquadramento',
+    'diag_dados_gerenciais',
   ])
 
   // Título e Observações livres
@@ -1045,6 +1046,10 @@ export default function MeusRelatorios() {
                           {
                             id: 'diag_enquadramento',
                             label: 'Síntese de Governança e Enquadramento',
+                          },
+                          {
+                            id: 'diag_dados_gerenciais',
+                            label: 'Dados Gerenciais Importados (Balancete & EFDs)',
                           },
                         ].map((sec) => (
                           <label

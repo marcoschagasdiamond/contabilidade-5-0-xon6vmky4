@@ -913,6 +913,195 @@ export function construirRelatorioPersonalizadoDoc(options: GerarRelatorioPerson
 
       currentY += 26
     }
+
+    // 3.5 Dados Gerenciais Importados (Balancete & EFDs)
+    if (configuracao.secoesDiagnostico.includes('diag_dados_gerenciais')) {
+      const docFiscal = dadosEmpresa?.documentoFiscalImportado
+      const agregados = docFiscal?.agregadosContabeis
+      const totaisFiscais = docFiscal?.totaisFiscais
+
+      const temDadosGerenciais =
+        Boolean(docFiscal) &&
+        (Boolean(
+          agregados &&
+          ((agregados.ativoTotal ?? 0) > 0 ||
+            (agregados.passivoTotal ?? 0) > 0 ||
+            (agregados.patrimonioLiquido ?? 0) !== 0 ||
+            (agregados.cmvCsp ?? 0) > 0 ||
+            (agregados.lucroLiquido ?? 0) !== 0 ||
+            (agregados.receitaBruta ?? 0) > 0 ||
+            (agregados.despesasOperacionais ?? 0) > 0),
+        ) ||
+          Boolean(
+            totaisFiscais &&
+            ((totaisFiscais.faturamentoPeriodo ?? 0) > 0 ||
+              (totaisFiscais.comprasTotais ?? 0) > 0 ||
+              (totaisFiscais.comprasComCredito ?? 0) > 0 ||
+              (totaisFiscais.saldoCredorAcumulado ?? 0) > 0 ||
+              (totaisFiscais.receitaInterestadual ?? 0) > 0 ||
+              (totaisFiscais.receitaExportacao ?? 0) > 0),
+          ))
+
+      if (temDadosGerenciais && docFiscal) {
+        verificarQuebra(50, 'Diagnóstico 360° • Dados Gerenciais Importados')
+
+        const rotuloTipoDoc =
+          docFiscal.tipo === 'balancete'
+            ? 'Balancete Contábil'
+            : docFiscal.tipo === 'efd_contribuicoes'
+              ? 'EFD Contribuições'
+              : docFiscal.tipo === 'efd_icms_ipi'
+                ? 'EFD ICMS/IPI'
+                : docFiscal.nomeTipo || 'Documento Fiscal'
+
+        let dataFormatada = '—'
+        if (docFiscal.dataImportacao) {
+          try {
+            const d = new Date(docFiscal.dataImportacao)
+            if (!isNaN(d.getTime())) {
+              dataFormatada = d.toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })
+            }
+          } catch {
+            dataFormatada = docFiscal.dataImportacao
+          }
+        }
+
+        // Box de cabeçalho
+        doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
+        doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+        doc.roundedRect(margin, currentY, contentWidth, 14, 2, 2, 'FD')
+
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(8)
+        doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+        doc.text('DADOS GERENCIAIS EXTRAÍDOS DE DOCUMENTO IMPORTADO', margin + 4, currentY + 5.5)
+
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(7)
+        doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+        doc.text(
+          `Origem: ${rotuloTipoDoc} • Arquivo: ${docFiscal.nomeArquivo || '—'} • Importado em: ${dataFormatada}`,
+          margin + 4,
+          currentY + 10.5,
+        )
+
+        currentY += 16
+
+        // Bloco Agregados Contábeis (se existirem)
+        if (agregados) {
+          verificarQuebra(28, 'Diagnóstico 360° • Agregados Contábeis')
+
+          doc.setFillColor(255, 255, 255)
+          doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+          doc.roundedRect(margin, currentY, contentWidth, 24, 2, 2, 'FD')
+
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(7.5)
+          doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+          doc.text('Quadro Gerencial Contábil (Balanço & DRE):', margin + 4, currentY + 5.5)
+
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(7)
+          doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+
+          const col1 = margin + 4
+          const col2 = margin + 65
+          const col3 = margin + 125
+
+          doc.text(
+            `• Ativo Total: ${formatarMoeda(agregados.ativoTotal || 0)}`,
+            col1,
+            currentY + 11,
+          )
+          doc.text(
+            `• Passivo Total: ${formatarMoeda(agregados.passivoTotal || 0)}`,
+            col2,
+            currentY + 11,
+          )
+          doc.text(
+            `• Patrimônio Líquido: ${formatarMoeda(agregados.patrimonioLiquido || 0)}`,
+            col3,
+            currentY + 11,
+          )
+
+          doc.text(
+            `• Lucro Líquido: ${formatarMoeda(agregados.lucroLiquido || 0)}`,
+            col1,
+            currentY + 16.5,
+          )
+          doc.text(`• CMV / CSP: ${formatarMoeda(agregados.cmvCsp || 0)}`, col2, currentY + 16.5)
+          doc.text(
+            `• Receita Bruta: ${formatarMoeda(agregados.receitaBruta || 0)}`,
+            col3,
+            currentY + 16.5,
+          )
+
+          currentY += 27
+        }
+
+        // Bloco Totais Fiscais (se existirem)
+        if (totaisFiscais) {
+          verificarQuebra(28, 'Diagnóstico 360° • Totais Fiscais EFD')
+
+          doc.setFillColor(255, 255, 255)
+          doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+          doc.roundedRect(margin, currentY, contentWidth, 24, 2, 2, 'FD')
+
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(7.5)
+          doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+          doc.text('Totais Fiscais Extraídos da EFD:', margin + 4, currentY + 5.5)
+
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(7)
+          doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+
+          const col1 = margin + 4
+          const col2 = margin + 65
+          const col3 = margin + 125
+
+          doc.text(
+            `• Faturamento Período: ${formatarMoeda(totaisFiscais.faturamentoPeriodo || 0)}`,
+            col1,
+            currentY + 11,
+          )
+          doc.text(
+            `• Compras Totais: ${formatarMoeda(totaisFiscais.comprasTotais || 0)}`,
+            col2,
+            currentY + 11,
+          )
+          doc.text(
+            `• Compras c/ Crédito: ${formatarMoeda(totaisFiscais.comprasComCredito || 0)}`,
+            col3,
+            currentY + 11,
+          )
+
+          doc.text(
+            `• Saldo Credor Acum.: ${formatarMoeda(totaisFiscais.saldoCredorAcumulado || 0)}`,
+            col1,
+            currentY + 16.5,
+          )
+          doc.text(
+            `• Vendas Interestaduais: ${formatarMoeda(totaisFiscais.receitaInterestadual || 0)}`,
+            col2,
+            currentY + 16.5,
+          )
+          doc.text(
+            `• Exportação: ${formatarMoeda(totaisFiscais.receitaExportacao || 0)}`,
+            col3,
+            currentY + 16.5,
+          )
+
+          currentY += 27
+        }
+
+        currentY += 3
+      }
+    }
   }
 
   if (currentY > 220) {
