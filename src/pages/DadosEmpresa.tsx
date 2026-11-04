@@ -25,8 +25,18 @@ import {
   PerfilRetencaoSplit,
 } from '@/types/dadosEmpresa'
 import { Switch } from '@/components/ui/switch'
-import { formatarCNPJ, limparCNPJ, validarCNPJ } from '@/lib/cnpj'
+import { formatarCNPJ, limparCNPJ } from '@/lib/cnpj'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
+import {
+  executarValidacaoFiscal,
+  validarCnpjInline,
+  validarEmailInline,
+  validarTelefoneInline,
+  validarPercentualInline,
+  validarValorMonetarioInline,
+} from '@/lib/validacaoDadosFiscais'
+import { IndicadorValidadeFiscal } from '@/components/dadosEmpresa/IndicadorValidadeFiscal'
+import { PainelAvisosCoerencia } from '@/components/dadosEmpresa/PainelAvisosCoerencia'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -138,6 +148,11 @@ export default function DadosEmpresa() {
   const [mensagemErro, setMensagemErro] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  // Validação em tempo real e coerência automática
+  const resultadoValidacao = React.useMemo(() => {
+    return executarValidacaoFiscal(formData)
+  }, [formData])
+
   // Rastreia se o usuário já editou campos localmente
   const hasEditedRef = React.useRef(false)
   // Rastreia o ID da empresa vinculado para detectar troca de cliente ativo
@@ -186,18 +201,33 @@ export default function DadosEmpresa() {
     const raw = e.target.value.replace(/\D/g, '')
     const valor = Number(raw) / 100
     atualizarCampo((prev) => ({ ...prev, faturamentoMensal: valor }))
+    const erroFat = validarValorMonetarioInline(valor, 'Faturamento mensal')
+    if (erroFat) {
+      setErrors((prev) => ({ ...prev, faturamentoMensal: erroFat }))
+    } else if (errors.faturamentoMensal) {
+      setErrors((prev) => ({ ...prev, faturamentoMensal: '' }))
+    }
   }
 
   const handleFolhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, '')
     const valor = Number(raw) / 100
     atualizarCampo((prev) => ({ ...prev, folhaPagamentoMensal: valor }))
+    const erroFolha = validarValorMonetarioInline(valor, 'Folha de pagamento')
+    if (erroFolha) {
+      setErrors((prev) => ({ ...prev, folhaPagamentoMensal: erroFolha }))
+    } else if (errors.folhaPagamentoMensal) {
+      setErrors((prev) => ({ ...prev, folhaPagamentoMensal: '' }))
+    }
   }
 
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatarCNPJ(e.target.value)
     atualizarCampo((prev) => ({ ...prev, cnpj: formatted }))
-    if (errors.cnpj) {
+    const erroCnpj = validarCnpjInline(formatted)
+    if (erroCnpj) {
+      setErrors((prev) => ({ ...prev, cnpj: erroCnpj }))
+    } else if (errors.cnpj) {
       setErrors((prev) => ({ ...prev, cnpj: '' }))
     }
   }
@@ -205,66 +235,24 @@ export default function DadosEmpresa() {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneBR(e.target.value)
     atualizarCampo((prev) => ({ ...prev, telefone: formatted }))
-    if (errors.telefone) {
+    const erroTel = validarTelefoneInline(formatted)
+    if (erroTel) {
+      setErrors((prev) => ({ ...prev, telefone: erroTel }))
+    } else if (errors.telefone) {
       setErrors((prev) => ({ ...prev, telefone: '' }))
     }
   }
 
+  const rolarParaCampo = (idCampo: string) => {
+    const el = document.getElementById(idCampo)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.focus?.()
+    }
+  }
+
   const validarFormulario = (): boolean => {
-    const novosErros: Record<string, string> = {}
-
-    // Nome Completo *
-    if (!formData.nomeContato?.trim()) {
-      novosErros.nomeContato = 'Nome é obrigatório (mínimo 3 caracteres)'
-    } else if (formData.nomeContato.trim().length < 3) {
-      novosErros.nomeContato = 'Informe seu nome completo'
-    }
-
-    // Nome da Empresa *
-    if (!formData.nomeEmpresa?.trim()) {
-      novosErros.nomeEmpresa = 'Nome da empresa é obrigatório'
-    }
-
-    // CNPJ da Empresa * (com validação real de dígitos)
-    const cnpjLimpo = limparCNPJ(formData.cnpj || '')
-    if (!formData.cnpj?.trim()) {
-      novosErros.cnpj = 'Informe um CNPJ válido com 14 dígitos'
-    } else if (cnpjLimpo.length !== 14 || !validarCNPJ(formData.cnpj)) {
-      novosErros.cnpj = 'Informe um CNPJ válido com 14 dígitos'
-    }
-
-    // E-mail corporativo *
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!formData.email?.trim()) {
-      novosErros.email = 'E-mail corporativo é obrigatório'
-    } else if (!emailRegex.test(formData.email.trim())) {
-      novosErros.email = 'Informe um e-mail válido (ex: seu.nome@empresa.com.br)'
-    }
-
-    // Telefone / WhatsApp *
-    const digitsOnly = (formData.telefone || '').replace(/\D/g, '')
-    const cleanDigits = digitsOnly.startsWith('55') ? digitsOnly.slice(2) : digitsOnly
-    if (!formData.telefone?.trim()) {
-      novosErros.telefone = 'Telefone/WhatsApp é obrigatório'
-    } else if (cleanDigits.length < 10) {
-      novosErros.telefone = 'Informe um telefone válido com DDD (mínimo 10 dígitos)'
-    }
-
-    // Segmento *
-    if (!formData.segmento) {
-      novosErros.segmento = 'Selecione o segmento principal de atuação'
-    }
-
-    // UF de Origem *
-    if (!formData.ufOrigem) {
-      novosErros.ufOrigem = 'UF de origem é obrigatória'
-    }
-
-    // Cidade / ISS *
-    if (!formData.cidade) {
-      novosErros.cidade = 'Cidade para alíquota de ISS é obrigatória'
-    }
-
+    const novosErros: Record<string, string> = { ...resultadoValidacao.errosCampos }
     setErrors(novosErros)
     return Object.keys(novosErros).length === 0
   }
@@ -687,6 +675,12 @@ export default function DadosEmpresa() {
       {/* CONTEÚDO PRINCIPAL */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <form onSubmit={handleSubmit} className="space-y-8 scroll-mt-28">
+          {/* INDICADOR VISUAL DE VALIDADE FISCAL (RESUMO NO TOPO) */}
+          <IndicadorValidadeFiscal
+            resultado={resultadoValidacao}
+            onRolarParaCampo={rolarParaCampo}
+          />
+
           {/* BANNER EXPLICATIVO / HUB DE MÓDULOS ALIMENTADOS */}
           <div className="bg-gradient-to-r from-[#07132B] via-[#0D1D3A] to-[#07132B] rounded-2xl p-6 sm:p-8 text-white border border-[#D4AF37]/40 shadow-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
@@ -898,8 +892,18 @@ export default function DadosEmpresa() {
                       type="email"
                       value={formData.email || ''}
                       onChange={(e) => {
-                        atualizarCampo((prev) => ({ ...prev, email: e.target.value }))
-                        if (errors.email) setErrors((prev) => ({ ...prev, email: '' }))
+                        const val = e.target.value
+                        atualizarCampo((prev) => ({ ...prev, email: val }))
+                        const err = validarEmailInline(val)
+                        if (err) {
+                          setErrors((prev) => ({ ...prev, email: err }))
+                        } else if (errors.email) {
+                          setErrors((prev) => ({ ...prev, email: '' }))
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const err = validarEmailInline(e.target.value)
+                        if (err) setErrors((prev) => ({ ...prev, email: err }))
                       }}
                       placeholder="carlos@empresa.com.br"
                       className={`h-12 bg-white font-medium ${
@@ -1413,10 +1417,13 @@ export default function DadosEmpresa() {
                         step="0.5"
                         value={formData.perfilInsumosAliquotaCheia ?? 0}
                         onChange={(e) => {
-                          const val = Math.max(0, Math.min(100, Number(e.target.value) || 0))
+                          const num = Number(e.target.value) || 0
+                          const val = Math.max(0, Math.min(100, num))
                           setFormData((prev) => ({ ...prev, perfilInsumosAliquotaCheia: val }))
                           if (errors.perfilInsumos)
                             setErrors((prev) => ({ ...prev, perfilInsumos: '' }))
+                          if (errors.perfilInsumosAliquotaCheia)
+                            setErrors((prev) => ({ ...prev, perfilInsumosAliquotaCheia: '' }))
                         }}
                         className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-10 shadow-xs"
                       />
@@ -1443,7 +1450,8 @@ export default function DadosEmpresa() {
                         step="0.5"
                         value={formData.perfilInsumosMonofasicos ?? 0}
                         onChange={(e) => {
-                          const val = Math.max(0, Math.min(100, Number(e.target.value) || 0))
+                          const num = Number(e.target.value) || 0
+                          const val = Math.max(0, Math.min(100, num))
                           setFormData((prev) => ({
                             ...prev,
                             perfilInsumosMonofasicos: val,
@@ -1451,6 +1459,8 @@ export default function DadosEmpresa() {
                           }))
                           if (errors.perfilInsumos)
                             setErrors((prev) => ({ ...prev, perfilInsumos: '' }))
+                          if (errors.perfilInsumosMonofasicos)
+                            setErrors((prev) => ({ ...prev, perfilInsumosMonofasicos: '' }))
                         }}
                         className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-10 shadow-xs"
                       />
@@ -1475,10 +1485,13 @@ export default function DadosEmpresa() {
                         step="0.5"
                         value={formData.perfilInsumosAliquotaReduzida ?? 0}
                         onChange={(e) => {
-                          const val = Math.max(0, Math.min(100, Number(e.target.value) || 0))
+                          const num = Number(e.target.value) || 0
+                          const val = Math.max(0, Math.min(100, num))
                           setFormData((prev) => ({ ...prev, perfilInsumosAliquotaReduzida: val }))
                           if (errors.perfilInsumos)
                             setErrors((prev) => ({ ...prev, perfilInsumos: '' }))
+                          if (errors.perfilInsumosAliquotaReduzida)
+                            setErrors((prev) => ({ ...prev, perfilInsumosAliquotaReduzida: '' }))
                         }}
                         className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-10 shadow-xs"
                       />
@@ -1521,6 +1534,16 @@ export default function DadosEmpresa() {
 
                   {formData.presencaMonofasicos && (
                     <div className="pt-3 border-t border-slate-100 space-y-2">
+                      {(!formData.categoriasMonofasicos ||
+                        formData.categoriasMonofasicos.length === 0) && (
+                        <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-800 flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
+                          <span>
+                            Atenção: A presença de monofásicos está ativa, mas nenhuma categoria foi
+                            selecionada abaixo.
+                          </span>
+                        </div>
+                      )}
                       <Label className="text-xs font-bold text-[#07132B]">
                         Categorias de produtos monofásicos aplicáveis:
                       </Label>
@@ -1812,6 +1835,8 @@ export default function DadosEmpresa() {
                         onChange={(e) => {
                           const val = Math.min(100, Math.max(0, Number(e.target.value) || 0))
                           setFormData((prev) => ({ ...prev, percentualComprasSemCredito: val }))
+                          if (errors.percentualComprasSemCredito)
+                            setErrors((prev) => ({ ...prev, percentualComprasSemCredito: '' }))
                         }}
                         className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 pr-10 shadow-xs"
                       />
@@ -2052,19 +2077,22 @@ export default function DadosEmpresa() {
                     </div>
                     <div className="relative">
                       <Input
-                        id="percentualRetencaoSplit"
+                        id="percentualVendasInterestaduais"
                         type="number"
-                        min={1}
-                        max={99}
-                        step={5}
-                        value={formData.percentualRetencaoSplit ?? 50}
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={formData.percentualVendasInterestaduais ?? 0}
                         onChange={(e) => {
-                          const val = Math.min(99, Math.max(1, Number(e.target.value) || 0))
-                          atualizarCampo((prev) => ({ ...prev, percentualRetencaoSplit: val }))
+                          const num = Number(e.target.value) || 0
+                          const val = Math.min(100, Math.max(0, num))
+                          setFormData((prev) => ({ ...prev, percentualVendasInterestaduais: val }))
+                          if (errors.percentualVendasInterestaduais)
+                            setErrors((prev) => ({ ...prev, percentualVendasInterestaduais: '' }))
                         }}
                         className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-10 shadow-xs"
                       />
-                    </div>
+                    </div>{' '}
                     <span className="text-[11px] text-slate-500 block">
                       Aplica retenção automática sobre{' '}
                       <strong>{formData.percentualRetencaoSplit ?? 50}%</strong> do montante
@@ -2460,6 +2488,14 @@ export default function DadosEmpresa() {
             </CardContent>
           </Card>
 
+          {/* PAINEL INFORMATIVO DE AVISOS DE COERÊNCIA FISCAL (NÃO BLOQUEANTE) */}
+          {resultadoValidacao.avisosCoerencia.length > 0 && (
+            <PainelAvisosCoerencia
+              avisos={resultadoValidacao.avisosCoerencia}
+              onFocarCampo={rolarParaCampo}
+            />
+          )}
+
           {/* BOTÕES DE AÇÃO: SALVAR / RESTAURAR */}
           <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-4 z-20">
             <div className="flex items-center gap-3">
@@ -2479,7 +2515,16 @@ export default function DadosEmpresa() {
               )}
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+              {resultadoValidacao.totalAvisos > 0 && (
+                <div className="text-[11px] text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>
+                    {resultadoValidacao.totalAvisos} aviso(s) de coerência detectado(s) (não
+                    bloqueia salvamento)
+                  </span>
+                </div>
+              )}
               <Button
                 type="submit"
                 disabled={isSalvando}
