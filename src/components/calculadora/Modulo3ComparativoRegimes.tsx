@@ -67,6 +67,12 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BotaoRetornarDadosIniciais } from '@/components/common/BotaoRetornarDadosIniciais'
+import {
+  RegimeEspecialAtual,
+  PerfilRetencaoSplit,
+  REGIMES_ESPECIAIS_OPCOES,
+  PERFIS_RETENCAO_SPLIT_OPCOES,
+} from '@/types/dadosEmpresa'
 import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
 import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
 
@@ -139,6 +145,19 @@ export default function Modulo3ComparativoRegimes({
     origensPropagadas,
     regimeAtualFiltro,
     setRegimeAtualFiltro,
+    percentualComprasSemCredito,
+    setPercentualComprasSemCredito,
+    saldoCredorAcumulado,
+    setSaldoCredorAcumulado,
+    percentualVendasInterestaduais,
+    setPercentualVendasInterestaduais,
+    regimeEspecialAtual,
+    setRegimeEspecialAtual,
+    perfilRetencaoSplit,
+    setPerfilRetencaoSplit,
+    percentualRetencaoSplit,
+    setPercentualRetencaoSplit,
+    editadoLocalmente,
   } = useCalculadoraIbsCbs()
 
   const handleFaturamentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1023,6 +1042,211 @@ export default function Modulo3ComparativoRegimes({
           {/* ETAPA 3: FARÓIS DO SIMPLES NACIONAL (TETO R$ 4,8M E SUBLIMITE R$ 3,6M) */}
           <div className="pt-2">
             <FarolLimitesSimples alerta={alertaLimitesSimples} compacto={false} />
+          </div>
+        </div>
+
+        {/* Bloco 3: Parâmetros Fiscais Avançados (Fase 2 • Override Local da Matriz Comparativa) */}
+        <div className="bg-slate-50 border border-slate-200/80 p-6 rounded-2xl shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" />
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#07132B] block">
+                  3. Parâmetros Fiscais Avançados (Fase 2 • Override Local)
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Refinamento fiscal exclusivo do Comparativo de Regimes. Não altera o cadastro
+                  global da empresa.
+                </span>
+              </div>
+            </div>
+            {editadoLocalmente?.fase2Parametros && (
+              <BotaoRetornarDadosIniciais
+                onClick={() => {
+                  restaurarDadosEmpresaNoModulo(3)
+                  restaurarDadosEmpresaNoModulo(1)
+                }}
+                rotulo="Retornar aos dados iniciais"
+                className="h-7 text-xs font-semibold bg-white text-slate-800 border-slate-300 hover:bg-slate-100"
+              />
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {/* Campo 1: Compras Sem Crédito */}
+            <div className="min-w-0 w-full space-y-2">
+              <div className="flex justify-between items-center gap-1 flex-wrap">
+                <Label
+                  htmlFor="m3ComprasSemCredito"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                >
+                  Compras s/ Crédito (%)
+                </Label>
+                <span className="text-xs font-mono font-bold text-slate-700 bg-slate-200 px-1.5 py-0.2 rounded">
+                  {percentualComprasSemCredito}%
+                </span>
+              </div>
+              <div className="relative">
+                <Input
+                  id="m3ComprasSemCredito"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={percentualComprasSemCredito}
+                  onChange={(e) => setPercentualComprasSemCredito(Number(e.target.value))}
+                  className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 shadow-sm pr-8"
+                />
+                <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">%</span>
+              </div>
+              <span className="text-[11px] text-slate-500 block leading-tight break-words">
+                Insumos sem apropriação de crédito IBS/CBS.
+              </span>
+            </div>
+
+            {/* Campo 2: Saldo Credor Acumulado */}
+            <div className="min-w-0 w-full space-y-2">
+              <Label
+                htmlFor="m3SaldoCredor"
+                className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] block"
+              >
+                Saldo Credor (R$)
+              </Label>
+              <Input
+                id="m3SaldoCredor"
+                type="text"
+                value={saldoCredorAcumulado.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                })}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/\D/g, '')
+                  setSaldoCredorAcumulado(Number(raw) / 100)
+                }}
+                className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 shadow-sm"
+              />
+              <span className="text-[11px] text-slate-500 block leading-tight break-words">
+                Créditos acumulados compensáveis.
+              </span>
+            </div>
+
+            {/* Campo 3: % Vendas Interestaduais */}
+            <div className="min-w-0 w-full space-y-2">
+              <div className="flex justify-between items-center gap-1 flex-wrap">
+                <Label
+                  htmlFor="m3VendasInterestaduais"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                >
+                  Vendas Interestaduais (%)
+                </Label>
+                <span className="text-xs font-mono font-bold text-slate-700 bg-slate-200 px-1.5 py-0.2 rounded">
+                  {percentualVendasInterestaduais}%
+                </span>
+              </div>
+              <div className="relative">
+                <Input
+                  id="m3VendasInterestaduais"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={percentualVendasInterestaduais}
+                  onChange={(e) => setPercentualVendasInterestaduais(Number(e.target.value))}
+                  className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 shadow-sm pr-8"
+                />
+                <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">%</span>
+              </div>
+              <span className="text-[11px] text-slate-500 block leading-tight break-words">
+                Fração interestadual para alíquotas de destino.
+              </span>
+            </div>
+
+            {/* Campo 4: Regime Especial Atual */}
+            <div className="min-w-0 w-full space-y-2">
+              <Label
+                htmlFor="m3RegimeEspecial"
+                className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B] block"
+              >
+                Regime Especial
+              </Label>
+              <Select
+                value={regimeEspecialAtual}
+                onValueChange={(val) => setRegimeEspecialAtual(val as RegimeEspecialAtual)}
+              >
+                <SelectTrigger
+                  id="m3RegimeEspecial"
+                  className="h-11 bg-white border-slate-300 shadow-sm font-medium text-xs"
+                >
+                  <SelectValue placeholder="Selecione o regime especial" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {REGIMES_ESPECIAIS_OPCOES.map((op) => (
+                    <SelectItem key={op.id} value={op.id} className="text-xs">
+                      {op.rotulo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-slate-500 block leading-tight break-words">
+                Benefício ou regime concentrado atual.
+              </span>
+            </div>
+
+            {/* Campo 5: Perfil Retenção Split Payment */}
+            <div className="min-w-0 w-full space-y-2">
+              <div className="flex justify-between items-center gap-1 flex-wrap">
+                <Label
+                  htmlFor="m3PerfilSplit"
+                  className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                >
+                  Perfil Split Payment
+                </Label>
+                {perfilRetencaoSplit === 'parcial' && (
+                  <span className="text-xs font-mono font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">
+                    {percentualRetencaoSplit}%
+                  </span>
+                )}
+              </div>
+              <Select
+                value={perfilRetencaoSplit}
+                onValueChange={(val) => setPerfilRetencaoSplit(val as PerfilRetencaoSplit)}
+              >
+                <SelectTrigger
+                  id="m3PerfilSplit"
+                  className="h-11 bg-white border-slate-300 shadow-sm font-medium text-xs"
+                >
+                  <SelectValue placeholder="Selecione o perfil de retenção" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {PERFIS_RETENCAO_SPLIT_OPCOES.map((op) => (
+                    <SelectItem key={op.id} value={op.id} className="text-xs">
+                      {op.rotulo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {perfilRetencaoSplit === 'parcial' ? (
+                <div className="pt-1 space-y-1">
+                  <div className="relative">
+                    <Input
+                      id="m3PctRetencaoSplit"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={percentualRetencaoSplit}
+                      onChange={(e) => setPercentualRetencaoSplit(Number(e.target.value))}
+                      className="text-xs font-bold font-mono text-[#07132B] bg-white border-slate-300 h-8 pr-7"
+                      placeholder="% Retenção"
+                    />
+                    <span className="absolute right-2.5 top-1.5 text-xs text-slate-400 font-bold">
+                      %
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <span className="text-[11px] text-slate-500 block leading-tight break-words">
+                  Retenção financeira na liquidação da venda.
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
