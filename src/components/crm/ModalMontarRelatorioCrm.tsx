@@ -186,6 +186,13 @@ export function ModalMontarRelatorioCrm({
     insumosEnergeticos: false,
     intangiveisRoyalties: false,
     imobilizadoUltimos5Anos: 0,
+    imobilizadoAnosDetalhe: {},
+    percentualComprasSemCredito: 0,
+    saldoCredorAcumulado: 0,
+    percentualVendasInterestaduais: 0,
+    regimeEspecialAtual: 'nenhum',
+    perfilRetencaoSplit: 'nao',
+    percentualRetencaoSplit: 0,
   }
 
   const montarConfiguracaoAtual = (): ConfiguracaoRelatorioPersonalizado => {
