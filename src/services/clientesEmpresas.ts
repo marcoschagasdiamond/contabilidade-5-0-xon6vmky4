@@ -46,6 +46,16 @@ export interface ClienteEmpresaModel {
   regime_especial_atual?: string
   perfil_retencao_split?: string
   percentual_retencao_split?: number
+  // Campos Fase 3
+  autos_infracao_ativos?: boolean
+  autos_infracao_quantidade?: number
+  autos_infracao_valor?: number
+  parcelamentos_em_curso?: boolean
+  parcelamentos_quantidade?: number
+  divida_ativa_execucao_fiscal?: boolean
+  obrigacoes_acessorias_atraso?: boolean
+  numero_filiais?: number
+  ufs_operacao?: string[]
   created?: string
   updated?: string
 }
@@ -129,6 +139,24 @@ export function perfilToRecord(
     result.perfil_retencao_split = perfil.perfilRetencaoSplit
   if (perfil.percentualRetencaoSplit !== undefined)
     result.percentual_retencao_split = perfil.percentualRetencaoSplit
+
+  // Fase 3
+  if (perfil.autosInfracaoAtivos !== undefined)
+    result.autos_infracao_ativos = perfil.autosInfracaoAtivos
+  if (perfil.autosInfracaoQuantidade !== undefined)
+    result.autos_infracao_quantidade = perfil.autosInfracaoQuantidade
+  if (perfil.autosInfracaoValor !== undefined)
+    result.autos_infracao_valor = perfil.autosInfracaoValor
+  if (perfil.parcelamentosEmCurso !== undefined)
+    result.parcelamentos_em_curso = perfil.parcelamentosEmCurso
+  if (perfil.parcelamentosQuantidade !== undefined)
+    result.parcelamentos_quantidade = perfil.parcelamentosQuantidade
+  if (perfil.dividaAtivaExecucaoFiscal !== undefined)
+    result.divida_ativa_execucao_fiscal = perfil.dividaAtivaExecucaoFiscal
+  if (perfil.obrigacoesAcessoriasAtraso !== undefined)
+    result.obrigacoes_acessorias_atraso = perfil.obrigacoesAcessoriasAtraso
+  if (perfil.numeroFiliais !== undefined) result.numero_filiais = perfil.numeroFiliais
+  if (perfil.ufsOperacao !== undefined) result.ufs_operacao = perfil.ufsOperacao
 
   return result
 }
@@ -229,6 +257,27 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
     regimeEspecialAtual: (rec.regime_especial_atual as any) || 'nenhum',
     perfilRetencaoSplit: (rec.perfil_retencao_split as any) || 'nao',
     percentualRetencaoSplit: rec.percentual_retencao_split ?? 0,
+    // Fase 3: Situação Fiscal & Multi-UF (valores neutros se indefinidos)
+    autosInfracaoAtivos: !!rec.autos_infracao_ativos,
+    autosInfracaoQuantidade: rec.autos_infracao_quantidade ?? 0,
+    autosInfracaoValor: rec.autos_infracao_valor ?? 0,
+    parcelamentosEmCurso: !!rec.parcelamentos_em_curso,
+    parcelamentosQuantidade: rec.parcelamentos_quantidade ?? 0,
+    dividaAtivaExecucaoFiscal: !!rec.divida_ativa_execucao_fiscal,
+    obrigacoesAcessoriasAtraso: !!rec.obrigacoes_acessorias_atraso,
+    numeroFiliais: rec.numero_filiais && rec.numero_filiais > 0 ? rec.numero_filiais : 1,
+    ufsOperacao: Array.isArray(rec.ufs_operacao)
+      ? rec.ufs_operacao
+      : typeof rec.ufs_operacao === 'string'
+        ? (() => {
+            try {
+              const parsed = JSON.parse(rec.ufs_operacao)
+              return Array.isArray(parsed) ? parsed : []
+            } catch {
+              return []
+            }
+          })()
+        : [],
     atualizadoEm: rec.updated || rec.created,
   }
 }

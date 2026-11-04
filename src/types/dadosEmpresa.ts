@@ -85,6 +85,23 @@ export interface DadosEmpresaPerfil {
   // 5b. % retenção quando split for parcial - 0 a 100%
   percentualRetencaoSplit?: number
 
+  // Bloco 5: Fase 3 — Situação Fiscal & Multi-UF (Fonte Mestra)
+  // 1. Autos de infração ativos
+  autosInfracaoAtivos: boolean
+  autosInfracaoQuantidade?: number
+  autosInfracaoValor?: number
+  // 2. Parcelamentos em curso
+  parcelamentosEmCurso: boolean
+  parcelamentosQuantidade?: number
+  // 3. Débitos com inscrição em dívida ativa ou execução fiscal
+  dividaAtivaExecucaoFiscal: boolean
+  // 4. Obrigações acessórias em atraso
+  obrigacoesAcessoriasAtraso: boolean
+  // 5. Número de filiais / estabelecimentos (mínimo 1)
+  numeroFiliais: number
+  // 6. UFs adicionais de operação (além da UF principal de origem)
+  ufsOperacao: string[]
+
   // Metadados
   atualizadoEm?: string
 }
@@ -219,6 +236,17 @@ export const DADOS_EMPRESA_PADRAO: DadosEmpresaPerfil = {
   regimeEspecialAtual: 'nenhum',
   perfilRetencaoSplit: 'nao',
   percentualRetencaoSplit: 0,
+
+  // Bloco 5 (Fase 3 - Situação Fiscal & Multi-UF neutros por padrão)
+  autosInfracaoAtivos: false,
+  autosInfracaoQuantidade: 0,
+  autosInfracaoValor: 0,
+  parcelamentosEmCurso: false,
+  parcelamentosQuantidade: 0,
+  dividaAtivaExecucaoFiscal: false,
+  obrigacoesAcessoriasAtraso: false,
+  numeroFiliais: 1,
+  ufsOperacao: [],
 }
 
 const STORAGE_KEY = 'contabilidade5_dados_empresa'

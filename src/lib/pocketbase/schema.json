@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T13:59:21.914Z",
+  "generatedAt": "2026-11-04T14:36:14.679Z",
   "collections": [
     {
       "name": "users",
@@ -870,6 +870,60 @@
         {
           "name": "percentual_retencao_split",
           "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "autos_infracao_ativos",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "autos_infracao_quantidade",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "autos_infracao_valor",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "parcelamentos_em_curso",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "parcelamentos_quantidade",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "divida_ativa_execucao_fiscal",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "obrigacoes_acessorias_atraso",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "numero_filiais",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ufs_operacao",
+          "type": "json",
           "required": false,
           "system": false
         }

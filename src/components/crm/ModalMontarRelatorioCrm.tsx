@@ -193,6 +193,15 @@ export function ModalMontarRelatorioCrm({
     regimeEspecialAtual: 'nenhum',
     perfilRetencaoSplit: 'nao',
     percentualRetencaoSplit: 0,
+    autosInfracaoAtivos: false,
+    autosInfracaoQuantidade: 0,
+    autosInfracaoValor: 0,
+    parcelamentosEmCurso: false,
+    parcelamentosQuantidade: 0,
+    dividaAtivaExecucaoFiscal: false,
+    obrigacoesAcessoriasAtraso: false,
+    numeroFiliais: 1,
+    ufsOperacao: [],
   }
 
   const montarConfiguracaoAtual = (): ConfiguracaoRelatorioPersonalizado => {

@@ -2060,7 +2060,7 @@ export default function DadosEmpresa() {
                         value={formData.percentualRetencaoSplit ?? 50}
                         onChange={(e) => {
                           const val = Math.min(99, Math.max(1, Number(e.target.value) || 0))
-                          setFormData((prev) => ({ ...prev, percentualRetencaoSplit: val }))
+                          atualizarCampo((prev) => ({ ...prev, percentualRetencaoSplit: val }))
                         }}
                         className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-10 shadow-xs"
                       />
@@ -2069,6 +2069,389 @@ export default function DadosEmpresa() {
                       Aplica retenção automática sobre{' '}
                       <strong>{formData.percentualRetencaoSplit ?? 50}%</strong> do montante
                       tributário nas simulações de fluxo de caixa e split payment.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* BLOCO: SITUAÇÃO FISCAL (FASE 3) */}
+          <Card className="border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="bg-gradient-to-r from-rose-950 via-[#07132B] to-slate-900 px-6 py-5 border-b border-rose-900/30 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
+                  <AlertTriangle className="w-5 h-5 text-rose-400" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-white flex items-center gap-2">
+                    Situação Fiscal
+                    <span className="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                      Fase 3 • Diagnóstico 360°
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    Controle de passivos, autuações e conformidade acessória para mapeamento de
+                    riscos e defesas tributárias.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <CardContent className="p-6 md:p-8 space-y-6">
+              {/* 1. Autos de infração ativos */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-bold text-[#07132B] flex items-center gap-2">
+                      Autos de Infração Ativos
+                      {formData.autosInfracaoAtivos && (
+                        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 font-bold">
+                          Ativo
+                        </span>
+                      )}
+                    </Label>
+                    <p className="text-xs text-slate-500 max-w-xl">
+                      A empresa possui autuações fiscais lavradas pela Receita Federal, SEFAZ ou
+                      Município em fase administrativa ou judicial?
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs font-semibold text-slate-600">
+                      {formData.autosInfracaoAtivos ? 'Sim, possui' : 'Não possui'}
+                    </span>
+                    <Switch
+                      checked={!!formData.autosInfracaoAtivos}
+                      onCheckedChange={(val) =>
+                        atualizarCampo((prev) => ({
+                          ...prev,
+                          autosInfracaoAtivos: val,
+                          autosInfracaoQuantidade: val ? prev.autosInfracaoQuantidade || 1 : 0,
+                          autosInfracaoValor: val ? prev.autosInfracaoValor || 0 : 0,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                {formData.autosInfracaoAtivos && (
+                  <div className="pt-4 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="autosInfracaoQuantidade"
+                        className="text-xs font-bold text-slate-700"
+                      >
+                        Quantidade de Autos Ativos
+                      </Label>
+                      <Input
+                        id="autosInfracaoQuantidade"
+                        type="number"
+                        min={1}
+                        max={999}
+                        value={formData.autosInfracaoQuantidade ?? 1}
+                        onChange={(e) => {
+                          const val = Math.max(1, Number(e.target.value) || 1)
+                          atualizarCampo((prev) => ({ ...prev, autosInfracaoQuantidade: val }))
+                        }}
+                        className="h-10 text-sm font-mono font-bold bg-white"
+                        placeholder="Ex: 1"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="autosInfracaoValor"
+                        className="text-xs font-bold text-slate-700"
+                      >
+                        Valor Total Aproximado (R$)
+                      </Label>
+                      <Input
+                        id="autosInfracaoValor"
+                        type="number"
+                        min={0}
+                        step={1000}
+                        value={formData.autosInfracaoValor ?? 0}
+                        onChange={(e) => {
+                          const val = Math.max(0, Number(e.target.value) || 0)
+                          atualizarCampo((prev) => ({ ...prev, autosInfracaoValor: val }))
+                        }}
+                        className="h-10 text-sm font-mono font-bold bg-white"
+                        placeholder="Ex: 50000"
+                      />
+                      <span className="text-[11px] text-slate-500 block">
+                        Equivalente a:{' '}
+                        <strong>{formatarMoeda(formData.autosInfracaoValor ?? 0)}</strong>
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Parcelamentos em curso */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-bold text-[#07132B] flex items-center gap-2">
+                      Parcelamentos Tributários em Curso
+                      {formData.parcelamentosEmCurso && (
+                        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 font-bold">
+                          {formData.parcelamentosQuantidade || 1} ativo(s)
+                        </span>
+                      )}
+                    </Label>
+                    <p className="text-xs text-slate-500 max-w-xl">
+                      Existem acordos de parcelamento ativos (PERT, Simples Nacional
+                      ordinário/especial, transações tributárias PGFN ou parcelamentos estaduais)?
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs font-semibold text-slate-600">
+                      {formData.parcelamentosEmCurso ? 'Sim, possui' : 'Não possui'}
+                    </span>
+                    <Switch
+                      checked={!!formData.parcelamentosEmCurso}
+                      onCheckedChange={(val) =>
+                        atualizarCampo((prev) => ({
+                          ...prev,
+                          parcelamentosEmCurso: val,
+                          parcelamentosQuantidade: val ? prev.parcelamentosQuantidade || 1 : 0,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                {formData.parcelamentosEmCurso && (
+                  <div className="pt-4 border-t border-slate-200 max-w-xs space-y-1.5">
+                    <Label
+                      htmlFor="parcelamentosQuantidade"
+                      className="text-xs font-bold text-slate-700"
+                    >
+                      Quantidade de Acordos/Parcelamentos Ativos
+                    </Label>
+                    <Input
+                      id="parcelamentosQuantidade"
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={formData.parcelamentosQuantidade ?? 1}
+                      onChange={(e) => {
+                        const val = Math.max(1, Number(e.target.value) || 1)
+                        atualizarCampo((prev) => ({ ...prev, parcelamentosQuantidade: val }))
+                      }}
+                      className="h-10 text-sm font-mono font-bold bg-white"
+                      placeholder="Ex: 2"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* 3 e 4: Débitos em dívida ativa / Execução fiscal e Obrigações acessórias */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 3. Dívida ativa / Execução fiscal */}
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-bold text-[#07132B] flex items-center gap-2">
+                      Inscrição em Dívida Ativa ou Execução Fiscal
+                      {formData.dividaAtivaExecucaoFiscal && (
+                        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 font-bold">
+                          Risco Crítico
+                        </span>
+                      )}
+                    </Label>
+                    <p className="text-xs text-slate-500">
+                      Débitos federais, estaduais ou municipais já inscritos na PGFN/PGE ou com
+                      processo de cobrança judicial ajuizado.
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                    <span className="text-xs font-semibold text-slate-600">
+                      {formData.dividaAtivaExecucaoFiscal
+                        ? 'Constam débitos/execuções'
+                        : 'Sem débitos inscritos'}
+                    </span>
+                    <Switch
+                      checked={!!formData.dividaAtivaExecucaoFiscal}
+                      onCheckedChange={(val) =>
+                        atualizarCampo((prev) => ({ ...prev, dividaAtivaExecucaoFiscal: val }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Obrigações acessórias em atraso */}
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-bold text-[#07132B] flex items-center gap-2">
+                      Obrigações Acessórias em Atraso
+                      {formData.obrigacoesAcessoriasAtraso && (
+                        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 font-bold">
+                          Pendente
+                        </span>
+                      )}
+                    </Label>
+                    <p className="text-xs text-slate-500">
+                      Declarações fiscais em atraso ou omissas (EFD ICMS/IPI, EFD Contribuições,
+                      DCTFWeb, ECD, ECF, PGDAS ou DEFIS).
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                    <span className="text-xs font-semibold text-slate-600">
+                      {formData.obrigacoesAcessoriasAtraso
+                        ? 'Constam pendências de envio'
+                        : 'Declarações em dia'}
+                    </span>
+                    <Switch
+                      checked={!!formData.obrigacoesAcessoriasAtraso}
+                      onCheckedChange={(val) =>
+                        atualizarCampo((prev) => ({ ...prev, obrigacoesAcessoriasAtraso: val }))
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* BLOCO: OPERAÇÃO MULTI-UF (FASE 3) */}
+          <Card className="border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-950 via-[#07132B] to-slate-900 px-6 py-5 border-b border-blue-900/30 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
+                  <Globe2 className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-white flex items-center gap-2">
+                    Operação Multi-UF & Estabelecimentos
+                    <span className="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                      Fase 3 • DIFAL & Territorialidade
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    Mapeamento geográfico de filiais e estados de operação para análise de alíquotas
+                    estaduais, DIFAL e transição IBS.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <CardContent className="p-6 md:p-8 space-y-6">
+              {/* 5. Número de filiais / estabelecimentos */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="numeroFiliais"
+                      className="text-sm font-bold text-[#07132B] flex items-center gap-2"
+                    >
+                      Número de Estabelecimentos (Matriz + Filiais)
+                    </Label>
+                    <p className="text-xs text-slate-500 max-w-xl">
+                      Informe o total de unidades produtivas, depósitos, centros de distribuição ou
+                      lojas físicas ativas. Padrão: 1 (apenas matriz).
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Input
+                      id="numeroFiliais"
+                      type="number"
+                      min={1}
+                      max={999}
+                      value={formData.numeroFiliais ?? 1}
+                      onChange={(e) => {
+                        const val = Math.max(1, Number(e.target.value) || 1)
+                        atualizarCampo((prev) => ({ ...prev, numeroFiliais: val }))
+                      }}
+                      className="w-28 h-10 text-base font-mono font-bold text-center bg-white border-slate-300"
+                    />
+                    <span className="text-xs font-semibold text-slate-600">
+                      {(formData.numeroFiliais ?? 1) > 1
+                        ? `1 matriz + ${(formData.numeroFiliais ?? 1) - 1} filial(is)`
+                        : 'Apenas Matriz'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 6. UFs adicionais de operação */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-bold text-[#07132B] flex items-center gap-2">
+                      Demais UFs de Operação Comercial / Filiais
+                      <span className="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                        {formData.ufsOperacao?.length || 0} selecionada(s)
+                      </span>
+                    </Label>
+                    <p className="text-xs text-slate-500">
+                      A <strong>UF principal ({formData.ufOrigem || 'SP'})</strong> já está
+                      cadastrada acima. Selecione as outras unidades federativas onde a empresa
+                      opera filiais, armazéns ou realiza distribuição direta.
+                    </p>
+                  </div>
+                  {formData.ufsOperacao && formData.ufsOperacao.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => atualizarCampo((prev) => ({ ...prev, ufsOperacao: [] }))}
+                      className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-8 self-start sm:self-auto"
+                    >
+                      Limpar seleção
+                    </Button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-9 gap-2 pt-2">
+                  {LISTA_UFS_ICMS.map((uf) => {
+                    const isOrigem = uf === (formData.ufOrigem || 'SP')
+                    const selecionada = isOrigem || (formData.ufsOperacao?.includes(uf) ?? false)
+
+                    return (
+                      <button
+                        key={uf}
+                        type="button"
+                        disabled={isOrigem}
+                        onClick={() => {
+                          if (isOrigem) return
+                          atualizarCampo((prev) => {
+                            const atuais = prev.ufsOperacao || []
+                            const novaLista = atuais.includes(uf)
+                              ? atuais.filter((u) => u !== uf)
+                              : [...atuais, uf]
+                            return { ...prev, ufsOperacao: novaLista }
+                          })
+                        }}
+                        className={`p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 ${
+                          isOrigem
+                            ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-900 cursor-not-allowed'
+                            : selecionada
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-xs ring-1 ring-blue-600'
+                              : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-100'
+                        }`}
+                        title={
+                          isOrigem
+                            ? `${uf} é a UF principal de origem da empresa (definida acima)`
+                            : `Clique para ${selecionada ? 'remover' : 'adicionar'} ${uf}`
+                        }
+                      >
+                        <span className="text-xs font-black font-mono">{uf}</span>
+                        <span className="text-[10px] leading-none opacity-80">
+                          {isOrigem ? 'Origem' : selecionada ? 'Ativo' : 'Adicionar'}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {formData.ufsOperacao && formData.ufsOperacao.length > 0 && (
+                  <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-100 text-xs text-blue-900 flex items-start gap-2">
+                    <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <span>
+                      Operação interestadual ativa em{' '}
+                      <strong>{formData.ufsOperacao.length + 1} estados</strong>:{' '}
+                      {formData.ufOrigem || 'SP'} (origem) + {formData.ufsOperacao.join(', ')}. No
+                      IBS/CBS, o imposto pertencerá integralmente ao estado/município de destino de
+                      cada consumo.
                     </span>
                   </div>
                 )}
