@@ -590,22 +590,36 @@ function CalculadoraConteudo() {
             {/* BOTÃO DE DESTAQUE: DADOS DA EMPRESA */}
             <Link
               to="/dados-empresa"
-              className="p-3 rounded-xl bg-gradient-to-r from-[#07132B] to-[#122347] text-white flex items-center justify-between gap-2.5 hover:from-[#0D1D3A] hover:to-[#1a3363] border border-[#D4AF37]/40 shadow-sm transition-all group"
+              className="relative p-3.5 rounded-xl bg-gradient-to-r from-[#07132B] via-[#0E2442] to-[#14345C] text-white flex items-center justify-between gap-2.5 hover:from-[#0D1D3A] hover:via-[#14345C] hover:to-[#1a3f70] border-2 border-[#D4AF37] shadow-lg shadow-[#07132B]/20 transition-all hover:scale-[1.01] active:scale-[0.99] group ring-2 ring-[#D4AF37]/30"
+              title="Acessar e calibrar os Dados da Empresa (Fonte Mestra)"
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-[#D4AF37] text-[#07132B] flex items-center justify-center shrink-0 font-bold group-hover:scale-105 transition-transform">
-                  <Building2 className="w-4 h-4" />
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#F3E5AB] via-[#D4AF37] to-[#AA820A] text-[#07132B] flex items-center justify-center shrink-0 font-bold shadow-md group-hover:scale-105 transition-transform">
+                    <Building2 className="w-5 h-5 text-[#07132B]" />
+                  </div>
+                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4AF37] opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D4AF37]" />
+                  </span>
                 </div>
                 <div className="min-w-0">
-                  <span className="text-xs font-bold text-[#D4AF37] block truncate">
-                    Dados da Empresa
-                  </span>
-                  <span className="text-[10px] text-slate-300 block truncate">
-                    Perfil Global Integrado
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black tracking-wide text-white group-hover:text-[#F3E5AB] transition-colors block truncate">
+                      Dados da Empresa
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-[#D4AF37] text-[#07132B] shrink-0 shadow-xs">
+                      Fonte Mestra
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-[#D4AF37] font-semibold block truncate">
+                    Base cadastral e fiscal integrada
                   </span>
                 </div>
               </div>
-              <ArrowRight className="w-4 h-4 text-[#D4AF37] shrink-0 group-hover:translate-x-0.5 transition-transform" />
+              <div className="w-7 h-7 rounded-lg bg-[#D4AF37]/20 border border-[#D4AF37]/50 flex items-center justify-center shrink-0 group-hover:bg-[#D4AF37] group-hover:text-[#07132B] transition-colors">
+                <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37] group-hover:text-[#07132B] group-hover:translate-x-0.5 transition-transform" />
+              </div>
             </Link>
 
             <div className="px-3 py-1.5 border-b border-slate-100">
