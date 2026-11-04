@@ -17,6 +17,7 @@ import {
   isAno2026OuAtual,
   AnoTransicaoIbsCbs,
 } from '@/types/calculadoraIbsCbs'
+import type { PerfilRetencaoSplit } from '@/types/dadosEmpresa'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 
 interface BlocoSplitPaymentProps {

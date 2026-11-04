@@ -800,6 +800,118 @@ export default function ModuloConfiguracoesRecuperador({
           </div>
         </div>
       </div>
+
+      {/* CARD 5: PARÂMETROS FISCAIS AVANÇADOS (FASE 2 • FONTE MESTRA • MERAMENTE INFORMATIVO) */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" />
+              <h3 className="text-sm font-bold text-[#07132B] uppercase tracking-wide">
+                Módulo 5 • Parâmetros Fiscais Avançados (Fase 2 • Fonte Mestra)
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Parâmetros refinados propagados de Dados da Empresa (/dados-empresa). Exibição
+              estritamente indicativa de contexto; a apuração e seleção de teses do Recuperador
+              permanecem 100% manuais.
+            </p>
+          </div>
+          <span className="text-[10px] font-mono font-bold bg-[#07132B] text-[#D4AF37] px-2.5 py-1 rounded-full">
+            CONTEXTO C5.0 • INFORMATIVO
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+          {/* 1. Compras Sem Direito a Crédito */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1.5">
+            <span className="text-xs font-bold text-[#07132B] block">
+              1. Compras sem Direito a Crédito
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono font-bold text-slate-800">
+                {configuracoes.percentualComprasSemCredito ?? 0}%
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 block">
+              Uso e consumo, não tributadas ou isentas
+            </span>
+          </div>
+
+          {/* 2. Saldo Credor Acumulado */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1.5">
+            <span className="text-xs font-bold text-[#07132B] block">
+              2. Saldo Credor Acumulado / Estoque
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono font-bold text-[#07132B]">
+                {formatarMoeda(configuracoes.saldoCredorAcumulado ?? 0)}
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 block">
+              Estoque inicial de créditos escriturais passíveis de compensação
+            </span>
+          </div>
+
+          {/* 3. Vendas Interestaduais */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1.5">
+            <span className="text-xs font-bold text-[#07132B] block">3. Vendas Interestaduais</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono font-bold text-slate-800">
+                {configuracoes.percentualVendasInterestaduais ?? 0}%
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 block">
+              Operações sujeitas a alíquotas interestaduais e partilha DIFAL
+            </span>
+          </div>
+
+          {/* 4. Regime Especial Atual */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1.5">
+            <span className="text-xs font-bold text-[#07132B] block">4. Regime Especial Atual</span>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#07132B] text-[#D4AF37]">
+                {configuracoes.regimeEspecialAtual === 'monofasico'
+                  ? 'Monofásico (PIS/COFINS)'
+                  : configuracoes.regimeEspecialAtual === 'substituicao_tributaria'
+                    ? 'Substituição Tributária (ICMS-ST)'
+                    : configuracoes.regimeEspecialAtual === 'zona_franca_manaus'
+                      ? 'Zona Franca de Manaus (ZFM/ALC)'
+                      : configuracoes.regimeEspecialAtual === 'ret_permuta'
+                        ? 'RET / Permuta Imobiliária'
+                        : 'Nenhum / Padrão'}
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 block">
+              Regime setorial específico cadastrado
+            </span>
+          </div>
+
+          {/* 5. Perfil de Retenção Split Payment */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1.5 col-span-1 md:col-span-2">
+            <span className="text-xs font-bold text-[#07132B] block">
+              5. Perfil de Retenção / Split Payment
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-800">
+                {configuracoes.perfilRetencaoSplit === 'sim_todos'
+                  ? 'Sim, todos (Retenção integral)'
+                  : configuracoes.perfilRetencaoSplit === 'parcial'
+                    ? `Parcial (${configuracoes.percentualRetencaoSplit ?? 0}%)`
+                    : 'Não retêm (Recolhimento padrão pós-faturamento)'}
+              </span>
+              {configuracoes.perfilRetencaoSplit === 'parcial' && (
+                <span className="text-xs text-slate-600 font-mono font-bold">
+                  Retenção estimada: {configuracoes.percentualRetencaoSplit ?? 0}%
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] text-slate-500 block">
+              Comportamento dos clientes na liquidação das notas fiscais
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

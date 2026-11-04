@@ -1131,6 +1131,61 @@ export default function DiagnosticoRelatorioConsolidado() {
                       </span>
                     </div>
                   </div>
+
+                  {/* PARÂMETROS FISCAIS AVANÇADOS (FASE 2 • FONTE MESTRA • INFORMATIVO) */}
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 col-span-2 sm:col-span-3 lg:col-span-4">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-slate-400 uppercase font-semibold block text-[10px]">
+                        Parâmetros Fiscais Avançados (Fase 2 • Fonte Mestra)
+                      </span>
+                      <span className="text-[9px] font-mono font-bold bg-[#07132B] text-[#D4AF37] px-2 py-0.5 rounded">
+                        INFORMATIVO
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-xs text-slate-700">
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono">
+                        Compras s/ crédito:{' '}
+                        <strong>{dadosEmpresa.percentualComprasSemCredito ?? 0}%</strong>
+                      </span>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono">
+                        Saldo credor acumulado:{' '}
+                        <strong>
+                          R${' '}
+                          {Number(dadosEmpresa.saldoCredorAcumulado || 0).toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                          })}
+                        </strong>
+                      </span>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono">
+                        Vendas interestaduais:{' '}
+                        <strong>{dadosEmpresa.percentualVendasInterestaduais ?? 0}%</strong>
+                      </span>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200">
+                        Regime especial:{' '}
+                        <strong>
+                          {dadosEmpresa.regimeEspecialAtual === 'monofasico'
+                            ? 'Monofásico'
+                            : dadosEmpresa.regimeEspecialAtual === 'substituicao_tributaria'
+                              ? 'ICMS-ST'
+                              : dadosEmpresa.regimeEspecialAtual === 'zona_franca_manaus'
+                                ? 'ZFM / ALC'
+                                : dadosEmpresa.regimeEspecialAtual === 'ret_permuta'
+                                  ? 'RET / Permuta'
+                                  : 'Nenhum / Padrão'}
+                        </strong>
+                      </span>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200">
+                        Split Payment:{' '}
+                        <strong>
+                          {dadosEmpresa.perfilRetencaoSplit === 'sim_todos'
+                            ? 'Integral'
+                            : dadosEmpresa.perfilRetencaoSplit === 'parcial'
+                              ? `Parcial (${dadosEmpresa.percentualRetencaoSplit ?? 0}%)`
+                              : 'Não retêm'}
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">

@@ -60,6 +60,13 @@ export interface ConfiguracoesRecuperador {
   intangiveisRoyalties?: boolean
   imobilizadoUltimos5Anos?: number
   imobilizadoAnosDetalhe?: Record<string, number>
+  // Campos Fase 2 (Refinamento Tributário & Operacional • Fonte Mestra)
+  percentualComprasSemCredito?: number
+  saldoCredorAcumulado?: number
+  percentualVendasInterestaduais?: number
+  regimeEspecialAtual?: import('./dadosEmpresa').RegimeEspecialAtual
+  perfilRetencaoSplit?: import('./dadosEmpresa').PerfilRetencaoSplit
+  percentualRetencaoSplit?: number
 }
 
 export interface TeseSelecaoUsuario {
