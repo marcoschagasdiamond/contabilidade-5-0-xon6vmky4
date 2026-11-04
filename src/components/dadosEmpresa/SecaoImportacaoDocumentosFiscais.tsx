@@ -83,7 +83,7 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
           return
         }
 
-        // Converte para formato compatível com ResultadoParsingSped
+        // Converte para formato compatível com ResultadoParsingSped, incluindo agregados contábeis
         const resultadoCompativel: ResultadoParsingSped = {
           valido: true,
           metadados: resBalancete.metadados,
@@ -120,6 +120,15 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
           },
           camposSugeridos: resBalancete.camposSugeridos,
           camposComparativo: resBalancete.camposComparativo,
+          agregadosContabeis: {
+            ativoTotal: resBalancete.detalhesBalancete.ativoTotal,
+            passivoTotal: resBalancete.detalhesBalancete.passivoTotal,
+            patrimonioLiquido: resBalancete.detalhesBalancete.patrimonioLiquido,
+            cmvCsp: resBalancete.detalhesBalancete.custosMercadoriasServicos,
+            lucroLiquido: resBalancete.detalhesBalancete.lucroLiquidoPeriodo,
+            receitaBruta: resBalancete.detalhesBalancete.receitaBrutaPeriodo,
+            despesasOperacionais: resBalancete.detalhesBalancete.despesasComCreditoPeriodo,
+          },
         }
 
         setItensInformativos(resBalancete.detalhesBalancete.itensInformativos)

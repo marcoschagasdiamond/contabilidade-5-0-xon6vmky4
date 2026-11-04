@@ -117,6 +117,15 @@ export interface ResultadoParsingSped {
   detalhes: DetalhesExtracaoSped
   camposSugeridos: Partial<DadosEmpresaPerfil>
   camposComparativo: CampoExtracaoComparativo[]
+  agregadosContabeis?: {
+    ativoTotal?: number
+    passivoTotal?: number
+    patrimonioLiquido?: number
+    cmvCsp?: number
+    lucroLiquido?: number
+    receitaBruta?: number
+    despesasOperacionais?: number
+  }
 }
 
 // Helpers numéricos de SPED: "1234,56" -> 1234.56

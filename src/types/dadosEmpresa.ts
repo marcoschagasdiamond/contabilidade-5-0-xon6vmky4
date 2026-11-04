@@ -107,6 +107,35 @@ export interface DadosEmpresaPerfil {
   documentoFiscalImportado?: DocumentoFiscalImportadoReferencia
 }
 
+export interface AgregadosContabeisImportados {
+  ativoTotal?: number
+  passivoTotal?: number
+  patrimonioLiquido?: number
+  cmvCsp?: number
+  lucroLiquido?: number
+  receitaBruta?: number
+  despesasOperacionais?: number
+}
+
+export interface TotaisFiscaisImportados {
+  faturamentoPeriodo?: number
+  comprasTotais?: number
+  comprasComCredito?: number
+  saldoCredorAcumulado?: number
+  receitaInterestadual?: number
+  receitaExportacao?: number
+  percentualVendasInterestaduais?: number
+}
+
+export interface OrigemCampoImportado {
+  chave: string
+  rotulo: string
+  documento: string
+  tipo: 'efd_contribuicoes' | 'efd_icms_ipi' | 'balancete' | 'outro'
+  dataImportacao: string
+  valorFormatado?: string
+}
+
 export interface DocumentoFiscalImportadoReferencia {
   tipo: 'efd_contribuicoes' | 'efd_icms_ipi' | 'balancete' | 'outro'
   nomeTipo: string
@@ -117,6 +146,12 @@ export interface DocumentoFiscalImportadoReferencia {
   cnpjArquivo?: string
   linhasLidas?: number
   resumoExtracao?: string
+  // Agregados contábeis e fiscais persistidos
+  agregadosContabeis?: AgregadosContabeisImportados
+  totaisFiscais?: TotaisFiscaisImportados
+  // Rastreabilidade de proveniência campo a campo
+  camposPreenchidos?: string[]
+  origemCampos?: Record<string, OrigemCampoImportado>
 }
 
 export type RegimeEspecialAtual =

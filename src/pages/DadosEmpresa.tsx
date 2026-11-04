@@ -388,16 +388,54 @@ export default function DadosEmpresa() {
           ? ('balancete' as const)
           : ('efd_contribuicoes' as const)
 
-    const docReferencia = {
+    const dataHoraIso = new Date().toISOString()
+
+    // Mapeamento de rastreabilidade campo a campo
+    const camposAtualizadosChaves = Object.keys(novosCampos)
+    const mapaOrigemCampos: Record<string, import('@/types/dadosEmpresa').OrigemCampoImportado> = {
+      ...(formData.documentoFiscalImportado?.origemCampos || {}),
+    }
+
+    resultado.camposComparativo.forEach((cmp) => {
+      mapaOrigemCampos[cmp.chave as string] = {
+        chave: cmp.chave as string,
+        rotulo: cmp.rotulo,
+        documento: resultado.metadados.nomeArquivo,
+        tipo: tipoDoc,
+        dataImportacao: dataHoraIso,
+        valorFormatado: cmp.valorFormatadoExtraido,
+      }
+    })
+
+    // Totais Fiscais extraídos
+    const totaisFiscais: import('@/types/dadosEmpresa').TotaisFiscaisImportados = {
+      faturamentoPeriodo: resultado.detalhes.faturamentoPeriodo,
+      comprasTotais: resultado.detalhes.comprasTotais,
+      comprasComCredito: resultado.detalhes.comprasComCredito,
+      saldoCredorAcumulado: resultado.detalhes.saldoCredorAcumulado,
+      receitaInterestadual: resultado.detalhes.receitaInterestadual,
+      receitaExportacao: resultado.detalhes.receitaExportacao,
+      percentualVendasInterestaduais: resultado.detalhes.percentualVendasInterestaduais,
+    }
+
+    // Agregados Contábeis (se vierem de balancete)
+    const agregadosContabeis =
+      resultado.agregadosContabeis || formData.documentoFiscalImportado?.agregadosContabeis
+
+    const docReferencia: import('@/types/dadosEmpresa').DocumentoFiscalImportadoReferencia = {
       tipo: tipoDoc,
       nomeTipo: resultado.metadados.nomeTipo,
       nomeArquivo: resultado.metadados.nomeArquivo,
       periodoInicio: resultado.metadados.periodoInicio,
       periodoFim: resultado.metadados.periodoFim,
-      dataImportacao: new Date().toISOString(),
+      dataImportacao: dataHoraIso,
       cnpjArquivo: resultado.metadados.cnpj,
       linhasLidas: resultado.metadados.linhasLidas,
       resumoExtracao: `${resultado.camposComparativo.length} campos atualizados via ${resultado.metadados.nomeTipo}`,
+      agregadosContabeis,
+      totaisFiscais,
+      camposPreenchidos: camposAtualizadosChaves,
+      origemCampos: mapaOrigemCampos,
     }
 
     const dadosAtualizados: DadosEmpresaPerfil = {
