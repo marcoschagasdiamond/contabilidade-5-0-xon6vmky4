@@ -680,6 +680,9 @@ export default function RecuperadorCreditos() {
         description: 'O download do relatório com as teses e quadro SELIC foi iniciado.',
       })
       setModalPdfAberto(false)
+
+      // Ao concluir a análise com emissão de parecer, reverte os dados locais para o cadastro mestre do cliente
+      handleRestaurarDadosMestres()
     } catch (err: any) {
       toast({
         title: 'Erro ao gerar parecer',

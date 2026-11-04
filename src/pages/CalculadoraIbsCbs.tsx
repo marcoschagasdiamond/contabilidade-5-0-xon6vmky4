@@ -119,6 +119,7 @@ function CalculadoraConteudo() {
     obterSnapshotParametros,
     obterSnapshotResultados,
     restaurarSimulacao,
+    restaurarDadosEmpresaNoModulo,
     parametroRadarTemporario,
     aplicarAliquotaRadarTemporaria,
     limparParametroRadarTemporario,
@@ -348,6 +349,12 @@ function CalculadoraConteudo() {
         description: 'O download com os resultados dos 6 módulos foi iniciado com sucesso.',
       })
       setModalPdfAtualAberto(false)
+
+      // Ao concluir a análise com emissão do relatório PDF, reverte os dados locais para o cadastro mestre
+      restaurarDadosEmpresaNoModulo(2)
+      restaurarDadosEmpresaNoModulo(3)
+      restaurarDadosEmpresaNoModulo(4)
+      restaurarDadosEmpresaNoModulo(5)
     } catch (err: any) {
       toast({
         title: 'Erro ao gerar relatório',

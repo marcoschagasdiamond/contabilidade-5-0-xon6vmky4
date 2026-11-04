@@ -14,18 +14,28 @@ export function notificarFonteMestraAtualizada() {
 }
 
 /**
- * Compara campos espelhados entre o estado atual do módulo e a nova versão.
- * Retorna true quando algum campo listado diverge (ou seja, houve alteração
- * manual nos dados que vêm do cadastro do cliente).
+ * Compara valores ou campos espelhados entre o estado atual do módulo e a nova versão.
+ * Suporta comparação de valores individuais (2 argumentos) ou de campos de um objeto (3 argumentos).
+ * Retorna true quando algum campo ou valor diverge (ou seja, houve alteração manual).
  */
-export function camposDivergem(
-  antes: Record<string, unknown>,
-  depois: Record<string, unknown>,
-  campos: string[],
-): boolean {
-  return campos.some((campo) => {
-    const valorA = (antes as Record<string, unknown>)[campo]
-    const valorD = (depois as Record<string, unknown>)[campo]
-    return JSON.stringify(valorA ?? null) !== JSON.stringify(valorD ?? null)
-  })
+export function camposDivergem(antes: unknown, depois: unknown, campos?: string[]): boolean {
+  if (Array.isArray(campos) && campos.length > 0) {
+    const objA = (antes && typeof antes === 'object' ? antes : {}) as Record<string, unknown>
+    const objD = (depois && typeof depois === 'object' ? depois : {}) as Record<string, unknown>
+    return campos.some((campo) => camposDivergem(objA[campo], objD[campo]))
+  }
+
+  // Normalização de vazios (null, undefined, '')
+  const normA = antes === null || antes === undefined || antes === '' ? null : antes
+  const normD = depois === null || depois === undefined || depois === '' ? null : depois
+
+  if (normA === null && normD === null) return false
+  if (normA === null || normD === null) return true
+
+  // Comparação numérica exata
+  if (typeof normA === 'number' && typeof normD === 'number') {
+    return normA !== normD
+  }
+
+  return JSON.stringify(normA) !== JSON.stringify(normD)
 }

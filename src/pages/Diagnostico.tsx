@@ -91,6 +91,7 @@ import { BotaoRetornarDadosIniciais } from '@/components/common/BotaoRetornarDad
 import { useFonteMestraSync } from '@/hooks/useFonteMestraSync'
 import { camposDivergem } from '@/lib/fonteMestra'
 import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
+import { useToast } from '@/hooks/use-toast'
 
 interface FormErrors {
   nome?: string
@@ -119,6 +120,7 @@ export default function Diagnostico() {
     isEmpresario,
   } = useAuth()
   const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
+  const { toast } = useToast()
   const [paywallModalOpen, setPaywallModalOpen] = useState(false)
   const [paywallMotivo, setPaywallMotivo] = useState<'diagnostico' | 'pdf'>('diagnostico')
 
@@ -128,6 +130,76 @@ export default function Diagnostico() {
   // Carrega dados da empresa salvos para pré-preenchimento
   const perfilEmpresaInicial = React.useMemo(() => carregarDadosEmpresa(), [])
   const [temPerfilSalvo, setTemPerfilSalvo] = useState(() => existeDadosEmpresaSalvos())
+
+  // Wizard state (etapa 1 a 4; etapa 5 = resultado)
+  const [etapa, setEtapa] = useState<number>(1)
+  const [isCalculando, setIsCalculando] = useState(false)
+  const [resultado, setResultado] = useState<ResultadoDiagnosticoCompleto | null>(null)
+  const [sucessoTrilhaAberto, setSucessoTrilhaAberto] = useState(false)
+
+  // Estado React local da simulação de ano da transição (default: anoBase do formulário/diagnóstico, tipicamente 2027)
+  const [anoSimulacao, setAnoSimulacao] = useState<AnoBaseSimulacao>(() => {
+    const anoInicial = perfilEmpresaInicial.anoBaseTransicao || 2027
+    return (anoInicial >= 2026 && anoInicial <= 2033 ? anoInicial : 2027) as AnoBaseSimulacao
+  })
+
+  // Valores iniciais calculados do perfil
+  const fatAnualInicial = perfilEmpresaInicial.faturamentoMensal
+    ? perfilEmpresaInicial.faturamentoMensal * 12
+    : 600000
+  const folhaAnualInicial = perfilEmpresaInicial.folhaPagamentoMensal
+    ? perfilEmpresaInicial.folhaPagamentoMensal * 12
+    : 120000
+  const folhaMensalInicial = perfilEmpresaInicial.folhaPagamentoMensal || 10000
+  const despesasCreditosInicial = perfilEmpresaInicial.despesasComCreditosMensais || 15000
+  const margemLucroInicial = perfilEmpresaInicial.margemLucroEstimada ?? 25
+  const exportacaoInicial = perfilEmpresaInicial.percentualExportacao ?? 0
+
+  // Formulário pré-preenchido com o perfil completo de Dados da Empresa
+  const [formData, setFormData] = useState<{
+    nome: string
+    email: string
+    telefone: string
+    empresa: string
+    cnpj: string
+    cidade: string
+    segmento: SegmentoEmpresa
+    rbt12: number
+    folha12: number
+    folhaMensal: number
+    despesasCreditos: number
+    percentualExportacao: number
+    ufOrigem: string
+    margemLucro: number
+    funcionarios: string
+    emissaoNf: string
+    atividadeMista: boolean
+    regimeAtual: string
+    anoBase: AnoBaseSimulacao
+  }>(() => ({
+    nome: perfilEmpresaInicial.nomeContato || '',
+    email: perfilEmpresaInicial.email || '',
+    telefone: perfilEmpresaInicial.telefone || '',
+    empresa: perfilEmpresaInicial.nomeEmpresa || '',
+    cnpj: perfilEmpresaInicial.cnpj || '',
+    cidade: perfilEmpresaInicial.cidade || 'sp-sao-paulo',
+    segmento: (perfilEmpresaInicial.segmento as SegmentoEmpresa) || 'Serviços',
+    rbt12: fatAnualInicial,
+    folha12: folhaAnualInicial,
+    folhaMensal: folhaMensalInicial,
+    despesasCreditos: despesasCreditosInicial,
+    percentualExportacao: exportacaoInicial,
+    ufOrigem: perfilEmpresaInicial.ufOrigem || 'SP',
+    margemLucro: margemLucroInicial,
+    funcionarios: perfilEmpresaInicial.funcionarios || '1 a 5 funcionários',
+    emissaoNf: perfilEmpresaInicial.emissaoNf || 'Predominante para Pessoas Jurídicas (B2B)',
+    atividadeMista:
+      typeof perfilEmpresaInicial.atividadeMista === 'boolean'
+        ? perfilEmpresaInicial.atividadeMista
+        : perfilEmpresaInicial.tipoAtividade === 'misto',
+    regimeAtual: perfilEmpresaInicial.regimeAtual || 'Simples Nacional',
+    anoBase: perfilEmpresaInicial.anoBaseTransicao || 2026,
+  }))
 
   // Sincroniza em tempo real se o perfil de Dados da Empresa for atualizado
   useEffect(() => {
@@ -238,77 +310,7 @@ export default function Diagnostico() {
       title: 'Dados restaurados',
       description: 'O Diagnóstico retornou aos dados originais do cadastro do cliente.',
     })
-  }, [])
-
-  // Wizard state (etapa 1 a 4; etapa 5 = resultado)
-  const [etapa, setEtapa] = useState<number>(1)
-  const [isCalculando, setIsCalculando] = useState(false)
-  const [resultado, setResultado] = useState<ResultadoDiagnosticoCompleto | null>(null)
-  const [sucessoTrilhaAberto, setSucessoTrilhaAberto] = useState(false)
-
-  // Estado React local da simulação de ano da transição (default: anoBase do formulário/diagnóstico, tipicamente 2027)
-  const [anoSimulacao, setAnoSimulacao] = useState<AnoBaseSimulacao>(() => {
-    const anoInicial = perfilEmpresaInicial.anoBaseTransicao || 2027
-    return (anoInicial >= 2026 && anoInicial <= 2033 ? anoInicial : 2027) as AnoBaseSimulacao
-  })
-
-  // Valores iniciais calculados do perfil
-  const fatAnualInicial = perfilEmpresaInicial.faturamentoMensal
-    ? perfilEmpresaInicial.faturamentoMensal * 12
-    : 600000
-  const folhaAnualInicial = perfilEmpresaInicial.folhaPagamentoMensal
-    ? perfilEmpresaInicial.folhaPagamentoMensal * 12
-    : 120000
-  const folhaMensalInicial = perfilEmpresaInicial.folhaPagamentoMensal || 10000
-  const despesasCreditosInicial = perfilEmpresaInicial.despesasComCreditosMensais || 15000
-  const margemLucroInicial = perfilEmpresaInicial.margemLucroEstimada ?? 25
-  const exportacaoInicial = perfilEmpresaInicial.percentualExportacao ?? 0
-
-  // Formulário pré-preenchido com o perfil completo de Dados da Empresa
-  const [formData, setFormData] = useState<{
-    nome: string
-    email: string
-    telefone: string
-    empresa: string
-    cnpj: string
-    cidade: string
-    segmento: SegmentoEmpresa
-    rbt12: number
-    folha12: number
-    folhaMensal: number
-    despesasCreditos: number
-    percentualExportacao: number
-    ufOrigem: string
-    margemLucro: number
-    funcionarios: string
-    emissaoNf: string
-    atividadeMista: boolean
-    regimeAtual: string
-    anoBase: AnoBaseSimulacao
-  }>(() => ({
-    nome: perfilEmpresaInicial.nomeContato || '',
-    email: perfilEmpresaInicial.email || '',
-    telefone: perfilEmpresaInicial.telefone || '',
-    empresa: perfilEmpresaInicial.nomeEmpresa || '',
-    cnpj: perfilEmpresaInicial.cnpj || '',
-    cidade: perfilEmpresaInicial.cidade || 'sp-sao-paulo',
-    segmento: (perfilEmpresaInicial.segmento as SegmentoEmpresa) || 'Serviços',
-    rbt12: fatAnualInicial,
-    folha12: folhaAnualInicial,
-    folhaMensal: folhaMensalInicial,
-    despesasCreditos: despesasCreditosInicial,
-    percentualExportacao: exportacaoInicial,
-    ufOrigem: perfilEmpresaInicial.ufOrigem || 'SP',
-    margemLucro: margemLucroInicial,
-    funcionarios: perfilEmpresaInicial.funcionarios || '1 a 5 funcionários',
-    emissaoNf: perfilEmpresaInicial.emissaoNf || 'Predominante para Pessoas Jurídicas (B2B)',
-    atividadeMista:
-      typeof perfilEmpresaInicial.atividadeMista === 'boolean'
-        ? perfilEmpresaInicial.atividadeMista
-        : perfilEmpresaInicial.tipoAtividade === 'misto',
-    regimeAtual: perfilEmpresaInicial.regimeAtual || 'Simples Nacional',
-    anoBase: perfilEmpresaInicial.anoBaseTransicao || 2026,
-  }))
+  }, [toast])
 
   // Visualização ativa na tela de resultado: 'novo' (Reforma IBS/CBS), 'atual' (Legislação Atual) ou 'comparativo' (lado a lado)
   const [visaoSistema, setVisaoSistema] = useState<'novo' | 'comparativo' | 'atual'>('novo')
@@ -559,6 +561,11 @@ export default function Diagnostico() {
         },
         resultado,
       })
+
+      // Ao concluir a análise com emissão de parecer/relatório PDF, restaura os dados locais para os do cadastro do cliente
+      if (temDivergenciaDiagnostico) {
+        handleRestaurarDadosDiagnostico()
+      }
     } catch (err) {
       console.error('Erro ao gerar relatório em PDF:', err)
     } finally {
