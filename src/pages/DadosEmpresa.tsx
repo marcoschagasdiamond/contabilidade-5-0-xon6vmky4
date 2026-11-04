@@ -381,11 +381,15 @@ export default function DadosEmpresa() {
   ) => {
     setMensagemErro(null)
 
+    const tipoDoc =
+      resultado.metadados.tipo === 'efd_icms_ipi'
+        ? ('efd_icms_ipi' as const)
+        : resultado.metadados.nomeTipo.toLowerCase().includes('balancete')
+          ? ('balancete' as const)
+          : ('efd_contribuicoes' as const)
+
     const docReferencia = {
-      tipo:
-        resultado.metadados.tipo === 'efd_icms_ipi'
-          ? ('efd_icms_ipi' as const)
-          : ('efd_contribuicoes' as const),
+      tipo: tipoDoc,
       nomeTipo: resultado.metadados.nomeTipo,
       nomeArquivo: resultado.metadados.nomeArquivo,
       periodoInicio: resultado.metadados.periodoInicio,

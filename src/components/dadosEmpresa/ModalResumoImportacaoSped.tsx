@@ -27,6 +27,7 @@ interface ModalResumoImportacaoSpedProps {
   aberto: boolean
   onFechar: () => void
   resultado: ResultadoParsingSped | null
+  itensInformativos?: { rotulo: string; valor: number; descricao: string }[]
   onConfirmar: (chavesSelecionadas?: string[]) => void
   salvando?: boolean
 }
@@ -35,12 +36,14 @@ export const ModalResumoImportacaoSped: React.FC<ModalResumoImportacaoSpedProps>
   aberto,
   onFechar,
   resultado,
+  itensInformativos,
   onConfirmar,
   salvando = false,
 }) => {
   if (!resultado || !resultado.valido) return null
 
-  const { metadados, detalhes, camposComparativo } = resultado
+  const { metadados, camposComparativo } = resultado
+  const informativos = itensInformativos || []
 
   const getIconeGrupo = (grupo: CampoExtracaoComparativo['grupo']) => {
     switch (grupo) {
@@ -221,6 +224,38 @@ export const ModalResumoImportacaoSped: React.FC<ModalResumoImportacaoSpedProps>
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Agregados Informativos (sem campo direto na fonte mestra) */}
+          {informativos.length > 0 && (
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+              <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <HelpCircle className="w-4 h-4 text-blue-600" />
+                Agregados Contábeis Identificados (Apenas Informativos)
+              </span>
+              <p className="text-[11px] text-slate-500">
+                Os itens abaixo foram apurados para sua conferência mas não alteram nenhum campo da
+                Fonte Mestra.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs">
+                {informativos.map((inf, i) => (
+                  <div
+                    key={i}
+                    className="p-2.5 bg-white rounded-lg border border-slate-200/90 space-y-0.5"
+                  >
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                      {inf.rotulo}
+                    </span>
+                    <span className="font-bold text-[#07132B] block">
+                      {inf.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block leading-tight">
+                      {inf.descricao}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

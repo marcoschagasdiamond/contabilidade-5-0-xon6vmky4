@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
 import { parseSpedConteudo, ResultadoParsingSped } from '@/lib/parseSpedFiscal'
+import { parseBalanceteArquivo } from '@/lib/parseBalancete'
 import { ModalResumoImportacaoSped } from './ModalResumoImportacaoSped'
 
 interface SecaoImportacaoDocumentosFiscaisProps {
@@ -33,6 +34,9 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
   const [carregando, setCarregando] = useState(false)
   const [erroUpload, setErroUpload] = useState<string | null>(null)
   const [resultadoParsing, setResultadoParsing] = useState<ResultadoParsingSped | null>(null)
+  const [itensInformativos, setItensInformativos] = useState<
+    { rotulo: string; valor: number; descricao: string }[]
+  >([])
   const [modalAberto, setModalAberto] = useState(false)
   const [salvandoConfirmacao, setSalvandoConfirmacao] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -41,16 +45,18 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
 
   const processarArquivo = async (file: File) => {
     setErroUpload(null)
+    setItensInformativos([])
 
-    // Valida extensão e tamanho máximo (100MB)
-    const nome = file.name
-    const isTxtOuSped =
-      nome.toLowerCase().endsWith('.txt') ||
-      nome.toLowerCase().endsWith('.sped') ||
-      file.type.includes('text')
+    const nome = file.name.toLowerCase()
+    const extensao = nome.split('.').pop() || ''
 
-    if (!isTxtOuSped) {
-      setErroUpload('Formato não suportado. Por favor envie um arquivo TXT de EFD/SPED.')
+    const isTxtOuSped = extensao === 'txt' || extensao === 'sped' || file.type.includes('text')
+    const isPlanilhaBalancete = extensao === 'xlsx' || extensao === 'csv' || extensao === 'xls'
+
+    if (!isTxtOuSped && !isPlanilhaBalancete) {
+      setErroUpload(
+        'Formato não suportado. Por favor envie um arquivo de escrituração EFD (.TXT) ou Balancete Contábil (.CSV / .XLSX).',
+      )
       return
     }
 
@@ -64,20 +70,79 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
     setCarregando(true)
 
     try {
-      const texto = await file.text()
-      const resultado = parseSpedConteudo(texto, file.name, perfilAtual)
+      if (isPlanilhaBalancete) {
+        // Rota de parsing de Balancete Contábil
+        const resBalancete = await parseBalanceteArquivo(file, perfilAtual)
 
-      if (!resultado.valido) {
-        setErroUpload(
-          resultado.erro ||
-            'Não foi possível identificar uma estrutura EFD válida neste arquivo. Certifique-se de enviar a EFD Contribuições ou EFD ICMS/IPI em formato TXT.',
-        )
-        setCarregando(false)
-        return
+        if (!resBalancete.valido) {
+          setErroUpload(
+            resBalancete.erro ||
+              'Não foi possível extrair dados válidos do Balancete Contábil. Verifique se a planilha possui contas com descrição e valores de saldo/movimentação.',
+          )
+          setCarregando(false)
+          return
+        }
+
+        // Converte para formato compatível com ResultadoParsingSped
+        const resultadoCompativel: ResultadoParsingSped = {
+          valido: true,
+          metadados: resBalancete.metadados,
+          detalhes: {
+            faturamentoPeriodo: resBalancete.detalhesBalancete.receitaBrutaPeriodo,
+            faturamentoMensalEstimado: resBalancete.detalhesBalancete.faturamentoMensalEstimado,
+            mesesNoArquivo: resBalancete.detalhesBalancete.mesesEstimados,
+            receitaInterestadual: 0,
+            receitaEstadual: 0,
+            receitaExportacao: 0,
+            percentualVendasInterestaduais: 0,
+            percentualExportacao: 0,
+            comprasTotais: 0,
+            comprasComCredito: 0,
+            comprasSemCredito: 0,
+            percentualComprasSemCredito: 0,
+            percentualComprasVendasEstimado: 0,
+            insumosAliquotaCheia: 0,
+            insumosMonofasicos: 0,
+            insumosAliquotaReduzida: 0,
+            perfilInsumosAliquotaCheia: 0,
+            perfilInsumosMonofasicos: 0,
+            perfilInsumosAliquotaReduzida: 0,
+            presencaMonofasicos: false,
+            categoriasMonofasicosDetectadas: [],
+            insumosEnergeticosDetectados: resBalancete.detalhesBalancete.contasEnergiaEletrica > 0,
+            intangiveisDetectados: resBalancete.detalhesBalancete.contasIntangiveisRoyalties > 0,
+            imobilizadoIdentificado: resBalancete.detalhesBalancete.ativoImobilizadoTotal,
+            saldoCredorAcumulado: 0,
+            filiaisDetectadas: 1,
+            ufsOperacaoDetectadas: [],
+            regimeEspecialSugerido: 'nenhum',
+            avisos: resBalancete.detalhesBalancete.avisos,
+          },
+          camposSugeridos: resBalancete.camposSugeridos,
+          camposComparativo: resBalancete.camposComparativo,
+        }
+
+        setItensInformativos(resBalancete.detalhesBalancete.itensInformativos)
+        setResultadoParsing(resultadoCompativel)
+        setModalAberto(true)
+      } else {
+        // Rota de parsing de EFD SPED (TXT)
+        const texto = await file.text()
+        const resultado = parseSpedConteudo(texto, file.name, perfilAtual)
+
+        if (!resultado.valido) {
+          setErroUpload(
+            resultado.erro ||
+              'Não foi possível identificar uma estrutura EFD válida neste arquivo. Certifique-se de enviar a EFD Contribuições ou EFD ICMS/IPI em formato TXT.',
+          )
+          setCarregando(false)
+          return
+        }
+
+        setItensInformativos([])
+        setResultadoParsing(resultado)
+        setModalAberto(true)
       }
-
-      setResultadoParsing(resultado)
-      setModalAberto(true)
     } catch (err: any) {
       console.error('Erro ao ler arquivo fiscal:', err)
       setErroUpload(
@@ -152,10 +217,10 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
               Importação de Documentos Fiscais (Opcional)
             </h3>
             <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
-              Carregue a <strong>EFD Contribuições (SPED PIS/Cofins)</strong> ou{' '}
-              <strong>EFD ICMS/IPI</strong> para preencher automaticamente perfil de insumos,
-              monofásicos, % interestadual, % compras sem crédito, faturamento e filiais na Fonte
-              Mestra.
+              Carregue a <strong>EFD Contribuições (SPED PIS/Cofins)</strong>,{' '}
+              <strong>EFD ICMS/IPI</strong> ou <strong>Balancete Contábil (CSV/XLSX)</strong> para
+              preencher automaticamente receitas, despesas geradoras de crédito, folha, insumos
+              energéticos, intangíveis, imobilizado e filiais na Fonte Mestra.
             </p>
           </div>
 
@@ -218,7 +283,7 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
             <input
               ref={fileInputRef}
               type="file"
-              accept=".txt,.sped,text/plain"
+              accept=".txt,.sped,.csv,.xlsx,.xls,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
               onChange={handleFileChange}
               className="hidden"
               disabled={disabled || carregando}
@@ -236,12 +301,12 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
               <div className="space-y-1">
                 <h4 className="text-sm sm:text-base font-bold text-[#07132B]">
                   {carregando
-                    ? 'Lendo e analisando linhas da escrituração...'
-                    : 'Arraste seu arquivo SPED aqui ou clique para selecionar'}
+                    ? 'Lendo e analisando contas e movimentações...'
+                    : 'Arraste seu arquivo SPED ou Balancete aqui ou clique para selecionar'}
                 </h4>
                 <p className="text-xs text-slate-500">
-                  Aceita arquivos <strong>.TXT</strong> oficiais da EFD Contribuições ou EFD
-                  ICMS/IPI.
+                  Aceita <strong>EFD Contribuições</strong>, <strong>EFD ICMS/IPI</strong> (.TXT) e{' '}
+                  <strong>Balancete Contábil</strong> (.CSV ou .XLSX).
                 </p>
               </div>
 
@@ -250,13 +315,19 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
                   variant="outline"
                   className="text-[10px] bg-white text-slate-600 border-slate-200"
                 >
-                  EFD Contribuições (PIS/Cofins)
+                  EFD Contribuições (.TXT)
                 </Badge>
                 <Badge
                   variant="outline"
                   className="text-[10px] bg-white text-slate-600 border-slate-200"
                 >
-                  EFD ICMS/IPI (SPED Fiscal)
+                  EFD ICMS/IPI (.TXT)
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] bg-amber-50 text-[#07132B] border-[#D4AF37]/40 font-bold"
+                >
+                  Balancete Contábil (.CSV / .XLSX)
                 </Badge>
                 <Badge
                   variant="outline"
@@ -322,6 +393,7 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
         aberto={modalAberto}
         onFechar={() => setModalAberto(false)}
         resultado={resultadoParsing}
+        itensInformativos={itensInformativos}
         onConfirmar={handleConfirmarResumo}
         salvando={salvandoConfirmacao}
       />

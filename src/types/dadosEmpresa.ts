@@ -108,7 +108,7 @@ export interface DadosEmpresaPerfil {
 }
 
 export interface DocumentoFiscalImportadoReferencia {
-  tipo: 'efd_contribuicoes' | 'efd_icms_ipi' | 'outro'
+  tipo: 'efd_contribuicoes' | 'efd_icms_ipi' | 'balancete' | 'outro'
   nomeTipo: string
   nomeArquivo: string
   periodoInicio?: string
