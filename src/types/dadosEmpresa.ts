@@ -102,8 +102,21 @@ export interface DadosEmpresaPerfil {
   // 6. UFs adicionais de operação (além da UF principal de origem)
   ufsOperacao: string[]
 
-  // Metadados
+  // Metadados e Documento Fiscal Importado
   atualizadoEm?: string
+  documentoFiscalImportado?: DocumentoFiscalImportadoReferencia
+}
+
+export interface DocumentoFiscalImportadoReferencia {
+  tipo: 'efd_contribuicoes' | 'efd_icms_ipi' | 'outro'
+  nomeTipo: string
+  nomeArquivo: string
+  periodoInicio?: string
+  periodoFim?: string
+  dataImportacao: string
+  cnpjArquivo?: string
+  linhasLidas?: number
+  resumoExtracao?: string
 }
 
 export type RegimeEspecialAtual =

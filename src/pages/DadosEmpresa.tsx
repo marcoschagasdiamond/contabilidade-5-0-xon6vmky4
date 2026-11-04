@@ -37,6 +37,8 @@ import {
 } from '@/lib/validacaoDadosFiscais'
 import { IndicadorValidadeFiscal } from '@/components/dadosEmpresa/IndicadorValidadeFiscal'
 import { PainelAvisosCoerencia } from '@/components/dadosEmpresa/PainelAvisosCoerencia'
+import { SecaoImportacaoDocumentosFiscais } from '@/components/dadosEmpresa/SecaoImportacaoDocumentosFiscais'
+import { ResultadoParsingSped } from '@/lib/parseSpedFiscal'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -369,6 +371,87 @@ export default function DadosEmpresa() {
       setFormData(DADOS_EMPRESA_PADRAO)
       setSalvoComSucesso(true)
       setTimeout(() => setSalvoComSucesso(false), 3000)
+    }
+  }
+
+  // Handler de Confirmação da Importação Opcional de Documentos Fiscais
+  const handleConfirmarImportacaoDocumento = async (
+    novosCampos: Partial<DadosEmpresaPerfil>,
+    resultado: ResultadoParsingSped,
+  ) => {
+    setMensagemErro(null)
+
+    const docReferencia = {
+      tipo:
+        resultado.metadados.tipo === 'efd_icms_ipi'
+          ? ('efd_icms_ipi' as const)
+          : ('efd_contribuicoes' as const),
+      nomeTipo: resultado.metadados.nomeTipo,
+      nomeArquivo: resultado.metadados.nomeArquivo,
+      periodoInicio: resultado.metadados.periodoInicio,
+      periodoFim: resultado.metadados.periodoFim,
+      dataImportacao: new Date().toISOString(),
+      cnpjArquivo: resultado.metadados.cnpj,
+      linhasLidas: resultado.metadados.linhasLidas,
+      resumoExtracao: `${resultado.camposComparativo.length} campos atualizados via ${resultado.metadados.nomeTipo}`,
+    }
+
+    const dadosAtualizados: DadosEmpresaPerfil = {
+      ...formData,
+      ...novosCampos,
+      documentoFiscalImportado: docReferencia,
+    }
+
+    // Atualiza estado local imediatamente
+    setFormData(dadosAtualizados)
+    hasEditedRef.current = false
+
+    const alteracoes = calcularDiffDadosEmpresa(dadosEmpresa, dadosAtualizados)
+
+    try {
+      const salvo = await salvar(dadosAtualizados)
+      setSalvoComSucesso(true)
+
+      // Registra auditoria imutável se configurado
+      if (alteracoes.length > 0) {
+        try {
+          await registrarAuditoriaDadosEmpresa({
+            empresaId: empresaVinculadaId,
+            userId: user?.id,
+            origemAjuste: 'pagina_dados_empresa',
+            nomeEmpresa: salvo.nomeEmpresa,
+            cnpj: salvo.cnpj,
+            alteracoes,
+            snapshotAnterior: dadosEmpresa,
+            snapshotNovo: salvo,
+            descricao: `Importação de documento fiscal: ${resultado.metadados.nomeArquivo} (${alteracoes.length} campo(s) preenchido(s) automaticamente)`,
+          })
+          listarAuditoriaDadosEmpresa({
+            empresaId: empresaVinculadaId || undefined,
+            userId: user?.id || undefined,
+          }).then((h) => setHistoricoAuditoria(h))
+        } catch (e) {
+          console.warn('Erro ao gravar auditoria da importação fiscal:', e)
+        }
+      }
+
+      try {
+        localStorage.removeItem(CHAVE_RASCUNHO)
+      } catch {
+        /* ignore */
+      }
+
+      setTimeout(() => setSalvoComSucesso(false), 4000)
+    } catch (err: any) {
+      console.error('Erro ao salvar dados importados:', err)
+      setSalvoComSucesso(false)
+      const msg =
+        err?.message ||
+        (typeof err === 'string'
+          ? err
+          : 'Não foi possível gravar os dados importados no banco de dados. Tente novamente.')
+      setMensagemErro(`Erro ao salvar dados importados no banco: ${msg}`)
+      throw err
     }
   }
 
@@ -758,6 +841,15 @@ export default function DadosEmpresa() {
               </div>
             </div>
           </div>
+
+          {/* ========================================================================= */}
+          {/* SEÇÃO OPCIONAL: IMPORTAÇÃO DE DOCUMENTOS FISCAIS (EFD SPED)              */}
+          {/* ========================================================================= */}
+          <SecaoImportacaoDocumentosFiscais
+            perfilAtual={formData}
+            onConfirmarImportacao={handleConfirmarImportacaoDocumento}
+            disabled={isSalvando}
+          />
 
           {/* ========================================================================= */}
           {/* BLOCO 1: DADOS OPERACIONAIS DA EMPRESA (ESPELHO DO PASSO 1 DO DIAGNÓSTICO) */}

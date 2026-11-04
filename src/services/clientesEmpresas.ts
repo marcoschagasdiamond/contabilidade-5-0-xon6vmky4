@@ -56,6 +56,7 @@ export interface ClienteEmpresaModel {
   obrigacoes_acessorias_atraso?: boolean
   numero_filiais?: number
   ufs_operacao?: string[]
+  documento_fiscal_importado?: any
   created?: string
   updated?: string
 }
@@ -157,6 +158,9 @@ export function perfilToRecord(
     result.obrigacoes_acessorias_atraso = perfil.obrigacoesAcessoriasAtraso
   if (perfil.numeroFiliais !== undefined) result.numero_filiais = perfil.numeroFiliais
   if (perfil.ufsOperacao !== undefined) result.ufs_operacao = perfil.ufsOperacao
+
+  if (perfil.documentoFiscalImportado !== undefined)
+    result.documento_fiscal_importado = perfil.documentoFiscalImportado
 
   return result
 }
@@ -278,6 +282,18 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
             }
           })()
         : [],
+    documentoFiscalImportado:
+      typeof rec.documento_fiscal_importado === 'object' && rec.documento_fiscal_importado !== null
+        ? rec.documento_fiscal_importado
+        : typeof rec.documento_fiscal_importado === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(rec.documento_fiscal_importado)
+              } catch {
+                return undefined
+              }
+            })()
+          : undefined,
     atualizadoEm: rec.updated || rec.created,
   }
 }
