@@ -590,34 +590,37 @@ function CalculadoraConteudo() {
             {/* BOTÃO DE DESTAQUE: DADOS DA EMPRESA */}
             <Link
               to="/dados-empresa"
-              className="relative p-3.5 rounded-xl bg-gradient-to-r from-[#07132B] via-[#0E2442] to-[#14345C] text-white flex items-center justify-between gap-2.5 hover:from-[#0D1D3A] hover:via-[#14345C] hover:to-[#1a3f70] border-2 border-[#D4AF37] shadow-lg shadow-[#07132B]/20 transition-all hover:scale-[1.01] active:scale-[0.99] group ring-2 ring-[#D4AF37]/30"
+              className="relative p-3 rounded-xl bg-gradient-to-br from-[#07132B] via-[#0E2442] to-[#14345C] text-white flex items-center gap-3 hover:from-[#0D1D3A] hover:via-[#14345C] hover:to-[#1a3f70] border-2 border-[#D4AF37] shadow-lg shadow-[#07132B]/20 transition-all hover:scale-[1.01] active:scale-[0.99] group ring-2 ring-[#D4AF37]/30"
               title="Acessar e calibrar os Dados da Empresa (Fonte Mestra)"
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#F3E5AB] via-[#D4AF37] to-[#AA820A] text-[#07132B] flex items-center justify-center shrink-0 font-bold shadow-md group-hover:scale-105 transition-transform">
-                    <Building2 className="w-5 h-5 text-[#07132B]" />
-                  </div>
-                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4AF37] opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D4AF37]" />
-                  </span>
+              {/* ÍCONE COM PONTO PULSANTE */}
+              <div className="relative shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#F3E5AB] via-[#D4AF37] to-[#AA820A] text-[#07132B] flex items-center justify-center font-bold shadow-md group-hover:scale-105 transition-transform">
+                  <Building2 className="w-5 h-5 text-[#07132B] shrink-0" />
                 </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-black tracking-wide text-white group-hover:text-[#F3E5AB] transition-colors block truncate">
-                      Dados da Empresa
-                    </span>
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-[#D4AF37] text-[#07132B] shrink-0 shadow-xs">
-                      Fonte Mestra
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-[#D4AF37] font-semibold block truncate">
-                    Base cadastral e fiscal integrada
-                  </span>
-                </div>
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 pointer-events-none">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4AF37] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D4AF37]" />
+                </span>
               </div>
-              <div className="w-7 h-7 rounded-lg bg-[#D4AF37]/20 border border-[#D4AF37]/50 flex items-center justify-center shrink-0 group-hover:bg-[#D4AF37] group-hover:text-[#07132B] transition-colors">
+
+              {/* TEXTO E BADGE */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs font-black tracking-wide text-white group-hover:text-[#F3E5AB] transition-colors truncate">
+                    Dados da Empresa
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#D4AF37] text-[#07132B] shrink-0 shadow-xs leading-none">
+                    Fonte Mestra
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#D4AF37] font-semibold block truncate mt-0.5">
+                  Base cadastral e fiscal
+                </span>
+              </div>
+
+              {/* SETA DE AÇÃO */}
+              <div className="w-6 h-6 rounded-md bg-[#D4AF37]/20 border border-[#D4AF37]/50 flex items-center justify-center shrink-0 group-hover:bg-[#D4AF37] group-hover:text-[#07132B] transition-colors">
                 <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37] group-hover:text-[#07132B] group-hover:translate-x-0.5 transition-transform" />
               </div>
             </Link>
