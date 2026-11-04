@@ -141,10 +141,39 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
     despesasComCreditosMensais: rec.despesas_creditos_mensais ?? 30000,
     percentualExportacao: rec.percentual_exportacao ?? 0,
     anoBaseTransicao: (rec.ano_base_transicao as any) || 2026,
-    // Fase 1
-    perfilInsumosAliquotaCheia: rec.perfil_insumos_aliquota_cheia ?? 100,
-    perfilInsumosMonofasicos: rec.perfil_insumos_monofasicos ?? 0,
-    perfilInsumosAliquotaReduzida: rec.perfil_insumos_aliquota_reduzida ?? 0,
+    // Fase 1: Perfil de Insumos
+    // Quando os três percentuais estiverem zerados ou indefinidos (ex: registro antigo no banco),
+    // trata como "não preenchido" e aplica 100/0/0 como padrão seguro
+    perfilInsumosAliquotaCheia: (() => {
+      const cheia = rec.perfil_insumos_aliquota_cheia
+      const mono = rec.perfil_insumos_monofasicos
+      const reduz = rec.perfil_insumos_aliquota_reduzida
+      const todosZeradosOuIndefinidos =
+        (cheia === 0 || cheia === undefined || cheia === null) &&
+        (mono === 0 || mono === undefined || mono === null) &&
+        (reduz === 0 || reduz === undefined || reduz === null)
+      return todosZeradosOuIndefinidos ? 100 : (cheia ?? 100)
+    })(),
+    perfilInsumosMonofasicos: (() => {
+      const cheia = rec.perfil_insumos_aliquota_cheia
+      const mono = rec.perfil_insumos_monofasicos
+      const reduz = rec.perfil_insumos_aliquota_reduzida
+      const todosZeradosOuIndefinidos =
+        (cheia === 0 || cheia === undefined || cheia === null) &&
+        (mono === 0 || mono === undefined || mono === null) &&
+        (reduz === 0 || reduz === undefined || reduz === null)
+      return todosZeradosOuIndefinidos ? 0 : (mono ?? 0)
+    })(),
+    perfilInsumosAliquotaReduzida: (() => {
+      const cheia = rec.perfil_insumos_aliquota_cheia
+      const mono = rec.perfil_insumos_monofasicos
+      const reduz = rec.perfil_insumos_aliquota_reduzida
+      const todosZeradosOuIndefinidos =
+        (cheia === 0 || cheia === undefined || cheia === null) &&
+        (mono === 0 || mono === undefined || mono === null) &&
+        (reduz === 0 || reduz === undefined || reduz === null)
+      return todosZeradosOuIndefinidos ? 0 : (reduz ?? 0)
+    })(),
     presencaMonofasicos: !!rec.presenca_monofasicos,
     categoriasMonofasicos: Array.isArray(rec.categorias_monofasicos)
       ? rec.categorias_monofasicos

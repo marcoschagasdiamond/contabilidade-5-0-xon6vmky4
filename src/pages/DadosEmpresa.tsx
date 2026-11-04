@@ -123,12 +123,38 @@ export default function DadosEmpresa() {
   const currentPathWithSearch = `${location.pathname}${location.search}`
 
   const [salvoComSucesso, setSalvoComSucesso] = useState(false)
+  const [mensagemErro, setMensagemErro] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Sincroniza quando os dados do contexto mudarem (ex: troca de cliente ativo ou carregamento do banco)
+  // Rastreia se o usuário já editou campos localmente
+  const hasEditedRef = React.useRef(false)
+  // Rastreia o ID da empresa vinculado para detectar troca de cliente ativo
+  const lastEmpresaIdRef = React.useRef<string | null>(empresaVinculadaId)
+
+  // Sincroniza apenas no primeiro carregamento ou na troca de cliente ativo,
+  // sem sobrescrever dados que o usuário já começou a digitar
   useEffect(() => {
-    setFormData(dadosEmpresa)
-  }, [dadosEmpresa])
+    const houveTrocaDeCliente = lastEmpresaIdRef.current !== empresaVinculadaId
+    if (houveTrocaDeCliente) {
+      lastEmpresaIdRef.current = empresaVinculadaId
+      hasEditedRef.current = false
+      setFormData(dadosEmpresa)
+      return
+    }
+
+    if (!hasEditedRef.current) {
+      setFormData(dadosEmpresa)
+    }
+  }, [dadosEmpresa, empresaVinculadaId])
+
+  // Helper para atualizar formData e marcar como editado pelo usuário
+  const atualizarCampo = React.useCallback(
+    (atualizador: (prev: DadosEmpresaPerfil) => DadosEmpresaPerfil) => {
+      hasEditedRef.current = true
+      setFormData(atualizador)
+    },
+    [],
+  )
 
   // Auto-save com debounce de 600ms no localStorage dedicado
   useEffect(() => {
@@ -147,18 +173,18 @@ export default function DadosEmpresa() {
   const handleFaturamentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, '')
     const valor = Number(raw) / 100
-    setFormData((prev) => ({ ...prev, faturamentoMensal: valor }))
+    atualizarCampo((prev) => ({ ...prev, faturamentoMensal: valor }))
   }
 
   const handleFolhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, '')
     const valor = Number(raw) / 100
-    setFormData((prev) => ({ ...prev, folhaPagamentoMensal: valor }))
+    atualizarCampo((prev) => ({ ...prev, folhaPagamentoMensal: valor }))
   }
 
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatarCNPJ(e.target.value)
-    setFormData((prev) => ({ ...prev, cnpj: formatted }))
+    atualizarCampo((prev) => ({ ...prev, cnpj: formatted }))
     if (errors.cnpj) {
       setErrors((prev) => ({ ...prev, cnpj: '' }))
     }
@@ -166,7 +192,7 @@ export default function DadosEmpresa() {
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneBR(e.target.value)
-    setFormData((prev) => ({ ...prev, telefone: formatted }))
+    atualizarCampo((prev) => ({ ...prev, telefone: formatted }))
     if (errors.telefone) {
       setErrors((prev) => ({ ...prev, telefone: '' }))
     }
@@ -227,22 +253,21 @@ export default function DadosEmpresa() {
       novosErros.cidade = 'Cidade para alíquota de ISS é obrigatória'
     }
 
-    // Validação Fase 1: Perfil de Insumos deve somar exatamente 100%
-    const cheia = Number(formData.perfilInsumosAliquotaCheia ?? 0)
-    const mono = Number(formData.perfilInsumosMonofasicos ?? 0)
-    const reduz = Number(formData.perfilInsumosAliquotaReduzida ?? 0)
-    const somaPerfil = Math.round((cheia + mono + reduz) * 100) / 100
-
-    if (somaPerfil !== 100) {
-      novosErros.perfilInsumos = `A soma do perfil de insumos deve ser exatamente 100% (atual: ${somaPerfil}%). Ajuste as proporções.`
-    }
-
     setErrors(novosErros)
     return Object.keys(novosErros).length === 0
   }
 
+  // Validação informativa de soma do perfil de insumos (Fase 1)
+  const cheiaAtual = Number(formData.perfilInsumosAliquotaCheia ?? 0)
+  const monoAtual = Number(formData.perfilInsumosMonofasicos ?? 0)
+  const reduzAtual = Number(formData.perfilInsumosAliquotaReduzida ?? 0)
+  const somaPerfilAtual = Math.round((cheiaAtual + monoAtual + reduzAtual) * 100) / 100
+  const perfilInsumosDivergente = somaPerfilAtual !== 100
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setMensagemErro(null)
+
     if (!validarFormulario()) {
       // Scroll até o primeiro erro se houver
       const formTop = document.querySelector('form')
@@ -254,11 +279,26 @@ export default function DadosEmpresa() {
       return
     }
 
-    const alteracoes = calcularDiffDadosEmpresa(dadosEmpresa, formData)
+    // Normalização antes de salvar:
+    // Se todos os 3 percentuais estiverem zerados (0/0/0), aplica 100/0/0 como "não preenchido"
+    let dadosParaSalvar: DadosEmpresaPerfil = { ...formData }
+    if (cheiaAtual === 0 && monoAtual === 0 && reduzAtual === 0) {
+      dadosParaSalvar = {
+        ...dadosParaSalvar,
+        perfilInsumosAliquotaCheia: 100,
+        perfilInsumosMonofasicos: 0,
+        perfilInsumosAliquotaReduzida: 0,
+      }
+      setFormData(dadosParaSalvar)
+    }
 
-    salvar(formData)
+    const alteracoes = calcularDiffDadosEmpresa(dadosEmpresa, dadosParaSalvar)
+
+    salvar(dadosParaSalvar)
       .then(async (salvo) => {
+        setMensagemErro(null)
         setSalvoComSucesso(true)
+        hasEditedRef.current = false
 
         // Se houve alterações reais, registra auditoria imutável
         if (alteracoes.length > 0) {
@@ -306,17 +346,15 @@ export default function DadosEmpresa() {
       })
       .catch((err) => {
         console.error('Erro ao salvar dados da empresa:', err)
-        setSalvoComSucesso(true)
-        try {
-          localStorage.removeItem(CHAVE_RASCUNHO)
-        } catch {
-          /* ignore */
-        }
-        if (destinoFinal) {
-          setTimeout(() => {
-            navigate(destinoFinal)
-          }, 1500)
-        }
+        setSalvoComSucesso(false)
+        const msg =
+          err?.message ||
+          (typeof err === 'string'
+            ? err
+            : 'Não foi possível gravar os dados no banco de dados. Tente novamente.')
+        setMensagemErro(`Erro ao salvar no banco de dados: ${msg}`)
+        // Rola até o banner de erro para feedback imediato
+        window.scrollTo({ top: 0, behavior: 'smooth' })
       })
   }
 
@@ -754,7 +792,7 @@ export default function DadosEmpresa() {
                     type="text"
                     value={formData.nomeContato || ''}
                     onChange={(e) => {
-                      setFormData((prev) => ({ ...prev, nomeContato: e.target.value }))
+                      atualizarCampo((prev) => ({ ...prev, nomeContato: e.target.value }))
                       if (errors.nomeContato) setErrors((prev) => ({ ...prev, nomeContato: '' }))
                     }}
                     placeholder="Ex: Carlos Eduardo Silva"
@@ -785,7 +823,7 @@ export default function DadosEmpresa() {
                       type="text"
                       value={formData.nomeEmpresa || ''}
                       onChange={(e) => {
-                        setFormData((prev) => ({ ...prev, nomeEmpresa: e.target.value }))
+                        atualizarCampo((prev) => ({ ...prev, nomeEmpresa: e.target.value }))
                         if (errors.nomeEmpresa) setErrors((prev) => ({ ...prev, nomeEmpresa: '' }))
                       }}
                       placeholder="Ex: Inova Tecnologia & Consultoria Ltda"
@@ -848,7 +886,7 @@ export default function DadosEmpresa() {
                       type="email"
                       value={formData.email || ''}
                       onChange={(e) => {
-                        setFormData((prev) => ({ ...prev, email: e.target.value }))
+                        atualizarCampo((prev) => ({ ...prev, email: e.target.value }))
                         if (errors.email) setErrors((prev) => ({ ...prev, email: '' }))
                       }}
                       placeholder="carlos@empresa.com.br"
@@ -913,7 +951,7 @@ export default function DadosEmpresa() {
                       value={formData.ufOrigem || undefined}
                       onValueChange={(val) => {
                         // Se a cidade selecionada não pertencer à nova UF, limpa o campo de cidade
-                        setFormData((prev) => {
+                        atualizarCampo((prev) => {
                           const cidadeAtual = CIDADES_ISS_MAPA.find((cid) => cid.id === prev.cidade)
                           const cidadeValida =
                             cidadeAtual && (cidadeAtual.uf === val || cidadeAtual.id === 'outra')
@@ -962,7 +1000,7 @@ export default function DadosEmpresa() {
                     <Select
                       value={formData.cidade || undefined}
                       onValueChange={(val) => {
-                        setFormData((prev) => ({ ...prev, cidade: val }))
+                        atualizarCampo((prev) => ({ ...prev, cidade: val }))
                         if (errors.cidade) setErrors((prev) => ({ ...prev, cidade: '' }))
                       }}
                     >
@@ -1074,7 +1112,7 @@ export default function DadosEmpresa() {
                             else if (item.id === 'Indústria') autoTipo = 'industria'
                             else autoTipo = 'servico'
                           }
-                          setFormData((prev) => ({
+                          atualizarCampo((prev) => ({
                             ...prev,
                             segmento: item.id,
                             tipoAtividade: autoTipo,
@@ -1144,7 +1182,7 @@ export default function DadosEmpresa() {
                     <Select
                       value={formData.regimeAtual || undefined}
                       onValueChange={(val) =>
-                        setFormData((prev) => ({ ...prev, regimeAtual: val }))
+                        atualizarCampo((prev) => ({ ...prev, regimeAtual: val }))
                       }
                     >
                       <SelectTrigger

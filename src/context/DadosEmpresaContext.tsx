@@ -202,6 +202,8 @@ export function DadosEmpresaProvider({ children }: { children: React.ReactNode }
           return perfilPersistido
         } catch (err) {
           console.error('Erro ao salvar empresa vinculada por ID:', err)
+          setIsSalvando(false)
+          throw err
         }
       }
 
@@ -227,6 +229,8 @@ export function DadosEmpresaProvider({ children }: { children: React.ReactNode }
           return perfilPersistido
         } catch (err) {
           console.error('Erro ao criar/atualizar empresa para o cliente ativo:', err)
+          setIsSalvando(false)
+          throw err
         }
       }
 
@@ -245,8 +249,7 @@ export function DadosEmpresaProvider({ children }: { children: React.ReactNode }
         } catch (err) {
           console.error('Erro ao salvar no banco:', err)
           setIsSalvando(false)
-          notificarFonteMestraAtualizada()
-          return atualizado
+          throw err
         }
       }
 
