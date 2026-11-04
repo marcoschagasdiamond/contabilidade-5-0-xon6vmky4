@@ -3,6 +3,7 @@ import type { ConfiguracoesRecuperador } from '@/types/recuperadorCreditos'
 import { formatarMoeda, parseInputMoeda } from '@/lib/calculadoraUtils'
 import { LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
 import { useAuth } from '@/context/AuthContext'
+import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { BannerIdentificacaoEmpresaBloqueada } from '@/components/dadosEmpresa/BannerIdentificacaoEmpresaBloqueada'
 import { BotaoRetornarDadosIniciais } from '@/components/common/BotaoRetornarDadosIniciais'
 import { CampoNcmAutocomplete } from '@/components/diagnosticos/CampoNcmAutocomplete'
@@ -70,6 +71,7 @@ export default function ModuloConfiguracoesRecuperador({
   onRestaurarDadosMestres,
 }: Props) {
   const { isEmpresario } = useAuth()
+  const { dadosEmpresa } = useDadosEmpresa()
 
   const itemNcmCurado = React.useMemo(() => {
     return configuracoes.ncm ? buscarNcmPorCodigo(configuracoes.ncm) : null
@@ -909,6 +911,106 @@ export default function ModuloConfiguracoesRecuperador({
             <span className="text-[11px] text-slate-500 block">
               Comportamento dos clientes na liquidação das notas fiscais
             </span>
+          </div>
+        </div>
+
+        {/* PARÂMETROS FASE 3 (SITUAÇÃO FISCAL & OPERAÇÃO MULTI-UF • INFORMATIVO) */}
+        <div className="mt-4 pt-4 border-t border-slate-200 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+              <span className="text-xs font-bold uppercase tracking-wider text-[#07132B]">
+                Situação Fiscal & Operação Multi-UF (Fase 3 • Informativo)
+              </span>
+            </div>
+            <span className="text-[10px] font-mono font-semibold text-slate-500">
+              Não altera cálculos ou teses de recuperação
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs">
+            <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+              <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+                Autos de Infração
+              </span>
+              <strong
+                className={
+                  dadosEmpresa.autosInfracaoAtivos
+                    ? 'text-rose-700 text-[11px]'
+                    : 'text-slate-800 text-[11px]'
+                }
+              >
+                {dadosEmpresa.autosInfracaoAtivos
+                  ? `Sim (${dadosEmpresa.autosInfracaoQuantidade || 0} auto(s))`
+                  : 'Nenhum'}
+              </strong>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+              <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+                Parcelamentos
+              </span>
+              <strong className="text-slate-800 text-[11px]">
+                {dadosEmpresa.parcelamentosEmCurso
+                  ? `Sim (${dadosEmpresa.parcelamentosQuantidade || 1})`
+                  : 'Nenhum'}
+              </strong>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+              <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+                Dívida Ativa
+              </span>
+              <strong
+                className={
+                  dadosEmpresa.dividaAtivaExecucaoFiscal
+                    ? 'text-rose-700 text-[11px]'
+                    : 'text-slate-800 text-[11px]'
+                }
+              >
+                {dadosEmpresa.dividaAtivaExecucaoFiscal ? 'Ativa / Execução' : 'Regular'}
+              </strong>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+              <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+                Obrigações Acessórias
+              </span>
+              <strong
+                className={
+                  dadosEmpresa.obrigacoesAcessoriasAtraso
+                    ? 'text-amber-700 text-[11px]'
+                    : 'text-slate-800 text-[11px]'
+                }
+              >
+                {dadosEmpresa.obrigacoesAcessoriasAtraso ? 'Pendentes' : 'Em dia'}
+              </strong>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+              <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+                Estabelecimentos
+              </span>
+              <strong className="text-slate-800 font-mono text-[11px]">
+                {(dadosEmpresa.numeroFiliais ?? 1) > 1
+                  ? `${dadosEmpresa.numeroFiliais} unidades`
+                  : '1 (Matriz)'}
+              </strong>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+              <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+                UFs Operação
+              </span>
+              <strong
+                className="text-slate-800 font-mono text-[11px] truncate block"
+                title={dadosEmpresa.ufsOperacao?.join(', ') || dadosEmpresa.ufOrigem}
+              >
+                {dadosEmpresa.ufsOperacao && dadosEmpresa.ufsOperacao.length > 0
+                  ? `${dadosEmpresa.ufOrigem || 'UF'} + ${dadosEmpresa.ufsOperacao.length} UF(s)`
+                  : `${dadosEmpresa.ufOrigem || 'UF'} (Única)`}
+              </strong>
+            </div>
           </div>
         </div>
       </div>

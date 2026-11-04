@@ -1186,6 +1186,192 @@ export default function DiagnosticoRelatorioConsolidado() {
                       </span>
                     </div>
                   </div>
+
+                  {/* SITUAÇÃO FISCAL & OPERAÇÃO MULTI-UF (FASE 3 • FONTE MESTRA • INFORMATIVO) */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 col-span-2 sm:col-span-3 lg:col-span-4 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+                        <span className="text-slate-700 uppercase font-bold block text-[11px] tracking-wide">
+                          Situação Fiscal & Operação Multi-UF (Fase 3 • Fonte Mestra)
+                        </span>
+                      </div>
+                      <span className="text-[9px] font-mono font-bold bg-[#07132B] text-[#D4AF37] px-2 py-0.5 rounded">
+                        INFORMATIVO
+                      </span>
+                    </div>
+
+                    {/* QUADRO DE ALERTA DE RISCO FISCAL (QUANDO HOUVER PENDÊNCIAS) */}
+                    {(dadosEmpresa.autosInfracaoAtivos ||
+                      dadosEmpresa.dividaAtivaExecucaoFiscal ||
+                      dadosEmpresa.obrigacoesAcessoriasAtraso ||
+                      dadosEmpresa.parcelamentosEmCurso) && (
+                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-950 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
+                            Atenção: pendências fiscais ativas identificadas
+                          </span>
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-200/80 text-amber-900 border border-amber-300">
+                            Monitoramento de Regularidade
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-amber-900/90 leading-relaxed">
+                          Foram apontados passivos ou obrigações que exigem atenção prévia na
+                          transição tributária. A presença de autos de infração, débitos em execução
+                          ou obrigações em atraso pode inviabilizar certidões negativas (CND) e
+                          exigir saneamento de passivos antes de regimes especiais ou apropriação de
+                          créditos no IBS/CBS.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-700">
+                      {/* 1. Autos de Infração */}
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1">
+                        <span className="text-[10px] font-semibold uppercase text-slate-400 block">
+                          Autos de Infração Ativos
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <strong
+                            className={
+                              dadosEmpresa.autosInfracaoAtivos
+                                ? 'text-rose-700 font-bold'
+                                : 'text-emerald-700 font-bold'
+                            }
+                          >
+                            {dadosEmpresa.autosInfracaoAtivos ? 'Sim' : 'Não'}
+                          </strong>
+                          {dadosEmpresa.autosInfracaoAtivos && (
+                            <span className="text-[11px] font-mono text-slate-600">
+                              ({dadosEmpresa.autosInfracaoQuantidade || 0} auto(s) •{' '}
+                              {formatarMoeda(dadosEmpresa.autosInfracaoValor || 0)})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 2. Parcelamentos */}
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1">
+                        <span className="text-[10px] font-semibold uppercase text-slate-400 block">
+                          Parcelamentos em Curso
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <strong
+                            className={
+                              dadosEmpresa.parcelamentosEmCurso
+                                ? 'text-blue-700 font-bold'
+                                : 'text-slate-800 font-bold'
+                            }
+                          >
+                            {dadosEmpresa.parcelamentosEmCurso ? 'Sim' : 'Não'}
+                          </strong>
+                          {dadosEmpresa.parcelamentosEmCurso && (
+                            <span className="text-[11px] font-mono text-slate-600">
+                              ({dadosEmpresa.parcelamentosQuantidade || 1} programa(s) ativo(s))
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 3. Dívida Ativa / Execução Fiscal */}
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1">
+                        <span className="text-[10px] font-semibold uppercase text-slate-400 block">
+                          Dívida Ativa / Execução
+                        </span>
+                        <strong
+                          className={
+                            dadosEmpresa.dividaAtivaExecucaoFiscal
+                              ? 'text-rose-700 font-bold'
+                              : 'text-emerald-700 font-bold'
+                          }
+                        >
+                          {dadosEmpresa.dividaAtivaExecucaoFiscal
+                            ? 'Sim (Débitos inscritos)'
+                            : 'Não'}
+                        </strong>
+                      </div>
+
+                      {/* 4. Obrigações Acessórias */}
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1">
+                        <span className="text-[10px] font-semibold uppercase text-slate-400 block">
+                          Obrigações Acessórias
+                        </span>
+                        <strong
+                          className={
+                            dadosEmpresa.obrigacoesAcessoriasAtraso
+                              ? 'text-amber-700 font-bold'
+                              : 'text-emerald-700 font-bold'
+                          }
+                        >
+                          {dadosEmpresa.obrigacoesAcessoriasAtraso
+                            ? 'Em atraso / pendentes'
+                            : 'Em dia / regulares'}
+                        </strong>
+                      </div>
+
+                      {/* 5. Estabelecimentos / Filiais */}
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1">
+                        <span className="text-[10px] font-semibold uppercase text-slate-400 block">
+                          Estabelecimentos Ativos
+                        </span>
+                        <strong className="text-slate-800 font-mono">
+                          {(dadosEmpresa.numeroFiliais ?? 1) > 1
+                            ? `${dadosEmpresa.numeroFiliais} (${dadosEmpresa.numeroFiliais - 1} filial(is) + matriz)`
+                            : '1 (Apenas Matriz)'}
+                        </strong>
+                      </div>
+
+                      {/* 6. UFs de Operação Comercial */}
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1">
+                        <span className="text-[10px] font-semibold uppercase text-slate-400 block">
+                          UFs de Operação Comercial
+                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-1.5 py-0.5 rounded bg-slate-100 font-mono font-bold text-slate-800 text-[11px]">
+                            {dadosEmpresa.ufOrigem || 'SP'} (Origem)
+                          </span>
+                          {dadosEmpresa.ufsOperacao && dadosEmpresa.ufsOperacao.length > 0 ? (
+                            dadosEmpresa.ufsOperacao.map((uf) => (
+                              <span
+                                key={uf}
+                                className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-mono font-bold text-[11px]"
+                              >
+                                {uf}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-slate-400 text-[11px]">
+                              Sem filiais/armazéns em outras UFs
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CONTEXTO DIFAL & PRINCÍPIO DO DESTINO */}
+                    <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-100 text-[11px] text-blue-900 leading-relaxed">
+                      <strong>Impacto DIFAL & Reforma Tributária (IBS/CBS):</strong>{' '}
+                      {dadosEmpresa.ufsOperacao && dadosEmpresa.ufsOperacao.length > 0 ? (
+                        <>
+                          Com operação distribuída em{' '}
+                          <strong>{dadosEmpresa.ufsOperacao.length + 1} UFs</strong> (
+                          {dadosEmpresa.ufOrigem || 'SP'} + {dadosEmpresa.ufsOperacao.join(', ')}),
+                          a empresa já gerencia partilhas de ICMS-DIFAL. Na transição do IBS/CBS
+                          (2029–2032), o imposto passará a pertencer 100% ao estado/município de
+                          destino de cada consumo, extinguindo a guerra fiscal e simplificando a
+                          conformidade entre estabelecimentos.
+                        </>
+                      ) : (
+                        <>
+                          Operação concentrada na UF de origem ({dadosEmpresa.ufOrigem || 'SP'}).
+                          Vendas interestaduais eventuais seguem regras vigentes de DIFAL (EC
+                          87/2015). No novo IBS/CBS, qualquer destinação para fora do estado
+                          arrecadará automaticamente para o destino via Comitê Gestor.
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">

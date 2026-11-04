@@ -241,6 +241,54 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
             </strong>
           </div>
         </div>
+
+        {/* RESUMO FASE 3: SITUAÇÃO FISCAL & MULTI-UF (INFORMATIVO) */}
+        <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-bold text-[#07132B]">Situação Fiscal:</span>
+            <span
+              className={
+                dadosEmpresa.autosInfracaoAtivos || dadosEmpresa.dividaAtivaExecucaoFiscal
+                  ? 'text-rose-700 font-semibold'
+                  : 'text-emerald-700 font-semibold'
+              }
+            >
+              {dadosEmpresa.autosInfracaoAtivos
+                ? `${dadosEmpresa.autosInfracaoQuantidade || 1} auto(s)`
+                : dadosEmpresa.dividaAtivaExecucaoFiscal
+                  ? 'Dívida Ativa'
+                  : 'Sem pendências críticas'}
+            </span>
+            <span>•</span>
+            <span>
+              Parcelamentos: <strong>{dadosEmpresa.parcelamentosEmCurso ? 'Sim' : 'Não'}</strong>
+            </span>
+            <span>•</span>
+            <span>
+              Obrigações:{' '}
+              <strong>{dadosEmpresa.obrigacoesAcessoriasAtraso ? 'Pendentes' : 'Regulares'}</strong>
+            </span>
+            <span>•</span>
+            <span>
+              Estabelecimentos:{' '}
+              <strong>
+                {(dadosEmpresa.numeroFiliais ?? 1) > 1
+                  ? `${dadosEmpresa.numeroFiliais} (${dadosEmpresa.numeroFiliais - 1} filiais)`
+                  : '1 (Matriz)'}
+              </strong>
+            </span>
+            <span>•</span>
+            <span>
+              UFs:{' '}
+              <strong className="font-mono">
+                {dadosEmpresa.ufsOperacao && dadosEmpresa.ufsOperacao.length > 0
+                  ? `${dadosEmpresa.ufOrigem || 'UF'} + ${dadosEmpresa.ufsOperacao.join(', ')}`
+                  : dadosEmpresa.ufOrigem || 'SP'}
+              </strong>
+            </span>
+          </div>
+          <span className="text-[10px] font-mono text-slate-400">Fase 3 • Informativo</span>
+        </div>
       </div>
 
       {/* BLOCO DE PREENCHIMENTO ASSISTIDO (LC 214/2025) */}

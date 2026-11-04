@@ -2402,22 +2402,23 @@ export default function DadosEmpresa() {
                 </div>
 
                 <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-9 gap-2 pt-2">
-                  {LISTA_UFS_ICMS.map((uf) => {
-                    const isOrigem = uf === (formData.ufOrigem || 'SP')
-                    const selecionada = isOrigem || (formData.ufsOperacao?.includes(uf) ?? false)
+                  {LISTA_UFS_ICMS.map((ufItem) => {
+                    const sigla = ufItem.uf
+                    const isOrigem = sigla === (formData.ufOrigem || 'SP')
+                    const selecionada = isOrigem || (formData.ufsOperacao?.includes(sigla) ?? false)
 
                     return (
                       <button
-                        key={uf}
+                        key={sigla}
                         type="button"
                         disabled={isOrigem}
                         onClick={() => {
                           if (isOrigem) return
                           atualizarCampo((prev) => {
                             const atuais = prev.ufsOperacao || []
-                            const novaLista = atuais.includes(uf)
-                              ? atuais.filter((u) => u !== uf)
-                              : [...atuais, uf]
+                            const novaLista = atuais.includes(sigla)
+                              ? atuais.filter((u) => u !== sigla)
+                              : [...atuais, sigla]
                             return { ...prev, ufsOperacao: novaLista }
                           })
                         }}
@@ -2430,11 +2431,11 @@ export default function DadosEmpresa() {
                         }`}
                         title={
                           isOrigem
-                            ? `${uf} é a UF principal de origem da empresa (definida acima)`
-                            : `Clique para ${selecionada ? 'remover' : 'adicionar'} ${uf}`
+                            ? `${sigla} (${ufItem.nome}) é a UF principal de origem da empresa (definida acima)`
+                            : `Clique para ${selecionada ? 'remover' : 'adicionar'} ${sigla} (${ufItem.nome})`
                         }
                       >
-                        <span className="text-xs font-black font-mono">{uf}</span>
+                        <span className="text-xs font-black font-mono">{sigla}</span>
                         <span className="text-[10px] leading-none opacity-80">
                           {isOrigem ? 'Origem' : selecionada ? 'Ativo' : 'Adicionar'}
                         </span>
