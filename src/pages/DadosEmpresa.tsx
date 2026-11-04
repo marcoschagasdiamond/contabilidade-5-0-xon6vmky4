@@ -17,7 +17,13 @@ import {
   obterAliquotaISS,
   obterAliquotaIcmsUf,
 } from '@/lib/regimes'
-import { CATEGORIAS_MONOFASICOS_OPCOES } from '@/types/dadosEmpresa'
+import {
+  CATEGORIAS_MONOFASICOS_OPCOES,
+  REGIMES_ESPECIAIS_OPCOES,
+  PERFIS_RETENCAO_SPLIT_OPCOES,
+  RegimeEspecialAtual,
+  PerfilRetencaoSplit,
+} from '@/types/dadosEmpresa'
 import { Switch } from '@/components/ui/switch'
 import { formatarCNPJ, limparCNPJ, validarCNPJ } from '@/lib/cnpj'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
@@ -56,6 +62,12 @@ import {
   Cpu,
   Hammer,
   UtensilsCrossed,
+  Percent,
+  Landmark,
+  Globe2,
+  Receipt,
+  CreditCard,
+  AlertTriangle,
   Info,
   LogIn,
   UserPlus,
@@ -1734,6 +1746,332 @@ export default function DadosEmpresa() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* BLOCO 4: FASE 2 — REFINAMENTO TRIBUTÁRIO & OPERACIONAL (FONTE MESTRA) */}
+          <Card className="border border-[#D4AF37]/50 shadow-md bg-gradient-to-br from-white via-slate-50 to-amber-50/20 overflow-hidden">
+            <div className="bg-[#07132B] px-6 py-4 border-b border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-3 h-3 rounded-full bg-[#D4AF37] animate-pulse" />
+                <h3 className="font-heading font-bold text-lg text-white">
+                  4. Parâmetros Fiscais Avançados (Fase 2 • Refinamento da Calculadora)
+                </h3>
+              </div>
+              <span className="text-xs text-[#D4AF37] bg-[#D4AF37]/10 px-3 py-1 rounded-full border border-[#D4AF37]/30 font-semibold">
+                Altera cálculos na Calculadora • Informativo no Recuperador e Diagnóstico
+              </span>
+            </div>
+
+            <CardContent className="p-6 sm:p-8 space-y-6">
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
+                <Sparkles className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
+                <div className="text-xs text-slate-700 leading-relaxed space-y-1">
+                  <p className="font-bold text-[#07132B]">
+                    Impacto direto nas fórmulas da Calculadora IBS/CBS:
+                  </p>
+                  <p>
+                    Os campos abaixo refinam automaticamente o crédito de compras (reduzindo
+                    aquisições sem direito a crédito), amortizam o saldo credor acumulado de
+                    ICMS/PIS/COFINS na projeção, distribuem o IBS com base nas operações
+                    interestaduais, aplicam a trajetória setorial de regimes especiais (monofásicos,
+                    ST, ZFM, RET) e ajustam a leitura de fluxo de caixa pelo split payment.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 1. % COMPRAS QUE NÃO GERAM CRÉDITO */}
+                <div className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label
+                      htmlFor="percentualComprasSemCredito"
+                      className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
+                    >
+                      <Percent className="w-4 h-4 text-[#D4AF37]" />
+                      1. Compras que NÃO Geram Crédito (%)
+                    </Label>
+                    <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                      0 a 100%
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Percentual estimado de aquisições sem direito a crédito amplo no IVA (uso
+                    pessoal, despesas não operacionais, mercadorias isentas ou não tributadas).
+                  </p>
+                  <div className="space-y-1.5 pt-1">
+                    <div className="relative">
+                      <Input
+                        id="percentualComprasSemCredito"
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={formData.percentualComprasSemCredito ?? 0}
+                        onChange={(e) => {
+                          const val = Math.min(100, Math.max(0, Number(e.target.value) || 0))
+                          setFormData((prev) => ({ ...prev, percentualComprasSemCredito: val }))
+                        }}
+                        className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 pr-10 shadow-xs"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 font-mono">
+                        %
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 block">
+                      {Number(formData.percentualComprasSemCredito || 0) === 0 ? (
+                        <span className="text-emerald-600 font-semibold">
+                          100% das compras geram crédito integral (padrão)
+                        </span>
+                      ) : (
+                        <span>
+                          Reduz a base creditável de compras em{' '}
+                          <strong>{formData.percentualComprasSemCredito}%</strong>
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 2. SALDO CREDOR ACUMULADO */}
+                <div className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label
+                      htmlFor="saldoCredorAcumulado"
+                      className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
+                    >
+                      <Landmark className="w-4 h-4 text-[#D4AF37]" />
+                      2. Saldo Credor Acumulado (R$)
+                    </Label>
+                    <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                      Estoque Inicial
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Saldo credor existente de ICMS, PIS ou COFINS disponível para compensação ou
+                    ressarcimento na virada para o IBS/CBS (estoque inicial de créditos).
+                  </p>
+                  <div className="space-y-1.5 pt-1">
+                    <Input
+                      id="saldoCredorAcumulado"
+                      type="text"
+                      value={(formData.saldoCredorAcumulado ?? 0).toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      })}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, '')
+                        const valor = Number(raw) / 100
+                        setFormData((prev) => ({ ...prev, saldoCredorAcumulado: valor }))
+                      }}
+                      className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 shadow-xs"
+                    />
+                    <span className="text-[11px] text-slate-500 block">
+                      Crédito inicial disponível para amortização nos primeiros períodos de
+                      transição.
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3. % VENDAS INTERESTADUAIS */}
+                <div className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label
+                      htmlFor="percentualVendasInterestaduais"
+                      className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
+                    >
+                      <Globe2 className="w-4 h-4 text-[#D4AF37]" />
+                      3. Vendas Interestaduais (%)
+                    </Label>
+                    <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                      Destino vs. Origem
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Parcela do faturamento destinada a outros estados da federação (operações
+                    sujeitas a DIFAL no modelo atual e princípio do destino no IBS).
+                  </p>
+                  <div className="space-y-1.5 pt-1">
+                    <div className="relative">
+                      <Input
+                        id="percentualVendasInterestaduais"
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={formData.percentualVendasInterestaduais ?? 0}
+                        onChange={(e) => {
+                          const val = Math.min(100, Math.max(0, Number(e.target.value) || 0))
+                          setFormData((prev) => ({ ...prev, percentualVendasInterestaduais: val }))
+                        }}
+                        className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 pr-10 shadow-xs"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 font-mono">
+                        %
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 block">
+                      Operações internas:{' '}
+                      <strong>{100 - Number(formData.percentualVendasInterestaduais || 0)}%</strong>{' '}
+                      • Interestaduais:{' '}
+                      <strong>{Number(formData.percentualVendasInterestaduais || 0)}%</strong>
+                    </span>
+                  </div>
+                </div>
+
+                {/* 4. REGIME ESPECIAL ATUAL */}
+                <div className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label
+                      htmlFor="regimeEspecialAtual"
+                      className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
+                    >
+                      <Receipt className="w-4 h-4 text-[#D4AF37]" />
+                      4. Regime Especial Atual
+                    </Label>
+                    <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                      Regras de Transição
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Identifica se a empresa opera hoje sob regimes diferenciados com regras
+                    específicas de transição e manutenção de benefícios na LC 214/2025.
+                  </p>
+                  <div className="space-y-1.5 pt-1">
+                    <Select
+                      value={formData.regimeEspecialAtual || 'nenhum'}
+                      onValueChange={(val: RegimeEspecialAtual) =>
+                        setFormData((prev) => ({ ...prev, regimeEspecialAtual: val }))
+                      }
+                    >
+                      <SelectTrigger
+                        id="regimeEspecialAtual"
+                        className="h-11 bg-white border-slate-300"
+                      >
+                        <SelectValue placeholder="Selecione o regime especial" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REGIMES_ESPECIAIS_OPCOES.map((opt) => (
+                          <SelectItem key={opt.id} value={opt.id}>
+                            {opt.rotulo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-[11px] text-slate-500 block">
+                      {
+                        REGIMES_ESPECIAIS_OPCOES.find(
+                          (r) => r.id === (formData.regimeEspecialAtual || 'nenhum'),
+                        )?.descricao
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. PERFIL DE RETENÇÃO / SPLIT PAYMENT */}
+              <div className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <Label
+                      htmlFor="perfilRetencaoSplit"
+                      className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
+                    >
+                      <CreditCard className="w-4 h-4 text-[#D4AF37]" />
+                      5. Perfil de Retenção dos Clientes / Split Payment
+                    </Label>
+                    <span className="text-xs text-slate-500 block mt-0.5">
+                      Os clientes reteriam o IBS/CBS automaticamente na liquidação financeira do
+                      pagamento?
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 self-start sm:self-auto">
+                    Fluxo de Caixa
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  {PERFIS_RETENCAO_SPLIT_OPCOES.map((opcao) => {
+                    const selecionado = (formData.perfilRetencaoSplit || 'nao') === opcao.id
+                    return (
+                      <button
+                        key={opcao.id}
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            perfilRetencaoSplit: opcao.id,
+                            percentualRetencaoSplit:
+                              opcao.id === 'sim_todos'
+                                ? 100
+                                : opcao.id === 'nao'
+                                  ? 0
+                                  : prev.percentualRetencaoSplit || 50,
+                          }))
+                        }
+                        className={`text-left p-3.5 rounded-xl border transition-all ${
+                          selecionado
+                            ? 'bg-amber-500/10 border-[#D4AF37] ring-1 ring-[#D4AF37]'
+                            : 'bg-white border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span
+                            className={`text-xs font-bold ${
+                              selecionado ? 'text-[#07132B]' : 'text-slate-700'
+                            }`}
+                          >
+                            {opcao.rotulo}
+                          </span>
+                          {selecionado && (
+                            <CheckCircle2 className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                          {opcao.descricao}
+                        </p>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Subcampo: % estimado de retenção quando "parcial" */}
+                {formData.perfilRetencaoSplit === 'parcial' && (
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 mt-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label
+                        htmlFor="percentualRetencaoSplit"
+                        className="text-xs font-bold text-slate-700"
+                      >
+                        Percentual Estimado de Retenção nos Pagamentos (%)
+                      </Label>
+                      <span className="text-xs font-mono font-bold text-[#07132B]">
+                        {formData.percentualRetencaoSplit ?? 50}%
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="percentualRetencaoSplit"
+                        type="number"
+                        min={1}
+                        max={99}
+                        step={5}
+                        value={formData.percentualRetencaoSplit ?? 50}
+                        onChange={(e) => {
+                          const val = Math.min(99, Math.max(1, Number(e.target.value) || 0))
+                          setFormData((prev) => ({ ...prev, percentualRetencaoSplit: val }))
+                        }}
+                        className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-10 shadow-xs"
+                      />
+                    </div>
+                    <span className="text-[11px] text-slate-500 block">
+                      Aplica retenção automática sobre{' '}
+                      <strong>{formData.percentualRetencaoSplit ?? 50}%</strong> do montante
+                      tributário nas simulações de fluxo de caixa e split payment.
+                    </span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

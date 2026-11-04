@@ -71,9 +71,89 @@ export interface DadosEmpresaPerfil {
   imobilizadoUltimos5Anos: number // Valor total investido nos últimos 5 anos (R$)
   imobilizadoAnosDetalhe?: Record<string, number> // Detalhamento opcional ano a ano ex: { "2021": 50000, ... }
 
+  // Bloco 4: Fase 2 — Refinamento Tributário & Operacional (Fonte Mestra)
+  // 1. % de compras que NÃO geram crédito (uso pessoal, isentas, não tributadas) - 0 a 100%
+  percentualComprasSemCredito: number
+  // 2. Saldo credor acumulado / estoque inicial de créditos tributários (R$)
+  saldoCredorAcumulado: number
+  // 3. % de vendas interestaduais - 0 a 100%
+  percentualVendasInterestaduais: number
+  // 4. Regime especial atual
+  regimeEspecialAtual: RegimeEspecialAtual
+  // 5. Perfil de retenção dos clientes / split payment
+  perfilRetencaoSplit: PerfilRetencaoSplit
+  // 5b. % retenção quando split for parcial - 0 a 100%
+  percentualRetencaoSplit?: number
+
   // Metadados
   atualizadoEm?: string
 }
+
+export type RegimeEspecialAtual =
+  | 'nenhum'
+  | 'monofasico'
+  | 'substituicao_tributaria'
+  | 'zona_franca_manaus'
+  | 'ret_permuta'
+
+export type PerfilRetencaoSplit = 'sim_todos' | 'parcial' | 'nao'
+
+export const REGIMES_ESPECIAIS_OPCOES: {
+  id: RegimeEspecialAtual
+  rotulo: string
+  descricao: string
+}[] = [
+  {
+    id: 'nenhum',
+    rotulo: 'Nenhum / Regime Padrão',
+    descricao: 'Tributação regular sem benefícios de regimes concentrados ou especiais.',
+  },
+  {
+    id: 'monofasico',
+    rotulo: 'Monofásico (PIS/COFINS)',
+    descricao:
+      'Cadeia com tributação concentrada no fabricante/importador e alíquota zero na revenda.',
+  },
+  {
+    id: 'substituicao_tributaria',
+    rotulo: 'Substituição Tributária (ICMS-ST)',
+    descricao: 'ICMS retido antecipadamente na fonte pelo substituto tributário.',
+  },
+  {
+    id: 'zona_franca_manaus',
+    rotulo: 'Zona Franca de Manaus (ZFM / ALC)',
+    descricao:
+      'Benefícios constitucionais de isenção, crédito presumido e incentivos regionais mantidos.',
+  },
+  {
+    id: 'ret_permuta',
+    rotulo: 'RET / Permuta Imobiliária',
+    descricao:
+      'Regime Especial de Tributação de incorporações imobiliárias e patrimônio de afetação.',
+  },
+]
+
+export const PERFIS_RETENCAO_SPLIT_OPCOES: {
+  id: PerfilRetencaoSplit
+  rotulo: string
+  descricao: string
+}[] = [
+  {
+    id: 'nao',
+    rotulo: 'Não retêm (Recolhimento padrão pós-faturamento)',
+    descricao: 'Os clientes liquidam a nota integralmente e o imposto é apurado por guia mensal.',
+  },
+  {
+    id: 'parcial',
+    rotulo: 'Parcialmente (Clientes corporativos/órgãos retêm % estimado)',
+    descricao: 'Fração das vendas sofre retenção automática na liquidação financeira da nota.',
+  },
+  {
+    id: 'sim_todos',
+    rotulo: 'Sim, todos (Split payment integral na liquidação)',
+    descricao: '100% do imposto apurado é retido na liquidação bancária/cartão.',
+  },
+]
 
 export const CATEGORIAS_MONOFASICOS_OPCOES = [
   { id: 'combustiveis', rotulo: 'Combustíveis e derivados' },
@@ -131,6 +211,14 @@ export const DADOS_EMPRESA_PADRAO: DadosEmpresaPerfil = {
   intangiveisRoyalties: false,
   imobilizadoUltimos5Anos: 0,
   imobilizadoAnosDetalhe: {},
+
+  // Bloco 4 (Fase 2 - Neutros por padrão para preservar cálculos legados)
+  percentualComprasSemCredito: 0,
+  saldoCredorAcumulado: 0,
+  percentualVendasInterestaduais: 0,
+  regimeEspecialAtual: 'nenhum',
+  perfilRetencaoSplit: 'nao',
+  percentualRetencaoSplit: 0,
 }
 
 const STORAGE_KEY = 'contabilidade5_dados_empresa'

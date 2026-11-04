@@ -94,6 +94,13 @@ export interface ParametrosSimulacaoCalculadora {
     insumosEnergeticos?: boolean
     intangiveisRoyalties?: boolean
     imobilizadoUltimos5Anos?: number
+    // Parâmetros Fiscais Fase 2
+    percentualComprasSemCredito?: number
+    saldoCredorAcumulado?: number
+    percentualVendasInterestaduais?: number
+    regimeEspecialAtual?: string
+    perfilRetencaoSplit?: string
+    percentualRetencaoSplit?: number
   }
 }
 

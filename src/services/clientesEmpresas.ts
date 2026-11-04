@@ -39,6 +39,13 @@ export interface ClienteEmpresaModel {
   intangiveis_royalties?: boolean
   imobilizado_ultimos_5_anos?: number
   imobilizado_anos_detalhe?: Record<string, number>
+  // Campos Fase 2
+  percentual_compras_sem_credito?: number
+  saldo_credor_acumulado?: number
+  percentual_vendas_interestaduais?: number
+  regime_especial_atual?: string
+  perfil_retencao_split?: string
+  percentual_retencao_split?: number
   created?: string
   updated?: string
 }
@@ -108,6 +115,20 @@ export function perfilToRecord(
     result.imobilizado_ultimos_5_anos = perfil.imobilizadoUltimos5Anos
   if (perfil.imobilizadoAnosDetalhe !== undefined)
     result.imobilizado_anos_detalhe = perfil.imobilizadoAnosDetalhe
+
+  // Fase 2
+  if (perfil.percentualComprasSemCredito !== undefined)
+    result.percentual_compras_sem_credito = perfil.percentualComprasSemCredito
+  if (perfil.saldoCredorAcumulado !== undefined)
+    result.saldo_credor_acumulado = perfil.saldoCredorAcumulado
+  if (perfil.percentualVendasInterestaduais !== undefined)
+    result.percentual_vendas_interestaduais = perfil.percentualVendasInterestaduais
+  if (perfil.regimeEspecialAtual !== undefined)
+    result.regime_especial_atual = perfil.regimeEspecialAtual
+  if (perfil.perfilRetencaoSplit !== undefined)
+    result.perfil_retencao_split = perfil.perfilRetencaoSplit
+  if (perfil.percentualRetencaoSplit !== undefined)
+    result.percentual_retencao_split = perfil.percentualRetencaoSplit
 
   return result
 }
@@ -201,6 +222,13 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
               }
             })()
           : {},
+    // Fase 2: Refinamento Tributário & Operacional (valores neutros se indefinidos)
+    percentualComprasSemCredito: rec.percentual_compras_sem_credito ?? 0,
+    saldoCredorAcumulado: rec.saldo_credor_acumulado ?? 0,
+    percentualVendasInterestaduais: rec.percentual_vendas_interestaduais ?? 0,
+    regimeEspecialAtual: (rec.regime_especial_atual as any) || 'nenhum',
+    perfilRetencaoSplit: (rec.perfil_retencao_split as any) || 'nao',
+    percentualRetencaoSplit: rec.percentual_retencao_split ?? 0,
     atualizadoEm: rec.updated || rec.created,
   }
 }

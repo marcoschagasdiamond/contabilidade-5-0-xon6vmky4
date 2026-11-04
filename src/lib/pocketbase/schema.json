@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T12:10:12.365Z",
+  "generatedAt": "2026-11-04T12:39:09.884Z",
   "collections": [
     {
       "name": "users",
@@ -826,6 +826,50 @@
         {
           "name": "imobilizado_anos_detalhe",
           "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "percentual_compras_sem_credito",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "saldo_credor_acumulado",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "percentual_vendas_interestaduais",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "regime_especial_atual",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "nenhum",
+            "monofasico",
+            "substituicao_tributaria",
+            "zona_franca_manaus",
+            "ret_permuta"
+          ]
+        },
+        {
+          "name": "perfil_retencao_split",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["sim_todos", "parcial", "nao"]
+        },
+        {
+          "name": "percentual_retencao_split",
+          "type": "number",
           "required": false,
           "system": false
         }
