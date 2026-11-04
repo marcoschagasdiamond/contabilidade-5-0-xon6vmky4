@@ -183,6 +183,66 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
         }}
       />
 
+      {/* BLOCO DE CONTEXTO CADASTRAL FASE 1 (DADOS DA EMPRESA - FONTE MESTRA) */}
+      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 shadow-xs space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+            <span className="text-xs font-bold text-[#07132B] uppercase tracking-wide">
+              Parâmetros Fiscais & Insumos (Fase 1 • Fonte Mestra)
+            </span>
+          </div>
+          <span className="text-[10px] font-mono text-slate-500">Origem: /dados-empresa</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs pt-1">
+          <div className="p-2 rounded bg-white border border-slate-200">
+            <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+              Insumos (Cheia/Mono/Red)
+            </span>
+            <strong className="text-slate-800 font-mono text-[11px]">
+              {dadosEmpresa.perfilInsumosAliquotaCheia ?? 70}% /{' '}
+              {dadosEmpresa.perfilInsumosMonofasicos ?? 20}% /{' '}
+              {dadosEmpresa.perfilInsumosAliquotaReduzida ?? 10}%
+            </strong>
+          </div>
+          <div className="p-2 rounded bg-white border border-slate-200">
+            <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+              Monofásicos
+            </span>
+            <strong className="text-slate-800 text-[11px]">
+              {dadosEmpresa.presencaMonofasicos ? 'Sim' : 'Não'}
+            </strong>
+          </div>
+          <div className="p-2 rounded bg-white border border-slate-200">
+            <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+              Energéticos
+            </span>
+            <strong className="text-slate-800 text-[11px]">
+              {dadosEmpresa.insumosEnergeticos ? 'Sim' : 'Não'}
+            </strong>
+          </div>
+          <div className="p-2 rounded bg-white border border-slate-200">
+            <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+              Intangíveis
+            </span>
+            <strong className="text-slate-800 text-[11px]">
+              {dadosEmpresa.intangiveisRoyalties ? 'Sim' : 'Não'}
+            </strong>
+          </div>
+          <div className="p-2 rounded bg-white border border-slate-200">
+            <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+              Imobilizado (5a)
+            </span>
+            <strong className="text-slate-800 font-mono text-[11px]">
+              R${' '}
+              {Number(dadosEmpresa.imobilizadoUltimos5Anos || 0).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+              })}
+            </strong>
+          </div>
+        </div>
+      </div>
+
       {/* BLOCO DE PREENCHIMENTO ASSISTIDO (LC 214/2025) */}
       <Card className="border border-[#D4AF37]/50 shadow-md bg-gradient-to-br from-white via-slate-50 to-amber-50/20 overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-[#07132B] via-[#0E1F42] to-[#122347] text-white border-b border-[#D4AF37]/30 pb-4">

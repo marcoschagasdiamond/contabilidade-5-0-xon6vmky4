@@ -231,6 +231,15 @@ export default function RecuperadorCreditos() {
           massaSalarialMensal: dadosEmp.folhaPagamentoMensal || 0,
           anoTransicao: dadosEmp.anoBaseTransicao || 2033,
           regimeAplicado: 'Padrão / Sem Redução',
+          perfilInsumosAliquotaCheia: dadosEmp.perfilInsumosAliquotaCheia,
+          perfilInsumosMonofasicos: dadosEmp.perfilInsumosMonofasicos,
+          perfilInsumosAliquotaReduzida: dadosEmp.perfilInsumosAliquotaReduzida,
+          presencaMonofasicos: dadosEmp.presencaMonofasicos,
+          categoriasMonofasicos: dadosEmp.categoriasMonofasicos,
+          insumosEnergeticos: dadosEmp.insumosEnergeticos,
+          intangiveisRoyalties: dadosEmp.intangiveisRoyalties,
+          imobilizadoUltimos5Anos: dadosEmp.imobilizadoUltimos5Anos,
+          imobilizadoAnosDetalhe: dadosEmp.imobilizadoAnosDetalhe,
           origemPreenchimento: 'calculadora_ibs_cbs',
           avisoOrigem: 'Pré-preenchido com dados salvos nas Configurações da Calculadora IBS/CBS',
         }
@@ -339,6 +348,15 @@ export default function RecuperadorCreditos() {
           anosFaturamento: anosFat,
           massaSalarialMensal: dadosMestres.folhaPagamentoMensal || 0,
           anoTransicao: dadosMestres.anoBaseTransicao || 2033,
+          perfilInsumosAliquotaCheia: dadosMestres.perfilInsumosAliquotaCheia,
+          perfilInsumosMonofasicos: dadosMestres.perfilInsumosMonofasicos,
+          perfilInsumosAliquotaReduzida: dadosMestres.perfilInsumosAliquotaReduzida,
+          presencaMonofasicos: dadosMestres.presencaMonofasicos,
+          categoriasMonofasicos: dadosMestres.categoriasMonofasicos,
+          insumosEnergeticos: dadosMestres.insumosEnergeticos,
+          intangiveisRoyalties: dadosMestres.intangiveisRoyalties,
+          imobilizadoUltimos5Anos: dadosMestres.imobilizadoUltimos5Anos,
+          imobilizadoAnosDetalhe: dadosMestres.imobilizadoAnosDetalhe,
           origemPreenchimento: 'dados_empresa',
           avisoOrigem: 'Alimentado automaticamente pelos Dados da Empresa (Fonte Mestra)',
         }
@@ -875,6 +893,7 @@ export default function RecuperadorCreditos() {
                 resultadosTeses={resultadosAtuais.resultadosTeses}
                 segmento={configuracoes.segmento}
                 onChangeTese={handleUpdateTese}
+                configuracoes={configuracoes}
               />
             )}
 

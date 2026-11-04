@@ -29,6 +29,16 @@ export interface ClienteEmpresaModel {
   despesas_creditos_mensais?: number
   percentual_exportacao?: number
   ano_base_transicao?: number
+  // Campos Fase 1
+  perfil_insumos_aliquota_cheia?: number
+  perfil_insumos_monofasicos?: number
+  perfil_insumos_aliquota_reduzida?: number
+  presenca_monofasicos?: boolean
+  categorias_monofasicos?: string[]
+  insumos_energeticos?: boolean
+  intangiveis_royalties?: boolean
+  imobilizado_ultimos_5_anos?: number
+  imobilizado_anos_detalhe?: Record<string, number>
   created?: string
   updated?: string
 }
@@ -79,6 +89,26 @@ export function perfilToRecord(
     result.percentual_exportacao = perfil.percentualExportacao
   if (perfil.anoBaseTransicao !== undefined) result.ano_base_transicao = perfil.anoBaseTransicao
 
+  // Fase 1
+  if (perfil.perfilInsumosAliquotaCheia !== undefined)
+    result.perfil_insumos_aliquota_cheia = perfil.perfilInsumosAliquotaCheia
+  if (perfil.perfilInsumosMonofasicos !== undefined)
+    result.perfil_insumos_monofasicos = perfil.perfilInsumosMonofasicos
+  if (perfil.perfilInsumosAliquotaReduzida !== undefined)
+    result.perfil_insumos_aliquota_reduzida = perfil.perfilInsumosAliquotaReduzida
+  if (perfil.presencaMonofasicos !== undefined)
+    result.presenca_monofasicos = perfil.presencaMonofasicos
+  if (perfil.categoriasMonofasicos !== undefined)
+    result.categorias_monofasicos = perfil.categoriasMonofasicos
+  if (perfil.insumosEnergeticos !== undefined)
+    result.insumos_energeticos = perfil.insumosEnergeticos
+  if (perfil.intangiveisRoyalties !== undefined)
+    result.intangiveis_royalties = perfil.intangiveisRoyalties
+  if (perfil.imobilizadoUltimos5Anos !== undefined)
+    result.imobilizado_ultimos_5_anos = perfil.imobilizadoUltimos5Anos
+  if (perfil.imobilizadoAnosDetalhe !== undefined)
+    result.imobilizado_anos_detalhe = perfil.imobilizadoAnosDetalhe
+
   return result
 }
 
@@ -111,6 +141,37 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
     despesasComCreditosMensais: rec.despesas_creditos_mensais ?? 30000,
     percentualExportacao: rec.percentual_exportacao ?? 0,
     anoBaseTransicao: (rec.ano_base_transicao as any) || 2026,
+    // Fase 1
+    perfilInsumosAliquotaCheia: rec.perfil_insumos_aliquota_cheia ?? 100,
+    perfilInsumosMonofasicos: rec.perfil_insumos_monofasicos ?? 0,
+    perfilInsumosAliquotaReduzida: rec.perfil_insumos_aliquota_reduzida ?? 0,
+    presencaMonofasicos: !!rec.presenca_monofasicos,
+    categoriasMonofasicos: Array.isArray(rec.categorias_monofasicos)
+      ? rec.categorias_monofasicos
+      : typeof rec.categorias_monofasicos === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(rec.categorias_monofasicos)
+            } catch {
+              return []
+            }
+          })()
+        : [],
+    insumosEnergeticos: !!rec.insumos_energeticos,
+    intangiveisRoyalties: !!rec.intangiveis_royalties,
+    imobilizadoUltimos5Anos: rec.imobilizado_ultimos_5_anos ?? 0,
+    imobilizadoAnosDetalhe:
+      typeof rec.imobilizado_anos_detalhe === 'object' && rec.imobilizado_anos_detalhe !== null
+        ? rec.imobilizado_anos_detalhe
+        : typeof rec.imobilizado_anos_detalhe === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(rec.imobilizado_anos_detalhe)
+              } catch {
+                return {}
+              }
+            })()
+          : {},
     atualizadoEm: rec.updated || rec.created,
   }
 }

@@ -8,12 +8,16 @@ import type {
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { obterRelacaoComCancelamento } from '@/lib/relacionamentoEst04'
 
+import { Sparkles, Info } from 'lucide-react'
+import type { ConfiguracoesRecuperador } from '@/types/recuperadorCreditos'
+
 interface Props {
   tesesDefinicoes: TeseRecuperacaoDefinicao[]
   tesesSelecionadas: Record<string, TeseSelecaoUsuario>
   resultadosTeses: ResultadoTese[]
-  segmento?: string
+  segmento: string
   onChangeTese: (teseId: string, atualizacao: Partial<TeseSelecaoUsuario>) => void
+  configuracoes?: ConfiguracoesRecuperador
 }
 
 export default function BlocoPisCofinsRecuperador({
@@ -22,6 +26,7 @@ export default function BlocoPisCofinsRecuperador({
   resultadosTeses,
   segmento,
   onChangeTese,
+  configuracoes,
 }: Props) {
   const tesesPis = tesesDefinicoes.filter((t) => t.modulo === 'pis_cofins')
 
@@ -76,13 +81,85 @@ export default function BlocoPisCofinsRecuperador({
 
             const relacaoEst04 = tese.relacionadaEst04 ? obterRelacaoComCancelamento(tese) : null
 
+            // Destaques contextuais da Fase 1 (Dados da Empresa) - SOMENTE INDICAÇÃO VISUAL, NUNCA MARCA/DESMARCA
+            const destaquesFase1: { rotulo: string; motivo: string; destaque: boolean }[] = []
+
+            const temMonofasicos =
+              !!configuracoes?.presencaMonofasicos ||
+              Number(configuracoes?.perfilInsumosMonofasicos ?? 0) > 0
+            const temEnergeticos = !!configuracoes?.insumosEnergeticos
+            const temIntangiveis = !!configuracoes?.intangiveisRoyalties
+            const temImobilizado = Number(configuracoes?.imobilizadoUltimos5Anos ?? 0) > 0
+
+            // Tema 69 (Exclusão do ICMS da base do PIS/Cofins) / Tema 118 (Exclusão do ISS)
+            if (tese.id === 'tese_pis_01') {
+              destaquesFase1.push({
+                rotulo: 'Tese Mestra (Tema 69 / STF)',
+                motivo:
+                  'Você possui parâmetros fiscais informados em Dados da Empresa pertinentes à tese do século.',
+                destaque: true,
+              })
+            }
+
+            if (tese.id === 'tese_pis_02') {
+              destaquesFase1.push({
+                rotulo: 'Exclusão de Tributos da Base (Tema 118 / STF)',
+                motivo:
+                  'Aplicável sobre aquisições e receitas tributadas à alíquota cheia/reduzida informadas no perfil de insumos.',
+                destaque: true,
+              })
+            }
+
+            // Tema 201 (Monofásicos / PIS/Cofins)
+            if (tese.id === 'tese_pis_04' && temMonofasicos) {
+              const cats = (configuracoes?.categoriasMonofasicos || []).join(', ')
+              destaquesFase1.push({
+                rotulo: 'Você indicou insumos/produtos monofásicos',
+                motivo: `Parâmetro cadastrado em Dados da Empresa (${configuracoes?.perfilInsumosMonofasicos || 0}% do perfil${cats ? ` • Categorias: ${cats}` : ''}). Seleção de tese permanece manual.`,
+                destaque: true,
+              })
+            }
+
+            // Tema 329 / Conceito de Insumos (Energéticos e Intangíveis)
+            if (tese.id === 'tese_pis_03') {
+              if (temEnergeticos) {
+                destaquesFase1.push({
+                  rotulo: 'Você indicou insumos energéticos',
+                  motivo:
+                    'Parâmetro cadastrado em Dados da Empresa (energia elétrica / vapor industrial na operação). Seleção manual.',
+                  destaque: true,
+                })
+              }
+              if (temIntangiveis) {
+                destaquesFase1.push({
+                  rotulo: 'Você indicou intangíveis e royalties',
+                  motivo:
+                    'Parâmetro cadastrado em Dados da Empresa (software, marcas e licenças). Seleção manual.',
+                  destaque: true,
+                })
+              }
+            }
+
+            // LC 87 / Imobilizado e créditos de ICMS/PIS/COFINS
+            if (tese.id === 'tese_pis_05' && temImobilizado) {
+              destaquesFase1.push({
+                rotulo: 'Investimento em imobilizado informado',
+                motivo: `Investimentos de R$ ${Number(configuracoes?.imobilizadoUltimos5Anos || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} nos últimos 5 anos cadastrados em Dados da Empresa.`,
+                destaque: true,
+              })
+            }
+
+            const possuiDestaqueAtivo = destaquesFase1.length > 0
+
             return (
               <div
                 key={tese.id}
                 className={`p-4 rounded-xl border transition-all ${
                   ativa
                     ? 'bg-white border-slate-300 shadow-sm'
-                    : 'bg-slate-50/70 border-slate-200 opacity-60'
+                    : possuiDestaqueAtivo
+                      ? 'bg-amber-50/20 border-amber-200/80 shadow-xs'
+                      : 'bg-slate-50/70 border-slate-200 opacity-60'
                 }`}
               >
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -99,10 +176,12 @@ export default function BlocoPisCofinsRecuperador({
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-[#07132B] text-[#D4AF37]">
                           {tese.codigo}
                         </span>
-                        {selecao.origem === 'ncm_sugerido' && (
+                        {(selecao as any).origem === 'ncm_sugerido' && (
                           <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/40 shadow-xs">
                             Sugerido via NCM{' '}
-                            {selecao.ncmReferencia ? `(${selecao.ncmReferencia})` : ''}
+                            {(selecao as any).ncmReferencia
+                              ? `(${(selecao as any).ncmReferencia})`
+                              : ''}
                           </span>
                         )}
                         {relacaoEst04 && (
@@ -110,8 +189,30 @@ export default function BlocoPisCofinsRecuperador({
                             Relacionada à EST-04
                           </span>
                         )}
+                        {destaquesFase1.map((d, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs"
+                            title={d.motivo}
+                          >
+                            <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                            {d.rotulo}
+                          </span>
+                        ))}
                         <h4 className="text-xs font-bold text-[#07132B]">{tese.titulo}</h4>
                       </div>
+                      {destaquesFase1.length > 0 && (
+                        <div className="mb-2 p-2 rounded-lg bg-amber-50/80 border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-1.5">
+                          <Info className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5" />
+                          <div className="space-y-0.5">
+                            {destaquesFase1.map((d, i) => (
+                              <p key={i}>
+                                <strong>Contexto cadastral:</strong> {d.motivo}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded inline-block mb-1.5 border border-emerald-200">
                         {tese.fundamento}
                       </span>

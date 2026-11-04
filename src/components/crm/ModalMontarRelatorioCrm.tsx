@@ -178,6 +178,14 @@ export function ModalMontarRelatorioCrm({
     despesasComCreditosMensais: 30000,
     percentualExportacao: 0,
     anoBaseTransicao: 2026,
+    perfilInsumosAliquotaCheia: 70,
+    perfilInsumosMonofasicos: 20,
+    perfilInsumosAliquotaReduzida: 10,
+    presencaMonofasicos: false,
+    categoriasMonofasicos: [],
+    insumosEnergeticos: false,
+    intangiveisRoyalties: false,
+    imobilizadoUltimos5Anos: 0,
   }
 
   const montarConfiguracaoAtual = (): ConfiguracaoRelatorioPersonalizado => {

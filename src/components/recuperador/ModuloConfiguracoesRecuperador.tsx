@@ -671,6 +671,135 @@ export default function ModuloConfiguracoesRecuperador({
           </div>
         </div>
       </div>
+
+      {/* CARD 4: PARÂMETROS FISCAIS & INSUMOS (FASE 1 - PROPAGADOS DA FONTE MESTRA) */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" />
+              <h3 className="text-sm font-bold text-[#07132B] uppercase tracking-wide">
+                Módulo 4 • Parâmetros Fiscais & Insumos (Fase 1 • Fonte Mestra)
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Dados propagados de Dados da Empresa (/dados-empresa). Você pode ajustar localmente
+              com override ou restaurar aos valores mestres a qualquer momento.
+            </p>
+          </div>
+          <span className="text-[10px] font-mono font-bold bg-[#07132B] text-[#D4AF37] px-2.5 py-1 rounded-full">
+            CONTEXTO C5.0
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+          {/* Perfil de Insumos */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-2">
+            <span className="text-xs font-bold text-[#07132B] block">1. Perfil de Insumos (%)</span>
+            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="bg-white p-2 rounded border border-slate-200">
+                <span className="text-[10px] text-slate-500 block">Cheia</span>
+                <strong className="text-slate-800 font-mono">
+                  {configuracoes.perfilInsumosAliquotaCheia ?? 70}%
+                </strong>
+              </div>
+              <div className="bg-white p-2 rounded border border-slate-200">
+                <span className="text-[10px] text-slate-500 block">Monofásico</span>
+                <strong className="text-[#D4AF37] font-mono">
+                  {configuracoes.perfilInsumosMonofasicos ?? 20}%
+                </strong>
+              </div>
+              <div className="bg-white p-2 rounded border border-slate-200">
+                <span className="text-[10px] text-slate-500 block">Reduzida</span>
+                <strong className="text-slate-800 font-mono">
+                  {configuracoes.perfilInsumosAliquotaReduzida ?? 10}%
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Monofásicos & Categorias */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1.5">
+            <span className="text-xs font-bold text-[#07132B] block">
+              2. Presença de Monofásicos
+            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  configuracoes.presencaMonofasicos
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-slate-200 text-slate-700'
+                }`}
+              >
+                {configuracoes.presencaMonofasicos ? 'Sim (Detectado)' : 'Não indicado'}
+              </span>
+            </div>
+            {configuracoes.presencaMonofasicos && (
+              <span className="text-[11px] text-slate-600 block truncate">
+                Categorias:{' '}
+                <strong>
+                  {(configuracoes.categoriasMonofasicos || []).join(', ') || 'Não especificadas'}
+                </strong>
+              </span>
+            )}
+          </div>
+
+          {/* Insumos Energéticos */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1.5">
+            <span className="text-xs font-bold text-[#07132B] block">3. Insumos Energéticos</span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  configuracoes.insumosEnergeticos
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-slate-200 text-slate-700'
+                }`}
+              >
+                {configuracoes.insumosEnergeticos ? 'Sim (Uso intensivo)' : 'Não indicado'}
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 block">
+              Energia contratada / vapor para indústria
+            </span>
+          </div>
+
+          {/* Intangíveis & Royalties */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1.5">
+            <span className="text-xs font-bold text-[#07132B] block">
+              4. Intangíveis & Royalties
+            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  configuracoes.intangiveisRoyalties
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-slate-200 text-slate-700'
+                }`}
+              >
+                {configuracoes.intangiveisRoyalties ? 'Sim (Software/marcas)' : 'Não indicado'}
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 block">
+              Software, licenças e remessas de marcas
+            </span>
+          </div>
+
+          {/* Imobilizado 5 Anos */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-1.5 col-span-1 md:col-span-2">
+            <span className="text-xs font-bold text-[#07132B] block">
+              5. Investimento em Ativo Imobilizado (Últimos 5 Anos)
+            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-bold font-mono text-[#07132B]">
+                {formatarMoeda(configuracoes.imobilizadoUltimos5Anos || 0)}
+              </span>
+              <span className="text-xs text-slate-500">
+                (Base para créditos de PIS/COFINS e CIAP/ICMS)
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

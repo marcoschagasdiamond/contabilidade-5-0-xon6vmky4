@@ -51,9 +51,38 @@ export interface DadosEmpresaPerfil {
   percentualExportacao: number // ex: 0 (%)
   anoBaseTransicao: AnoBaseSimulacao // ex: 2026, 2027...
 
+  // Bloco 3: Fase 1 — Parâmetros Fiscais & Insumos (Fonte Mestra)
+  // 1. Perfil de insumos (% tributados à alíquota cheia, % monofásicos, % alíquota reduzida — somam 100%)
+  perfilInsumosAliquotaCheia: number // ex: 70 (%)
+  perfilInsumosMonofasicos: number // ex: 20 (%)
+  perfilInsumosAliquotaReduzida: number // ex: 10 (%)
+
+  // 2. Presença de monofásicos
+  presencaMonofasicos: boolean // sim / não
+  categoriasMonofasicos: string[] // 'combustiveis' | 'bebidas' | 'medicamentos' | 'pneus' | 'veiculos' | 'agroquimicos'
+
+  // 3. Insumos energéticos (energia elétrica, vapor para indústria)
+  insumosEnergeticos: boolean // sim / não
+
+  // 4. Intangíveis / royalties (software, marcas, licenças)
+  intangiveisRoyalties: boolean // sim / não
+
+  // 5. Imobilizado (investimentos em ativo imobilizado nos últimos 5 anos)
+  imobilizadoUltimos5Anos: number // Valor total investido nos últimos 5 anos (R$)
+  imobilizadoAnosDetalhe?: Record<string, number> // Detalhamento opcional ano a ano ex: { "2021": 50000, ... }
+
   // Metadados
   atualizadoEm?: string
 }
+
+export const CATEGORIAS_MONOFASICOS_OPCOES = [
+  { id: 'combustiveis', rotulo: 'Combustíveis e derivados' },
+  { id: 'bebidas', rotulo: 'Bebidas (cervejas, refrigerantes, águas)' },
+  { id: 'medicamentos', rotulo: 'Medicamentos e produtos farmacêuticos' },
+  { id: 'pneus', rotulo: 'Pneus e câmaras de ar' },
+  { id: 'veiculos', rotulo: 'Veículos, autopeças e máquinas' },
+  { id: 'agroquimicos', rotulo: 'Agroquímicos e insumos agrícolas' },
+] as const
 
 export const DADOS_EMPRESA_PADRAO: DadosEmpresaPerfil = {
   // Passo 1 - Identificação
@@ -91,6 +120,17 @@ export const DADOS_EMPRESA_PADRAO: DadosEmpresaPerfil = {
   despesasComCreditosMensais: 30000,
   percentualExportacao: 0,
   anoBaseTransicao: 2026,
+
+  // Bloco 3 (Fase 1)
+  perfilInsumosAliquotaCheia: 100,
+  perfilInsumosMonofasicos: 0,
+  perfilInsumosAliquotaReduzida: 0,
+  presencaMonofasicos: false,
+  categoriasMonofasicos: [],
+  insumosEnergeticos: false,
+  intangiveisRoyalties: false,
+  imobilizadoUltimos5Anos: 0,
+  imobilizadoAnosDetalhe: {},
 }
 
 const STORAGE_KEY = 'contabilidade5_dados_empresa'

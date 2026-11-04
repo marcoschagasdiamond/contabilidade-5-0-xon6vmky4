@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T01:50:27.256Z",
+  "generatedAt": "2026-11-04T02:11:02.838Z",
   "collections": [
     {
       "name": "users",
@@ -774,6 +774,60 @@
           "required": false,
           "system": false,
           "collectionRef": "users"
+        },
+        {
+          "name": "perfil_insumos_aliquota_cheia",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "perfil_insumos_monofasicos",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "perfil_insumos_aliquota_reduzida",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "presenca_monofasicos",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "categorias_monofasicos",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "insumos_energeticos",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "intangiveis_royalties",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "imobilizado_ultimos_5_anos",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "imobilizado_anos_detalhe",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

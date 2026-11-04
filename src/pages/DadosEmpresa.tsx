@@ -17,6 +17,8 @@ import {
   obterAliquotaISS,
   obterAliquotaIcmsUf,
 } from '@/lib/regimes'
+import { CATEGORIAS_MONOFASICOS_OPCOES } from '@/types/dadosEmpresa'
+import { Switch } from '@/components/ui/switch'
 import { formatarCNPJ, limparCNPJ, validarCNPJ } from '@/lib/cnpj'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
@@ -223,6 +225,16 @@ export default function DadosEmpresa() {
     // Cidade / ISS *
     if (!formData.cidade) {
       novosErros.cidade = 'Cidade para alíquota de ISS é obrigatória'
+    }
+
+    // Validação Fase 1: Perfil de Insumos deve somar exatamente 100%
+    const cheia = Number(formData.perfilInsumosAliquotaCheia ?? 0)
+    const mono = Number(formData.perfilInsumosMonofasicos ?? 0)
+    const reduz = Number(formData.perfilInsumosAliquotaReduzida ?? 0)
+    const somaPerfil = Math.round((cheia + mono + reduz) * 100) / 100
+
+    if (somaPerfil !== 100) {
+      novosErros.perfilInsumos = `A soma do perfil de insumos deve ser exatamente 100% (atual: ${somaPerfil}%). Ajuste as proporções.`
     }
 
     setErrors(novosErros)
@@ -1270,6 +1282,418 @@ export default function DadosEmpresa() {
                       Folha 12m: <strong>{formatarMoeda(folhaAnual)}</strong>. Se ≥ 28%, garante
                       Anexo III.
                     </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* SUB-BLOCO F: PARÂMETROS FISCAIS & INSUMOS (FASE 1 - FONTE MESTRA) */}
+              <div className="pt-6 border-t-2 border-slate-200/80 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gradient-to-r from-slate-50 via-emerald-50/40 to-slate-50 p-4 rounded-xl border border-slate-200">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" />
+                      <h4 className="text-sm font-heading font-bold uppercase tracking-wider text-[#07132B]">
+                        Parâmetros Fiscais & Insumos • Fase 1 (Fonte Mestra)
+                      </h4>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Dados corporativos unificados. Propagam para Calculadora IBS/CBS, Recuperador
+                      de Créditos e Diagnóstico 360° sem recadastro.
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-mono font-bold bg-[#07132B] text-[#D4AF37] px-2.5 py-1 rounded-full shrink-0 self-start sm:self-auto">
+                    FONTE MESTRA C5.0
+                  </span>
+                </div>
+
+                {/* 1. PERFIL DE INSUMOS (SOMA 100%) */}
+                <div className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <Label className="text-sm font-bold text-[#07132B] flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                        1. Perfil de Insumos da Operação (%)
+                      </Label>
+                      <span className="text-xs text-slate-500 block mt-0.5">
+                        Distribuição das aquisições de insumos. A soma das 3 alíquotas deve ser
+                        exatamente 100%.
+                      </span>
+                    </div>
+                    {(() => {
+                      const soma =
+                        Number(formData.perfilInsumosAliquotaCheia ?? 0) +
+                        Number(formData.perfilInsumosMonofasicos ?? 0) +
+                        Number(formData.perfilInsumosAliquotaReduzida ?? 0)
+                      const ok = Math.round(soma * 100) / 100 === 100
+                      return (
+                        <div
+                          className={`text-xs font-mono font-bold px-3 py-1 rounded-full border ${
+                            ok
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                              : 'bg-rose-50 text-rose-800 border-rose-300'
+                          }`}
+                        >
+                          Soma: {soma.toFixed(1)}% {ok ? '✓ Válida' : '⚠ Deve somar 100%'}
+                        </div>
+                      )
+                    })()}
+                  </div>
+
+                  {errors.perfilInsumos && (
+                    <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-800 flex items-center gap-2">
+                      <Info className="w-4 h-4 shrink-0 text-rose-600" />
+                      <span>{errors.perfilInsumos}</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                    {/* Alíquota Cheia */}
+                    <div className="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="perfilCheia" className="text-xs font-bold text-[#07132B]">
+                          Alíquota Cheia (%)
+                        </Label>
+                        <span className="text-[11px] font-mono text-slate-500">Padrão</span>
+                      </div>
+                      <Input
+                        id="perfilCheia"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        value={formData.perfilInsumosAliquotaCheia ?? 0}
+                        onChange={(e) => {
+                          const val = Math.max(0, Math.min(100, Number(e.target.value) || 0))
+                          setFormData((prev) => ({ ...prev, perfilInsumosAliquotaCheia: val }))
+                          if (errors.perfilInsumos)
+                            setErrors((prev) => ({ ...prev, perfilInsumos: '' }))
+                        }}
+                        className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-10 shadow-xs"
+                      />
+                      <span className="text-[10px] text-slate-500 block">
+                        Tributados integralmente
+                      </span>
+                    </div>
+
+                    {/* Monofásicos */}
+                    <div className="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="perfilMono" className="text-xs font-bold text-[#07132B]">
+                          Monofásicos (%)
+                        </Label>
+                        <span className="text-[11px] font-mono text-[#D4AF37] font-bold">
+                          Fase 1
+                        </span>
+                      </div>
+                      <Input
+                        id="perfilMono"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        value={formData.perfilInsumosMonofasicos ?? 0}
+                        onChange={(e) => {
+                          const val = Math.max(0, Math.min(100, Number(e.target.value) || 0))
+                          setFormData((prev) => ({
+                            ...prev,
+                            perfilInsumosMonofasicos: val,
+                            presencaMonofasicos: val > 0 ? true : prev.presencaMonofasicos,
+                          }))
+                          if (errors.perfilInsumos)
+                            setErrors((prev) => ({ ...prev, perfilInsumos: '' }))
+                        }}
+                        className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-10 shadow-xs"
+                      />
+                      <span className="text-[10px] text-slate-500 block">
+                        Alíquota zero / concentrada
+                      </span>
+                    </div>
+
+                    {/* Alíquota Reduzida */}
+                    <div className="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="perfilReduz" className="text-xs font-bold text-[#07132B]">
+                          Alíquota Reduzida (%)
+                        </Label>
+                        <span className="text-[11px] font-mono text-slate-500">Especial</span>
+                      </div>
+                      <Input
+                        id="perfilReduz"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        value={formData.perfilInsumosAliquotaReduzida ?? 0}
+                        onChange={(e) => {
+                          const val = Math.max(0, Math.min(100, Number(e.target.value) || 0))
+                          setFormData((prev) => ({ ...prev, perfilInsumosAliquotaReduzida: val }))
+                          if (errors.perfilInsumos)
+                            setErrors((prev) => ({ ...prev, perfilInsumos: '' }))
+                        }}
+                        className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-10 shadow-xs"
+                      />
+                      <span className="text-[10px] text-slate-500 block">
+                        Incentivados ou cesta básica
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. PRESENÇA DE MONOFÁSICOS & CATEGORIAS */}
+                <div className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-bold text-[#07132B] flex items-center gap-1.5">
+                        <Coins className="w-4 h-4 text-[#D4AF37]" />
+                        2. Presença de Insumos / Produtos Monofásicos
+                      </Label>
+                      <span className="text-xs text-slate-500 block">
+                        A empresa comercializa ou adquire insumos submetidos à tributação
+                        concentrada/monofásica?
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-slate-600">
+                        {formData.presencaMonofasicos ? 'Sim' : 'Não'}
+                      </span>
+                      <Switch
+                        checked={!!formData.presencaMonofasicos}
+                        onCheckedChange={(checked) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            presencaMonofasicos: checked,
+                            categoriasMonofasicos: checked ? prev.categoriasMonofasicos : [],
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {formData.presencaMonofasicos && (
+                    <div className="pt-3 border-t border-slate-100 space-y-2">
+                      <Label className="text-xs font-bold text-[#07132B]">
+                        Categorias de produtos monofásicos aplicáveis:
+                      </Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {CATEGORIAS_MONOFASICOS_OPCOES.map((cat) => {
+                          const selecionado = (formData.categoriasMonofasicos || []).includes(
+                            cat.id,
+                          )
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => {
+                                setFormData((prev) => {
+                                  const atuais = prev.categoriasMonofasicos || []
+                                  const novo = selecionado
+                                    ? atuais.filter((id) => id !== cat.id)
+                                    : [...atuais, cat.id]
+                                  return { ...prev, categoriasMonofasicos: novo }
+                                })
+                              }}
+                              className={`p-2.5 rounded-lg border text-left text-xs transition-all flex items-center gap-2 ${
+                                selecionado
+                                  ? 'bg-[#07132B] text-[#D4AF37] border-[#07132B] font-bold shadow-xs'
+                                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              <span
+                                className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] font-bold border ${
+                                  selecionado
+                                    ? 'bg-[#D4AF37] text-[#07132B] border-[#D4AF37]'
+                                    : 'border-slate-300 bg-white'
+                                }`}
+                              >
+                                {selecionado ? '✓' : ''}
+                              </span>
+                              <span className="truncate">{cat.rotulo}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3 & 4. INSUMOS ENERGÉTICOS E INTANGÍVEIS / ROYALTIES */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* 3. Insumos energéticos */}
+                  <div className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white flex flex-col justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Cpu className="w-4 h-4 text-[#D4AF37]" />
+                        <Label className="text-sm font-bold text-[#07132B]">
+                          3. Insumos Energéticos
+                        </Label>
+                      </div>
+                      <p className="text-xs text-slate-500 leading-relaxed">
+                        A operação utiliza intensivamente energia elétrica contratada em demanda,
+                        vapor industrial ou combustíveis como insumo fabril?
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                      <span className="text-xs font-semibold text-slate-600">
+                        Presença de insumos energéticos:
+                      </span>
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xs font-bold text-slate-700">
+                          {formData.insumosEnergeticos ? 'Sim' : 'Não'}
+                        </span>
+                        <Switch
+                          checked={!!formData.insumosEnergeticos}
+                          onCheckedChange={(checked) =>
+                            setFormData((prev) => ({ ...prev, insumosEnergeticos: checked }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. Intangíveis e royalties */}
+                  <div className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white flex flex-col justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="w-4 h-4 text-[#D4AF37]" />
+                        <Label className="text-sm font-bold text-[#07132B]">
+                          4. Intangíveis & Royalties
+                        </Label>
+                      </div>
+                      <p className="text-xs text-slate-500 leading-relaxed">
+                        Aquisição, licenciamento ou remessas de software, cessão de direitos,
+                        marcas, patentes, royalties ou direitos autorais?
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                      <span className="text-xs font-semibold text-slate-600">
+                        Presença de intangíveis/royalties:
+                      </span>
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xs font-bold text-slate-700">
+                          {formData.intangiveisRoyalties ? 'Sim' : 'Não'}
+                        </span>
+                        <Switch
+                          checked={!!formData.intangiveisRoyalties}
+                          onCheckedChange={(checked) =>
+                            setFormData((prev) => ({ ...prev, intangiveisRoyalties: checked }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. INVESTIMENTOS EM ATIVO IMOBILIZADO (ÚLTIMOS 5 ANOS) */}
+                <div className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <Label
+                        htmlFor="imobilizadoTotal"
+                        className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
+                      >
+                        <Hammer className="w-4 h-4 text-[#D4AF37]" />
+                        5. Investimentos em Ativo Imobilizado (Últimos 5 Anos)
+                      </Label>
+                      <span className="text-xs text-slate-500 block mt-0.5">
+                        Total investido em máquinas, equipamentos, frotas, edificações e
+                        benfeitorias nos últimos 60 meses.
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 self-start sm:self-auto">
+                      Base CIAP / PIS / COFINS
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="imobilizadoTotal"
+                        className="text-xs font-bold text-slate-700"
+                      >
+                        Valor Total Acumulado (R$)
+                      </Label>
+                      <Input
+                        id="imobilizadoTotal"
+                        type="text"
+                        value={(formData.imobilizadoUltimos5Anos ?? 0).toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\D/g, '')
+                          const valor = Number(raw) / 100
+                          setFormData((prev) => ({ ...prev, imobilizadoUltimos5Anos: valor }))
+                        }}
+                        className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 shadow-xs"
+                      />
+                      <span className="text-[11px] text-slate-500 block">
+                        Equivale a uma média de{' '}
+                        <strong>
+                          {formatarMoeda((formData.imobilizadoUltimos5Anos ?? 0) / 5)}/ano
+                        </strong>{' '}
+                        ou{' '}
+                        <strong>
+                          {formatarMoeda((formData.imobilizadoUltimos5Anos ?? 0) / 60)}/mês
+                        </strong>
+                        .
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-slate-700">
+                        Detalhamento Opcional por Exercício (Últimos 5 Anos)
+                      </Label>
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {[2021, 2022, 2023, 2024, 2025].map((ano) => {
+                          const anoStr = String(ano)
+                          const valorAno = formData.imobilizadoAnosDetalhe?.[anoStr] ?? ''
+                          return (
+                            <div key={ano} className="space-y-1">
+                              <span className="text-[10px] font-mono font-bold text-slate-500 block text-center">
+                                {ano}
+                              </span>
+                              <Input
+                                type="text"
+                                placeholder="R$ 0"
+                                value={
+                                  valorAno !== '' && valorAno !== undefined
+                                    ? Number(valorAno).toLocaleString('pt-BR')
+                                    : ''
+                                }
+                                onChange={(e) => {
+                                  const raw = e.target.value.replace(/\D/g, '')
+                                  const num = Number(raw)
+                                  setFormData((prev) => {
+                                    const detalhe = { ...(prev.imobilizadoAnosDetalhe || {}) }
+                                    if (num > 0) {
+                                      detalhe[anoStr] = num
+                                    } else {
+                                      delete detalhe[anoStr]
+                                    }
+                                    const soma = Object.values(detalhe).reduce(
+                                      (acc, v) => acc + v,
+                                      0,
+                                    )
+                                    return {
+                                      ...prev,
+                                      imobilizadoAnosDetalhe: detalhe,
+                                      // Se detalhou, atualiza o total acumulado automaticamente se a soma for maior
+                                      imobilizadoUltimos5Anos:
+                                        soma > 0 ? soma : prev.imobilizadoUltimos5Anos,
+                                    }
+                                  })
+                                }}
+                                className="text-[11px] font-mono text-center h-8 px-1 bg-slate-50 border-slate-200"
+                              />
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <span className="text-[10px] text-slate-400 block">
+                        Preenchimento livre. Se preenchido, calcula automaticamente o total
+                        acumulado.
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

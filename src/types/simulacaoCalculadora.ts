@@ -86,6 +86,14 @@ export interface ParametrosSimulacaoCalculadora {
     cidade?: string
     funcionarios?: string
     emissaoNf?: string
+    perfilInsumosAliquotaCheia?: number
+    perfilInsumosMonofasicos?: number
+    perfilInsumosAliquotaReduzida?: number
+    presencaMonofasicos?: boolean
+    categoriasMonofasicos?: string[]
+    insumosEnergeticos?: boolean
+    intangiveisRoyalties?: boolean
+    imobilizadoUltimos5Anos?: number
   }
 }
 

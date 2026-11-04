@@ -1356,6 +1356,14 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         cidade: perfil.cidade,
         funcionarios: perfil.funcionarios,
         emissaoNf: perfil.emissaoNf,
+        perfilInsumosAliquotaCheia: perfil.perfilInsumosAliquotaCheia,
+        perfilInsumosMonofasicos: perfil.perfilInsumosMonofasicos,
+        perfilInsumosAliquotaReduzida: perfil.perfilInsumosAliquotaReduzida,
+        presencaMonofasicos: perfil.presencaMonofasicos,
+        categoriasMonofasicos: perfil.categoriasMonofasicos,
+        insumosEnergeticos: perfil.insumosEnergeticos,
+        intangiveisRoyalties: perfil.intangiveisRoyalties,
+        imobilizadoUltimos5Anos: perfil.imobilizadoUltimos5Anos,
       },
     }
   }, [

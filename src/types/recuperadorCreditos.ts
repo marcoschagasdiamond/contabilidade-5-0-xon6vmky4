@@ -50,6 +50,16 @@ export interface ConfiguracoesRecuperador {
   ncmDescricao?: string
   ncmCategoriaRotulo?: string
   ncmOrigemSugerida?: boolean
+  // Campos Fase 1 (Fonte Mestra de Dados da Empresa)
+  perfilInsumosAliquotaCheia?: number
+  perfilInsumosMonofasicos?: number
+  perfilInsumosAliquotaReduzida?: number
+  presencaMonofasicos?: boolean
+  categoriasMonofasicos?: string[]
+  insumosEnergeticos?: boolean
+  intangiveisRoyalties?: boolean
+  imobilizadoUltimos5Anos?: number
+  imobilizadoAnosDetalhe?: Record<string, number>
 }
 
 export interface TeseSelecaoUsuario {

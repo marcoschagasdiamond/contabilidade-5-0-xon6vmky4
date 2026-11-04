@@ -1096,6 +1096,41 @@ export default function DiagnosticoRelatorioConsolidado() {
                         : 'Não (Atividade Pura)'}
                     </strong>
                   </div>
+                  {/* DADOS FASE 1 PROPAGADOS DA FONTE MESTRA */}
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 col-span-2 sm:col-span-3 lg:col-span-4">
+                    <span className="text-slate-400 uppercase font-semibold block text-[10px] mb-1">
+                      Parâmetros Fiscais & Insumos (Fase 1 • Fonte Mestra)
+                    </span>
+                    <div className="flex flex-wrap gap-2 text-xs text-slate-700">
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono">
+                        Insumos: <strong>{dadosEmpresa.perfilInsumosAliquotaCheia ?? 70}%</strong>{' '}
+                        cheia / <strong>{dadosEmpresa.perfilInsumosMonofasicos ?? 20}%</strong> mono
+                        / <strong>{dadosEmpresa.perfilInsumosAliquotaReduzida ?? 10}%</strong> red
+                      </span>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200">
+                        Monofásicos:{' '}
+                        <strong>{dadosEmpresa.presencaMonofasicos ? 'Sim' : 'Não'}</strong>
+                      </span>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200">
+                        Energéticos:{' '}
+                        <strong>{dadosEmpresa.insumosEnergeticos ? 'Sim' : 'Não'}</strong>
+                      </span>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200">
+                        Intangíveis:{' '}
+                        <strong>{dadosEmpresa.intangiveisRoyalties ? 'Sim' : 'Não'}</strong>
+                      </span>
+                      <span className="px-2 py-1 rounded bg-white border border-slate-200 font-mono">
+                        Imobilizado (5a):{' '}
+                        <strong>
+                          R${' '}
+                          {Number(dadosEmpresa.imobilizadoUltimos5Anos || 0).toLocaleString(
+                            'pt-BR',
+                            { minimumFractionDigits: 2 },
+                          )}
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
