@@ -828,6 +828,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       dashboardSetor: false,
       dashboardFaturamento: false,
       dashboardPercentualCompras: false,
+      fase2Parametros: false,
     })
 
     // 8. Limpa os dados em localStorage através de limparDadosEmpresa()
@@ -2735,11 +2736,16 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
     // Fase 2: Split payment modulado pelo perfil de retenção e percentual de retenção
     // Regra: quando o perfil de retenção indicar que clientes retêm, ajustar o split payment pelo % de retenção informado
-    // Se perfil = 'nao' ou 'nenhum', o padrão é a alíquota cheia legal do IVA (100% da alíquota da saída)
-    // Se perfil for sim ('sim' | 'parcial'), o percentual informado (ex: 20%) modula a retenção efetiva.
+    // Se perfil = 'nao', o padrão é a alíquota cheia legal do IVA (100% da alíquota da saída)
+    // Se perfil for 'sim_todos' ou 'parcial', o percentual informado (ex: 20% ou 100%) modula a retenção efetiva.
     // Neutralidade: perfil 'nao' ou percentual = 0 preserva rigorosamente a retenção total integral.
     let fatorAjusteRetencao = 1.0
-    if (perfilRetencaoSplit === 'sim' || perfilRetencaoSplit === 'parcial') {
+    if (perfilRetencaoSplit === 'sim_todos') {
+      // 100% retido ou percentual se especificado
+      if (percentualRetencaoSplit && percentualRetencaoSplit > 0) {
+        fatorAjusteRetencao = Math.min(1, Math.max(0, percentualRetencaoSplit / 100))
+      }
+    } else if (perfilRetencaoSplit === 'parcial') {
       if (percentualRetencaoSplit && percentualRetencaoSplit > 0) {
         fatorAjusteRetencao = Math.min(1, Math.max(0, percentualRetencaoSplit / 100))
       }
@@ -2937,18 +2943,21 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       // - monofasico / st: carga de PIS/COFINS e ICMS concentrada na origem; na transição há diluição gradual
       //   (fator modulador suave: zfm desonera IPI/PIS/COFINS preservando incentivo regional; ret mantém alíquota unificada de 4%)
       // Neutralidade: regimeEspecialAtual === 'nenhum' mantém exatamente 1.0 (idêntico ao legado)
-      if (regimeEspecialAtual === 'zfm') {
+      if (regimeEspecialAtual === 'zona_franca_manaus') {
         // Zona Franca de Manaus: manutenção do tratamento favorecido constitucional (art. 92-B)
         // Reduz a alíquota em transição de IBS/CBS em 20% pela manutenção dos créditos de incentivo regional
         if (typeof ano === 'number' && ano >= 2027) {
           aliqEfetivaAno = Number((aliqEfetivaAno * 0.8).toFixed(2))
         }
-      } else if (regimeEspecialAtual === 'ret') {
+      } else if (regimeEspecialAtual === 'ret_permuta') {
         // Regime Especial de Tributação (RET Construção Civil - 4% unificado)
         if (ano === 'atual' || ano === 2026) {
           aliqEfetivaAno = Math.min(aliqEfetivaAno, 4.0)
         }
-      } else if (regimeEspecialAtual === 'monofasico' || regimeEspecialAtual === 'st') {
+      } else if (
+        regimeEspecialAtual === 'monofasico' ||
+        regimeEspecialAtual === 'substituicao_tributaria'
+      ) {
         // Monofásico / Substituição Tributária: alíquota concentrada na cadeia
         // Durante a transição, a transição para CBS/IBS unificado é gradual
         if (ano === 2027 || ano === 2028) {
@@ -3244,6 +3253,20 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         setRegimeAtualFiltro,
         anoTransicaoDashboard,
         setAnoTransicaoDashboard,
+
+        // Parâmetros Fiscais Avançados (Fase 2) - Override local da Calculadora
+        percentualComprasSemCredito,
+        setPercentualComprasSemCredito,
+        saldoCredorAcumulado,
+        setSaldoCredorAcumulado,
+        percentualVendasInterestaduais,
+        setPercentualVendasInterestaduais,
+        regimeEspecialAtual,
+        setRegimeEspecialAtual,
+        perfilRetencaoSplit,
+        setPerfilRetencaoSplit,
+        percentualRetencaoSplit,
+        setPercentualRetencaoSplit,
 
         // Composição detalhada por Itens / NCM (Fase 3)
         itensComposicao,

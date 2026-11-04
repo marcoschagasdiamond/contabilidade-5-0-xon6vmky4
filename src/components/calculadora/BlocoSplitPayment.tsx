@@ -38,6 +38,11 @@ interface BlocoSplitPaymentProps {
   onRegimeAtualChange?: (regime: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional') => void
   origemPropagada?: boolean
   anoTransicao?: AnoTransicaoIbsCbs
+  perfilRetencaoSplit?: PerfilRetencaoSplit
+  setPerfilRetencaoSplit?: (val: PerfilRetencaoSplit) => void
+  percentualRetencaoSplit?: number
+  setPercentualRetencaoSplit?: (val: number) => void
+  onRestaurarDadosIniciais?: () => void
 }
 
 export function BlocoSplitPayment({
@@ -50,7 +55,30 @@ export function BlocoSplitPayment({
   onRegimeAtualChange,
   origemPropagada,
   anoTransicao: anoTransicaoProp,
+  perfilRetencaoSplit: perfilRetencaoSplitProp,
+  setPerfilRetencaoSplit: setPerfilRetencaoSplitProp,
+  percentualRetencaoSplit: percentualRetencaoSplitProp,
+  setPercentualRetencaoSplit: setPercentualRetencaoSplitProp,
+  onRestaurarDadosIniciais,
 }: BlocoSplitPaymentProps) {
+  let ctxCalculadora: ReturnType<typeof useCalculadoraIbsCbs> | undefined
+  try {
+    ctxCalculadora = useCalculadoraIbsCbs()
+  } catch {
+    ctxCalculadora = undefined
+  }
+
+  const perfilRetencaoEfetivo =
+    perfilRetencaoSplitProp ?? ctxCalculadora?.perfilRetencaoSplit ?? 'nao'
+  const setPerfilRetencaoEfetivo =
+    setPerfilRetencaoSplitProp ?? ctxCalculadora?.setPerfilRetencaoSplit
+  const pctRetencaoEfetivo =
+    percentualRetencaoSplitProp ?? ctxCalculadora?.percentualRetencaoSplit ?? 0
+  const setPctRetencaoEfetivo =
+    setPercentualRetencaoSplitProp ?? ctxCalculadora?.setPercentualRetencaoSplit
+  const handleRestaurar =
+    onRestaurarDadosIniciais ??
+    (ctxCalculadora ? () => ctxCalculadora.restaurarDadosEmpresaNoModulo('split') : undefined)
   // Se anoTransicao não foi passado explicitamente via prop, consulta o contexto
   let anoDoContexto: AnoTransicaoIbsCbs | undefined
   try {
