@@ -1,18 +1,22 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import type { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
+import type { DadosEmpresaPerfil, DocumentoFiscalImportadoReferencia } from '@/types/dadosEmpresa'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 
 interface SecaoDadosGerenciaisImportadosProps {
   dadosEmpresa?: DadosEmpresaPerfil | null
+  documentoFiscal?: DocumentoFiscalImportadoReferencia | null
+  nomeEmpresa?: string
   className?: string
 }
 
 export function SecaoDadosGerenciaisImportados({
   dadosEmpresa,
+  documentoFiscal,
+  nomeEmpresa,
   className = '',
 }: SecaoDadosGerenciaisImportadosProps) {
-  const doc = dadosEmpresa?.documentoFiscalImportado
+  const doc = documentoFiscal ?? dadosEmpresa?.documentoFiscalImportado
   const agregados = doc?.agregadosContabeis
   const totaisFiscais = doc?.totaisFiscais
 
@@ -100,6 +104,9 @@ export function SecaoDadosGerenciaisImportados({
             <span className="text-[10px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded">
               DOCUMENTO IMPORTADO
             </span>
+            {nomeEmpresa && (
+              <span className="text-[11px] font-medium text-slate-500">• {nomeEmpresa}</span>
+            )}
           </div>
           <h3 className="text-xl font-heading font-extrabold text-[#07132B] mt-1.5">
             Dados Gerenciais dos Documentos Importados
