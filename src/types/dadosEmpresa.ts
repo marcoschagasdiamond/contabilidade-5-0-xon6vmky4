@@ -105,7 +105,145 @@ export interface DadosEmpresaPerfil {
   // Metadados e Documento Fiscal Importado
   atualizadoEm?: string
   documentoFiscalImportado?: DocumentoFiscalImportadoReferencia
+
+  // Etapa 1: Integração Fiscal (Certidões & Consultas + Histórico Unificado)
+  certidoesFiscais?: CertidaoFiscalRegistro[]
+  historicoDocumentosFiscais?: ItemHistoricoDocumentoFiscal[]
 }
+
+// ============================================================================
+// ETAPA 1 DA INTEGRAÇÃO FISCAL: TIPOS DE CERTIDÕES E CONSULTAS
+// ============================================================================
+
+export type TipoCertidaoFiscal =
+  | 'cnd_federal' // Certidão Negativa/Positiva Federal (PGFN / RFB)
+  | 'cnd_estadual' // Certidão Negativa/Positiva Estadual (SEFAZ)
+  | 'cnd_municipal' // Certidão Negativa/Positiva Municipal (ISS / IPTU)
+  | 'cnd_fgts' // Certificado de Regularidade do FGTS (CRF / Caixa)
+  | 'cndt_trabalhista' // Certidão Negativa de Débitos Trabalhistas (TST)
+  | 'consulta_receita' // Comprovante / Consulta Situação Cadastral Receita Federal
+  | 'consulta_sintegra' // Consulta Sintegra / CCC Estadual
+  | 'declaracao_dctf' // Recibo / Declaração DCTF / DCTFWeb
+  | 'outro' // Outra consulta ou certidão tributária
+
+export type SituacaoCertidaoFiscal =
+  | 'negativa' // Negativa (regular, sem pendências)
+  | 'positiva_efeito_negativa' // Positiva com Efeito de Negativa (débitos suspensos/parcelados)
+  | 'positiva' // Positiva (possui pendências/débitos ativos)
+  | 'com_pendencias' // Pendências cadastrais ou omissões
+  | 'regular' // Regular (situação cadastral ativa)
+  | 'irregular' // Irregular (inapta, suspensa, baixada)
+
+export type FonteOrigemDocumentoFiscal = 'manual' | 'api'
+
+export interface CertidaoFiscalRegistro {
+  id: string
+  tipo: TipoCertidaoFiscal
+  nomeTipo: string
+  orgaoEmissor: string // Ex: "Receita Federal / PGFN", "SEFAZ-SP", "Prefeitura de São Paulo", "Caixa Econômica Federal", "TST"
+  situacao: SituacaoCertidaoFiscal
+  codigoControle?: string // Código de controle/autenticidade
+  numeroCertidao?: string
+  dataEmissao?: string // YYYY-MM-DD
+  dataValidade?: string // YYYY-MM-DD
+  nomeArquivo: string
+  tamanhoArquivoBytes?: number
+  tipoMime?: string
+  fonte: FonteOrigemDocumentoFiscal // 'manual' vs 'api'
+  dataRegistro: string // ISO string
+  observacoes?: string
+  // Impactos mapeados na Situação Fiscal (Fase 3)
+  impactoSituacaoFiscal?: {
+    sugereAutosInfracao?: boolean
+    sugereDividaAtiva?: boolean
+    sugereParcelamentos?: boolean
+    sugereObrigacoesAtraso?: boolean
+  }
+}
+
+export type TipoItemHistoricoFiscal =
+  | 'efd_contribuicoes'
+  | 'efd_icms_ipi'
+  | 'balancete'
+  | 'certidao_fiscal'
+  | 'consulta_fiscal'
+  | 'outro'
+
+export interface ItemHistoricoDocumentoFiscal {
+  id: string
+  tipo: TipoItemHistoricoFiscal
+  categoria: 'escrituracao' | 'balancete' | 'certidao' | 'consulta'
+  titulo: string
+  nomeArquivo: string
+  dataProcessamento: string // ISO string
+  fonte: FonteOrigemDocumentoFiscal // 'manual' ou 'api'
+  situacaoOuResumo: string
+  dataValidade?: string // YYYY-MM-DD (para certidões)
+  linhasLidas?: number
+  detalhesAdicionais?: Record<string, any>
+}
+
+export const TIPOS_CERTIDOES_FISCAIS_OPCOES: {
+  id: TipoCertidaoFiscal
+  rotulo: string
+  orgaoPadrao: string
+  descricao: string
+}[] = [
+  {
+    id: 'cnd_federal',
+    rotulo: 'Certidão Conjunta Federal (PGFN / RFB)',
+    orgaoPadrao: 'Receita Federal / PGFN',
+    descricao: 'Tributos federais e Dívida Ativa da União.',
+  },
+  {
+    id: 'cnd_estadual',
+    rotulo: 'Certidão Estadual (SEFAZ / PGE)',
+    orgaoPadrao: 'SEFAZ Estadual / PGE',
+    descricao: 'ICMS e débitos inscritos em Dívida Ativa do Estado.',
+  },
+  {
+    id: 'cnd_municipal',
+    rotulo: 'Certidão Municipal (Tributos Mobiliários / ISS)',
+    orgaoPadrao: 'Prefeitura Municipal',
+    descricao: 'ISSQN, taxas municipais e Dívida Ativa Municipal.',
+  },
+  {
+    id: 'cnd_fgts',
+    rotulo: 'Certificado de Regularidade do FGTS (CRF)',
+    orgaoPadrao: 'Caixa Econômica Federal',
+    descricao: 'Regularidade de depósitos e obrigações do FGTS.',
+  },
+  {
+    id: 'cndt_trabalhista',
+    rotulo: 'Certidão Negativa Trabalhista (CNDT)',
+    orgaoPadrao: 'Tribunal Superior do Trabalho (TST)',
+    descricao: 'Inadimplência de débitos perante a Justiça do Trabalho.',
+  },
+  {
+    id: 'consulta_receita',
+    rotulo: 'Consulta / Situação Cadastral CNPJ',
+    orgaoPadrao: 'Receita Federal do Brasil',
+    descricao: 'Comprovante de inscrição e situação cadastral do CNPJ.',
+  },
+  {
+    id: 'consulta_sintegra',
+    rotulo: 'Consulta Sintegra / Cadastro Estadual (CCC)',
+    orgaoPadrao: 'Sintegra / SEFAZ',
+    descricao: 'Situação da Inscrição Estadual e habilitação para emitir NF-e.',
+  },
+  {
+    id: 'declaracao_dctf',
+    rotulo: 'DCTF / DCTFWeb / Recibo de Entrega',
+    orgaoPadrao: 'Receita Federal do Brasil',
+    descricao: 'Declaração de Débitos e Créditos Tributários Federais.',
+  },
+  {
+    id: 'outro',
+    rotulo: 'Outra Certidão ou Consulta Tributária',
+    orgaoPadrao: 'Órgão Fiscal',
+    descricao: 'Outro comprovante, termo de parcelamento ou notificação fiscal.',
+  },
+]
 
 export interface AgregadosContabeisImportados {
   ativoTotal?: number

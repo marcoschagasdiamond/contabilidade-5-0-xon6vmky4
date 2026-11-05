@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T19:32:36.682Z",
+  "generatedAt": "2026-11-05T11:20:46.674Z",
   "collections": [
     {
       "name": "users",
@@ -929,6 +929,18 @@
         },
         {
           "name": "documento_fiscal_importado",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "certidoes_fiscais",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "historico_documentos_fiscais",
           "type": "json",
           "required": false,
           "system": false

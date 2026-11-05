@@ -162,6 +162,12 @@ export function perfilToRecord(
   if (perfil.documentoFiscalImportado !== undefined)
     result.documento_fiscal_importado = perfil.documentoFiscalImportado
 
+  if (perfil.certidoesFiscais !== undefined)
+    (result as any).certidoes_fiscais = perfil.certidoesFiscais
+
+  if (perfil.historicoDocumentosFiscais !== undefined)
+    (result as any).historico_documentos_fiscais = perfil.historicoDocumentosFiscais
+
   return result
 }
 
@@ -294,6 +300,30 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
               }
             })()
           : undefined,
+    certidoesFiscais: Array.isArray((rec as any).certidoes_fiscais)
+      ? (rec as any).certidoes_fiscais
+      : typeof (rec as any).certidoes_fiscais === 'string'
+        ? (() => {
+            try {
+              const parsed = JSON.parse((rec as any).certidoes_fiscais)
+              return Array.isArray(parsed) ? parsed : []
+            } catch {
+              return []
+            }
+          })()
+        : [],
+    historicoDocumentosFiscais: Array.isArray((rec as any).historico_documentos_fiscais)
+      ? (rec as any).historico_documentos_fiscais
+      : typeof (rec as any).historico_documentos_fiscais === 'string'
+        ? (() => {
+            try {
+              const parsed = JSON.parse((rec as any).historico_documentos_fiscais)
+              return Array.isArray(parsed) ? parsed : []
+            } catch {
+              return []
+            }
+          })()
+        : [],
     atualizadoEm: rec.updated || rec.created,
   }
 }
