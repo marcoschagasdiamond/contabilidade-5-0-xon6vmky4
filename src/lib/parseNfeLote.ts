@@ -521,8 +521,11 @@ export function agregarLoteNfe(
       const ncmLimpo = it.ncm.replace(/\D/g, '')
       if (ncmLimpo.length >= 4) {
         const itemNcmCurado = buscarNcmPorCodigo(ncmLimpo)
-        if (itemNcmCurado?.isMonofasico) {
-          categoriasMonoSet.add(itemNcmCurado.categoria)
+        if (
+          itemNcmCurado?.categoria === 'monofasico_imposto_seletivo' ||
+          it.isMonofasicoPisCofins
+        ) {
+          categoriasMonoSet.add(itemNcmCurado?.categoria || 'monofasico_imposto_seletivo')
         }
 
         const atual = mapaNcm.get(ncmLimpo) || {
@@ -581,7 +584,7 @@ export function agregarLoteNfe(
         totalItens: item.totalItens,
         notasCount: item.notasSet.size,
         categoriaRotulo: curado?.categoriaRotulo || 'Geral',
-        tesesSugeridas: sug?.tesesSugeridasNomes || [],
+        tesesSugeridas: sug?.tesesSugeridasIds || [],
         sugestaoCompleta: sug,
       }
     })
@@ -883,7 +886,7 @@ export function construirOrigemCamposNfe(
         chave,
         rotulo: rotulos[chave] || chave,
         documento: `${nomeLote} (${totalNotas} NFs)`,
-        tipo: 'outro',
+        tipo: 'nfe_xml',
         dataImportacao: agora,
         valorFormatado:
           typeof valor === 'number'

@@ -459,10 +459,45 @@ export default function DadosEmpresa() {
         : formData.documentoFiscalImportado?.itensNcmImportados,
     }
 
+    // Atualiza também o histórico geral de documentos fiscais
+    const novoItemHistorico: import('@/types/dadosEmpresa').ItemHistoricoDocumentoFiscal = {
+      id: `doc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      tipo: tipoDoc,
+      categoria: resultadoNfe
+        ? 'nfe'
+        : tipoDoc === 'balancete'
+          ? 'balancete'
+          : 'escrituracao',
+      titulo: resultado.metadados.nomeTipo,
+      nomeArquivo: resultado.metadados.nomeArquivo,
+      dataProcessamento: dataHoraIso,
+      fonte: 'manual',
+      situacaoOuResumo: `${resultado.camposComparativo.length} campo(s) preenchido(s) automaticamente${
+        resultadoNfe
+          ? ` • ${resultadoNfe.agregadosNfe.totalNotasProcessadas} NF(s) processada(s) • ${resultadoNfe.agregadosNfe.ncmsConsolidados.length} NCM(s) consolidados`
+          : ''
+      }`,
+      linhasLidas: resultado.metadados.linhasLidas,
+      detalhesAdicionais: resultadoNfe
+        ? {
+            totalNotas: resultadoNfe.agregadosNfe.totalNotasProcessadas,
+            totalItens: resultadoNfe.agregadosNfe.totalItensLidos,
+            totalNcms: resultadoNfe.agregadosNfe.ncmsConsolidados.length,
+          }
+        : undefined,
+    }
+
+    const historicoAnterior = formData.historicoDocumentosFiscais || []
+    const historicoAtualizado = [
+      novoItemHistorico,
+      ...historicoAnterior.filter((h) => h.nomeArquivo !== resultado.metadados.nomeArquivo),
+    ].slice(0, 30)
+
     const dadosAtualizados: DadosEmpresaPerfil = {
       ...formData,
       ...novosCampos,
       documentoFiscalImportado: docReferencia,
+      historicoDocumentosFiscais: historicoAtualizado,
     }
 
     // Atualiza estado local imediatamente

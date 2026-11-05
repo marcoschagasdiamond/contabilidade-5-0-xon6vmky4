@@ -24,6 +24,8 @@ import {
   type CategoriaNcmLc214,
 } from '@/data/tabelaNcmLc214'
 
+export { buscarNcmPorCodigo, formatarCodigoNcm, type ItemNcmCurado, type CategoriaNcmLc214 }
+
 export interface SugestaoNcmRecuperador {
   itemCurado: ItemNcmCurado
   tesesSugeridasIds: string[]

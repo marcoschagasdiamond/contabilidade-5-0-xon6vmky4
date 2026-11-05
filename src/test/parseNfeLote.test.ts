@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { parseNfeXmlUnica, agregarLoteNfe, construirResultadoParsingLoteNfe } from './parseNfeLote'
+import {
+  parseNfeXmlUnica,
+  agregarLoteNfe,
+  construirResultadoParsingLoteNfe,
+} from '@/lib/parseNfeLote'
 import { DADOS_EMPRESA_PADRAO } from '@/types/dadosEmpresa'
 
 const XML_NFE_VALIDA_SAIDA = `<?xml version="1.0" encoding="UTF-8"?>
