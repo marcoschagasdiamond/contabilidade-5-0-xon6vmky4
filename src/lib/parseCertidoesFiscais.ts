@@ -362,7 +362,7 @@ export function sugerirDadosCertidaoPorArquivo(
  */
 export function extrairDatasTexto(texto: string): string[] {
   if (!texto) return []
-  const regexData = /\b(\d{2})[/\.-](\d{2})[/\.-](\d{4})\b/g
+  const regexData = /\b(\d{2})[-/.](\d{2})[-/.](\d{4})\b/g
   const datas: string[] = []
   let match: RegExpExecArray | null
 
