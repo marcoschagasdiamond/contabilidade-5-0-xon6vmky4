@@ -165,6 +165,7 @@ export type TipoItemHistoricoFiscal =
   | 'efd_contribuicoes'
   | 'efd_icms_ipi'
   | 'balancete'
+  | 'nfe_xml'
   | 'certidao_fiscal'
   | 'consulta_fiscal'
   | 'outro'
@@ -172,7 +173,7 @@ export type TipoItemHistoricoFiscal =
 export interface ItemHistoricoDocumentoFiscal {
   id: string
   tipo: TipoItemHistoricoFiscal
-  categoria: 'escrituracao' | 'balancete' | 'certidao' | 'consulta'
+  categoria: 'escrituracao' | 'balancete' | 'nfe' | 'certidao' | 'consulta'
   titulo: string
   nomeArquivo: string
   dataProcessamento: string // ISO string
@@ -265,17 +266,34 @@ export interface TotaisFiscaisImportados {
   percentualVendasInterestaduais?: number
 }
 
+export type TipoDocumentoFiscalOrigem =
+  | 'efd_contribuicoes'
+  | 'efd_icms_ipi'
+  | 'balancete'
+  | 'nfe_xml'
+  | 'outro'
+
+export interface ItemNcmImportadoReferencia {
+  ncm: string
+  descricao: string
+  quantidadeTotal: number
+  valorTotal: number
+  totalItens: number
+  categoriaRotulo?: string
+  tesesSugeridas?: string[]
+}
+
 export interface OrigemCampoImportado {
   chave: string
   rotulo: string
   documento: string
-  tipo: 'efd_contribuicoes' | 'efd_icms_ipi' | 'balancete' | 'outro'
+  tipo: TipoDocumentoFiscalOrigem
   dataImportacao: string
   valorFormatado?: string
 }
 
 export interface DocumentoFiscalImportadoReferencia {
-  tipo: 'efd_contribuicoes' | 'efd_icms_ipi' | 'balancete' | 'outro'
+  tipo: TipoDocumentoFiscalOrigem
   nomeTipo: string
   nomeArquivo: string
   periodoInicio?: string
@@ -287,6 +305,8 @@ export interface DocumentoFiscalImportadoReferencia {
   // Agregados contábeis e fiscais persistidos
   agregadosContabeis?: AgregadosContabeisImportados
   totaisFiscais?: TotaisFiscaisImportados
+  // NCMs extraídos de notas fiscais eletrônicas
+  itensNcmImportados?: ItemNcmImportadoReferencia[]
   // Rastreabilidade de proveniência campo a campo
   camposPreenchidos?: string[]
   origemCampos?: Record<string, OrigemCampoImportado>

@@ -22,12 +22,14 @@ import {
   HelpCircle,
 } from 'lucide-react'
 import { ResultadoParsingSped, CampoExtracaoComparativo } from '@/lib/parseSpedFiscal'
+import { ResultadoParsingLoteNfe } from '@/lib/parseNfeLote'
 
 interface ModalResumoImportacaoSpedProps {
   aberto: boolean
   onFechar: () => void
   resultado: ResultadoParsingSped | null
   itensInformativos?: { rotulo: string; valor: number; descricao: string }[]
+  resultadoNfe?: ResultadoParsingLoteNfe | null
   onConfirmar: (chavesSelecionadas?: string[]) => void
   salvando?: boolean
 }
@@ -44,6 +46,7 @@ export const ModalResumoImportacaoSped: React.FC<ModalResumoImportacaoSpedProps>
 
   const { metadados, camposComparativo } = resultado
   const informativos = itensInformativos || []
+  const agregadosNfe = resultadoNfe?.agregadosNfe
 
   const getIconeGrupo = (grupo: CampoExtracaoComparativo['grupo']) => {
     switch (grupo) {
@@ -109,6 +112,23 @@ export const ModalResumoImportacaoSped: React.FC<ModalResumoImportacaoSpedProps>
               Nenhum dado é gravado sem a sua confirmação explícita.
             </DialogDescription>
           </DialogHeader>
+
+          {/* Alertas de arquivos com erro de XML se houver */}
+          {agregadosNfe && agregadosNfe.erros.length > 0 && (
+            <div className="mt-3 p-3 bg-rose-500/20 border border-rose-400/40 rounded-xl text-xs space-y-1">
+              <span className="font-bold text-rose-200 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-300" />
+                {agregadosNfe.erros.length} arquivo(s) XML inválido(s) ou corrompido(s) ignorados:
+              </span>
+              <ul className="text-rose-100 text-[11px] list-disc list-inside space-y-0.5 max-h-24 overflow-y-auto">
+                {agregadosNfe.erros.map((e, idx) => (
+                  <li key={idx}>
+                    <strong>{e.nomeArquivo}:</strong> {e.motivo}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Card com Metadados do Arquivo */}
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-white/10 rounded-xl border border-white/10 text-xs">
@@ -224,6 +244,78 @@ export const ModalResumoImportacaoSped: React.FC<ModalResumoImportacaoSpedProps>
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Quadro Especial de NCMs Detectados nas Notas Fiscais */}
+          {agregadosNfe && agregadosNfe.ncmsConsolidados.length > 0 && (
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Coins className="w-4 h-4 text-purple-600" />
+                    NCMs Consolidados das Notas ({agregadosNfe.totalNcmsDistintos} códigos)
+                  </span>
+                  <p className="text-[11px] text-slate-500">
+                    Alimentam automaticamente as sugestões com badge &quot;Sugerido via NCM&quot; no
+                    Recuperador de Créditos e a composição da Calculadora. Nenhuma tese é marcada.
+                  </p>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="bg-purple-50 text-purple-800 border-purple-200 text-[10px] font-bold"
+                >
+                  Sugestão Automática de Teses
+                </Badge>
+              </div>
+
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                {agregadosNfe.ncmsConsolidados.slice(0, 10).map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="p-2.5 bg-white rounded-lg border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                  >
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-[#07132B]">{item.ncm}</span>
+                        <Badge
+                          variant="outline"
+                          className="text-[9px] bg-slate-100 text-slate-700 border-slate-200"
+                        >
+                          {item.categoriaRotulo}
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-slate-600 truncate" title={item.descricao}>
+                        {item.descricao}
+                      </p>
+                      {item.tesesSugeridas.length > 0 && (
+                        <p className="text-[10px] text-emerald-700 font-semibold">
+                          Teses sugeridas: {item.tesesSugeridas.join(', ')}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="font-bold text-[#07132B] block">
+                        {item.valorTotal.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block">
+                        {item.quantidadeTotal.toLocaleString('pt-BR')} un. • {item.totalItens}{' '}
+                        item(ns)
+                      </span>
+                    </div>
+                  </div>
+                ))}
+
+                {agregadosNfe.ncmsConsolidados.length > 10 && (
+                  <p className="text-[10px] text-center text-slate-500 pt-1">
+                    + {agregadosNfe.ncmsConsolidados.length - 10} outros NCMs consolidados no lote.
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
