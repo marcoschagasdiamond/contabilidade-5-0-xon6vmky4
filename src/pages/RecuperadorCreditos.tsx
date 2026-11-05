@@ -906,6 +906,7 @@ export default function RecuperadorCreditos() {
                 segmento={configuracoes.segmento}
                 onChangeTese={handleUpdateTese}
                 configuracoes={configuracoes}
+                itensNcmImportados={dadosMestres.documentoFiscalImportado?.itensNcmImportados}
               />
             )}
 

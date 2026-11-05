@@ -23,8 +23,10 @@ import {
   type ItemNcmCurado,
   type CategoriaNcmLc214,
 } from '@/data/tabelaNcmLc214'
+import { carregarDadosEmpresa, type ItemNcmImportadoReferencia } from '@/types/dadosEmpresa'
 
 export { buscarNcmPorCodigo, formatarCodigoNcm, type ItemNcmCurado, type CategoriaNcmLc214 }
+export type { ItemNcmImportadoReferencia }
 
 export interface SugestaoNcmRecuperador {
   itemCurado: ItemNcmCurado
@@ -154,16 +156,101 @@ export function sugerirTesesPorItemNcm(itemCurado: ItemNcmCurado): SugestaoNcmRe
 }
 
 /**
- * Consulta um código NCM (com ou sem pontuação) e retorna a sugestão caso esteja na base curada.
- * Se não for encontrado, retorna null (garantindo fallback manual intacto).
+ * Consulta um código NCM (com ou sem pontuação) e retorna a sugestão caso esteja:
+ * 1) Na base curada oficial da LC 214/2025; OU
+ * 2) Na lista de NCMs importados do lote de NF-e (passada por parâmetro ou lida da Fonte Mestra).
+ * Se não for encontrado em nenhuma das fontes, retorna null (garantindo fallback manual intacto).
+ * REGRA INVIOLÁVEL: apenas indicação visual, nunca marca/desmarca teses automaticamente.
  */
 export function buscarSugestaoTesesPorNcm(
   codigoNcm?: string | null,
+  itensNcmImportados?: ItemNcmImportadoReferencia[] | null,
 ): SugestaoNcmRecuperador | null {
   if (!codigoNcm) return null
-  const item = buscarNcmPorCodigo(codigoNcm)
-  if (!item) return null
-  return sugerirTesesPorItemNcm(item)
+
+  // 1. Tabela curada oficial LC 214/2025
+  const itemCurado = buscarNcmPorCodigo(codigoNcm)
+  if (itemCurado) {
+    return sugerirTesesPorItemNcm(itemCurado)
+  }
+
+  // 2. Fonte complementar: NCMs consolidados do lote de NF-e importado
+  const listaImportada: ItemNcmImportadoReferencia[] =
+    itensNcmImportados && itensNcmImportados.length > 0
+      ? itensNcmImportados
+      : carregarDadosEmpresa().documentoFiscalImportado?.itensNcmImportados || []
+
+  if (listaImportada.length === 0) return null
+
+  const codigoLimpo = codigoNcm.replace(/\D/g, '')
+  const achado = listaImportada.find((it) => it.ncm.replace(/\D/g, '') === codigoLimpo)
+
+  if (!achado) return null
+
+  const itemSimulado: ItemNcmCurado = {
+    codigo: achado.ncm,
+    codigoLimpo: achado.ncm.replace(/\D/g, ''),
+    descricao: achado.descricao || 'Item importado do lote de NF-e',
+    categoria: 'regime_geral_insumos',
+    categoriaRotulo: achado.categoriaRotulo || 'Lote de NF-e',
+    anexoReferencia: 'Lote de NF-e importado',
+    classificacaoSugerida: 'integral',
+    aliquotaEfetivaTexto: 'Alíquota Padrão (Crédito Integral Estimado)',
+    observacaoTributaria: 'Item do lote de NF-e sugerido para recuperação de créditos.',
+  }
+
+  const tesesIds =
+    achado.tesesSugeridas && achado.tesesSugeridas.length > 0
+      ? achado.tesesSugeridas
+      : ['tese_pis_icms_base', 'tese_pis_insumos_presumido']
+
+  return {
+    itemCurado: itemSimulado,
+    tesesSugeridasIds: tesesIds,
+    categoriaRotulo: achado.categoriaRotulo || 'Lote de NF-e',
+    motivoSugestao: `Item do lote de NF-e importado (${achado.descricao}). Sugere apuração de créditos tributários.`,
+    tipoAlvo: 'regime_geral',
+  }
+}
+
+/**
+ * Retorna o mapa de teses sugeridas a partir de todos os NCMs importados do lote de NF-e.
+ * Somente para indicação visual (badge 'Sugerido via NCM') — NUNCA altera seleção ou cálculo.
+ */
+export function obterMapaTesesSugeridasPorLoteNfe(
+  itensNcmImportados?: ItemNcmImportadoReferencia[] | null,
+): Record<string, { ncmReferencia: string; descricao: string }> {
+  const lista: ItemNcmImportadoReferencia[] =
+    itensNcmImportados && itensNcmImportados.length > 0
+      ? itensNcmImportados
+      : carregarDadosEmpresa().documentoFiscalImportado?.itensNcmImportados || []
+
+  const mapa: Record<string, { ncmReferencia: string; descricao: string }> = {}
+
+  lista.forEach((item) => {
+    const sug = buscarSugestaoTesesPorNcm(item.ncm, lista)
+    if (sug) {
+      sug.tesesSugeridasIds.forEach((teseId) => {
+        if (!mapa[teseId]) {
+          mapa[teseId] = {
+            ncmReferencia: formatarCodigoNcm(item.ncm),
+            descricao: item.descricao,
+          }
+        }
+      })
+    } else if (item.tesesSugeridas && item.tesesSugeridas.length > 0) {
+      item.tesesSugeridas.forEach((teseId) => {
+        if (!mapa[teseId]) {
+          mapa[teseId] = {
+            ncmReferencia: formatarCodigoNcm(item.ncm),
+            descricao: item.descricao,
+          }
+        }
+      })
+    }
+  })
+
+  return mapa
 }
 
 /**

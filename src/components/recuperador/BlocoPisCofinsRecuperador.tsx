@@ -10,6 +10,8 @@ import { obterRelacaoComCancelamento } from '@/lib/relacionamentoEst04'
 
 import { Sparkles, Info } from 'lucide-react'
 import type { ConfiguracoesRecuperador } from '@/types/recuperadorCreditos'
+import { obterMapaTesesSugeridasPorLoteNfe } from '@/lib/ncmRecuperadorCreditos'
+import type { ItemNcmImportadoReferencia } from '@/types/dadosEmpresa'
 
 interface Props {
   tesesDefinicoes: TeseRecuperacaoDefinicao[]
@@ -18,6 +20,7 @@ interface Props {
   segmento: string
   onChangeTese: (teseId: string, atualizacao: Partial<TeseSelecaoUsuario>) => void
   configuracoes?: ConfiguracoesRecuperador
+  itensNcmImportados?: ItemNcmImportadoReferencia[]
 }
 
 export default function BlocoPisCofinsRecuperador({
@@ -27,8 +30,14 @@ export default function BlocoPisCofinsRecuperador({
   segmento,
   onChangeTese,
   configuracoes,
+  itensNcmImportados,
 }: Props) {
   const tesesPis = tesesDefinicoes.filter((t) => t.modulo === 'pis_cofins')
+
+  // Mapa de sugestões alimentado por NCMs importados do lote de NF-e
+  const mapaSugeridosNfe = React.useMemo(() => {
+    return obterMapaTesesSugeridasPorLoteNfe(itensNcmImportados)
+  }, [itensNcmImportados])
 
   const mapaResultados = React.useMemo(() => {
     const map: Record<string, ResultadoTese> = {}
@@ -176,12 +185,22 @@ export default function BlocoPisCofinsRecuperador({
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-[#07132B] text-[#D4AF37]">
                           {tese.codigo}
                         </span>
-                        {(selecao as any).origem === 'ncm_sugerido' && (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/40 shadow-xs">
+                        {((selecao as any).origem === 'ncm_sugerido' ||
+                          mapaSugeridosNfe[tese.id]) && (
+                          <span
+                            className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/40 shadow-xs"
+                            title={
+                              mapaSugeridosNfe[tese.id]?.descricao
+                                ? `Sugerido pelo NCM ${mapaSugeridosNfe[tese.id].ncmReferencia} (${mapaSugeridosNfe[tese.id].descricao}) do lote de NF-e importado. Seleção manual livre.`
+                                : 'Sugerido via NCM. Seleção manual livre.'
+                            }
+                          >
                             Sugerido via NCM{' '}
                             {(selecao as any).ncmReferencia
                               ? `(${(selecao as any).ncmReferencia})`
-                              : ''}
+                              : mapaSugeridosNfe[tese.id]?.ncmReferencia
+                                ? `(${mapaSugeridosNfe[tese.id].ncmReferencia})`
+                                : ''}
                           </span>
                         )}
                         {relacaoEst04 && (

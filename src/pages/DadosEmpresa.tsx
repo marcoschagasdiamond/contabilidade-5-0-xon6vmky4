@@ -463,11 +463,7 @@ export default function DadosEmpresa() {
     const novoItemHistorico: import('@/types/dadosEmpresa').ItemHistoricoDocumentoFiscal = {
       id: `doc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       tipo: tipoDoc,
-      categoria: resultadoNfe
-        ? 'nfe'
-        : tipoDoc === 'balancete'
-          ? 'balancete'
-          : 'escrituracao',
+      categoria: resultadoNfe ? 'nfe' : tipoDoc === 'balancete' ? 'balancete' : 'escrituracao',
       titulo: resultado.metadados.nomeTipo,
       nomeArquivo: resultado.metadados.nomeArquivo,
       dataProcessamento: dataHoraIso,
@@ -481,7 +477,10 @@ export default function DadosEmpresa() {
       detalhesAdicionais: resultadoNfe
         ? {
             totalNotas: resultadoNfe.agregadosNfe.totalNotasProcessadas,
-            totalItens: resultadoNfe.agregadosNfe.totalItensLidos,
+            totalItens: resultadoNfe.agregadosNfe.ncmsConsolidados.reduce(
+              (acc, it) => acc + (it.totalItens || 0),
+              0,
+            ),
             totalNcms: resultadoNfe.agregadosNfe.ncmsConsolidados.length,
           }
         : undefined,
