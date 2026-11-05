@@ -17,6 +17,7 @@ import { SecaoFornecedoresConsolidado } from '@/components/diagnosticos/SecaoFor
 import { QuadroMudancasPerfilConsolidado } from '@/components/diagnosticos/QuadroMudancasPerfilConsolidado'
 import { SecaoDadosGerenciaisImportados } from '@/components/diagnosticos/SecaoDadosGerenciaisImportados'
 import { BadgeProvenienciaCampo } from '@/components/diagnosticos/BadgeProvenienciaCampo'
+import { ModalTrocarEmpresaDiagnostico } from '@/components/diagnosticos/ModalTrocarEmpresaDiagnostico'
 import {
   exportarPdfEtapaConfiguracoes,
   exportarPdfEtapaAutoavaliacao,
@@ -45,8 +46,8 @@ export default function DiagnosticoRelatorioConsolidado() {
 
   const { toast } = useToast()
   const navigate = useNavigate()
-  const { clienteAtivo, clienteAtivoId, limparClienteAtivo } = useClienteAtivo()
-  const { dadosEmpresa, temDadosSalvos, limpar: limparDadosEmpresaContext } = useDadosEmpresa()
+  const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
+  const { dadosEmpresa, temDadosSalvos } = useDadosEmpresa()
 
   const [carregando, setCarregando] = useState(true)
   const [todosDiagnosticos, setTodosDiagnosticos] = useState<DiagnosticoRecord[]>([])
@@ -55,6 +56,7 @@ export default function DiagnosticoRelatorioConsolidado() {
   const [versaoSelecionada, setVersaoSelecionada] = useState<HistoricoRelatorioRecord | null>(null)
   const [salvandoSnapshotManual, setSalvandoSnapshotManual] = useState(false)
   const [sucessoSnapshotMsg, setSucessoSnapshotMsg] = useState<string | null>(null)
+  const [modalTrocarEmpresaAberto, setModalTrocarEmpresaAberto] = useState(false)
 
   const [abaAtiva, setAbaAtiva] = useState<
     | 'consolidado'
@@ -2383,18 +2385,9 @@ export default function DiagnosticoRelatorioConsolidado() {
               </Link>
               <button
                 type="button"
-                onClick={() => {
-                  limparDadosEmpresaContext()
-                  limparClienteAtivo()
-                  toast({
-                    title: 'Dados cadastrais redefinidos',
-                    description:
-                      'Iniciando diagnóstico para uma nova empresa com campos em branco. Os históricos anteriores permanecem salvos.',
-                  })
-                  navigate('/diagnostico-configuracoes')
-                }}
+                onClick={() => setModalTrocarEmpresaAberto(true)}
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl font-bold text-xs sm:text-sm text-[#D4AF37] bg-[#07132B] hover:bg-[#0c224c] border border-[#D4AF37] shadow-md transition-all hover:scale-105 cursor-pointer text-center"
-                title="Limpar etapa 01/Dados da Empresa e preencher nova empresa do zero (históricos preservados)"
+                title="Trocar o contexto completo de análise para outra empresa (dados da atual preservados na Carteira)"
               >
                 Diagnóstico de outra empresa
               </button>
@@ -2402,6 +2395,12 @@ export default function DiagnosticoRelatorioConsolidado() {
           </div>
         </div>
       </div>
+
+      {/* MODAL: TROCAR CONTEXTO COMPLETO DE ANÁLISE (OUTRA EMPRESA) */}
+      <ModalTrocarEmpresaDiagnostico
+        open={modalTrocarEmpresaAberto}
+        onOpenChange={setModalTrocarEmpresaAberto}
+      />
     </div>
   )
 }

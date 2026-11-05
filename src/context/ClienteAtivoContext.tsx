@@ -10,6 +10,7 @@ interface ClienteAtivoContextType {
   clientes: Cliente[]
   carregando: boolean
   selecionarClienteAtivo: (clienteOuId: Cliente | string | null) => void
+  adicionarCliente: (cliente: Cliente) => void
   limparClienteAtivo: () => void
   recarregarClientes: () => Promise<void>
 }
@@ -63,6 +64,16 @@ export function ClienteAtivoProvider({ children }: { children: React.ReactNode }
     }
   }, [])
 
+  // Insere (ou atualiza) um cliente na lista imediatamente, sem esperar o
+  // recarregamento do banco — evita janelas em que clienteAtivo fica null
+  // logo após criar um cliente novo.
+  const adicionarCliente = useCallback((cliente: Cliente) => {
+    setClientes((atual) => {
+      const jaExiste = atual.some((c) => c.id === cliente.id)
+      return jaExiste ? atual.map((c) => (c.id === cliente.id ? cliente : c)) : [cliente, ...atual]
+    })
+  }, [])
+
   const limparClienteAtivo = useCallback(() => {
     setClienteAtivoId(null)
     try {
@@ -85,6 +96,7 @@ export function ClienteAtivoProvider({ children }: { children: React.ReactNode }
         clientes,
         carregando,
         selecionarClienteAtivo,
+        adicionarCliente,
         limparClienteAtivo,
         recarregarClientes,
       }}
