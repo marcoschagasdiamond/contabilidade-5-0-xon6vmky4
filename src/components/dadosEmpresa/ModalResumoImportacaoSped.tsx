@@ -39,6 +39,7 @@ export const ModalResumoImportacaoSped: React.FC<ModalResumoImportacaoSpedProps>
   onFechar,
   resultado,
   itensInformativos,
+  resultadoNfe,
   onConfirmar,
   salvando = false,
 }) => {

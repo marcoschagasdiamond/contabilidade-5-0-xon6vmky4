@@ -15,6 +15,15 @@ import {
 import { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
 import { parseSpedConteudo, ResultadoParsingSped } from '@/lib/parseSpedFiscal'
 import { parseBalanceteArquivo } from '@/lib/parseBalancete'
+import {
+  parseNfeXmlUnica,
+  agregarLoteNfe,
+  construirResultadoParsingLoteNfe,
+  NotaFiscalExtraida,
+  ErroImportacaoNfeItem,
+  ResultadoParsingLoteNfe,
+} from '@/lib/parseNfeLote'
+import { extrairXmlsDeZip } from '@/lib/zipReader'
 import { ModalResumoImportacaoSped } from './ModalResumoImportacaoSped'
 
 interface SecaoImportacaoDocumentosFiscaisProps {
@@ -22,6 +31,7 @@ interface SecaoImportacaoDocumentosFiscaisProps {
   onConfirmarImportacao: (
     novosCampos: Partial<DadosEmpresaPerfil>,
     resultado: ResultadoParsingSped,
+    resultadoNfe?: ResultadoParsingLoteNfe,
   ) => Promise<void>
   disabled?: boolean
 }
@@ -34,6 +44,7 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
   const [carregando, setCarregando] = useState(false)
   const [erroUpload, setErroUpload] = useState<string | null>(null)
   const [resultadoParsing, setResultadoParsing] = useState<ResultadoParsingSped | null>(null)
+  const [resultadoNfe, setResultadoNfe] = useState<ResultadoParsingLoteNfe | null>(null)
   const [itensInformativos, setItensInformativos] = useState<
     { rotulo: string; valor: number; descricao: string }[]
   >([])
@@ -42,6 +53,75 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
   const [isDragOver, setIsDragOver] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const isNfeXml = (nome: string) => nome.toLowerCase().endsWith('.xml')
+  const isZip = (nome: string) => nome.toLowerCase().endsWith('.zip')
+
+  // Processa lote de NF-e em XML (arquivos soltos e/ou ZIPs com XMLs internos).
+  // XML corrompido vira erro item a item — nunca aborta o lote inteiro.
+  const processarLoteNfe = async (arquivos: File[]) => {
+    const notas: NotaFiscalExtraida[] = []
+    const erros: ErroImportacaoNfeItem[] = []
+
+    for (const file of arquivos) {
+      try {
+        if (isNfeXml(file.name)) {
+          const texto = await file.text()
+          const nota = parseNfeXmlUnica(texto, file.name)
+          notas.push(nota)
+        } else if (isZip(file.name)) {
+          const buffer = await file.arrayBuffer()
+          const entradas = await extrairXmlsDeZip(buffer)
+          for (const entrada of entradas) {
+            try {
+              const nota = parseNfeXmlUnica(entrada.texto, entrada.nome)
+              notas.push(nota)
+            } catch (err: any) {
+              erros.push({
+                nomeArquivo: entrada.nome,
+                motivo: err?.message || 'XML inválido ou corrompido dentro do ZIP.',
+              })
+            }
+          }
+        }
+      } catch (err: any) {
+        erros.push({
+          nomeArquivo: file.name,
+          motivo: err?.message || 'Falha ao ler o arquivo (XML ou ZIP corrompido).',
+        })
+      }
+    }
+
+    if (notas.length === 0) {
+      setErroUpload(
+        erros.length > 0
+          ? `Nenhuma NF-e válida encontrada no lote. ${erros.length} arquivo(s) inválido(s): ${erros
+              .slice(0, 3)
+              .map((e) => `${e.nomeArquivo} (${e.motivo})`)
+              .join('; ')}${erros.length > 3 ? '…' : ''}`
+          : 'Nenhum XML de NF-e válido encontrado nos arquivos enviados. Verifique se os XMLs são notas fiscais eletrônicas (modelo 55 ou 65).',
+      )
+      setCarregando(false)
+      return
+    }
+
+    const agregados = agregarLoteNfe(notas, erros, perfilAtual)
+    const tamanhoTotal = arquivos.reduce((acc, f) => acc + f.size, 0)
+    const nomeLote =
+      arquivos.length === 1 ? arquivos[0].name : `${arquivos.length} arquivo(s) de NF-e`
+
+    const resultadoLote = construirResultadoParsingLoteNfe(
+      agregados,
+      notas,
+      nomeLote,
+      tamanhoTotal,
+      perfilAtual,
+    )
+
+    setResultadoParsing(resultadoLote)
+    setResultadoNfe(resultadoLote)
+    setModalAberto(true)
+  }
 
   const processarArquivo = async (file: File) => {
     setErroUpload(null)
@@ -53,9 +133,9 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
     const isTxtOuSped = extensao === 'txt' || extensao === 'sped' || file.type.includes('text')
     const isPlanilhaBalancete = extensao === 'xlsx' || extensao === 'csv' || extensao === 'xls'
 
-    if (!isTxtOuSped && !isPlanilhaBalancete) {
+    if (!isTxtOuSped && !isPlanilhaBalancete && !isNfeXml(file.name) && !isZip(file.name)) {
       setErroUpload(
-        'Formato não suportado. Por favor envie um arquivo de escrituração EFD (.TXT) ou Balancete Contábil (.CSV / .XLSX).',
+        'Formato não suportado. Por favor envie escrituração EFD (.TXT), Balancete Contábil (.CSV / .XLSX), NF-e (.XML) ou lote de notas (.ZIP).',
       )
       return
     }
@@ -70,6 +150,11 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
     setCarregando(true)
 
     try {
+      if (isNfeXml(file.name) || isZip(file.name)) {
+        await processarLoteNfe([file])
+        return
+      }
+
       if (isPlanilhaBalancete) {
         // Rota de parsing de Balancete Contábil
         const resBalancete = await parseBalanceteArquivo(file, perfilAtual)
@@ -167,10 +252,33 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      processarArquivo(file)
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    const temNfe = files.some((f) => isNfeXml(f.name) || isZip(f.name))
+    if (temNfe) {
+      setErroUpload(null)
+      setItensInformativos([])
+      setCarregando(true)
+      processarLoteNfe(files)
+        .catch((err: any) => {
+          console.error('Erro ao processar lote de NF-e:', err)
+          setErroUpload(
+            err?.message ||
+              'Erro ao processar o lote de notas fiscais. Verifique os arquivos e tente novamente.',
+          )
+        })
+        .finally(() => {
+          setCarregando(false)
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ''
+          }
+        })
+      return
     }
+
+    // Fluxo de arquivo único existente (SPED/Balancete)
+    processarArquivo(files[0])
   }
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -178,10 +286,32 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
     setIsDragOver(false)
     if (disabled || carregando) return
 
-    const file = e.dataTransfer.files?.[0]
-    if (file) {
-      processarArquivo(file)
+    const files = Array.from(e.dataTransfer.files || [])
+    if (files.length === 0) return
+
+    const temNfe = files.some((f) => isNfeXml(f.name) || isZip(f.name))
+    if (temNfe) {
+      setErroUpload(null)
+      setItensInformativos([])
+      setCarregando(true)
+      processarLoteNfe(files)
+        .catch((err: any) => {
+          console.error('Erro ao processar lote de NF-e (drag & drop):', err)
+          setErroUpload(
+            err?.message ||
+              'Erro ao processar o lote de notas fiscais. Verifique os arquivos e tente novamente.',
+          )
+        })
+        .finally(() => {
+          setCarregando(false)
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ''
+          }
+        })
+      return
     }
+
+    processarArquivo(files[0])
   }
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -199,9 +329,14 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
     if (!resultadoParsing) return
     setSalvandoConfirmacao(true)
     try {
-      await onConfirmarImportacao(resultadoParsing.camposSugeridos, resultadoParsing)
+      await onConfirmarImportacao(
+        resultadoParsing.camposSugeridos,
+        resultadoParsing,
+        resultadoNfe || undefined,
+      )
       setModalAberto(false)
       setResultadoParsing(null)
+      setResultadoNfe(null)
     } catch (err) {
       console.error('Erro ao confirmar importação:', err)
     } finally {
@@ -227,9 +362,10 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
             </h3>
             <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
               Carregue a <strong>EFD Contribuições (SPED PIS/Cofins)</strong>,{' '}
-              <strong>EFD ICMS/IPI</strong> ou <strong>Balancete Contábil (CSV/XLSX)</strong> para
-              preencher automaticamente receitas, despesas geradoras de crédito, folha, insumos
-              energéticos, intangíveis, imobilizado e filiais na Fonte Mestra.
+              <strong>EFD ICMS/IPI</strong>, <strong>Balancete Contábil (CSV/XLSX)</strong> ou{' '}
+              <strong>Notas Fiscais Eletrônicas (XMLs ou ZIP de lote)</strong> para preencher
+              automaticamente receitas, despesas geradoras de crédito, folha, insumos energéticos,
+              intangíveis, imobilizado, filiais e o consolidado de NCMs na Fonte Mestra.
             </p>
           </div>
 
@@ -292,7 +428,8 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
             <input
               ref={fileInputRef}
               type="file"
-              accept=".txt,.sped,.csv,.xlsx,.xls,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+              multiple
+              accept=".txt,.sped,.csv,.xlsx,.xls,.xml,.zip,text/plain,application/xml,text/xml,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/zip"
               onChange={handleFileChange}
               className="hidden"
               disabled={disabled || carregando}
@@ -310,12 +447,13 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
               <div className="space-y-1">
                 <h4 className="text-sm sm:text-base font-bold text-[#07132B]">
                   {carregando
-                    ? 'Lendo e analisando contas e movimentações...'
-                    : 'Arraste seu arquivo SPED ou Balancete aqui ou clique para selecionar'}
+                    ? 'Lendo e analisando contas, movimentações e notas fiscais...'
+                    : 'Arraste seu SPED, Balancete, NF-e (.XML) ou lote (.ZIP) aqui ou clique para selecionar'}
                 </h4>
                 <p className="text-xs text-slate-500">
-                  Aceita <strong>EFD Contribuições</strong>, <strong>EFD ICMS/IPI</strong> (.TXT) e{' '}
-                  <strong>Balancete Contábil</strong> (.CSV ou .XLSX).
+                  Aceita <strong>EFD Contribuições</strong>, <strong>EFD ICMS/IPI</strong> (.TXT),{' '}
+                  <strong>Balancete Contábil</strong> (.CSV ou .XLSX), <strong>NF-e</strong> (.XML,
+                  vários arquivos) e <strong>Lote de Notas</strong> (.ZIP).
                 </p>
               </div>
 
@@ -337,6 +475,12 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
                   className="text-[10px] bg-amber-50 text-[#07132B] border-[#D4AF37]/40 font-bold"
                 >
                   Balancete Contábil (.CSV / .XLSX)
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] bg-emerald-50 text-emerald-800 border-emerald-200 font-bold"
+                >
+                  NF-e (.XML) / Lote (.ZIP)
                 </Badge>
                 <Badge
                   variant="outline"
@@ -367,8 +511,8 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
                 Visualização Prévia
               </span>
               <p className="text-slate-500 text-[11px] leading-relaxed">
-                Você visualiza todos os campos extraídos e o comparativo antes de qualquer alteração
-                na Fonte Mestra.
+                Você visualiza todos os campos extraídos, os NCMs consolidados e os erros por
+                arquivo antes de qualquer alteração na Fonte Mestra.
               </p>
             </div>
 
@@ -402,6 +546,7 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
         aberto={modalAberto}
         onFechar={() => setModalAberto(false)}
         resultado={resultadoParsing}
+        resultadoNfe={resultadoNfe}
         itensInformativos={itensInformativos}
         onConfirmar={handleConfirmarResumo}
         salvando={salvandoConfirmacao}

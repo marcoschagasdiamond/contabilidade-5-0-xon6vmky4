@@ -10,6 +10,7 @@ import {
 import { AbaHistoricoCadastral } from '@/components/crm/AbaHistoricoCadastral'
 import type { HistoricoDadosEmpresaRegistro } from '@/types/historicoDadosEmpresa'
 import { DadosEmpresaPerfil, DADOS_EMPRESA_PADRAO } from '@/types/dadosEmpresa'
+import { ResultadoParsingLoteNfe, construirOrigemCamposNfe } from '@/lib/parseNfeLote'
 import { LISTA_UFS_ICMS } from '@/types/calculadoraIbsCbs'
 import {
   SegmentoEmpresa,
@@ -378,11 +379,13 @@ export default function DadosEmpresa() {
   const handleConfirmarImportacaoDocumento = async (
     novosCampos: Partial<DadosEmpresaPerfil>,
     resultado: ResultadoParsingSped,
+    resultadoNfe?: ResultadoParsingLoteNfe,
   ) => {
     setMensagemErro(null)
 
-    const tipoDoc =
-      resultado.metadados.tipo === 'efd_icms_ipi'
+    const tipoDoc: import('@/types/dadosEmpresa').TipoDocumentoFiscalOrigem = resultadoNfe
+      ? 'nfe_xml'
+      : resultado.metadados.tipo === 'efd_icms_ipi'
         ? ('efd_icms_ipi' as const)
         : resultado.metadados.nomeTipo.toLowerCase().includes('balancete')
           ? ('balancete' as const)
@@ -394,6 +397,13 @@ export default function DadosEmpresa() {
     const camposAtualizadosChaves = Object.keys(novosCampos)
     const mapaOrigemCampos: Record<string, import('@/types/dadosEmpresa').OrigemCampoImportado> = {
       ...(formData.documentoFiscalImportado?.origemCampos || {}),
+      ...(resultadoNfe
+        ? construirOrigemCamposNfe(
+            novosCampos,
+            resultado.metadados.nomeArquivo,
+            resultadoNfe.agregadosNfe.totalNotasProcessadas,
+          )
+        : {}),
     }
 
     resultado.camposComparativo.forEach((cmp) => {
@@ -436,6 +446,17 @@ export default function DadosEmpresa() {
       totaisFiscais,
       camposPreenchidos: camposAtualizadosChaves,
       origemCampos: mapaOrigemCampos,
+      itensNcmImportados: resultadoNfe
+        ? resultadoNfe.agregadosNfe.ncmsConsolidados.map((item) => ({
+            ncm: item.ncm,
+            descricao: item.descricao,
+            quantidadeTotal: item.quantidadeTotal,
+            valorTotal: item.valorTotal,
+            totalItens: item.totalItens,
+            categoriaRotulo: item.categoriaRotulo,
+            tesesSugeridas: item.tesesSugeridas,
+          }))
+        : formData.documentoFiscalImportado?.itensNcmImportados,
     }
 
     const dadosAtualizados: DadosEmpresaPerfil = {
@@ -889,7 +910,7 @@ export default function DadosEmpresa() {
           {/* ========================================================================= */}
           <SecaoImportacaoDocumentosFiscais
             perfilAtual={formData}
-            onConfirmarImportacao={handleConfirmarImportacaoDocumento}
+            onConfirmarImportacao={handleConfirmarImportacaoDocumento as any}
             disabled={isSalvando}
           />
 
