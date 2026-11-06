@@ -753,9 +753,10 @@ export default function Modulo6Dashboard({
             <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">Módulo 6 • Painel Executivo Integrado</span>
           </div>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 min-w-0">
-            <div className="min-w-0 flex-1">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-heading font-extrabold text-white tracking-tight leading-tight break-words">
+          {/* Dois blocos empilhados (sem linha flex compartilhada): texto com largura livre, botões em linha própria */}
+          <div className="flex flex-col gap-4 min-w-0">
+            <div className="min-w-0 w-full">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-heading font-extrabold text-white tracking-tight leading-tight">
                 Dashboard Executivo da Reforma Tributária
               </h2>
               <p className="text-slate-300 text-xs sm:text-sm max-w-2xl mt-1 leading-snug break-words">
