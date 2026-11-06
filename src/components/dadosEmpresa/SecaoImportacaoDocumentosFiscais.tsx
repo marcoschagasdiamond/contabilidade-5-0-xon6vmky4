@@ -12,8 +12,9 @@ import {
   RotateCcw,
   Info,
 } from 'lucide-react'
-import { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
+import { DadosEmpresaPerfil, OrigemCampoImportado } from '@/types/dadosEmpresa'
 import { parseSpedConteudo, ResultadoParsingSped } from '@/lib/parseSpedFiscal'
+import { BadgeProvenienciaCampo } from '@/components/diagnosticos/BadgeProvenienciaCampo'
 import { parseBalanceteArquivo } from '@/lib/parseBalancete'
 import {
   parseNfeXmlUnica,
@@ -346,6 +347,59 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
 
   const docImportadoAnterior = perfilAtual.documentoFiscalImportado
 
+  // IBS/CBS (integração antecipada): monta a lista dos 4 campos preenchidos apenas
+  // quando o documento importado trouxe o grupo IBSCBS; origemCampos dá o badge de proveniência
+  const camposIbsCbsComOrigem: {
+    chave: string
+    rotulo: string
+    valorFormatado?: string
+    valorOriginal?: string
+    origem?: OrigemCampoImportado
+  }[] = []
+  if (docImportadoAnterior?.totaisFiscais) {
+    const tf = docImportadoAnterior.totaisFiscais
+    const origemCamposIbs = docImportadoAnterior.origemCampos || {}
+    const fmtMoedaIbs = (v?: number) =>
+      (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+    if (tf.ibsDestacado !== undefined) {
+      camposIbsCbsComOrigem.push({
+        chave: 'ibsDestacado',
+        rotulo: 'IBS Destacado (Total)',
+        valorFormatado:
+          origemCamposIbs.ibsDestacado?.valorFormatado || fmtMoedaIbs(tf.ibsDestacado),
+        origem: origemCamposIbs.ibsDestacado,
+      })
+    }
+    if (tf.cbsDestacado !== undefined) {
+      camposIbsCbsComOrigem.push({
+        chave: 'cbsDestacado',
+        rotulo: 'CBS Destacada (Total)',
+        valorFormatado:
+          origemCamposIbs.cbsDestacado?.valorFormatado || fmtMoedaIbs(tf.cbsDestacado),
+        origem: origemCamposIbs.cbsDestacado,
+      })
+    }
+    if (tf.cstCClassTrib) {
+      camposIbsCbsComOrigem.push({
+        chave: 'cstCClassTrib',
+        rotulo: 'CST / cClassTrib IBS-CBS',
+        valorFormatado: origemCamposIbs.cstCClassTrib?.valorFormatado || tf.cstCClassTrib,
+        origem: origemCamposIbs.cstCClassTrib,
+      })
+    }
+    if (tf.creditoIbsCbsApurado !== undefined) {
+      camposIbsCbsComOrigem.push({
+        chave: 'creditoIbsCbsApurado',
+        rotulo: 'Crédito IBS/CBS Apurado',
+        valorFormatado:
+          origemCamposIbs.creditoIbsCbsApurado?.valorFormatado ||
+          fmtMoedaIbs(tf.creditoIbsCbsApurado),
+        origem: origemCamposIbs.creditoIbsCbsApurado,
+      })
+    }
+  }
+
   return (
     <>
       <Card className="border border-slate-200/90 shadow-md overflow-hidden bg-white rounded-2xl">
@@ -380,36 +434,70 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
         <CardContent className="p-6 sm:p-8 space-y-6">
           {/* Alerta de Documento Já Importado (se houver histórico) */}
           {docImportadoAnterior && (
-            <div className="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-start sm:items-center gap-2.5 text-emerald-950">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
-                <div>
-                  <span className="font-bold text-emerald-900 block">
-                    Último documento importado: {docImportadoAnterior.nomeArquivo} (
-                    {docImportadoAnterior.nomeTipo})
-                  </span>
-                  <span className="text-emerald-700 text-[11px] flex items-center gap-1.5 mt-0.5">
-                    <Clock className="w-3 h-3 inline" />
-                    Processado em{' '}
-                    {new Date(docImportadoAnterior.dataImportacao).toLocaleString('pt-BR')}
-                    {docImportadoAnterior.linhasLidas
-                      ? ` • ${docImportadoAnterior.linhasLidas.toLocaleString('pt-BR')} linhas`
-                      : ''}
-                  </span>
+            <div className="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col gap-3 text-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center gap-2.5 text-emerald-950">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                  <div>
+                    <span className="font-bold text-emerald-900 block">
+                      Último documento importado: {docImportadoAnterior.nomeArquivo} (
+                      {docImportadoAnterior.nomeTipo})
+                    </span>
+                    <span className="text-emerald-700 text-[11px] flex items-center gap-1.5 mt-0.5">
+                      <Clock className="w-3 h-3 inline" />
+                      Processado em{' '}
+                      {new Date(docImportadoAnterior.dataImportacao).toLocaleString('pt-BR')}
+                      {docImportadoAnterior.linhasLidas
+                        ? ` • ${docImportadoAnterior.linhasLidas.toLocaleString('pt-BR')} linhas`
+                        : ''}
+                    </span>
+                  </div>
                 </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={disabled || carregando}
+                  className="text-xs font-semibold bg-white border-emerald-300 text-emerald-800 hover:bg-emerald-100/50 shrink-0 self-start sm:self-auto"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                  Importar Outro Período
+                </Button>
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={disabled || carregando}
-                className="text-xs font-semibold bg-white border-emerald-300 text-emerald-800 hover:bg-emerald-100/50 shrink-0"
-              >
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Importar Outro Período
-              </Button>
+              {/* IBS/CBS (integração antecipada): só aparece quando o documento importado trouxe os valores */}
+              {camposIbsCbsComOrigem.length > 0 && (
+                <div className="p-3 rounded-xl bg-slate-50/70 border border-slate-200 space-y-2 text-xs w-full">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold text-[#07132B] uppercase tracking-wide">
+                      IBS / CBS do documento importado
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      Grupo IBSCBS — Reforma Tributária
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {camposIbsCbsComOrigem.map((campo) => (
+                      <div
+                        key={campo.chave}
+                        className="p-2.5 bg-white rounded-lg border border-slate-200/90 flex flex-col gap-1"
+                      >
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                          {campo.rotulo}
+                        </span>
+                        <div className="flex flex-wrap items-center justify-between gap-1.5">
+                          <span className="font-mono font-bold text-[#07132B]">
+                            {campo.valorFormatado || campo.valorOriginal}
+                          </span>
+                          <BadgeProvenienciaCampo origem={campo.origem} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
