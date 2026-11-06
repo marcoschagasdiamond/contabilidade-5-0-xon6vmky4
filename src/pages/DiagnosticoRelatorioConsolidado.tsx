@@ -16,6 +16,7 @@ import { AvisoOrientativo } from '@/components/common/AvisoOrientativo'
 import { SecaoFornecedoresConsolidado } from '@/components/diagnosticos/SecaoFornecedoresConsolidado'
 import { QuadroMudancasPerfilConsolidado } from '@/components/diagnosticos/QuadroMudancasPerfilConsolidado'
 import { SecaoDadosGerenciaisImportados } from '@/components/diagnosticos/SecaoDadosGerenciaisImportados'
+import { SecaoVinculosSocietariosConsolidado } from '@/components/diagnosticos/SecaoVinculosSocietariosConsolidado'
 import { BadgeProvenienciaCampo } from '@/components/diagnosticos/BadgeProvenienciaCampo'
 import { ModalTrocarEmpresaDiagnostico } from '@/components/diagnosticos/ModalTrocarEmpresaDiagnostico'
 import {
@@ -1455,6 +1456,20 @@ export default function DiagnosticoRelatorioConsolidado() {
                 nomeEmpresa={dadosEmpresa.nomeEmpresa}
               />
             )}
+
+            {/* SEÇÃO ANÁLISE DE VÍNCULOS SOCIETÁRIOS & RISCO DE REGIME */}
+            {temDadosSalvos &&
+              dadosEmpresa.vinculosSocietarios &&
+              dadosEmpresa.vinculosSocietarios.length > 0 && (
+                <SecaoVinculosSocietariosConsolidado
+                  vinculos={dadosEmpresa.vinculosSocietarios}
+                  regimeAtual={dadosEmpresa.regimeAtual}
+                  faturamentoProprio={
+                    dadosEmpresa.faturamentoMensal ? dadosEmpresa.faturamentoMensal * 12 : 0
+                  }
+                  nomeEmpresa={dadosEmpresa.nomeEmpresa}
+                />
+              )}
 
             {/* SEÇÃO 2: AUTOAVALIAÇÃO DAS 7 FRENTES */}
             <div className="bg-white rounded-[24px] p-6 sm:p-8 border border-slate-200 shadow-md space-y-5">

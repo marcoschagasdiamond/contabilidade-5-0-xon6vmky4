@@ -27,6 +27,7 @@ export type SecaoDiagnosticoTipo =
   | 'diag_transicao'
   | 'diag_enquadramento'
   | 'diag_dados_gerenciais'
+  | 'diag_vinculos_societarios'
 
 export type SecaoRelatorioTipo = SecaoCalculadoraTipo | SecaoRecuperadorTipo | SecaoDiagnosticoTipo
 

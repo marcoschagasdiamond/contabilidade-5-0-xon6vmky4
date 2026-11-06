@@ -9,6 +9,7 @@ import { formatarCNPJ } from '@/lib/cnpj'
 import { desenharAvisoLegalCompletoPDF } from '@/components/common/AvisoOrientativo'
 import { renderizarRodapeEscritorioPdf } from '@/lib/pdfIdentidadeEscritorio'
 import { desenharLogoContabilidade50 } from '@/lib/pdfSimulacaoCalculadora'
+import { analisarVinculosSocietarios } from '@/lib/vinculosSocietarios'
 
 export interface GerarRelatorioPersonalizadoOptions {
   configuracao: ConfiguracaoRelatorioPersonalizado
@@ -1097,6 +1098,95 @@ export function construirRelatorioPersonalizadoDoc(options: GerarRelatorioPerson
           )
 
           currentY += 27
+        }
+
+        currentY += 3
+      }
+
+      // -------------------------------------------------------------
+      // SUBSEÇÃO: VÍNCULOS SOCIETÁRIOS & RISCO DE REGIME
+      // -------------------------------------------------------------
+      const incluirVinculos = configuracao.secoesDiagnostico.includes('diag_vinculos_societarios')
+      const vinculos = dadosEmpresa?.vinculosSocietarios || []
+
+      if (incluirVinculos && vinculos.length > 0) {
+        verificarQuebra(50, 'Diagnóstico 360° • Vínculos Societários')
+
+        const faturamentoProprio =
+          (dadosEmpresa?.faturamentoMensal ? dadosEmpresa.faturamentoMensal * 12 : 0) || 0
+        const resultadoVinculos = analisarVinculosSocietarios({
+          vinculos,
+          regimeAtual: dadosEmpresa?.regimeAtual || 'Simples Nacional',
+          faturamentoAnualProprio: faturamentoProprio,
+        })
+
+        // Box de cabeçalho da subseção
+        doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
+        doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])
+        doc.roundedRect(margin, currentY, contentWidth, 14, 2, 2, 'FD')
+
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(8)
+        doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+        doc.text(
+          'ANÁLISE DE VÍNCULOS SOCIETÁRIOS & RISCO DE REGIME (LC 123/2006)',
+          margin + 4,
+          currentY + 5.5,
+        )
+
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(7)
+        doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+        doc.text(
+          `Vínculos Analisados: ${resultadoVinculos.totalVinculos} • Receita Global Simples: ${formatarMoeda(resultadoVinculos.faturamentoGlobalSimples)} • Achados: ${resultadoVinculos.achados.length}`,
+          margin + 4,
+          currentY + 10.5,
+        )
+
+        currentY += 16
+
+        // Lista de Achados com Norma de Origem
+        for (const achado of resultadoVinculos.achados) {
+          verificarQuebra(26, 'Diagnóstico 360° • Achado de Vínculo Societário')
+
+          const corSeveridade =
+            achado.severidade === 'critico'
+              ? [192, 57, 43] // Rose / Vermelho
+              : achado.severidade === 'atencao'
+                ? [211, 84, 0] // Âmbar / Laranja
+                : [39, 174, 96] // Verde
+
+          doc.setFillColor(255, 255, 255)
+          doc.setDrawColor(corSeveridade[0], corSeveridade[1], corSeveridade[2])
+          doc.roundedRect(margin, currentY, contentWidth, 23, 2, 2, 'FD')
+
+          // Tarja lateral de severidade
+          doc.setFillColor(corSeveridade[0], corSeveridade[1], corSeveridade[2])
+          doc.roundedRect(margin, currentY, 3, 23, 1, 1, 'F')
+
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(7.5)
+          doc.setTextColor(corSeveridade[0], corSeveridade[1], corSeveridade[2])
+          const tagSeveridade = achado.severidade.toUpperCase()
+          doc.text(`[${tagSeveridade}] ${achado.titulo}`, margin + 5, currentY + 5)
+
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(6.5)
+          doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+          doc.text(`Norma de Origem: ${achado.normaOrigem}`, margin + 5, currentY + 9.5)
+
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(6.5)
+          doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+          const descLinhas = doc.splitTextToSize(achado.descricao, contentWidth - 10)
+          doc.text(descLinhas.slice(0, 2), margin + 5, currentY + 13.5)
+
+          doc.setFont('helvetica', 'italic')
+          doc.setFontSize(6)
+          doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+          doc.text(`Impacto: ${achado.impactoRegime}`, margin + 5, currentY + 20.5)
+
+          currentY += 25
         }
 
         currentY += 3

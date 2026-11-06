@@ -39,7 +39,7 @@ interface ClienteCarteiraConsolidado {
   ultimaEconomiaAnual: number | null
   temEconomiaPositiva: boolean
   alertaSimples: boolean
-  alertaSimplesTipo: 'desenquadrado' | 'hibrido' | 'atencao' | null
+  alertaSimplesTipo: 'desenquadrado' | 'hibrido' | 'atencao' | 'vedacao_societaria' | null
   faturamentoSimplesMax: number
   dataUltimaAtividade: string | null
   simulacaoMaisRecente?: SimulacaoCalculadora

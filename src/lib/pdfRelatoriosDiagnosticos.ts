@@ -4,6 +4,7 @@ import type { DiagnosticoRecord } from '@/services/diagnosticos'
 import { formatarCNPJ } from '@/lib/cnpj'
 import { desenharAvisoLegalCompletoPDF } from '@/components/common/AvisoOrientativo'
 import { renderizarRodapeEscritorioPdf } from '@/lib/pdfIdentidadeEscritorio'
+import { analisarVinculosSocietarios } from '@/lib/vinculosSocietarios'
 
 export interface DadosRelatorioConsolidado {
   clienteNome?: string
@@ -194,6 +195,75 @@ export function exportarPdfEtapaConfiguracoes(
       campoY += 8
     }
   })
+
+  // Seção adicional de Vínculos Societários se cadastrados
+  if (dadosEmpresa.vinculosSocietarios && dadosEmpresa.vinculosSocietarios.length > 0) {
+    if (y > 220) {
+      doc.addPage()
+      y = 20
+    } else {
+      y += 8
+    }
+
+    const faturamentoProprio =
+      (dadosEmpresa.faturamentoMensal ? dadosEmpresa.faturamentoMensal * 12 : 0) || 0
+    const resultadoVinculos = analisarVinculosSocietarios({
+      vinculos: dadosEmpresa.vinculosSocietarios,
+      regimeAtual: dadosEmpresa.regimeAtual || 'Simples Nacional',
+      faturamentoAnualProprio: faturamentoProprio,
+    })
+
+    doc.setFillColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+    doc.roundedRect(margin, y, contentWidth, 7, 1, 1, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(COR_GOLD[0], COR_GOLD[1], COR_GOLD[2])
+    doc.text('VÍNCULOS SOCIETÁRIOS & RISCO DE REGIME (LC 123/2006)', margin + 4, y + 4.8)
+    y += 10
+
+    for (const achado of resultadoVinculos.achados) {
+      if (y > 250) {
+        doc.addPage()
+        y = 20
+      }
+
+      const cor =
+        achado.severidade === 'critico'
+          ? [192, 57, 43]
+          : achado.severidade === 'atencao'
+            ? [211, 84, 0]
+            : [39, 174, 96]
+
+      doc.setFillColor(255, 255, 255)
+      doc.setDrawColor(cor[0], cor[1], cor[2])
+      doc.roundedRect(margin, y, contentWidth, 22, 1.5, 1.5, 'FD')
+      doc.setFillColor(cor[0], cor[1], cor[2])
+      doc.roundedRect(margin, y, 2.5, 22, 1, 1, 'F')
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(7.5)
+      doc.setTextColor(cor[0], cor[1], cor[2])
+      doc.text(`[${achado.severidade.toUpperCase()}] ${achado.titulo}`, margin + 5, y + 4.5)
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(6.5)
+      doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+      doc.text(`Norma de Origem: ${achado.normaOrigem}`, margin + 5, y + 9)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(6.5)
+      doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+      const desc = doc.splitTextToSize(achado.descricao, contentWidth - 8)
+      doc.text(desc.slice(0, 2), margin + 5, y + 13)
+
+      doc.setFont('helvetica', 'italic')
+      doc.setFontSize(6)
+      doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+      doc.text(`Impacto: ${achado.impactoRegime}`, margin + 5, y + 19.5)
+
+      y += 24
+    }
+  }
 
   aplicarRodape(doc)
   doc.save(
@@ -681,7 +751,81 @@ export function exportarPdfRelatorioConsolidado(dados: DadosRelatorioConsolidado
     doc.text(`• Colaboradores: ${dados.dadosEmpresa.funcionarios || '—'}`, col2, y + 18)
     doc.text(`• Perfil NF: ${dados.dadosEmpresa.emissaoNf || '—'}`, col2, y + 24)
 
-    y += 36
+    y += 34
+
+    // SUBSEÇÃO: VÍNCULOS SOCIETÁRIOS & RISCO DE REGIME (CONDICIONAL A EXISTIREM VÍNCULOS)
+    const vinculosEmpresa = dados.dadosEmpresa.vinculosSocietarios || []
+    if (vinculosEmpresa.length > 0) {
+      if (y > 230) {
+        doc.addPage()
+        y = 20
+      }
+
+      const faturamentoProprio =
+        (dados.dadosEmpresa.faturamentoMensal ? dados.dadosEmpresa.faturamentoMensal * 12 : 0) || 0
+      const resultadoVinculos = analisarVinculosSocietarios({
+        vinculos: vinculosEmpresa,
+        regimeAtual: dados.dadosEmpresa.regimeAtual || 'Simples Nacional',
+        faturamentoAnualProprio: faturamentoProprio,
+      })
+
+      doc.setFillColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+      doc.roundedRect(margin, y, contentWidth, 7, 1, 1, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8)
+      doc.setTextColor(COR_GOLD[0], COR_GOLD[1], COR_GOLD[2])
+      doc.text(
+        'ANÁLISE DE VÍNCULOS SOCIETÁRIOS & RISCO DE REGIME (LC 123/2006)',
+        margin + 4,
+        y + 4.8,
+      )
+      y += 10
+
+      for (const achado of resultadoVinculos.achados) {
+        if (y > 250) {
+          doc.addPage()
+          y = 20
+        }
+
+        const cor =
+          achado.severidade === 'critico'
+            ? [192, 57, 43]
+            : achado.severidade === 'atencao'
+              ? [211, 84, 0]
+              : [39, 174, 96]
+
+        doc.setFillColor(255, 255, 255)
+        doc.setDrawColor(cor[0], cor[1], cor[2])
+        doc.roundedRect(margin, y, contentWidth, 22, 1.5, 1.5, 'FD')
+        doc.setFillColor(cor[0], cor[1], cor[2])
+        doc.roundedRect(margin, y, 2.5, 22, 1, 1, 'F')
+
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(7.5)
+        doc.setTextColor(cor[0], cor[1], cor[2])
+        doc.text(`[${achado.severidade.toUpperCase()}] ${achado.titulo}`, margin + 5, y + 4.5)
+
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(6.5)
+        doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
+        doc.text(`Norma de Origem: ${achado.normaOrigem}`, margin + 5, y + 9)
+
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(6.5)
+        doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
+        const desc = doc.splitTextToSize(achado.descricao, contentWidth - 8)
+        doc.text(desc.slice(0, 2), margin + 5, y + 13)
+
+        doc.setFont('helvetica', 'italic')
+        doc.setFontSize(6)
+        doc.setTextColor(COR_MUTED[0], COR_MUTED[1], COR_MUTED[2])
+        doc.text(`Impacto: ${achado.impactoRegime}`, margin + 5, y + 19.5)
+
+        y += 24
+      }
+
+      y += 2
+    }
   } else {
     doc.setFillColor(COR_BG_LIGHT[0], COR_BG_LIGHT[1], COR_BG_LIGHT[2])
     doc.setDrawColor(COR_BORDA[0], COR_BORDA[1], COR_BORDA[2])

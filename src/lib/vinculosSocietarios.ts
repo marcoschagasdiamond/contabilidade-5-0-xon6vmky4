@@ -36,9 +36,11 @@ export interface AchadoVinculoSocietario {
   titulo: string
   descricao: string
   norma: string
+  normaOrigem: string
   impactoRegime: string
   recomendacao: string
   vinculoId?: string
+  linkLegislacao?: string
 }
 
 export interface ResultadoAnaliseVinculos {
@@ -98,6 +100,7 @@ export function analisarVinculosSocietarios(params: {
         titulo: `Vedação Legal Crítica: Pessoa Jurídica no quadro societário (${nomeExibicao})`,
         descricao: `A empresa analisada possui participação de outra pessoa jurídica (${nomeExibicao}, CNPJ: ${v.cnpj || 'não informado'}). A legislação veda expressamente a opção ou permanência no Simples Nacional para empresas cujo capital participe outra pessoa jurídica.`,
         norma: 'LC 123/2006, art. 3º, § 4º, inciso I; Resolução CGSN 140/2018, art. 15, I',
+        normaOrigem: 'LC 123/2006, art. 3º, § 4º, I',
         impactoRegime: 'Exclusão de ofício do Simples Nacional com desenquadramento obrigatório.',
         recomendacao:
           'Adequar a estrutura societária caso haja intenção de permanência no Simples Nacional, ou planejar a migração para Lucro Presumido ou Lucro Real.',
@@ -114,6 +117,7 @@ export function analisarVinculosSocietarios(params: {
           titulo: `Participação societária com ressalva legal (${nomeExibicao})`,
           descricao: `A participação no capital de ${nomeExibicao} está declarada sob exceção legal prevista em lei (central de compras, cooperativa de crédito, consórcio ou joint venture autorizada).`,
           norma: 'LC 123/2006, art. 3º, § 4º, inciso VII e legislação correlata',
+          normaOrigem: 'LC 123/2006, art. 3º, § 4º, VII (Exceção)',
           impactoRegime: 'Permitido, desde que formalmente enquadrada nas hipóteses excepcionais.',
           recomendacao:
             'Manter arquivada a documentação comprobatória da exceção legal para eventual fiscalização.',
@@ -127,6 +131,7 @@ export function analisarVinculosSocietarios(params: {
           titulo: `Vedação Legal Crítica: Participação no capital de outra PJ (${nomeExibicao})`,
           descricao: `A empresa analisada participa do capital social de outra pessoa jurídica (${nomeExibicao}). A LC 123/2006 veda que optante do Simples participe do capital de outra PJ.`,
           norma: 'LC 123/2006, art. 3º, § 4º, inciso VII; Resolução CGSN 140/2018, art. 15, VII',
+          normaOrigem: 'LC 123/2006, art. 3º, § 4º, VII',
           impactoRegime: 'Causa impeditiva e motivo de exclusão obrigatória do Simples Nacional.',
           recomendacao:
             'Desinvestir da participação social ou formalizar consórcio/cooperativa legalmente autorizada.',
@@ -144,6 +149,7 @@ export function analisarVinculosSocietarios(params: {
         titulo: `Soma Global de Receitas: Empresa do Simples vinculada (${nomeExibicao})`,
         descricao: `O cliente/sócio participa de outra empresa optante pelo Simples Nacional (${nomeExibicao}, CNPJ: ${v.cnpj || 'não informado'}, receita: R$ ${fatVinc.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). A receita bruta anual de todas as empresas do Simples das quais o titular ou sócio participe deve ser somada para aferição do limite de R$ 4,8 milhões.`,
         norma: 'LC 123/2006, art. 3º, § 4º, inciso III; Resolução CGSN 140/2018, art. 15, III',
+        normaOrigem: 'LC 123/2006, art. 3º, § 4º, III',
         impactoRegime:
           'Soma obrigatória de receitas para verificação do limite do Simples Nacional.',
         recomendacao:
@@ -169,6 +175,7 @@ export function analisarVinculosSocietarios(params: {
           descricao: `O sócio detém ${motivo} em pessoa jurídica não optante (${nomeExibicao}, regime: ${v.regimeEmpresa}, receita: R$ ${fatVinc.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). A receita bruta global de ambas as empresas deve ser somada para aferição do teto de R$ 4,8 milhões.`,
           norma:
             'LC 123/2006, art. 3º, § 4º, incisos IV e V; Resolução CGSN 140/2018, art. 15, IV e V',
+          normaOrigem: 'LC 123/2006, art. 3º, § 4º, IV/V',
           impactoRegime:
             'Soma obrigatória de receitas para verificação do limite do Simples Nacional.',
           recomendacao:
@@ -190,6 +197,7 @@ export function analisarVinculosSocietarios(params: {
       titulo: 'Excesso Crítico de Faturamento Global (> 20% acima do teto de R$ 4,8M)',
       descricao: `A receita bruta global somada (R$ ${receitaGlobalEfetiva.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) ultrapassa o teto do Simples Nacional em mais de 20% (limite de tolerância: R$ ${TETO_SIMPLES_TOLERANCIA_20.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}).`,
       norma: 'LC 123/2006, art. 3º, §§ 9º e 9º-A; Resolução CGSN 140/2018',
+      normaOrigem: 'LC 123/2006, art. 3º, § 9º (>20%)',
       impactoRegime:
         'Exclusão do Simples Nacional com efeitos retroativos ao início do ano-calendário (ou mês seguinte ao excesso se empresa nova).',
       recomendacao:
@@ -202,6 +210,7 @@ export function analisarVinculosSocietarios(params: {
       titulo: 'Atenção: Faturamento Global acima do teto de R$ 4,8M (até 20% de tolerância)',
       descricao: `A receita bruta global somada (R$ ${receitaGlobalEfetiva.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) ultrapassa R$ 4.800.000, porém permanece dentro da margem de tolerância de 20% (até R$ ${TETO_SIMPLES_TOLERANCIA_20.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}).`,
       norma: 'LC 123/2006, art. 3º, §§ 9º e 10; Resolução CGSN 140/2018',
+      normaOrigem: 'LC 123/2006, art. 3º, §§ 9º e 10 (até 20%)',
       impactoRegime:
         'Desenquadramento do Simples Nacional com efeitos a partir de 1º de janeiro do ano-calendário seguinte.',
       recomendacao:
@@ -214,6 +223,7 @@ export function analisarVinculosSocietarios(params: {
       titulo: 'Monitoramento: Faturamento Global acima de 90% do teto legal',
       descricao: `A receita bruta global somada das empresas vinculadas atingiu R$ ${receitaGlobalEfetiva.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}, superando 90% do limite legal de R$ 4.800.000.`,
       norma: 'LC 123/2006, art. 3º, § 4º',
+      normaOrigem: 'LC 123/2006, art. 3º, § 4º',
       impactoRegime: 'Risco iminente de desenquadramento nos próximos meses.',
       recomendacao:
         'Acompanhar mensalmente as emissões de notas fiscais de todo o grupo societário.',
@@ -228,6 +238,7 @@ export function analisarVinculosSocietarios(params: {
       titulo: 'Vínculos Societários em Conformidade Legal',
       descricao: `Os ${vinculos.length} vínculo(s) societário(s) cadastrado(s) foram analisados. A receita global somada (R$ ${receitaGlobalEfetiva.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) está dentro do teto de R$ 4,8 milhões e não há vedações societárias expressas.`,
       norma: 'LC 123/2006, art. 3º; Resolução CGSN 140/2018, art. 15',
+      normaOrigem: 'LC 123/2006, art. 3º / CGSN 140 art. 15',
       impactoRegime: 'Permanência regular no regime tributário.',
       recomendacao: 'Manter os cadastros atualizados periodicamente.',
     })

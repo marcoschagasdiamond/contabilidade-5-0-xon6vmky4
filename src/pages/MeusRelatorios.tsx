@@ -78,6 +78,7 @@ export default function MeusRelatorios() {
     'diag_transicao',
     'diag_enquadramento',
     'diag_dados_gerenciais',
+    'diag_vinculos_societarios',
   ])
 
   // Título e Observações livres
@@ -1050,6 +1051,10 @@ export default function MeusRelatorios() {
                           {
                             id: 'diag_dados_gerenciais',
                             label: 'Dados Gerenciais Importados (Balancete & EFDs)',
+                          },
+                          {
+                            id: 'diag_vinculos_societarios',
+                            label: 'Vínculos Societários & Risco de Regime',
                           },
                         ].map((sec) => (
                           <label

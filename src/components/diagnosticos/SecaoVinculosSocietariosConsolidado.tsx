@@ -201,7 +201,7 @@ export const SecaoVinculosSocietariosConsolidado: React.FC<
                 {vinculos.map((v) => (
                   <tr key={v.id} className="hover:bg-slate-50/80">
                     <td className="py-2.5 px-3 font-semibold text-slate-800">
-                      {v.razaoSocial}
+                      {v.nomeEmpresa}
                       {v.cnpj && (
                         <span className="block text-[10px] font-mono text-slate-500">{v.cnpj}</span>
                       )}
@@ -211,7 +211,7 @@ export const SecaoVinculosSocietariosConsolidado: React.FC<
                         ? 'Sócio PF'
                         : v.papelCliente === 'administrador'
                           ? 'Administrador'
-                          : v.papelCliente === 'holding_socia'
+                          : v.papelCliente === 'pj_socia_holding'
                             ? 'Holding/PJ Sócia'
                             : 'Participação em outra PJ'}
                     </td>
@@ -227,13 +227,7 @@ export const SecaoVinculosSocietariosConsolidado: React.FC<
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800">
-                        {v.regimeTributario === 'simples'
-                          ? 'Simples Nacional'
-                          : v.regimeTributario === 'lucro_presumido'
-                            ? 'Lucro Presumido'
-                            : v.regimeTributario === 'lucro_real'
-                              ? 'Lucro Real'
-                              : 'Outro'}
+                        {v.regimeEmpresa}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-800">
