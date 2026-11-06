@@ -116,6 +116,20 @@ export interface DadosEmpresaPerfil {
     consultadoEm?: string
   }
 
+  // Consulta de CNAE Externa
+  dadosCnaeConsulta?: {
+    codigo?: string
+    codigoFormatado?: string
+    descricao?: string
+    secaoCodigo?: string
+    secaoDescricao?: string
+    divisaoCodigo?: string
+    divisaoDescricao?: string
+    segmentoSugerido?: string
+    fonte?: string
+    consultadoEm?: string
+  }
+
   // Metadados e Documento Fiscal Importado
   atualizadoEm?: string
   documentoFiscalImportado?: DocumentoFiscalImportadoReferencia

@@ -94,6 +94,10 @@ import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucess
 import { useToast } from '@/hooks/use-toast'
 import { CampoBuscaCnpj } from '@/components/dadosEmpresa/CampoBuscaCnpj'
 import { BadgeProvenienciaCnpj } from '@/components/dadosEmpresa/BadgeProvenienciaCnpj'
+import { CampoBuscaCnae } from '@/components/dadosEmpresa/CampoBuscaCnae'
+import { BadgeProvenienciaCnae } from '@/components/dadosEmpresa/BadgeProvenienciaCnae'
+import type { ItemResultadoCnae } from '@/services/consultaCnae'
+import type { OpcoesConfirmacaoCnae } from '@/components/dadosEmpresa/ModalConfirmarDadosCnae'
 import {
   mapearCnaeParaSegmento,
   mapearCidadeIss,
@@ -619,6 +623,29 @@ export default function Diagnostico() {
   }
 
   const [dadosCnpjConsultaDiag, setDadosCnpjConsultaDiag] = useState<DadosCnpjConsulta | null>(null)
+  const [dadosCnaeConsultaDiag, setDadosCnaeConsultaDiag] = useState<ItemResultadoCnae | null>(null)
+
+  const handleAplicarDadosCnaeDiagnostico = (
+    cnae: ItemResultadoCnae,
+    opcoes: OpcoesConfirmacaoCnae,
+  ) => {
+    setDadosCnaeConsultaDiag(cnae)
+    setFormData((prev) => {
+      const atualizado = { ...prev }
+
+      if (opcoes.aplicarSegmento && cnae.segmentoSugerido) {
+        if (!opcoes.apenasCamposEmBranco || !atualizado.segmento) {
+          atualizado.segmento = cnae.segmentoSugerido as SegmentoEmpresa
+        }
+      }
+
+      return atualizado
+    })
+
+    if (errors.segmento) {
+      setErrors((prev) => ({ ...prev, segmento: undefined }))
+    }
+  }
 
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatarCNPJ(e.target.value)
@@ -1514,12 +1541,51 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   </p>
                 </div>
 
-                {/* Segmento de Atuação (Grade responsiva com 10 opções) */}
-                <div>
+                {/* Segmento de Atuação (Grade responsiva com 10 opções + Busca CNAE) */}
+                <div className="space-y-3.5">
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <CampoBuscaCnae
+                      id="cnaeEmpresaDiagnostico"
+                      valorCnaeCodigo={dadosCnaeConsultaDiag?.codigoFormatado || ''}
+                      valorCnaeDescricao={dadosCnaeConsultaDiag?.descricao || ''}
+                      valoresAtuaisFormulario={{
+                        cnaeCodigo: dadosCnaeConsultaDiag?.codigoFormatado || '',
+                        cnaeDescricao: dadosCnaeConsultaDiag?.descricao || '',
+                        segmento: formData.segmento,
+                      }}
+                      aoAplicarDadosCnae={handleAplicarDadosCnaeDiagnostico}
+                      label="Busca Externa de CNAE (Subclasse / Atividade)"
+                      placeholder="Digite o código (ex: 6201-5/01) ou atividade (ex: desenvolvimento de software)"
+                    />
+                    {dadosCnaeConsultaDiag?.fonte && (
+                      <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between flex-wrap gap-2 text-xs">
+                        <span className="text-slate-600 font-medium">
+                          CNAE oficial selecionado:{' '}
+                          <strong className="font-mono text-slate-800">
+                            {dadosCnaeConsultaDiag.codigoFormatado}
+                          </strong>{' '}
+                          — {dadosCnaeConsultaDiag.descricao}
+                        </span>
+                        <BadgeProvenienciaCnae
+                          fonte={dadosCnaeConsultaDiag.fonte}
+                          consultadoEm={dadosCnaeConsultaDiag.consultadoEm}
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      Segmento Principal de Atividade *
-                    </label>
+                    <div className="flex items-center gap-2">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Segmento Principal de Atividade *
+                      </label>
+                      {dadosCnaeConsultaDiag?.fonte && (
+                        <BadgeProvenienciaCnae
+                          fonte={dadosCnaeConsultaDiag.fonte}
+                          consultadoEm={dadosCnaeConsultaDiag.consultadoEm}
+                        />
+                      )}
+                    </div>
                     <span className="text-[11px] text-slate-400">Selecione 1 das 10 opções</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">

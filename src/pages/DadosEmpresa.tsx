@@ -42,6 +42,10 @@ import { SecaoImportacaoDocumentosFiscais } from '@/components/dadosEmpresa/Seca
 import { SecaoVinculosSocietarios } from '@/components/dadosEmpresa/SecaoVinculosSocietarios'
 import { CampoBuscaCnpj } from '@/components/dadosEmpresa/CampoBuscaCnpj'
 import { BadgeProvenienciaCnpj } from '@/components/dadosEmpresa/BadgeProvenienciaCnpj'
+import { CampoBuscaCnae } from '@/components/dadosEmpresa/CampoBuscaCnae'
+import { BadgeProvenienciaCnae } from '@/components/dadosEmpresa/BadgeProvenienciaCnae'
+import type { ItemResultadoCnae } from '@/services/consultaCnae'
+import type { OpcoesConfirmacaoCnae } from '@/components/dadosEmpresa/ModalConfirmarDadosCnae'
 import {
   mapearCnaeParaSegmento,
   mapearCidadeIss,
@@ -334,6 +338,44 @@ export default function DadosEmpresa() {
       email: '',
       telefone: '',
     }))
+  }
+
+  const handleAplicarDadosCnae = (cnae: ItemResultadoCnae, opcoes: OpcoesConfirmacaoCnae) => {
+    atualizarCampo((prev) => {
+      const atualizado = { ...prev }
+
+      // Segmento Correspondente Sugerido
+      if (opcoes.aplicarSegmento && cnae.segmentoSugerido) {
+        if (!opcoes.apenasCamposEmBranco || !atualizado.segmento) {
+          atualizado.segmento = cnae.segmentoSugerido
+          if (!atualizado.atividadeMista) {
+            if (cnae.segmentoSugerido === 'Comércio') atualizado.tipoAtividade = 'comercio'
+            else if (cnae.segmentoSugerido === 'Indústria') atualizado.tipoAtividade = 'industria'
+            else atualizado.tipoAtividade = 'servico'
+          }
+        }
+      }
+
+      // Metadados do CNAE consultado
+      atualizado.dadosCnaeConsulta = {
+        codigo: cnae.codigo,
+        codigoFormatado: cnae.codigoFormatado,
+        descricao: cnae.descricao,
+        secaoCodigo: cnae.secaoCodigo,
+        secaoDescricao: cnae.secaoDescricao,
+        divisaoCodigo: cnae.divisaoCodigo,
+        divisaoDescricao: cnae.divisaoDescricao,
+        segmentoSugerido: cnae.segmentoSugerido,
+        fonte: cnae.fonte,
+        consultadoEm: cnae.consultadoEm,
+      }
+
+      return atualizado
+    })
+
+    if (errors.segmento) {
+      setErrors((prev) => ({ ...prev, segmento: '' }))
+    }
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1393,12 +1435,66 @@ export default function DadosEmpresa() {
                 </div>
               </div>
 
-              {/* SUB-BLOCO C: SEGMENTO PRINCIPAL DE ATIVIDADE (Grade com 10 opções exatas) */}
-              <div className="pt-5 border-t border-slate-100">
+              {/* SUB-BLOCO C: SEGMENTO PRINCIPAL DE ATIVIDADE (Grade com 10 opções exatas + Busca CNAE) */}
+              <div className="pt-5 border-t border-slate-100 space-y-4">
+                {/* Campo integrado de Busca Externa de CNAE para preenchimento de Segmento */}
+                <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                  <CampoBuscaCnae
+                    id="cnaeEmpresaDadosEmpresa"
+                    valorCnaeCodigo={
+                      formData.dadosCnaeConsulta?.codigoFormatado ||
+                      formData.dadosCnpjConsulta?.cnaePrincipalCodigo ||
+                      ''
+                    }
+                    valorCnaeDescricao={
+                      formData.dadosCnaeConsulta?.descricao ||
+                      formData.dadosCnpjConsulta?.cnaePrincipalDescricao ||
+                      ''
+                    }
+                    valoresAtuaisFormulario={{
+                      cnaeCodigo:
+                        formData.dadosCnaeConsulta?.codigoFormatado ||
+                        formData.dadosCnpjConsulta?.cnaePrincipalCodigo ||
+                        '',
+                      cnaeDescricao:
+                        formData.dadosCnaeConsulta?.descricao ||
+                        formData.dadosCnpjConsulta?.cnaePrincipalDescricao ||
+                        '',
+                      segmento: formData.segmento,
+                    }}
+                    aoAplicarDadosCnae={handleAplicarDadosCnae}
+                    label="Busca Externa de CNAE (Subclasse / Atividade)"
+                    placeholder="Digite o código (ex: 6201-5/01) ou atividade (ex: desenvolvimento de software)"
+                  />
+                  {formData.dadosCnaeConsulta?.fonte && (
+                    <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between flex-wrap gap-2 text-xs">
+                      <span className="text-slate-600 font-medium">
+                        CNAE oficial selecionado:{' '}
+                        <strong className="font-mono text-slate-800">
+                          {formData.dadosCnaeConsulta.codigoFormatado}
+                        </strong>{' '}
+                        — {formData.dadosCnaeConsulta.descricao}
+                      </span>
+                      <BadgeProvenienciaCnae
+                        fonte={formData.dadosCnaeConsulta.fonte}
+                        consultadoEm={formData.dadosCnaeConsulta.consultadoEm}
+                      />
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between mb-2">
-                  <Label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Segmento Principal de Atividade *
-                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Segmento Principal de Atividade *
+                    </Label>
+                    {formData.dadosCnaeConsulta?.fonte && (
+                      <BadgeProvenienciaCnae
+                        fonte={formData.dadosCnaeConsulta.fonte}
+                        consultadoEm={formData.dadosCnaeConsulta.consultadoEm}
+                      />
+                    )}
+                  </div>
                   <span className="text-[11px] text-slate-400">Selecione 1 das 10 opções</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
