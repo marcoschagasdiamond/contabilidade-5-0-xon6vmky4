@@ -1070,148 +1070,175 @@ export default function Modulo6Dashboard({
           <FarolLimitesSimples alerta={alertaLimitesSimples} compacto={false} />
 
           {/* Cards de KPI no Topo Conforme Especificação */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* KPI 1: Alíquota Efetiva Atual */}
-            <Card className="border-slate-200/80 shadow hover:shadow-md transition-all">
-              <CardContent className="p-5 space-y-1.5">
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span className="font-semibold uppercase tracking-wider">
-                    {regimeAtualFiltro === 'Simples Nacional'
-                      ? 'DAS Atual'
-                      : 'Alíquota Efetiva Atual'}
-                  </span>
-                  <span className="font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[10px]">
-                    {regimeAtualFiltro}
-                  </span>
-                </div>
-                <p className="text-3xl font-mono font-extrabold text-slate-800">
-                  {formatarPorcentagem(aliquotaEfetivaAtual)}
-                </p>
-                <p className="text-[11px] text-slate-400">
-                  {regimeAtualFiltro === 'Simples Nacional'
-                    ? 'Alíquota efetiva atual da guia DAS tradicional'
-                    : 'Carga efetiva nominal suportada no regime vigente'}
-                </p>
-              </CardContent>
-            </Card>
+          {(() => {
+            const atual = formatarPorcentagem(aliquotaEfetivaAtual)
+            const nova = formatarPorcentagem(aliquotaEfetivaNova)
 
-            {/* KPI 2: Alíquota Efetiva Nova / Cenário da Transição */}
-            <Card className="border-[#D4AF37]/50 bg-gradient-to-br from-amber-50/40 to-white shadow hover:shadow-md transition-all">
-              <CardContent className="p-5 space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold uppercase tracking-wider text-amber-900">
-                    {regimeAtualFiltro === 'Simples Nacional'
-                      ? 'Cenário da Transição'
-                      : 'Alíquota Efetiva Nova'}
-                  </span>
-                  <span className="font-mono text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded text-[10px] font-bold">
-                    {regimeAtualFiltro === 'Simples Nacional' ? 'CBS no DAS + IBS' : 'IBS / CBS'}
-                  </span>
-                </div>
-                <p className="text-3xl font-mono font-extrabold text-[#07132B]">
-                  {formatarPorcentagem(aliquotaEfetivaNova)}
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  {regimeAtualFiltro === 'Simples Nacional'
-                    ? 'CBS no DAS a partir de 2027 e IBS por fora com créditos'
-                    : `Considerando débitos com abatimento de compras (${percentualComprasVendasComparativo}%)`}
-                </p>
-              </CardContent>
-            </Card>
+            // Fonte adaptativa baseada no comprimento do valor percentual formatado
+            const tamanhoFonteAliquota = (valor: string) =>
+              valor.length > 9
+                ? 'text-lg sm:text-xl'
+                : valor.length > 7
+                  ? 'text-xl sm:text-2xl'
+                  : 'text-2xl sm:text-3xl'
 
-            {/* KPI 3: Economia Mensal Projetada */}
-            {(() => {
-              const temEconomiaMensal = economiaMensalProjetada >= 0
-              const strValorMensal = temEconomiaMensal
-                ? formatarMoeda(economiaMensalProjetada)
-                : 'Sem economia neste cenário'
-
-              // Fonte adaptativa baseada no comprimento do valor formatado ou texto
-              const tamanhoFonteMensal = !temEconomiaMensal
-                ? 'text-lg sm:text-xl font-sans'
-                : strValorMensal.length > 18
-                  ? 'text-base sm:text-lg'
-                  : strValorMensal.length > 15
-                    ? 'text-lg sm:text-xl'
-                    : strValorMensal.length > 12
-                      ? 'text-xl sm:text-2xl'
-                      : 'text-2xl sm:text-3xl'
-
-              return (
-                <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 to-white shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* KPI 1: Alíquota Efetiva Atual */}
+                <Card className="border-slate-200/80 shadow hover:shadow-md transition-all">
                   <CardContent className="p-5 space-y-1.5 min-w-0">
-                    <div className="flex items-center justify-between text-xs gap-1">
-                      <span className="font-bold uppercase tracking-wider text-emerald-800 truncate">
-                        Economia Mensal Projetada
+                    <div className="flex items-center justify-between text-xs text-slate-500 gap-1 min-w-0">
+                      <span className="font-semibold uppercase tracking-wider truncate min-w-0">
+                        {regimeAtualFiltro === 'Simples Nacional'
+                          ? 'DAS Atual'
+                          : 'Alíquota Efetiva Atual'}
                       </span>
-                      <span className="font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px] shrink-0">
-                        {temEconomiaMensal ? 'Redução' : 'Acréscimo'}
+                      <span className="font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[10px] shrink-0 whitespace-nowrap">
+                        {regimeAtualFiltro}
                       </span>
                     </div>
                     <div className="py-0.5 min-w-0 overflow-hidden">
                       <p
-                        className={`${tamanhoFonteMensal} ${temEconomiaMensal ? 'font-mono' : 'font-semibold'} font-extrabold text-emerald-700 truncate tracking-tight`}
-                        title={strValorMensal}
+                        className={`${tamanhoFonteAliquota(atual)} font-mono font-extrabold text-slate-800 truncate tracking-tight`}
+                        title={atual}
                       >
-                        {strValorMensal}
+                        {atual}
+                      </p>
+                    </div>
+                    <p className="text-[11px] text-slate-400 line-clamp-2">
+                      {regimeAtualFiltro === 'Simples Nacional'
+                        ? 'Alíquota efetiva atual da guia DAS tradicional'
+                        : 'Carga efetiva nominal suportada no regime vigente'}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* KPI 2: Alíquota Efetiva Nova / Cenário da Transição */}
+                <Card className="border-[#D4AF37]/50 bg-gradient-to-br from-amber-50/40 to-white shadow hover:shadow-md transition-all">
+                  <CardContent className="p-5 space-y-1.5 min-w-0">
+                    <div className="flex items-center justify-between text-xs gap-1 min-w-0">
+                      <span className="font-bold uppercase tracking-wider text-amber-900 truncate min-w-0">
+                        {regimeAtualFiltro === 'Simples Nacional'
+                          ? 'Cenário da Transição'
+                          : 'Alíquota Efetiva Nova'}
+                      </span>
+                      <span className="font-mono text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded text-[10px] font-bold shrink-0 whitespace-nowrap">
+                        {regimeAtualFiltro === 'Simples Nacional'
+                          ? 'CBS no DAS + IBS'
+                          : 'IBS / CBS'}
+                      </span>
+                    </div>
+                    <div className="py-0.5 min-w-0 overflow-hidden">
+                      <p
+                        className={`${tamanhoFonteAliquota(nova)} font-mono font-extrabold text-[#07132B] truncate tracking-tight`}
+                        title={nova}
+                      >
+                        {nova}
                       </p>
                     </div>
                     <p className="text-[11px] text-slate-500 line-clamp-2">
-                      {temEconomiaMensal
-                        ? 'Economia líquida estimada por competência mensal'
-                        : 'Necessidade de ajuste via tomada de créditos adicionais'}
+                      {regimeAtualFiltro === 'Simples Nacional'
+                        ? 'CBS no DAS a partir de 2027 e IBS por fora com créditos'
+                        : `Considerando débitos com abatimento de compras (${percentualComprasVendasComparativo}%)`}
                     </p>
                   </CardContent>
                 </Card>
-              )
-            })()}
 
-            {/* KPI 4: Economia Anual Projetada */}
-            {(() => {
-              const temEconomiaAnual = economiaAnualProjetada >= 0
-              const strValorAnual = temEconomiaAnual
-                ? formatarMoeda(economiaAnualProjetada)
-                : 'Sem economia neste cenário'
+                {/* KPI 3: Economia Mensal Projetada */}
+                {(() => {
+                  const temEconomiaMensal = economiaMensalProjetada >= 0
+                  const strValorMensal = temEconomiaMensal
+                    ? formatarMoeda(economiaMensalProjetada)
+                    : 'Sem economia neste cenário'
 
-              // Fonte adaptativa baseada no comprimento do valor formatado ou texto
-              const tamanhoFonteAnual = !temEconomiaAnual
-                ? 'text-lg sm:text-xl font-sans'
-                : strValorAnual.length > 18
-                  ? 'text-base sm:text-lg'
-                  : strValorAnual.length > 15
-                    ? 'text-lg sm:text-xl'
-                    : strValorAnual.length > 12
-                      ? 'text-xl sm:text-2xl'
-                      : 'text-2xl sm:text-3xl'
+                  // Fonte adaptativa baseada no comprimento do valor formatado ou texto
+                  const tamanhoFonteMensal = !temEconomiaMensal
+                    ? 'text-lg sm:text-xl font-sans'
+                    : strValorMensal.length > 18
+                      ? 'text-base sm:text-lg'
+                      : strValorMensal.length > 15
+                        ? 'text-lg sm:text-xl'
+                        : strValorMensal.length > 12
+                          ? 'text-xl sm:text-2xl'
+                          : 'text-2xl sm:text-3xl'
 
-              return (
-                <Card className="bg-[#07132B] text-white border border-[#D4AF37]/50 shadow-xl overflow-hidden relative flex flex-col justify-between">
-                  <div className="absolute top-0 right-0 w-28 h-28 bg-[#D4AF37]/20 rounded-full blur-xl pointer-events-none" />
-                  <CardContent className="p-5 space-y-1.5 relative min-w-0">
-                    <div className="flex items-center justify-between text-xs gap-1">
-                      <span className="font-bold uppercase tracking-wider text-[#D4AF37] truncate">
-                        Economia Anual Projetada
-                      </span>
-                      <span className="bg-[#D4AF37]/20 text-[#D4AF37] px-2 py-0.5 rounded text-[10px] font-bold shrink-0">
-                        12 meses
-                      </span>
-                    </div>
-                    <div className="py-0.5 min-w-0 overflow-hidden">
-                      <p
-                        className={`${tamanhoFonteAnual} ${temEconomiaAnual ? 'font-mono' : 'font-semibold'} font-extrabold text-white truncate tracking-tight`}
-                        title={strValorAnual}
-                      >
-                        {strValorAnual}
-                      </p>
-                    </div>
-                    <p className="text-[11px] text-slate-300 line-clamp-2">
-                      Impacto no fluxo de caixa anualizado da companhia
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            })()}
-          </div>
+                  return (
+                    <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 to-white shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
+                      <CardContent className="p-5 space-y-1.5 min-w-0">
+                        <div className="flex items-center justify-between text-xs gap-1">
+                          <span className="font-bold uppercase tracking-wider text-emerald-800 truncate">
+                            Economia Mensal Projetada
+                          </span>
+                          <span className="font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px] shrink-0">
+                            {temEconomiaMensal ? 'Redução' : 'Acréscimo'}
+                          </span>
+                        </div>
+                        <div className="py-0.5 min-w-0 overflow-hidden">
+                          <p
+                            className={`${tamanhoFonteMensal} ${temEconomiaMensal ? 'font-mono' : 'font-semibold'} font-extrabold text-emerald-700 truncate tracking-tight`}
+                            title={strValorMensal}
+                          >
+                            {strValorMensal}
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2">
+                          {temEconomiaMensal
+                            ? 'Economia líquida estimada por competência mensal'
+                            : 'Necessidade de ajuste via tomada de créditos adicionais'}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
+
+                {/* KPI 4: Economia Anual Projetada */}
+                {(() => {
+                  const temEconomiaAnual = economiaAnualProjetada >= 0
+                  const strValorAnual = temEconomiaAnual
+                    ? formatarMoeda(economiaAnualProjetada)
+                    : 'Sem economia neste cenário'
+
+                  // Fonte adaptativa baseada no comprimento do valor formatado ou texto
+                  const tamanhoFonteAnual = !temEconomiaAnual
+                    ? 'text-lg sm:text-xl font-sans'
+                    : strValorAnual.length > 18
+                      ? 'text-base sm:text-lg'
+                      : strValorAnual.length > 15
+                        ? 'text-lg sm:text-xl'
+                        : strValorAnual.length > 12
+                          ? 'text-xl sm:text-2xl'
+                          : 'text-2xl sm:text-3xl'
+
+                  return (
+                    <Card className="bg-[#07132B] text-white border border-[#D4AF37]/50 shadow-xl overflow-hidden relative flex flex-col justify-between">
+                      <div className="absolute top-0 right-0 w-28 h-28 bg-[#D4AF37]/20 rounded-full blur-xl pointer-events-none" />
+                      <CardContent className="p-5 space-y-1.5 relative min-w-0">
+                        <div className="flex items-center justify-between text-xs gap-1">
+                          <span className="font-bold uppercase tracking-wider text-[#D4AF37] truncate">
+                            Economia Anual Projetada
+                          </span>
+                          <span className="bg-[#D4AF37]/20 text-[#D4AF37] px-2 py-0.5 rounded text-[10px] font-bold shrink-0">
+                            12 meses
+                          </span>
+                        </div>
+                        <div className="py-0.5 min-w-0 overflow-hidden">
+                          <p
+                            className={`${tamanhoFonteAnual} ${temEconomiaAnual ? 'font-mono' : 'font-semibold'} font-extrabold text-white truncate tracking-tight`}
+                            title={strValorAnual}
+                          >
+                            {strValorAnual}
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-slate-300 line-clamp-2">
+                          Impacto no fluxo de caixa anualizado da companhia
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
+              </div>
+            )
+          })()}
 
           {/* BLOCO: CONCLUSÃO ANALÍTICA (ENTRE OS KPIS E O QUADRO/GRÁFICOS) */}
           {/* Padrão Visual Diamond Group: verde escuro/dourado, cards escuros, SEM ícones */}
