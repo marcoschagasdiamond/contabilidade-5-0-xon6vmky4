@@ -1750,8 +1750,10 @@ export default function DadosEmpresa() {
                       formData.dadosCnaeConsulta?.descricao ||
                       formData.dadosCnpjConsulta?.cnaePrincipalDescricao ||
                       ''
-                    const segmentoSugeridoPrincipal =
-                      mapearCnaeParaSegmentoOpcional(cnaeCodPrincipal)
+                    const segmentoSugeridoPrincipal = mapearCnaeParaSegmentoOpcional(
+                      cnaeCodPrincipal,
+                      cnaeDescPrincipal,
+                    )
 
                     if (!segmentoSugeridoPrincipal) return null
 

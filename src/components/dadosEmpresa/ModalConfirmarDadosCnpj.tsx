@@ -223,6 +223,7 @@ export function ModalConfirmarDadosCnpj({
                   {(() => {
                     const segmentoSugeridoOpcional = mapearCnaeParaSegmentoOpcional(
                       dados.cnaePrincipalCodigo,
+                      dados.cnaePrincipalDescricao,
                     )
                     if (segmentoSugeridoOpcional) {
                       return (

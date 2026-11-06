@@ -146,17 +146,32 @@ export function mapearCnaeParaSegmentoOpcional(
     return 'Agro'
   }
 
-  // Construção Civil
+  // Construção Civil (Divisões 41, 42, 43 e termos de obras/edificações)
   if (
     ['41', '42', '43'].includes(cod2) ||
-    desc.includes('construção') ||
-    desc.includes('construcao') ||
-    desc.includes('obras') ||
+    desc.includes('construção civil') ||
+    desc.includes('construcao civil') ||
+    desc.includes('construção de') ||
+    desc.includes('construcao de') ||
+    desc.includes('incorporação de empreendimentos') ||
+    desc.includes('incorporacao de empreendimentos') ||
+    desc.includes('obras de engenharia') ||
+    desc.includes('obras de infraestrutura') ||
+    desc.includes('obras de arte') ||
+    desc.includes('obras de urbanização') ||
+    desc.includes('obras de urbanizacao') ||
+    desc.includes('terraplenagem') ||
     desc.includes('edifícios') ||
     desc.includes('edificios') ||
-    desc.includes('engenharia') ||
-    desc.includes('incorporação') ||
-    desc.includes('incorporacao')
+    desc.includes('alvenaria') ||
+    desc.includes('demolição') ||
+    desc.includes('demolicao') ||
+    desc.includes('instalações elétricas') ||
+    desc.includes('instalacoes eletricas') ||
+    desc.includes('instalações hidráulicas') ||
+    desc.includes('instalacoes hidraulicas') ||
+    desc.includes('pintura de edifícios') ||
+    desc.includes('pintura de edificios')
   ) {
     return 'Construção Civil'
   }
@@ -176,7 +191,7 @@ export function mapearCnaeParaSegmentoOpcional(
     return 'Transporte'
   }
 
-  // Bares e Restaurantes (alimentação fora do lar)
+  // Bares e Restaurantes (alimentação fora do lar - Divisão 56)
   if (
     ['56'].includes(cod2) ||
     desc.includes('restaurante') ||
@@ -186,6 +201,15 @@ export function mapearCnaeParaSegmentoOpcional(
     desc.includes('pizzaria') ||
     desc.includes('choperia') ||
     desc.includes('cafeteria') ||
+    desc.includes('churrascaria') ||
+    desc.includes('hamburgueria') ||
+    desc.includes('petiscaria') ||
+    desc.includes('cantina') ||
+    desc.includes('buffet') ||
+    desc.includes('bufê') ||
+    desc.includes('catering') ||
+    desc.includes('serviços de alimentação') ||
+    desc.includes('servicos de alimentacao') ||
     desc.includes('fornecimento de alimentos preparados')
   ) {
     return 'Bares e Restaurantes'
@@ -217,49 +241,115 @@ export function mapearCnaeParaSegmentoOpcional(
     return 'Comércio'
   }
 
-  // Serviços explícitos (Divisões de serviços típicos ou termos de serviço)
+  // Serviços explícitos (Divisões de serviços e atividades profissionais, técnicas e operacionais)
   if (
     [
-      '58',
-      '59',
-      '60',
-      '61',
-      '64',
-      '65',
-      '66',
-      '68',
-      '69',
-      '70',
-      '71',
-      '72',
-      '73',
-      '74',
-      '75',
-      '77',
-      '78',
-      '79',
-      '80',
-      '81',
-      '82',
-      '90',
-      '91',
-      '92',
-      '93',
-      '94',
-      '95',
-      '96',
+      '55', // Alojamento / Hotéis / Pousadas
+      '58', // Edição e publicação
+      '59', // Produção cinematográfica, vídeos, música
+      '60', // Rádio e televisão
+      '61', // Telecomunicações
+      '64', // Intermediação financeira / Bancos / Cooperativas
+      '65', // Seguros, resseguros, previdência privada
+      '66', // Atividades auxiliares dos serviços financeiros e seguros
+      '68', // Atividades imobiliárias / Locação / Corretagem
+      '69', // Atividades jurídicas, contábeis e de auditoria
+      '70', // Consultoria em gestão empresarial / Sedes de empresas
+      '71', // Serviços de arquitetura e engenharia; testes e análises técnicas
+      '72', // Pesquisa e desenvolvimento científico
+      '73', // Publicidade e pesquisa de mercado / Marketing
+      '74', // Outras atividades profissionais, científicas e técnicas (design, tradução, fotografia)
+      '75', // Atividades veterinárias
+      '77', // Aluguel e locação de bens materiais e imateriais
+      '78', // Seleção, agenciamento e locação de mão de obra
+      '79', // Agências de viagens, operadores turísticos e serviços de reservas
+      '80', // Atividades de vigilância, segurança e investigação
+      '81', // Serviços para edifícios e atividades paisagísticas (limpeza, portaria, conservação)
+      '82', // Serviços de escritório, apoio administrativo, cobrança, teleatendimento
+      '88', // Serviços de assistência social sem alojamento
+      '90', // Atividades artísticas, criativas e de espetáculos
+      '91', // Atividades ligadas ao patrimônio cultural e ambiental
+      '92', // Atividades de exploração de jogos de azar e apostas
+      '93', // Atividades esportivas e de recreação e lazer (academias, clubes)
+      '94', // Atividades de organizações associativas
+      '95', // Reparação e manutenção de computadores e de objetos pessoais e domésticos
+      '96', // Outras atividades de serviços pessoais (estética, cabeleireiro, lavanderia, funerária)
+      '97', // Serviços domésticos
+      '99', // Organismos internacionais
     ].includes(cod2) ||
     desc.includes('prestação de serviço') ||
     desc.includes('prestacao de servico') ||
+    desc.includes('prestador de serviço') ||
+    desc.includes('prestador de servico') ||
     desc.includes('consultoria') ||
     desc.includes('assessoria') ||
     desc.includes('advocacia') ||
+    desc.includes('advogado') ||
+    desc.includes('jurídic') ||
+    desc.includes('juridic') ||
     desc.includes('contabilidade') ||
-    desc.includes('locação') ||
-    desc.includes('locacao') ||
+    desc.includes('contábil') ||
+    desc.includes('contabil') ||
+    desc.includes('auditoria') ||
+    desc.includes('perícia') ||
+    desc.includes('pericia') ||
+    desc.includes('engenharia') ||
+    desc.includes('arquiteto') ||
+    desc.includes('arquitetura') ||
+    desc.includes('agenciamento') ||
+    desc.includes('corretagem') ||
+    desc.includes('imobiliári') ||
+    desc.includes('imobiliari') ||
+    desc.includes('publicidade') ||
+    desc.includes('marketing') ||
+    desc.includes('propaganda') ||
     desc.includes('limpeza') ||
     desc.includes('vigilância') ||
-    desc.includes('vigilancia')
+    desc.includes('vigilancia') ||
+    desc.includes('segurança privada') ||
+    desc.includes('seguranca privada') ||
+    desc.includes('portaria') ||
+    desc.includes('zeladoria') ||
+    desc.includes('locação') ||
+    desc.includes('locacao') ||
+    desc.includes('aluguel') ||
+    desc.includes('manutenção') ||
+    desc.includes('manutencao') ||
+    desc.includes('reparação') ||
+    desc.includes('reparacao') ||
+    desc.includes('conserto') ||
+    desc.includes('instalação e manutenção') ||
+    desc.includes('instalacao e manutencao') ||
+    desc.includes('veterinári') ||
+    desc.includes('veterinari') ||
+    desc.includes('estética') ||
+    desc.includes('estetica') ||
+    desc.includes('beleza') ||
+    desc.includes('cabeleireir') ||
+    desc.includes('barbearia') ||
+    desc.includes('lavanderia') ||
+    desc.includes('tinturaria') ||
+    desc.includes('hotelaria') ||
+    desc.includes('pousada') ||
+    desc.includes('hospedagem') ||
+    desc.includes('evento') ||
+    desc.includes('feiras e congressos') ||
+    desc.includes('produção musical') ||
+    desc.includes('producao musical') ||
+    desc.includes('design') ||
+    desc.includes('fotografia') ||
+    desc.includes('tradução') ||
+    desc.includes('traducao') ||
+    desc.includes('academia') ||
+    desc.includes('condomínio') ||
+    desc.includes('condominio') ||
+    desc.includes('coworking') ||
+    desc.includes('apoio administrativo') ||
+    desc.includes('teleatendimento') ||
+    desc.includes('call center') ||
+    desc.includes('cobrança') ||
+    desc.includes('cobranca') ||
+    desc.includes('despachante')
   ) {
     return 'Serviços'
   }
