@@ -147,8 +147,20 @@ describe('parseIbsCbsPlanilha - Extração IBS/CBS de planilhas (CSV/XLSX)', () 
       expect(r.ibsDestacado).toBe(150)
       expect(r.cbsDestacado).toBeUndefined()
       expect(r.cstIbsCbsDetectados).toEqual(['000'])
-      //QUIRK atual: texto não-numérico em cClassTrib entra como "código" detectado
-      expect(r.cClassTribDetectados).toEqual(['sem classe', '000001'])
+      // Corrigido: texto livre ("sem classe") NÃO entra como código detectado
+      expect(r.cClassTribDetectados).toEqual(['000001'])
+    })
+
+    it('cClassTrib aceita códigos com separadores típicos (ponto/hífen) e descarta texto alfabético', () => {
+      const linhas = montarLinhas(colunas, [
+        ['100,00', '', '000', '000.001'],
+        ['100,00', '', '000', '000-002'],
+        ['100,00', '', '000', 'isento'],
+        ['100,00', '', '000', '000003'],
+      ])
+      const r = extrairIbsCbsDePlanilha(linhas, colunas)
+      expect(r.cClassTribDetectados).toEqual(['000.001', '000-002', '000003'])
+      expect(r.ibsDestacado).toBe(400)
     })
 
     it('deve aceitar vírgula decimal BR (1.234,56) e ponto decimal (1234.56)', () => {
@@ -171,13 +183,16 @@ describe('parseIbsCbsPlanilha - Extração IBS/CBS de planilhas (CSV/XLSX)', () 
       expect(r.cbsDestacado).toBe(250)
     })
 
-    it('planilha cuja soma final é zero (ex.: +100 e -100) NÃO produz campo ibsDestacado', () => {
+    it('planilha cuja soma final é zero (ex.: +100 e -100) grava ibsDestacado = 0 (corrigido)', () => {
       const linhas = montarLinhas(colunas, [
         ['100,00', '', '', ''],
         ['-100,00', '', '', ''],
       ])
       const r = extrairIbsCbsDePlanilha(linhas, colunas)
-      expect(r).toEqual({})
+      // Corrigido: valor zerado é diferente de "coluna ausente/sem valor válido"
+      expect(r.ibsDestacado).toBe(0)
+      expect(r.cbsDestacado).toBeUndefined()
+      expect(Object.keys(r)).toEqual(['ibsDestacado'])
     })
 
     it('células com número negativo puro (número real do XLSX, negativo) entram na soma', () => {
@@ -234,7 +249,7 @@ describe('parseIbsCbsPlanilha - Extração IBS/CBS de planilhas (CSV/XLSX)', () 
     })
   })
 
-  describe('créditos separados (Crédito IBS + Crédito CBS) e colisões de cabeçalho - comportamento ATUAL documentado', () => {
+  describe('créditos separados (Crédito IBS + Crédito CBS) e colisões de cabeçalho - comportamento corrigido', () => {
     it('deve somar créditos separados de IBS e CBS quando não há coluna combinada', () => {
       const colunas = ['IBS', 'CBS', 'Crédito de IBS', 'Crédito de CBS']
       const linhas = montarLinhas(colunas, [
@@ -247,27 +262,31 @@ describe('parseIbsCbsPlanilha - Extração IBS/CBS de planilhas (CSV/XLSX)', () 
       expect(r.creditoIbsCbsApurado).toBe(250)
     })
 
-    it('QUIRK (não corrigido): coluna de crédito também é capturada como IBS/CBS destacado quando não há coluna dedicada', () => {
-      // "Crédito IBS" contém "ibs" e "Crédito CBS" contém "cbs" — o matching por includes
-      // faz a mesma coluna alimentar ibsDestacado/cbsDestacado E o crédito.
+    it('colunas "Crédito IBS"/"Crédito CBS" sem coluna dedicada gravam SÓ o crédito (corrigido)', () => {
+      // "Crédito IBS" contém "ibs" e "Crédito CBS" contém "cbs" — corrigido: os
+      // papéis de crédito reivindicam a coluna primeiro e os valores destacados
+      // NÃO são poluídos pelo crédito.
       const colunas = ['Crédito IBS', 'Crédito CBS']
       const linhas = montarLinhas(colunas, [['100,00', '50,00']])
       const r = extrairIbsCbsDePlanilha(linhas, colunas)
-      expect(r.ibsDestacado).toBe(100)
-      expect(r.cbsDestacado).toBe(50)
+      expect(r.ibsDestacado).toBeUndefined()
+      expect(r.cbsDestacado).toBeUndefined()
       expect(r.creditoIbsCbsApurado).toBe(150)
+      expect(Object.keys(r)).toEqual(['creditoIbsCbsApurado'])
     })
 
-    it('QUIRK (não corrigido): coluna CST listada ANTES da coluna IBS é capturada como colIbs e seus códigos entram na soma', () => {
-      // "CST IBS/CBS" contém "ibs": mapearColunasIbsCbs devolve a primeira coluna que casa,
-      // então valores numéricos de CST (ex.: 900) são somados em ibsDestacado.
+    it('coluna CST listada ANTES da coluna IBS é reconhecida como CST e NÃO soma códigos nos destacados (corrigido)', () => {
+      // Corrigido: papéis mais específicos (CST, crédito, cClassTrib) reivindicam
+      // suas colunas antes dos de valor; "CST IBS/CBS" não vira coluna de IBS.
       const colunas = ['CST IBS/CBS', 'IBS', 'CBS']
       const linhas = montarLinhas(colunas, [['900', '10,00', '5,00']])
       const m = mapearColunasIbsCbs(colunas)
-      expect(m.colIbs).toBe('CST IBS/CBS')
+      expect(m.colCst).toBe('CST IBS/CBS')
+      expect(m.colIbs).toBe('IBS')
+      expect(m.colCbs).toBe('CBS')
       const r = extrairIbsCbsDePlanilha(linhas, colunas)
-      expect(r.ibsDestacado).toBe(910)
-      expect(r.cbsDestacado).toBe(900)
+      expect(r.ibsDestacado).toBe(10)
+      expect(r.cbsDestacado).toBe(5)
       expect(r.cstIbsCbsDetectados).toEqual(['900'])
     })
 
