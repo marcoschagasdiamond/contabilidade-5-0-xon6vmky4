@@ -9,7 +9,8 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
-import { CONFUSOES_COMUNS, FONTES_OFICIAIS } from '@/data/reformaTributariaData'
+import { CONFUSOES_COMUNS_COMPLETO } from '@/data/reformaDicionarioExpansao'
+import { FONTES_OFICIAIS } from '@/data/reformaTributariaData'
 
 export default function SubpageGlossarioFontes() {
   return (
@@ -35,7 +36,7 @@ export default function SubpageGlossarioFontes() {
           </p>
 
           <div className="space-y-6">
-            {CONFUSOES_COMUNS.map((item) => (
+            {CONFUSOES_COMUNS_COMPLETO.map((item) => (
               <div
                 key={item.comparativo}
                 className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-[#D4AF37] transition-all"

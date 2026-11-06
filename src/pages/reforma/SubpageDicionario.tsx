@@ -1,7 +1,7 @@
 import React from 'react'
 import { BookOpen, Sparkles, Lightbulb, Zap, HelpCircle } from 'lucide-react'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
-import { DICIONARIO_MNEMONICOS } from '@/data/reformaTributariaData'
+import { DICIONARIO_MNEMONICOS_COMPLETO } from '@/data/reformaDicionarioExpansao'
 
 export default function SubpageDicionario() {
   return (
@@ -9,7 +9,7 @@ export default function SubpageDicionario() {
       <DiamondHeader
         badge="MÓDULO 3 • TRUQUES DE MEMÓRIA"
         titulo="Dicionário Rápido da Reforma"
-        subtitulo="As principais siglas explicadas com gatilhos mentais e truques mnemônicos para você nunca mais esquecer nem confundir."
+        subtitulo="As principais siglas e termos explicados com gatilhos mentais e truques mnemônicos para você nunca mais esquecer nem confundir."
       />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -31,7 +31,7 @@ export default function SubpageDicionario() {
 
         {/* LISTAGEM DOS MNEMÔNICOS EM CARDS RÍGIDOS E ELEGANTES */}
         <div className="space-y-6 mb-12">
-          {DICIONARIO_MNEMONICOS.map((item) => (
+          {DICIONARIO_MNEMONICOS_COMPLETO.map((item) => (
             <div
               key={item.sigla}
               className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm hover:border-[#D4AF37] transition-all"
