@@ -953,7 +953,11 @@ export function construirRelatorioPersonalizadoDoc(options: GerarRelatorioPerson
               ? 'EFD Contribuições'
               : docFiscal.tipo === 'efd_icms_ipi'
                 ? 'EFD ICMS/IPI'
-                : docFiscal.nomeTipo || 'Documento Fiscal'
+                : docFiscal.tipo === 'cnae_secundario'
+                  ? 'CNAE Secundário'
+                  : docFiscal.tipo === 'consulta_cnpj'
+                    ? 'Consulta CNPJ'
+                    : docFiscal.nomeTipo || 'Documento Fiscal'
 
         let dataFormatada = '—'
         if (docFiscal.dataImportacao) {

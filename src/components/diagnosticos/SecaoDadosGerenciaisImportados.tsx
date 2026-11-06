@@ -88,7 +88,11 @@ export function SecaoDadosGerenciaisImportados({
         ? 'EFD Contribuições'
         : doc.tipo === 'efd_icms_ipi'
           ? 'EFD ICMS/IPI'
-          : doc.nomeTipo || 'Documento Fiscal'
+          : doc.tipo === 'cnae_secundario'
+            ? 'CNAE Secundário'
+            : doc.tipo === 'consulta_cnpj'
+              ? 'Consulta CNPJ'
+              : doc.nomeTipo || 'Documento Fiscal'
 
   return (
     <div

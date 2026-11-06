@@ -374,6 +374,8 @@ export type TipoDocumentoFiscalOrigem =
   | 'efd_icms_ipi'
   | 'balancete'
   | 'nfe_xml'
+  | 'consulta_cnpj'
+  | 'cnae_secundario'
   | 'outro'
 
 export interface ItemNcmImportadoReferencia {

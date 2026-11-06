@@ -33,7 +33,11 @@ export function BadgeProvenienciaCampo({
           ? 'EFD ICMS/IPI'
           : origem.tipo === 'nfe_xml'
             ? 'NF-e (Lote XML)'
-            : 'Documento Fiscal'
+            : origem.tipo === 'cnae_secundario'
+              ? 'CNAE Secundário'
+              : origem.tipo === 'consulta_cnpj'
+                ? 'Consulta CNPJ'
+                : 'Documento Fiscal'
 
   const dataFmt = formatarData(origem.dataImportacao)
   const textoTooltip = `Preenchido via ${rotuloTipo} (${origem.documento}) importado em ${dataFmt}`
