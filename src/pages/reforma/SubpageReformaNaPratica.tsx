@@ -26,10 +26,46 @@ import {
   Store,
   Briefcase,
   Factory,
+  Sprout,
+  Lock,
+  Landmark,
+  FileCheck,
+  Sliders,
+  Shuffle,
+  Coins,
+  BookOpen,
+  Zap,
 } from 'lucide-react'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import {
+  DICIONARIO_MNEMONICOS_COMPLETO,
+  CONFUSOES_COMUNS_COMPLETO,
+} from '@/data/reformaDicionarioExpansao'
+
+const MAPA_ICONES: Record<string, React.ComponentType<{ className?: string }>> = {
+  Calendar,
+  BookOpen,
+  LayoutGrid: Layers,
+  ShieldAlert,
+  Kanban: Layers,
+  Split,
+  Calculator,
+  FileText,
+  Building2,
+  Landmark,
+  Flame: Layers,
+  Sprout,
+  Lock,
+  Sliders,
+  FileCheck,
+  Receipt,
+  Factory,
+  Shuffle,
+  Coins,
+  MinusCircle: Layers,
+}
 
 interface NavSection {
   id: string
@@ -108,6 +144,20 @@ const SECOES_NAV: NavSection[] = [
     num: 10,
     titulo: 'Mapa de Decisão e Erros',
     subtitulo: '4 perguntas e 4 erros caros',
+    icone: ShieldAlert,
+  },
+  {
+    id: 'dicionario-rapido',
+    num: 11,
+    titulo: 'Dicionário Rápido',
+    subtitulo: 'Truques de memória e siglas',
+    icone: BookOpen,
+  },
+  {
+    id: 'comparativos-comuns',
+    num: 12,
+    titulo: 'Comparativos',
+    subtitulo: 'Confusões mais comuns',
     icone: ShieldAlert,
   },
 ]
@@ -251,7 +301,7 @@ export default function SubpageReformaNaPratica() {
                 Sumário Operacional Diamond
               </div>
               <h3 className="text-lg font-heading font-bold text-[#07132B]">
-                As 10 Seções Práticas de Operação e Cálculo
+                As 12 Seções Práticas de Operação e Cálculo
               </h3>
             </div>
             <span className="hidden sm:inline-block text-xs text-slate-500 font-medium">
@@ -324,7 +374,7 @@ export default function SubpageReformaNaPratica() {
               <Layers className="w-3.5 h-3.5 text-[#07132B]" />
               Seção 1
             </div>
-            <span className="text-xs font-mono font-bold text-slate-400">01 / 10</span>
+            <span className="text-xs font-mono font-bold text-slate-400">01 / 12</span>
           </div>
 
           <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
@@ -414,7 +464,7 @@ export default function SubpageReformaNaPratica() {
               <Briefcase className="w-3.5 h-3.5 text-[#07132B]" />
               Seção 2
             </div>
-            <span className="text-xs font-mono font-bold text-slate-400">02 / 10</span>
+            <span className="text-xs font-mono font-bold text-slate-400">02 / 12</span>
           </div>
 
           <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
@@ -486,7 +536,7 @@ export default function SubpageReformaNaPratica() {
               <Calculator className="w-3.5 h-3.5 text-[#07132B]" />
               Seção 3
             </div>
-            <span className="text-xs font-mono font-bold text-slate-400">03 / 10</span>
+            <span className="text-xs font-mono font-bold text-slate-400">03 / 12</span>
           </div>
 
           <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
@@ -596,7 +646,7 @@ export default function SubpageReformaNaPratica() {
               <Store className="w-3.5 h-3.5 text-[#07132B]" />
               Seção 4
             </div>
-            <span className="text-xs font-mono font-bold text-slate-400">04 / 10</span>
+            <span className="text-xs font-mono font-bold text-slate-400">04 / 12</span>
           </div>
 
           <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
@@ -758,7 +808,7 @@ export default function SubpageReformaNaPratica() {
               <Sparkles className="w-3.5 h-3.5 text-[#07132B]" />
               Seção 5
             </div>
-            <span className="text-xs font-mono font-bold text-slate-400">05 / 10</span>
+            <span className="text-xs font-mono font-bold text-slate-400">05 / 12</span>
           </div>
 
           <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
@@ -867,7 +917,7 @@ export default function SubpageReformaNaPratica() {
               <CheckCircle2 className="w-3.5 h-3.5 text-[#07132B]" />
               Seção 6
             </div>
-            <span className="text-xs font-mono font-bold text-slate-400">06 / 10</span>
+            <span className="text-xs font-mono font-bold text-slate-400">06 / 12</span>
           </div>
 
           <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
@@ -984,7 +1034,7 @@ export default function SubpageReformaNaPratica() {
               <Split className="w-3.5 h-3.5 text-[#07132B]" />
               Seção 7
             </div>
-            <span className="text-xs font-mono font-bold text-slate-400">07 / 10</span>
+            <span className="text-xs font-mono font-bold text-slate-400">07 / 12</span>
           </div>
 
           <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
@@ -1071,7 +1121,7 @@ export default function SubpageReformaNaPratica() {
               <Receipt className="w-3.5 h-3.5 text-[#07132B]" />
               Seção 8
             </div>
-            <span className="text-xs font-mono font-bold text-slate-400">08 / 10</span>
+            <span className="text-xs font-mono font-bold text-slate-400">08 / 12</span>
           </div>
 
           <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
@@ -1168,7 +1218,7 @@ export default function SubpageReformaNaPratica() {
               <FileSpreadsheet className="w-3.5 h-3.5 text-[#07132B]" />
               Seção 9
             </div>
-            <span className="text-xs font-mono font-bold text-slate-400">09 / 10</span>
+            <span className="text-xs font-mono font-bold text-slate-400">09 / 12</span>
           </div>
 
           <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
@@ -1241,7 +1291,7 @@ export default function SubpageReformaNaPratica() {
               <ShieldAlert className="w-3.5 h-3.5 text-[#07132B]" />
               Seção 10
             </div>
-            <span className="text-xs font-mono font-bold text-slate-400">10 / 10</span>
+            <span className="text-xs font-mono font-bold text-slate-400">10 / 12</span>
           </div>
 
           <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
@@ -1344,8 +1394,144 @@ export default function SubpageReformaNaPratica() {
         </div>
 
         {/* ========================================================
-            FONTES E ATUALIZAÇÃO
-            ======================================================== */}
+           SEÇÃO 11: DICIONÁRIO RÁPIDO NA PRÁTICA (MESMOS DADOS DO /reforma/dicionario)
+           ======================================================== */}
+        <div
+          id="dicionario-rapido"
+          className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm scroll-mt-24"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#07132B] bg-[#D4AF37]/20 border border-[#D4AF37]/30 uppercase">
+              <BookOpen className="w-3.5 h-3.5 text-[#07132B]" />
+              Seção 11
+            </div>
+            <span className="text-xs font-mono font-bold text-slate-400">11 / 12</span>
+          </div>
+
+          <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
+            11. Dicionário Rápido — Truques de Memória
+          </h2>
+          <p className="text-slate-600 text-sm leading-relaxed mb-6">
+            Os principais termos e siglas da Reforma Tributária com{' '}
+            <strong>gatilho de memória</strong>, <strong>significado simples</strong> e{' '}
+            <strong>exemplo prático</strong> — o mesmo conteúdo do Dicionário Rápido, agora junto do
+            guia operacional.
+          </p>
+
+          <div className="space-y-5">
+            {DICIONARIO_MNEMONICOS_COMPLETO.map((item) => {
+              const IconeComponente = MAPA_ICONES[item.icone] ?? Layers
+              return (
+                <div
+                  key={item.sigla}
+                  className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm hover:border-[#D4AF37] transition-all"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                        <IconeComponente className="w-5 h-5 text-[#07132B]" />
+                      </div>
+                      <div>
+                        <span className="text-lg font-black text-[#07132B] font-heading">
+                          {item.sigla}
+                        </span>
+                        <h3 className="font-heading font-bold text-xs sm:text-sm text-slate-600">
+                          {item.nomeOficial}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-extrabold shadow-sm shrink-0 self-start sm:self-center">
+                      <Zap className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      {item.truqueMemoria}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-1">
+                        Significado Simples:
+                      </span>
+                      <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                        {item.definicaoSimples}
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-100">
+                      <span className="text-xs font-bold text-emerald-800 uppercase tracking-wide block mb-1 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Exemplo Prático do Dia a Dia:
+                      </span>
+                      <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+                        {item.exemploPratico}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ========================================================
+           SEÇÃO 12: COMPARATIVOS — AS CONFUSÕES MAIS COMUNS (MESMOS DADOS DO /reforma/glossario-fontes)
+           ======================================================== */}
+        <div
+          id="comparativos-comuns"
+          className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm scroll-mt-24"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#07132B] bg-[#D4AF37]/20 border border-[#D4AF37]/30 uppercase">
+              <ShieldAlert className="w-3.5 h-3.5 text-[#07132B]" />
+              Seção 12
+            </div>
+            <span className="text-xs font-mono font-bold text-slate-400">12 / 12</span>
+          </div>
+
+          <h2 className="text-2xl font-heading font-black text-[#07132B] mb-2">
+            12. Comparativos — As Confusões Mais Comuns Desfeitas
+          </h2>
+          <p className="text-slate-600 text-sm leading-relaxed mb-6">
+            Lado a lado, os pares de conceitos que mais confundem no dia a dia fiscal — o mesmo
+            quadro descomplicado do Glossário e Fontes Oficiais.
+          </p>
+
+          <div className="space-y-5">
+            {CONFUSOES_COMUNS_COMPLETO.map((item) => (
+              <div
+                key={item.comparativo}
+                className="p-5 rounded-2xl bg-slate-50 border border-slate-200 hover:border-[#D4AF37] transition-all"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200 mb-4">
+                  <h3 className="font-heading font-black text-base sm:text-lg text-[#07132B]">
+                    {item.comparativo}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#07132B]">
+                    <span className="bg-white px-2.5 py-1 rounded-md border border-slate-200">
+                      {item.termoA}
+                    </span>
+                    <span>vs</span>
+                    <span className="bg-[#07132B] text-[#D4AF37] px-2.5 py-1 rounded-md">
+                      {item.termoB}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-xs sm:text-sm text-slate-700 leading-relaxed mb-4">
+                  <strong className="text-slate-900 block mb-1">Diferença na Prática:</strong>
+                  {item.diferencaPratica}
+                </div>
+
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-xs text-amber-900 leading-relaxed font-medium">
+                  <strong className="text-amber-950 font-bold block mb-0.5">Truque mental:</strong>
+                  {item.dicaMnemônica}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ========================================================
+           FONTES E ATUALIZAÇÃO
+           ======================================================== */}
         <div className="bg-[#07132B] text-white rounded-2xl p-6 sm:p-8 border border-[#D4AF37]/30 shadow-xl">
           <div className="flex items-center gap-2 text-xs font-bold text-[#D4AF37] uppercase tracking-wider mb-2">
             <FileText className="w-4 h-4" />
