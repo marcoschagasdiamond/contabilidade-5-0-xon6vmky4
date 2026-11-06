@@ -16,6 +16,7 @@ import { DadosEmpresaPerfil, OrigemCampoImportado } from '@/types/dadosEmpresa'
 import { parseSpedConteudo, ResultadoParsingSped } from '@/lib/parseSpedFiscal'
 import { BadgeProvenienciaCampo } from '@/components/diagnosticos/BadgeProvenienciaCampo'
 import { parseBalanceteArquivo } from '@/lib/parseBalancete'
+import { extrairIbsCbsDePlanilha } from '@/lib/parseIbsCbsPlanilha'
 import {
   parseNfeXmlUnica,
   agregarLoteNfe,
@@ -169,6 +170,14 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
           return
         }
 
+        // IBS/CBS (integração antecipada): extração apenas quando a planilha traz
+        // colunas reconhecíveis de IBS/CBS; sem elas, saída idêntica à anterior.
+        const ibsCbsPlanilha = extrairIbsCbsDePlanilha(
+          resBalancete.linhasBrutas || [],
+          resBalancete.colunasBrutas || [],
+        )
+        const ibsCbsPresente = Object.keys(ibsCbsPlanilha).length > 0
+
         // Converte para formato compatível com ResultadoParsingSped, incluindo agregados contábeis
         const resultadoCompativel: ResultadoParsingSped = {
           valido: true,
@@ -203,6 +212,8 @@ export const SecaoImportacaoDocumentosFiscais: React.FC<SecaoImportacaoDocumento
             ufsOperacaoDetectadas: [],
             regimeEspecialSugerido: 'nenhum',
             avisos: resBalancete.detalhesBalancete.avisos,
+            // IBS/CBS (integração antecipada): preenchidos só quando a planilha traz as colunas
+            ...(ibsCbsPresente ? ibsCbsPlanilha : {}),
           },
           camposSugeridos: resBalancete.camposSugeridos,
           camposComparativo: resBalancete.camposComparativo,

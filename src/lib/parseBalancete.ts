@@ -63,6 +63,9 @@ export interface ResultadoParsingBalancete {
   detalhesBalancete: AgregadosBalancete
   camposSugeridos: Partial<DadosEmpresaPerfil>
   camposComparativo: CampoExtracaoComparativo[]
+  /** IBS/CBS (integração antecipada): linhas e colunas originais para extração opcional */
+  linhasBrutas?: LinhaPlanilhaBruta[]
+  colunasBrutas?: string[]
 }
 
 interface ColunasMapeadasBalancete {
@@ -935,6 +938,10 @@ export function parseBalanceteLinhas(
     detalhesBalancete: agregados,
     camposSugeridos,
     camposComparativo,
+    // IBS/CBS (integração antecipada): expõe as linhas/colunas originais para
+    // extração opcional dos campos do novo sistema quando a planilha os traz
+    linhasBrutas: linhas,
+    colunasBrutas: colunas,
   }
 }
 

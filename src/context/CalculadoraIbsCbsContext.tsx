@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react'
 import {
   ConfiguracoesGerais,
   CONFIGURACOES_PADRAO,
@@ -431,6 +439,17 @@ interface CalculadoraContextType {
   parametroRadarTemporario: { aplicar: string; aliquota: number; ano: number } | null
   aplicarAliquotaRadarTemporaria: (aplicar: string, aliquota: number, ano: number) => void
   limparParametroRadarTemporario: () => void
+
+  // IBS/CBS (integração antecipada, FATIA 2): leitura INERTE dos valores do novo
+  // sistema importados em /dados-empresa — disponíveis para uso futuro, sem
+  // alterar nenhum cálculo, parâmetro default ou tese.
+  ibsCbsImportados: {
+    ibsDestacado?: number
+    cbsDestacado?: number
+    cstCClassTrib?: string
+    creditoIbsCbsApurado?: number
+    temDados: boolean
+  }
 }
 
 const CalculadoraContext = createContext<CalculadoraContextType | undefined>(undefined)
@@ -446,6 +465,29 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const [origemDadosEmpresa, setOrigemDadosEmpresa] = useState<boolean>(() =>
     isAuthenticated ? existeDadosEmpresaSalvos() : false,
   )
+
+  // IBS/CBS (integração antecipada, FATIA 2): leitura INERTE dos valores do novo
+  // sistema importados em /dados-empresa. Apenas disponíveis para uso futuro —
+  // nenhum cálculo, parâmetro default ou tese é alterado por eles.
+  // Sem estado novo: o valor é lido quando o provider monta ou quando a Fonte
+  // Mestra é salva (handleSync abaixo reexecuta e o consumer relê via contexto).
+  const ibsCbsImportados = useMemo(
+    () => ({
+      ibsDestacado: perfilInicial.documentoFiscalImportado?.totaisFiscais?.ibsDestacado,
+      cbsDestacado: perfilInicial.documentoFiscalImportado?.totaisFiscais?.cbsDestacado,
+      cstCClassTrib: perfilInicial.documentoFiscalImportado?.totaisFiscais?.cstCClassTrib,
+      creditoIbsCbsApurado:
+        perfilInicial.documentoFiscalImportado?.totaisFiscais?.creditoIbsCbsApurado,
+      temDados: !!(
+        perfilInicial.documentoFiscalImportado?.totaisFiscais?.ibsDestacado ||
+        perfilInicial.documentoFiscalImportado?.totaisFiscais?.cbsDestacado ||
+        perfilInicial.documentoFiscalImportado?.totaisFiscais?.creditoIbsCbsApurado
+      ),
+    }),
+    [perfilInicial],
+  )
+  // Exposto para uso futuro sem alterar cálculos (leitura inerte)
+  void ibsCbsImportados
 
   // Radar Tributário: Alíquotas e Notificações lidas da coleção parametros_tributarios
   const [parametrosRadar, setParametrosRadar] = useState<ParametroTributario[]>([])
@@ -3305,6 +3347,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         parametroRadarTemporario,
         aplicarAliquotaRadarTemporaria,
         limparParametroRadarTemporario,
+
+        // IBS/CBS (integração antecipada) - leitura inerte, sem efeito em cálculos
+        ibsCbsImportados,
       }}
     >
       {children}

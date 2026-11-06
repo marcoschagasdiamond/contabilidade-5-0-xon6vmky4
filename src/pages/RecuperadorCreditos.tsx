@@ -307,6 +307,26 @@ export default function RecuperadorCreditos() {
   // Fonte Mestra: dados cadastrais sincronizados automaticamente
   const dadosMestres = useFonteMestraSync()
 
+  // IBS/CBS (integração antecipada, FATIA 2): leitura INERTE dos valores do novo
+  // sistema importados em /dados-empresa. Apenas disponíveis para uso futuro —
+  // nenhum cálculo, parâmetro default ou tese é alterado por eles.
+  const ibsCbsImportados = React.useMemo(
+    () => ({
+      ibsDestacado: dadosMestres.documentoFiscalImportado?.totaisFiscais?.ibsDestacado,
+      cbsDestacado: dadosMestres.documentoFiscalImportado?.totaisFiscais?.cbsDestacado,
+      cstCClassTrib: dadosMestres.documentoFiscalImportado?.totaisFiscais?.cstCClassTrib,
+      creditoIbsCbsApurado:
+        dadosMestres.documentoFiscalImportado?.totaisFiscais?.creditoIbsCbsApurado,
+      temDados: !!(
+        dadosMestres.documentoFiscalImportado?.totaisFiscais?.ibsDestacado ||
+        dadosMestres.documentoFiscalImportado?.totaisFiscais?.cbsDestacado ||
+        dadosMestres.documentoFiscalImportado?.totaisFiscais?.creditoIbsCbsApurado
+      ),
+    }),
+    [dadosMestres.documentoFiscalImportado],
+  )
+  void ibsCbsImportados
+
   const [configuracoes, setConfiguracoes] = useState<ConfiguracoesRecuperador>(() =>
     derivarConfiguracoesIniciais(clienteAtivo),
   )
