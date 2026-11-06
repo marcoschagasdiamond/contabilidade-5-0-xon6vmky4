@@ -455,6 +455,35 @@ export default function Modulo6Dashboard({
     }
   }, [regimeAtualFiltro, resultadoComparativo, ibsCbsAnoDashboard, anoSimulacaoSelecionado])
 
+  // KPIs adicionais do Dashboard (APENAS APRESENTAÇÃO): derivados dos mesmos valores
+  // já calculados acima — nenhuma fórmula de apuração é alterada ou duplicada aqui.
+  const kpisAdicionais = React.useMemo(() => {
+    const cargaAtualMensal =
+      regimeAtualFiltro === 'Lucro Real'
+        ? resultadoComparativo.lucroReal.totalEfetivo
+        : regimeAtualFiltro === 'Lucro Presumido'
+          ? resultadoComparativo.lucroPresumido.totalEfetivo
+          : resultadoComparativo.simplesNacional.totalEfetivo
+    const cargaNovaMensal = ibsCbsAnoDashboard.totalEfetivo
+
+    // Fases sem incidência plena de IBS/CBS: ano atual (pré-reforma) e 2026 (ensaio art. 348)
+    const isFaseSemIbsCbs =
+      anoSimulacaoSelecionado === 'atual' || String(anoSimulacaoSelecionado) === '2026'
+
+    const variacaoPercentual =
+      !isFaseSemIbsCbs && cargaAtualMensal > 0
+        ? ((cargaAtualMensal - cargaNovaMensal) / cargaAtualMensal) * 100
+        : null
+
+    return {
+      cargaAtualPeriodo: cargaAtualMensal * mult,
+      cargaNovaPeriodo: cargaNovaMensal * mult,
+      creditosPeriodo: ibsCbsAnoDashboard.creditosTotal * mult,
+      variacaoPercentual,
+      isFaseSemIbsCbs,
+    }
+  }, [regimeAtualFiltro, resultadoComparativo, ibsCbsAnoDashboard, anoSimulacaoSelecionado, mult])
+
   // Dados consolidados da Conclusão Analítica do cenário selecionado
   const conclusaoAnalitica = React.useMemo(() => {
     return construirConclusaoAnalitica({
@@ -1082,6 +1111,16 @@ export default function Modulo6Dashboard({
                   ? 'text-xl sm:text-2xl'
                   : 'text-2xl sm:text-3xl'
 
+            // Fonte adaptativa genérica para valores monetários/textos longos (KPIs adicionais)
+            const tamanhoFonteValor = (valor: string) =>
+              valor.length > 14
+                ? 'text-base sm:text-lg'
+                : valor.length > 11
+                  ? 'text-lg sm:text-xl'
+                  : valor.length > 8
+                    ? 'text-xl sm:text-2xl'
+                    : 'text-2xl sm:text-3xl'
+
             return (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* KPI 1: Alíquota Efetiva Atual */}
@@ -1231,6 +1270,192 @@ export default function Modulo6Dashboard({
                         </div>
                         <p className="text-[11px] text-slate-300 line-clamp-2">
                           Impacto no fluxo de caixa anualizado da companhia
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
+
+                {/* KPI 5: Carga Tributária Total no Regime Atual */}
+                {(() => {
+                  const valorAtual = formatarMoeda(kpisAdicionais.cargaAtualPeriodo)
+                  return (
+                    <Card className="border-slate-200/80 bg-white shadow hover:shadow-md transition-all">
+                      <CardContent className="p-5 space-y-1.5 min-w-0">
+                        <div className="flex items-center justify-between text-xs gap-1 min-w-0">
+                          <span className="font-semibold uppercase tracking-wider text-slate-600 truncate min-w-0">
+                            Carga Total Atual
+                          </span>
+                          <span className="font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[10px] shrink-0 whitespace-nowrap">
+                            {periodoDashboard === 'mensal' ? 'R$/mês' : 'R$/ano'}
+                          </span>
+                        </div>
+                        <div className="py-0.5 min-w-0 overflow-hidden">
+                          <p
+                            className={`${tamanhoFonteValor(valorAtual)} font-mono font-extrabold text-slate-800 truncate tracking-tight`}
+                            title={valorAtual}
+                          >
+                            {valorAtual}
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-slate-400 line-clamp-2">
+                          {`Carga efetiva total estimada no ${regimeAtualFiltro} (${
+                            periodoDashboard === 'mensal' ? 'base mensal' : 'x12'
+                          })`}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
+
+                {/* KPI 6: Carga Tributária Total no IBS/CBS */}
+                {(() => {
+                  const valorNovo = formatarMoeda(kpisAdicionais.cargaNovaPeriodo)
+                  return (
+                    <Card className="border-[#D4AF37]/50 bg-gradient-to-br from-amber-50/40 to-white shadow hover:shadow-md transition-all">
+                      <CardContent className="p-5 space-y-1.5 min-w-0">
+                        <div className="flex items-center justify-between text-xs gap-1 min-w-0">
+                          <span className="font-bold uppercase tracking-wider text-amber-900 truncate min-w-0">
+                            Carga Total IBS/CBS
+                          </span>
+                          <span className="font-mono text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded text-[10px] font-bold shrink-0 whitespace-nowrap">
+                            {anoSimulacaoSelecionado === 'atual'
+                              ? 'Ano Atual'
+                              : String(anoSimulacaoSelecionado)}
+                          </span>
+                        </div>
+                        <div className="py-0.5 min-w-0 overflow-hidden">
+                          <p
+                            className={`${tamanhoFonteValor(valorNovo)} font-mono font-extrabold text-[#07132B] truncate tracking-tight`}
+                            title={valorNovo}
+                          >
+                            {valorNovo}
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2">
+                          {kpisAdicionais.isFaseSemIbsCbs
+                            ? 'Fase sem incidência plena de IBS/CBS — carga zero neste ano'
+                            : `IVA Dual da fase selecionada com abatimento de créditos (${
+                                periodoDashboard === 'mensal' ? 'base mensal' : 'x12'
+                              })`}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
+
+                {/* KPI 7: Variação Percentual da Carga (Atual → IBS/CBS) */}
+                {(() => {
+                  const temVariacao = kpisAdicionais.variacaoPercentual !== null
+                  const strVariacao = temVariacao
+                    ? formatarPorcentagem(kpisAdicionais.variacaoPercentual as number)
+                    : 'N/D'
+                  const reduzindo =
+                    temVariacao && (kpisAdicionais.variacaoPercentual as number) >= 0
+
+                  return (
+                    <Card
+                      className={`shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between ${
+                        temVariacao
+                          ? 'border-slate-200/80 bg-gradient-to-br from-slate-50 to-white'
+                          : 'border-dashed border-slate-200/80 bg-slate-50'
+                      }`}
+                    >
+                      <CardContent className="p-5 space-y-1.5 min-w-0">
+                        <div className="flex items-center justify-between text-xs gap-1 min-w-0">
+                          <span className="font-bold uppercase tracking-wider text-slate-700 truncate min-w-0">
+                            Variação de Carga
+                          </span>
+                          <span
+                            className={`font-medium px-2 py-0.5 rounded text-[10px] shrink-0 ${
+                              temVariacao
+                                ? reduzindo
+                                  ? 'text-emerald-700 bg-emerald-100'
+                                  : 'text-red-700 bg-red-100'
+                                : 'text-slate-500 bg-slate-200'
+                            }`}
+                          >
+                            {temVariacao ? (reduzindo ? 'Redução' : 'Aumento') : 'Sem dado'}
+                          </span>
+                        </div>
+                        <div className="py-0.5 min-w-0 overflow-hidden">
+                          <p
+                            className={`${temVariacao ? tamanhoFonteValor(strVariacao) : 'text-xl sm:text-2xl'} ${
+                              temVariacao ? 'font-mono' : 'font-semibold'
+                            } font-extrabold ${
+                              temVariacao
+                                ? reduzindo
+                                  ? 'text-emerald-700'
+                                  : 'text-red-600'
+                                : 'text-slate-400'
+                            } truncate tracking-tight`}
+                            title={strVariacao}
+                          >
+                            {strVariacao}
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2">
+                          {kpisAdicionais.isFaseSemIbsCbs
+                            ? 'Indisponível: fase sem incidência plena de IBS/CBS'
+                            : 'Percentual de variação da carga no regime atual vs IBS/CBS'}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
+
+                {/* KPI 8: Créditos Aproveitáveis Estimados (IBS/CBS) */}
+                {(() => {
+                  const temCreditos = kpisAdicionais.creditosPeriodo > 0
+                  const strCreditos = temCreditos
+                    ? formatarMoeda(kpisAdicionais.creditosPeriodo)
+                    : '—'
+
+                  return (
+                    <Card
+                      className={`shadow hover:shadow-md transition-all overflow-hidden flex flex-col justify-between ${
+                        temCreditos
+                          ? 'border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 to-white'
+                          : 'border-dashed border-slate-200/80 bg-slate-50'
+                      }`}
+                    >
+                      <CardContent className="p-5 space-y-1.5 min-w-0">
+                        <div className="flex items-center justify-between text-xs gap-1 min-w-0">
+                          <span className="font-bold uppercase tracking-wider text-emerald-800 truncate min-w-0">
+                            Créditos Aproveitáveis
+                          </span>
+                          <span
+                            className={`font-medium px-2 py-0.5 rounded text-[10px] shrink-0 ${
+                              temCreditos
+                                ? 'text-emerald-700 bg-emerald-100'
+                                : 'text-slate-500 bg-slate-200'
+                            }`}
+                          >
+                            {temCreditos
+                              ? periodoDashboard === 'mensal'
+                                ? 'R$/mês'
+                                : 'R$/ano'
+                              : 'N/D'}
+                          </span>
+                        </div>
+                        <div className="py-0.5 min-w-0 overflow-hidden">
+                          <p
+                            className={`${temCreditos ? tamanhoFonteValor(strCreditos) : 'text-xl sm:text-2xl'} ${
+                              temCreditos ? 'font-mono' : 'font-semibold'
+                            } font-extrabold ${
+                              temCreditos ? 'text-emerald-700' : 'text-slate-400'
+                            } truncate tracking-tight`}
+                            title={
+                              temCreditos ? strCreditos : 'Sem créditos aproveitáveis nesta fase'
+                            }
+                          >
+                            {strCreditos}
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2">
+                          {kpisAdicionais.isFaseSemIbsCbs
+                            ? 'Fase sem créditos IBS/CBS a apropriar'
+                            : 'Total de créditos (compras + despesas) abatidos no IVA Dual'}
                         </p>
                       </CardContent>
                     </Card>
