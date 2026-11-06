@@ -114,6 +114,19 @@ export interface DadosEmpresaPerfil {
     cep?: string
     fonte?: string
     consultadoEm?: string
+    qsaDisponivel?: boolean
+    totalSociosQsa?: number
+    qsa?: SocioQsaConsulta[]
+    qsaFonte?: string
+    qsaConsultadoEm?: string
+  }
+
+  // Quadro de Sócios e Administradores (QSA) obtido externamente
+  dadosQsaConsulta?: {
+    socios: SocioQsaConsulta[]
+    fonte: string
+    consultadoEm: string
+    aplicadoComoVinculos?: boolean
   }
 
   // Consulta de CNAE Externa
@@ -159,6 +172,20 @@ export type RegimeOutraEmpresa =
   | 'MEI'
   | 'Outro'
 
+export interface SocioQsaConsulta {
+  id: string
+  nome: string
+  qualificacao: string
+  cpfCnpj?: string
+  percentualParticipacao?: number // 0 a 100
+  dataEntrada?: string
+  faixaEtaria?: string
+  nomeRepresentanteLegal?: string
+  qualificacaoRepresentanteLegal?: string
+  paisOrigem?: string
+  tipoPessoa?: 'PF' | 'PJ' | 'ESTRANGEIRO'
+}
+
 export interface VinculoSocietario {
   id: string
   nomeEmpresa: string
@@ -171,6 +198,8 @@ export interface VinculoSocietario {
   excecaoLegal?: boolean // Para empresa_participa_outra: cooperativa, central de compras, consórcio etc.
   observacoes?: string
   dataCadastro?: string // ISO string
+  origemQsa?: boolean
+  nomeSocioOrigem?: string
 }
 
 // ============================================================================

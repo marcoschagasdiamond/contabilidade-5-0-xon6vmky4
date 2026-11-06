@@ -15,8 +15,17 @@ export interface ItemCnaeConsulta {
 }
 
 export interface ItemSocioQsa {
+  id?: string
   nome: string
   qualificacao: string
+  cpfCnpj?: string
+  percentualParticipacao?: number
+  dataEntrada?: string
+  faixaEtaria?: string
+  nomeRepresentanteLegal?: string
+  qualificacaoRepresentanteLegal?: string
+  paisOrigem?: string
+  tipoPessoa?: 'PF' | 'PJ' | 'ESTRANGEIRO'
 }
 
 export interface DadosCnpjConsulta {
@@ -43,7 +52,8 @@ export interface DadosCnpjConsulta {
   naturezaJuridica?: string
   porte?: string
   qsa?: ItemSocioQsa[]
-  fonte: 'brasilapi' | 'receitaws' | 'proxy'
+  qsaFonte?: string
+  fonte: 'brasilapi' | 'receitaws' | 'proxy' | 'minhareceita'
   consultadoEm: string
 }
 
@@ -261,14 +271,130 @@ async function consultarBrasilApi(cnpjLimpo: string): Promise<DadosCnpjConsulta>
     naturezaJuridica: (json.natureza_juridica || '').trim(),
     porte: (json.porte || '').trim(),
     qsa: Array.isArray(json.qsa)
-      ? json.qsa.map((s: any) => ({
-          nome: (s.nome_socio || '').trim(),
-          qualificacao: (s.qualificacao_socio || '').trim(),
-        }))
+      ? json.qsa.map((s: any, idx: number) => {
+          const cpfCnpjDoc = (s.cnpj_cpf_do_socio || '').trim()
+          const docNumeros = cpfCnpjDoc.replace(/\D/g, '')
+          const tipoPessoa: 'PF' | 'PJ' = docNumeros.length === 14 ? 'PJ' : 'PF'
+          return {
+            id: `qsa_${idx}_${docNumeros.slice(-4) || Math.random().toString(36).slice(2, 6)}`,
+            nome: (s.nome_socio || '').trim(),
+            qualificacao: (s.qualificacao_socio || '').trim(),
+            cpfCnpj: cpfCnpjDoc || undefined,
+            percentualParticipacao:
+              typeof s.percentual_capital_social === 'number'
+                ? s.percentual_capital_social
+                : undefined,
+            dataEntrada: s.data_entrada_sociedade || undefined,
+            faixaEtaria: s.faixa_etaria || undefined,
+            nomeRepresentanteLegal: (s.nome_representante_legal || '').trim() || undefined,
+            qualificacaoRepresentanteLegal:
+              (s.qualificacao_representante_legal || '').trim() || undefined,
+            paisOrigem: (s.pais || '').trim() || undefined,
+            tipoPessoa,
+          }
+        })
       : [],
     fonte: 'brasilapi',
     consultadoEm: new Date().toISOString(),
   }
+}
+
+/**
+ * Consulta direta de contingência à Minha Receita (dados públicos abertos da RFB com QSA completo)
+ */
+async function consultarMinhaReceita(cnpjLimpo: string): Promise<DadosCnpjConsulta> {
+  const url = `https://minhareceita.org/${cnpjLimpo}`
+  const resp = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  })
+
+  if (!resp.ok) {
+    throw new Error(`Minha Receita retornou status ${resp.status}`)
+  }
+
+  const json = await resp.json()
+
+  return {
+    cnpj: cnpjLimpo,
+    cnpjFormatado: formatarCNPJ(cnpjLimpo),
+    razaoSocial: (json.razao_social || '').trim(),
+    nomeFantasia: (json.nome_fantasia || '').trim(),
+    situacaoCadastral: (json.descricao_situacao_cadastral || 'Ativa').trim(),
+    dataSituacaoCadastral: json.data_situacao_cadastral || undefined,
+    dataAbertura: json.data_inicio_atividade || undefined,
+    cnaePrincipalCodigo: json.cnae_fiscal ? String(json.cnae_fiscal) : '',
+    cnaePrincipalDescricao: (json.cnae_fiscal_descricao || '').trim(),
+    cnaesSecundarios: Array.isArray(json.cnaes_secundarios)
+      ? json.cnaes_secundarios.map((c: any) => ({
+          codigo: String(c.codigo || ''),
+          descricao: (c.descricao || '').trim(),
+        }))
+      : [],
+    logradouro: (json.logradouro || '').trim(),
+    numero: (json.numero || '').trim(),
+    complemento: (json.complemento || '').trim(),
+    bairro: (json.bairro || '').trim(),
+    cep: json.cep ? String(json.cep).replace(/\D/g, '') : '',
+    municipio: (json.municipio || '').trim(),
+    uf: (json.uf || '').toUpperCase().trim(),
+    telefone: json.ddd_telefone_1 ? String(json.ddd_telefone_1).trim() : undefined,
+    email: (json.email || '').trim(),
+    capitalSocial: Number(json.capital_social || 0),
+    naturezaJuridica: (json.natureza_juridica || '').trim(),
+    porte: (json.porte || '').trim(),
+    qsa: Array.isArray(json.qsa)
+      ? json.qsa.map((s: any, idx: number) => {
+          const doc = (s.cnpj_cpf_do_socio || '').trim()
+          const docNum = doc.replace(/\D/g, '')
+          return {
+            id: `qsa_${idx}_${docNum.slice(-4) || Math.random().toString(36).slice(2, 6)}`,
+            nome: (s.nome_socio || '').trim(),
+            qualificacao: (s.qualificacao_socio || '').trim(),
+            cpfCnpj: doc || undefined,
+            percentualParticipacao:
+              typeof s.percentual_capital_social === 'number'
+                ? s.percentual_capital_social
+                : undefined,
+            dataEntrada: s.data_entrada_sociedade || undefined,
+            faixaEtaria: s.faixa_etaria || undefined,
+            nomeRepresentanteLegal: (s.nome_representante_legal || '').trim() || undefined,
+            qualificacaoRepresentanteLegal:
+              (s.qualificacao_representante_legal || '').trim() || undefined,
+            paisOrigem: (s.pais || '').trim() || undefined,
+            tipoPessoa: docNum.length === 14 ? 'PJ' : 'PF',
+          }
+        })
+      : [],
+    fonte: 'minhareceita',
+    consultadoEm: new Date().toISOString(),
+  }
+}
+
+/**
+ * Tenta enriquecer uma consulta que veio sem sócios (ou com lista vazia) buscando especificamente
+ * o QSA via Minha Receita ou ReceitaWS.
+ */
+async function enriquecerQsaSeNecessario(dados: DadosCnpjConsulta): Promise<DadosCnpjConsulta> {
+  if (Array.isArray(dados.qsa) && dados.qsa.length > 0) {
+    return dados
+  }
+
+  // Se não tem QSA, tenta Minha Receita para obter os sócios
+  try {
+    const resM = await consultarMinhaReceita(dados.cnpj)
+    if (Array.isArray(resM.qsa) && resM.qsa.length > 0) {
+      return {
+        ...dados,
+        qsa: resM.qsa,
+        qsaFonte: 'minhareceita',
+      }
+    }
+  } catch (_e) {
+    // Silencioso se Minha Receita falhar
+  }
+
+  return dados
 }
 
 /**
@@ -325,10 +451,28 @@ async function consultarReceitaWs(cnpjLimpo: string): Promise<DadosCnpjConsulta>
     naturezaJuridica: (json.natureza_juridica || '').trim(),
     porte: (json.porte || '').trim(),
     qsa: Array.isArray(json.qsa)
-      ? json.qsa.map((s: any) => ({
-          nome: (s.nome || '').trim(),
-          qualificacao: (s.qual || '').trim(),
-        }))
+      ? json.qsa.map((s: any, idx: number) => {
+          const qual = (s.qual || '').trim()
+          const qualLower = qual.toLowerCase()
+          const tipoPessoa: 'PF' | 'PJ' =
+            qualLower.includes('jurídica') || qualLower.includes('juridica') ? 'PJ' : 'PF'
+
+          // Extração de percentual se presente no texto da ReceitaWS
+          let perc: number | undefined
+          if (typeof s.participacao === 'number') perc = s.participacao
+          else if (typeof s.percentual === 'number') perc = s.percentual
+
+          return {
+            id: `qsa_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+            nome: (s.nome || '').trim(),
+            qualificacao: qual,
+            percentualParticipacao: perc,
+            nomeRepresentanteLegal: (s.nome_rep_legal || '').trim() || undefined,
+            qualificacaoRepresentanteLegal: (s.qual_rep_legal || '').trim() || undefined,
+            paisOrigem: (s.pais || '').trim() || undefined,
+            tipoPessoa,
+          }
+        })
       : [],
     fonte: 'receitaws',
     consultadoEm: new Date().toISOString(),
@@ -377,7 +521,21 @@ async function consultarViaBackendProxy(cnpjLimpo: string): Promise<DadosCnpjCon
     capitalSocial: d.capitalSocial,
     naturezaJuridica: d.naturezaJuridica,
     porte: d.porte,
-    qsa: d.qsa || [],
+    qsa: Array.isArray(d.qsa)
+      ? d.qsa.map((s: any, idx: number) => ({
+          id: s.id || `qsa_${idx}`,
+          nome: (s.nome || '').trim(),
+          qualificacao: (s.qualificacao || '').trim(),
+          cpfCnpj: s.cpfCnpj,
+          percentualParticipacao: s.percentualParticipacao,
+          dataEntrada: s.dataEntrada,
+          faixaEtaria: s.faixaEtaria,
+          nomeRepresentanteLegal: s.nomeRepresentanteLegal,
+          qualificacaoRepresentanteLegal: s.qualificacaoRepresentanteLegal,
+          paisOrigem: s.paisOrigem,
+          tipoPessoa: s.tipoPessoa || 'PF',
+        }))
+      : [],
     fonte: 'proxy',
     consultadoEm: new Date().toISOString(),
   }
@@ -417,8 +575,9 @@ export async function consultarCnpjExterno(cnpjInformado: string): Promise<Resul
 
   // 1. Tentar BrasilAPI primeiro
   try {
-    const dados = await consultarBrasilApi(cnpjLimpo)
-    return { sucesso: true, dados }
+    const dadosBrasil = await consultarBrasilApi(cnpjLimpo)
+    const dadosEnriquecidos = await enriquecerQsaSeNecessario(dadosBrasil)
+    return { sucesso: true, dados: dadosEnriquecidos }
   } catch (errBrasil: any) {
     const msgBrasil = errBrasil?.message || ''
     // Se explicitamente 404, não adianta tentar outro provedor se a empresa não existe
@@ -429,29 +588,40 @@ export async function consultarCnpjExterno(cnpjInformado: string): Promise<Resul
       }
     }
 
-    // 2. Fallback: ReceitaWS
+    // 2. Tentativa secundária: Minha Receita
     try {
-      const dadosRws = await consultarReceitaWs(cnpjLimpo)
+      const dadosMinha = await consultarMinhaReceita(cnpjLimpo)
       return {
         sucesso: true,
-        dados: dadosRws,
-        aviso: 'Dados recuperados via ReceitaWS (fonte de contingência).',
+        dados: dadosMinha,
+        aviso: 'Dados recuperados via Minha Receita (dados abertos da Receita Federal).',
       }
-    } catch (_errReceita) {
-      // 3. Fallback: Backend Proxy (contorna CORS ou bloqueios de navegador)
+    } catch (_errMinha) {
+      // 3. Fallback: ReceitaWS
       try {
-        const dadosProxy = await consultarViaBackendProxy(cnpjLimpo)
+        const dadosRws = await consultarReceitaWs(cnpjLimpo)
+        const dadosEnriquecidos = await enriquecerQsaSeNecessario(dadosRws)
         return {
           sucesso: true,
-          dados: dadosProxy,
-          aviso: 'Dados recuperados via serviço proxy seguro da Contabilidade 5.0.',
+          dados: dadosEnriquecidos,
+          aviso: 'Dados recuperados via ReceitaWS (fonte de contingência).',
         }
-      } catch (errProxy: any) {
-        return {
-          sucesso: false,
-          erro:
-            errProxy?.message ||
-            'Não foi possível consultar os dados da empresa no momento. Verifique sua conexão ou tente novamente mais tarde.',
+      } catch (_errReceita) {
+        // 4. Fallback: Backend Proxy (contorna CORS ou bloqueios de navegador)
+        try {
+          const dadosProxy = await consultarViaBackendProxy(cnpjLimpo)
+          return {
+            sucesso: true,
+            dados: dadosProxy,
+            aviso: 'Dados recuperados via serviço proxy seguro da Contabilidade 5.0.',
+          }
+        } catch (errProxy: any) {
+          return {
+            sucesso: false,
+            erro:
+              errProxy?.message ||
+              'Não foi possível consultar os dados da empresa no momento. Verifique sua conexão ou tente novamente mais tarde.',
+          }
         }
       }
     }

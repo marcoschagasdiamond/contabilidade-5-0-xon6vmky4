@@ -42,6 +42,7 @@ import { SecaoImportacaoDocumentosFiscais } from '@/components/dadosEmpresa/Seca
 import { SecaoVinculosSocietarios } from '@/components/dadosEmpresa/SecaoVinculosSocietarios'
 import { CampoBuscaCnpj } from '@/components/dadosEmpresa/CampoBuscaCnpj'
 import { BadgeProvenienciaCnpj } from '@/components/dadosEmpresa/BadgeProvenienciaCnpj'
+import { BadgeProvenienciaQsa } from '@/components/dadosEmpresa/BadgeProvenienciaQsa'
 import { CampoBuscaCnae } from '@/components/dadosEmpresa/CampoBuscaCnae'
 import { BadgeProvenienciaCnae } from '@/components/dadosEmpresa/BadgeProvenienciaCnae'
 import type { ItemResultadoCnae } from '@/services/consultaCnae'
@@ -52,7 +53,7 @@ import {
   type DadosCnpjConsulta,
 } from '@/services/consultaCnpj'
 import type { CamposAplicacaoCnpj } from '@/components/dadosEmpresa/ModalConfirmarDadosCnpj'
-import { VinculoSocietario } from '@/types/dadosEmpresa'
+import { VinculoSocietario, PapelClienteNoVinculo } from '@/types/dadosEmpresa'
 import { ResultadoParsingSped } from '@/lib/parseSpedFiscal'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import { Card, CardContent } from '@/components/ui/card'
@@ -314,6 +315,22 @@ export default function DadosEmpresa() {
         .filter(Boolean)
         .join(', ')
 
+      const sociosRetornados = Array.isArray(dados.qsa)
+        ? dados.qsa.map((s, idx) => ({
+            id: s.id || `qsa_${idx}`,
+            nome: s.nome,
+            qualificacao: s.qualificacao,
+            cpfCnpj: s.cpfCnpj,
+            percentualParticipacao: s.percentualParticipacao,
+            dataEntrada: s.dataEntrada,
+            faixaEtaria: s.faixaEtaria,
+            nomeRepresentanteLegal: s.nomeRepresentanteLegal,
+            qualificacaoRepresentanteLegal: s.qualificacaoRepresentanteLegal,
+            paisOrigem: s.paisOrigem,
+            tipoPessoa: s.tipoPessoa,
+          }))
+        : []
+
       atualizado.dadosCnpjConsulta = {
         razaoSocial: dados.razaoSocial,
         nomeFantasia: dados.nomeFantasia,
@@ -325,6 +342,101 @@ export default function DadosEmpresa() {
         cep: dados.cep,
         fonte: dados.fonte,
         consultadoEm: dados.consultadoEm,
+        qsa: sociosRetornados,
+        qsaFonte: dados.qsaFonte || dados.fonte,
+        qsaConsultadoEm: dados.consultadoEm,
+      }
+
+      // Integração QSA com Vínculos Societários
+      if (
+        opcoes.incluirQsa &&
+        opcoes.modoQsa === 'vinculos' &&
+        sociosRetornados.length > 0 &&
+        Array.isArray(opcoes.sociosSelecionadosIds) &&
+        opcoes.sociosSelecionadosIds.length > 0
+      ) {
+        const vinculosAtuais = Array.isArray(atualizado.vinculosSocietarios)
+          ? [...atualizado.vinculosSocietarios]
+          : []
+
+        // Filtra só os sócios que o técnico manteve marcados
+        const sociosParaAdicionar = sociosRetornados.filter((s) =>
+          opcoes.sociosSelecionadosIds.includes(s.id),
+        )
+
+        sociosParaAdicionar.forEach((socio) => {
+          const nomeNormalizado = (socio.nome || '').trim().toLowerCase()
+          const docNormalizado = (socio.cpfCnpj || '').replace(/\D/g, '')
+
+          // Verificação de duplicação: evita reinserir vínculo idêntico já cadastrado
+          const jaExiste = vinculosAtuais.some((v) => {
+            const vNome = (v.nomeEmpresa || '').trim().toLowerCase()
+            const vObs = (v.observacoes || '').trim().toLowerCase()
+            const vCnpj = (v.cnpj || '').replace(/\D/g, '')
+
+            if (docNormalizado && vCnpj && docNormalizado === vCnpj) return true
+            if (vNome === nomeNormalizado || vObs.includes(nomeNormalizado)) return true
+            return false
+          })
+
+          if (jaExiste) {
+            // Se já existe e a opção 'apenasVazios' está ligada ou não queremos sobrescrever, ignora
+            return
+          }
+
+          // Derivação semântica do papel a partir da qualificação e tipo de pessoa:
+          // Se for PJ ou qualificação indicar holding/empresa -> 'socio_pj_holding'
+          // Se for Administrador isolado sem quotas -> 'administrador_nao_socio'
+          // Caso padrão -> 'socio_pf'
+          const qualif = (socio.qualificacao || '').toLowerCase()
+          let papelDerivado: PapelClienteNoVinculo = 'socio_pf'
+
+          if (
+            socio.tipoPessoa === 'PJ' ||
+            qualif.includes('jurídica') ||
+            qualif.includes('juridica') ||
+            qualif.includes('holding') ||
+            docNormalizado.length === 14
+          ) {
+            papelDerivado = 'pj_socia_holding'
+          } else if (
+            (qualif.includes('administrador') ||
+              qualif.includes('diretor') ||
+              qualif.includes('gerente')) &&
+            !qualif.includes('sócio') &&
+            !qualif.includes('socio') &&
+            (socio.percentualParticipacao === undefined || socio.percentualParticipacao === 0)
+          ) {
+            papelDerivado = 'administrador'
+          }
+
+          const exerceAdmin =
+            qualif.includes('administrador') ||
+            qualif.includes('gerente') ||
+            qualif.includes('diretor') ||
+            qualif.includes('presidente')
+
+          const participacaoSocio =
+            typeof socio.percentualParticipacao === 'number' && socio.percentualParticipacao > 0
+              ? socio.percentualParticipacao
+              : 50 // padrão seguro se a fonte não trouxe percentual explícito
+
+          vinculosAtuais.push({
+            id: `vinc_qsa_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            nomeEmpresa: dados.razaoSocial || 'Empresa Consultada',
+            cnpj: dados.cnpjFormatado || formatarCNPJ(dados.cnpj),
+            papelCliente: papelDerivado,
+            percentualParticipacao: participacaoSocio,
+            exerceAdministracao: exerceAdmin,
+            regimeEmpresa: 'Simples Nacional',
+            faturamentoAnual: 0,
+            excecaoLegal: false,
+            observacoes: `Sócio/Adm: ${socio.nome}${socio.qualificacao ? ` (${socio.qualificacao})` : ''} - QSA importado em ${new Date().toLocaleDateString('pt-BR')}`,
+            dataCadastro: new Date().toISOString(),
+          })
+        })
+
+        atualizado.vinculosSocietarios = vinculosAtuais
       }
 
       return atualizado
@@ -2925,17 +3037,46 @@ export default function DadosEmpresa() {
           </Card>
 
           {/* BLOCO 6: VÍNCULOS SOCIETÁRIOS & RISCO DE REGIME (LC 123/2006, art. 3º) */}
-          <SecaoVinculosSocietarios
-            vinculos={formData.vinculosSocietarios || []}
-            regimeAtual={formData.regimeAtual}
-            faturamentoMensalProprio={formData.faturamentoMensal || 0}
-            onChangeVinculos={(novosVinculos: VinculoSocietario[]) => {
-              atualizarCampo((prev) => ({
-                ...prev,
-                vinculosSocietarios: novosVinculos,
-              }))
-            }}
-          />
+          <div className="space-y-3">
+            {formData.dadosCnpjConsulta?.qsa && formData.dadosCnpjConsulta.qsa.length > 0 && (
+              <div className="p-3.5 rounded-xl bg-blue-50/80 border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 rounded-lg bg-[#07132B] text-[#D4AF37]">
+                    <Users className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="text-xs text-blue-950">
+                    <span className="font-semibold">Quadro de Sócios (QSA) Vinculado:</span>{' '}
+                    <span className="text-blue-900">
+                      {formData.dadosCnpjConsulta.qsa.length} sócio(s)/administrador(es)
+                      registrado(s) pela Receita Federal
+                    </span>
+                  </div>
+                </div>
+
+                <BadgeProvenienciaQsa
+                  consultadoEm={
+                    formData.dadosCnpjConsulta.qsaConsultadoEm ||
+                    formData.dadosCnpjConsulta.consultadoEm
+                  }
+                  fonte={formData.dadosCnpjConsulta.qsaFonte || formData.dadosCnpjConsulta.fonte}
+                  totalSocios={formData.dadosCnpjConsulta.qsa.length}
+                  variante="compacta"
+                />
+              </div>
+            )}
+
+            <SecaoVinculosSocietarios
+              vinculos={formData.vinculosSocietarios || []}
+              regimeAtual={formData.regimeAtual}
+              faturamentoMensalProprio={formData.faturamentoMensal || 0}
+              onChangeVinculos={(novosVinculos: VinculoSocietario[]) => {
+                atualizarCampo((prev) => ({
+                  ...prev,
+                  vinculosSocietarios: novosVinculos,
+                }))
+              }}
+            />
+          </div>
 
           {/* PAINEL INFORMATIVO DE AVISOS DE COERÊNCIA FISCAL (NÃO BLOQUEANTE) */}
           {resultadoValidacao.avisosCoerencia.length > 0 && (

@@ -20,9 +20,14 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
+  Users,
+  UserCheck,
+  Briefcase,
+  Layers,
 } from 'lucide-react'
 import type { DadosCnpjConsulta } from '@/services/consultaCnpj'
 import { mapearCnaeParaSegmento, mapearCidadeIss } from '@/services/consultaCnpj'
+import { BadgeProvenienciaQsa } from '@/components/dadosEmpresa/BadgeProvenienciaQsa'
 
 export interface CamposAplicacaoCnpj {
   nomeEmpresa: boolean
@@ -32,6 +37,10 @@ export interface CamposAplicacaoCnpj {
   email: boolean
   telefone: boolean
   apenasVazios: boolean
+  // Opções de QSA
+  incluirQsa: boolean
+  sociosSelecionadosIds: string[]
+  modoQsa: 'vinculos' | 'informativo'
 }
 
 interface ModalConfirmarDadosCnpjProps {
@@ -65,11 +74,16 @@ export function ModalConfirmarDadosCnpj({
     email: false,
     telefone: false,
     apenasVazios: false,
+    incluirQsa: true,
+    sociosSelecionadosIds: [],
+    modoQsa: 'vinculos',
   })
 
   // Sincroniza estado inicial sempre que novos dados chegarem
   useEffect(() => {
     if (dados) {
+      const qsaList = Array.isArray(dados.qsa) ? dados.qsa : []
+      const idsIniciais = qsaList.map((s, idx) => s.id || `qsa_${idx}`)
       setSelecao({
         nomeEmpresa: true,
         segmento: true,
@@ -78,6 +92,9 @@ export function ModalConfirmarDadosCnpj({
         email: !!dados.email,
         telefone: !!dados.telefone,
         apenasVazios: false,
+        incluirQsa: qsaList.length > 0,
+        sociosSelecionadosIds: idsIniciais,
+        modoQsa: 'vinculos',
       })
     }
   }, [dados])
@@ -371,6 +388,229 @@ export function ModalConfirmarDadosCnpj({
                 </label>
               )}
             </div>
+          </div>
+
+          {/* Seção Nova: Sócios e Administradores (QSA) */}
+          <div className="pt-4 border-t border-slate-200 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-[#07132B] text-[#D4AF37]">
+                  <Users className="w-4 h-4" />
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <span>Sócios e Administradores (QSA)</span>
+                    {Array.isArray(dados.qsa) && dados.qsa.length > 0 && (
+                      <Badge className="bg-slate-100 text-slate-700 text-[10px] py-0 px-1.5 font-mono">
+                        {dados.qsa.length}
+                      </Badge>
+                    )}
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Dados obtidos do registro público da Receita Federal
+                  </p>
+                </div>
+              </div>
+
+              {Array.isArray(dados.qsa) && dados.qsa.length > 0 ? (
+                <BadgeProvenienciaQsa
+                  consultadoEm={dados.consultadoEm}
+                  fonte={dados.qsaFonte || dados.fonte}
+                  totalSocios={dados.qsa.length}
+                  variante="compacta"
+                />
+              ) : null}
+            </div>
+
+            {/* Quando não há QSA retornado */}
+            {!dados.qsa || dados.qsa.length === 0 ? (
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2.5 text-xs text-slate-600">
+                <AlertCircle className="w-4 h-4 text-slate-400 shrink-0" />
+                <span>
+                  QSA não disponível nesta fonte pública para este CNPJ (ou empresa de titular único
+                  / MEI). A busca cadastral de CNPJ foi concluída normalmente.
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Escolha explícita: Aplicar como Vínculos Societários vs Apenas Quadro de Sócios Informativo */}
+                <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-200/80 space-y-2">
+                  <div className="text-xs font-semibold text-blue-950 flex items-center gap-1.5">
+                    <Briefcase className="w-4 h-4 text-[#07132B]" />
+                    <span>Como você deseja registrar os sócios no sistema?</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <label
+                      className={`p-2.5 rounded-lg border transition cursor-pointer flex items-start gap-2.5 ${
+                        selecao.modoQsa === 'vinculos'
+                          ? 'bg-white border-[#07132B] shadow-xs'
+                          : 'bg-white/50 border-slate-200 hover:bg-white'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="modoQsa"
+                        value="vinculos"
+                        checked={selecao.modoQsa === 'vinculos'}
+                        onChange={() => setSelecao((prev) => ({ ...prev, modoQsa: 'vinculos' }))}
+                        className="mt-1 text-[#07132B] focus:ring-[#07132B]"
+                      />
+                      <div className="space-y-0.5">
+                        <div className="font-semibold text-slate-900">
+                          Aplicar como Vínculos Societários
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-tight">
+                          Gera itens na seção Vínculos Societários de /dados-empresa para análise de
+                          risco de regime (LC 123/06).
+                        </p>
+                      </div>
+                    </label>
+
+                    <label
+                      className={`p-2.5 rounded-lg border transition cursor-pointer flex items-start gap-2.5 ${
+                        selecao.modoQsa === 'informativo'
+                          ? 'bg-white border-[#07132B] shadow-xs'
+                          : 'bg-white/50 border-slate-200 hover:bg-white'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="modoQsa"
+                        value="informativo"
+                        checked={selecao.modoQsa === 'informativo'}
+                        onChange={() => setSelecao((prev) => ({ ...prev, modoQsa: 'informativo' }))}
+                        className="mt-1 text-[#07132B] focus:ring-[#07132B]"
+                      />
+                      <div className="space-y-0.5">
+                        <div className="font-semibold text-slate-900">
+                          Apenas registrar como Quadro de Sócios
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-tight">
+                          Mantém os dados salvos no cadastro da empresa como histórico/conferência,
+                          sem criar vínculos adicionais.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Lista de Sócios com Checkboxes */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-600 px-1">
+                    <span className="font-medium text-slate-700">
+                      Selecione os sócios que deseja incluir:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const todosIds = (dados.qsa || []).map((s, idx) => s.id || `qsa_${idx}`)
+                        const todosMarcados =
+                          selecao.sociosSelecionadosIds.length === todosIds.length
+                        setSelecao((prev) => ({
+                          ...prev,
+                          sociosSelecionadosIds: todosMarcados ? [] : todosIds,
+                        }))
+                      }}
+                      className="text-[11px] text-[#07132B] hover:underline font-semibold"
+                    >
+                      {selecao.sociosSelecionadosIds.length === (dados.qsa || []).length
+                        ? 'Desmarcar todos'
+                        : 'Marcar todos'}
+                    </button>
+                  </div>
+
+                  <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+                    {dados.qsa.map((socio, idx) => {
+                      const idSocio = socio.id || `qsa_${idx}`
+                      const marcado = selecao.sociosSelecionadosIds.includes(idSocio)
+                      const ehPJ =
+                        socio.tipoPessoa === 'PJ' ||
+                        (socio.qualificacao || '').toLowerCase().includes('jurídica') ||
+                        (socio.qualificacao || '').toLowerCase().includes('juridica')
+                      const ehAdmin =
+                        (socio.qualificacao || '').toLowerCase().includes('administrador') ||
+                        (socio.qualificacao || '').toLowerCase().includes('gerente') ||
+                        (socio.qualificacao || '').toLowerCase().includes('diretor')
+
+                      return (
+                        <label
+                          key={idSocio}
+                          className={`p-2.5 rounded-lg border text-xs flex items-start gap-2.5 cursor-pointer transition ${
+                            marcado
+                              ? 'bg-slate-50/90 border-slate-300'
+                              : 'bg-white border-slate-200 opacity-60 hover:opacity-100'
+                          }`}
+                        >
+                          <Checkbox
+                            checked={marcado}
+                            onCheckedChange={(checked) => {
+                              setSelecao((prev) => {
+                                const novo = checked
+                                  ? [...prev.sociosSelecionadosIds, idSocio]
+                                  : prev.sociosSelecionadosIds.filter((x) => x !== idSocio)
+                                return { ...prev, sociosSelecionadosIds: novo }
+                              })
+                            }}
+                            className="mt-0.5"
+                          />
+
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-semibold text-slate-800 truncate">
+                                {socio.nome}
+                              </span>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {ehPJ && (
+                                  <Badge className="bg-purple-100 text-purple-800 text-[10px] py-0 px-1 font-mono">
+                                    PJ / Holding
+                                  </Badge>
+                                )}
+                                {ehAdmin && (
+                                  <Badge className="bg-emerald-100 text-emerald-800 text-[10px] py-0 px-1">
+                                    Administração
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                              <span>
+                                Qualificação:{' '}
+                                <strong className="text-slate-700">
+                                  {socio.qualificacao || 'Sócio'}
+                                </strong>
+                              </span>
+
+                              {socio.percentualParticipacao !== undefined &&
+                                socio.percentualParticipacao !== null && (
+                                  <span>
+                                    Participação:{' '}
+                                    <strong className="text-slate-700">
+                                      {socio.percentualParticipacao}%
+                                    </strong>
+                                  </span>
+                                )}
+
+                              {socio.cpfCnpj && (
+                                <span className="font-mono text-[10px] text-slate-400">
+                                  Doc: {socio.cpfCnpj}
+                                </span>
+                              )}
+
+                              {socio.dataEntrada && (
+                                <span className="text-[10px] text-slate-400">
+                                  Entrada: {socio.dataEntrada}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

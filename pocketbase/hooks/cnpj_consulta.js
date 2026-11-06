@@ -62,9 +62,24 @@ routerAdd('GET', '/backend/v1/cnpj/consultar/{cnpj}', (e) => {
             naturezaJuridica: dados.natureza_juridica || '',
             porte: dados.porte || '',
             qsa: Array.isArray(dados.qsa)
-              ? dados.qsa.map((s) => ({
+              ? dados.qsa.map((s, idx) => ({
+                  id: 'soc_' + idx + '_' + (s.cnpj_cpf_do_socio || s.nome_socio || '').slice(-4),
                   nome: s.nome_socio || '',
                   qualificacao: s.qualificacao_socio || '',
+                  cpfCnpj: s.cnpj_cpf_do_socio || '',
+                  dataEntrada: s.data_entrada_sociedade || '',
+                  faixaEtaria: s.faixa_etaria || '',
+                  nomeRepresentanteLegal: s.nome_representante_legal || '',
+                  qualificacaoRepresentanteLegal: s.qualificacao_representante_legal || '',
+                  paisOrigem: s.pais || '',
+                  percentualParticipacao:
+                    typeof s.percentual_capital_social === 'number'
+                      ? s.percentual_capital_social
+                      : undefined,
+                  tipoPessoa:
+                    s.cnpj_cpf_do_socio && s.cnpj_cpf_do_socio.replace(/\D/g, '').length === 14
+                      ? 'PJ'
+                      : 'PF',
                 }))
               : [],
           },
@@ -79,7 +94,78 @@ routerAdd('GET', '/backend/v1/cnpj/consultar/{cnpj}', (e) => {
       console.log('[Proxy CNPJ] Erro na consulta BrasilAPI:', errBrasil)
     }
 
-    // 2. Fallback: ReceitaWS
+    // 2. Tentativa intermediária: Minha Receita (Dados Abertos da Receita Federal com QSA completo)
+    try {
+      const resMinhaReceita = $http.send({
+        url: `https://minhareceita.org/${cnpjLimpo}`,
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        timeout: 10,
+      })
+
+      if (resMinhaReceita.statusCode === 200 && resMinhaReceita.json) {
+        const dadosM = resMinhaReceita.json
+        const qsaM = Array.isArray(dadosM.qsa)
+          ? dadosM.qsa.map((s, idx) => ({
+              id: 'soc_' + idx + '_' + (s.cnpj_cpf_do_socio || s.nome_socio || '').slice(-4),
+              nome: s.nome_socio || '',
+              qualificacao: s.qualificacao_socio || '',
+              cpfCnpj: s.cnpj_cpf_do_socio || '',
+              dataEntrada: s.data_entrada_sociedade || '',
+              faixaEtaria: s.faixa_etaria || '',
+              nomeRepresentanteLegal: s.nome_representante_legal || '',
+              qualificacaoRepresentanteLegal: s.qualificacao_representante_legal || '',
+              paisOrigem: s.pais || '',
+              percentualParticipacao:
+                typeof s.percentual_capital_social === 'number'
+                  ? s.percentual_capital_social
+                  : undefined,
+              tipoPessoa:
+                s.cnpj_cpf_do_socio && s.cnpj_cpf_do_socio.replace(/\D/g, '').length === 14
+                  ? 'PJ'
+                  : 'PF',
+            }))
+          : []
+
+        return e.json(200, {
+          sucesso: true,
+          provedor: 'minhareceita',
+          dados: {
+            cnpj: dadosM.cnpj || cnpjLimpo,
+            razaoSocial: dadosM.razao_social || '',
+            nomeFantasia: dadosM.nome_fantasia || '',
+            situacaoCadastral: dadosM.descricao_situacao_cadastral || '',
+            dataSituacaoCadastral: dadosM.data_situacao_cadastral || '',
+            dataAbertura: dadosM.data_inicio_atividade || '',
+            cnaePrincipalCodigo: dadosM.cnae_fiscal ? String(dadosM.cnae_fiscal) : '',
+            cnaePrincipalDescricao: dadosM.cnae_fiscal_descricao || '',
+            cnaesSecundarios: Array.isArray(dadosM.cnaes_secundarios)
+              ? dadosM.cnaes_secundarios.map((c) => ({
+                  codigo: String(c.codigo || ''),
+                  descricao: c.descricao || '',
+                }))
+              : [],
+            logradouro: dadosM.logradouro || '',
+            numero: dadosM.numero || '',
+            complemento: dadosM.complemento || '',
+            bairro: dadosM.bairro || '',
+            cep: dadosM.cep ? String(dadosM.cep).replace(/\D/g, '') : '',
+            municipio: dadosM.municipio || '',
+            uf: dadosM.uf || '',
+            telefone: dadosM.ddd_telefone_1 ? `${dadosM.ddd_telefone_1}` : '',
+            email: dadosM.email || '',
+            capitalSocial: Number(dadosM.capital_social || 0),
+            naturezaJuridica: dadosM.natureza_juridica || '',
+            porte: dadosM.porte || '',
+            qsa: qsaM,
+          },
+        })
+      }
+    } catch (errMinhaReceita) {
+      console.log('[Proxy CNPJ] Erro na consulta Minha Receita:', errMinhaReceita)
+    }
+
+    // 3. Fallback: ReceitaWS
     try {
       const resReceita = $http.send({
         url: `https://receitaws.com.br/api/cnpj/${cnpjLimpo}`,
@@ -133,9 +219,18 @@ routerAdd('GET', '/backend/v1/cnpj/consultar/{cnpj}', (e) => {
             naturezaJuridica: dadosR.natureza_juridica || '',
             porte: dadosR.porte || '',
             qsa: Array.isArray(dadosR.qsa)
-              ? dadosR.qsa.map((s) => ({
+              ? dadosR.qsa.map((s, idx) => ({
+                  id: 'soc_' + idx + '_' + (s.nome || '').slice(-4),
                   nome: s.nome || '',
                   qualificacao: s.qual || '',
+                  nomeRepresentanteLegal: s.nome_rep_legal || '',
+                  qualificacaoRepresentanteLegal: s.qual_rep_legal || '',
+                  paisOrigem: s.pais || '',
+                  tipoPessoa:
+                    (s.qual || '').toLowerCase().includes('jurídica') ||
+                    (s.qual || '').toLowerCase().includes('juridica')
+                      ? 'PJ'
+                      : 'PF',
                 }))
               : [],
           },
