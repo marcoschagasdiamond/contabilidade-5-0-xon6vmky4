@@ -70,13 +70,19 @@ export interface ResultadoConsultaCnpj {
  * 'Comércio', 'Indústria', 'Serviços', 'Tecnologia', 'Saúde', 'Agronegócio',
  * 'Construção Civil', 'Transporte e Logística', 'Energia e Telecomunicações', 'Outros'
  */
-export function mapearCnaeParaSegmento(
-  cnaeCodigo: string,
+/**
+ * Mapeia CNAE para um dos 10 segmentos oficiais da empresa de forma opcional.
+ * Retorna null se não houver correspondência semântica ou código reconhecido
+ * (adequado para sugestões contextuais de CNAEs secundários).
+ */
+export function mapearCnaeParaSegmentoOpcional(
+  cnaeCodigo?: string | null,
   cnaeDescricao: string = '',
-): SegmentoEmpresa {
-  const codLimpo = cnaeCodigo.replace(/\D/g, '')
+): SegmentoEmpresa | null {
+  if (!cnaeCodigo && !cnaeDescricao) return null
+  const codLimpo = (cnaeCodigo || '').replace(/\D/g, '')
   const cod2 = codLimpo.slice(0, 2)
-  const desc = cnaeDescricao.toLowerCase()
+  const desc = (cnaeDescricao || '').toLowerCase()
 
   // Tecnologia
   if (
@@ -95,14 +101,33 @@ export function mapearCnaeParaSegmento(
     cod2 === '86' ||
     cod2 === '87' ||
     desc.includes('médic') ||
+    desc.includes('medic') ||
     desc.includes('odontol') ||
     desc.includes('hospital') ||
     desc.includes('fisioterap') ||
     desc.includes('psicol') ||
     desc.includes('laboratório') ||
-    desc.includes('saúde humana')
+    desc.includes('laboratorio') ||
+    desc.includes('saúde humana') ||
+    desc.includes('saude humana')
   ) {
     return 'Saúde'
+  }
+
+  // Educação (Divisão 85)
+  if (
+    cod2 === '85' ||
+    desc.includes('educação') ||
+    desc.includes('educacao') ||
+    desc.includes('ensino') ||
+    desc.includes('escola') ||
+    desc.includes('faculdade') ||
+    desc.includes('universidade') ||
+    desc.includes('cursos livres') ||
+    desc.includes('treinamento em desenvolvimento') ||
+    desc.includes('instituto de ensino')
+  ) {
+    return 'Educação'
   }
 
   // Agro
@@ -110,7 +135,9 @@ export function mapearCnaeParaSegmento(
     ['01', '02', '03'].includes(cod2) ||
     desc.includes('agropecu') ||
     desc.includes('agrícola') ||
+    desc.includes('agricola') ||
     desc.includes('pecuária') ||
+    desc.includes('pecuaria') ||
     desc.includes('cultivo') ||
     desc.includes('soja') ||
     desc.includes('gado') ||
@@ -123,10 +150,13 @@ export function mapearCnaeParaSegmento(
   if (
     ['41', '42', '43'].includes(cod2) ||
     desc.includes('construção') ||
+    desc.includes('construcao') ||
     desc.includes('obras') ||
     desc.includes('edifícios') ||
+    desc.includes('edificios') ||
     desc.includes('engenharia') ||
-    desc.includes('incorporação')
+    desc.includes('incorporação') ||
+    desc.includes('incorporacao')
   ) {
     return 'Construção Civil'
   }
@@ -137,8 +167,10 @@ export function mapearCnaeParaSegmento(
     desc.includes('transporte') ||
     desc.includes('carga') ||
     desc.includes('logística') ||
+    desc.includes('logistica') ||
     desc.includes('armazena') ||
     desc.includes('rodoviário') ||
+    desc.includes('rodoviario') ||
     desc.includes('frete')
   ) {
     return 'Transporte'
@@ -153,7 +185,8 @@ export function mapearCnaeParaSegmento(
     desc.includes('lanchonete') ||
     desc.includes('pizzaria') ||
     desc.includes('choperia') ||
-    desc.includes('cafeteria')
+    desc.includes('cafeteria') ||
+    desc.includes('fornecimento de alimentos preparados')
   ) {
     return 'Bares e Restaurantes'
   }
@@ -163,7 +196,9 @@ export function mapearCnaeParaSegmento(
   if (
     (!isNaN(num2) && num2 >= 5 && num2 <= 33) ||
     desc.includes('fabricação') ||
+    desc.includes('fabricacao') ||
     desc.includes('indústria') ||
+    desc.includes('industria') ||
     desc.includes('manufatura') ||
     desc.includes('usinagem')
   ) {
@@ -174,6 +209,7 @@ export function mapearCnaeParaSegmento(
   if (
     ['45', '46', '47'].includes(cod2) ||
     desc.includes('comércio') ||
+    desc.includes('comercio') ||
     desc.includes('varejista') ||
     desc.includes('atacadista') ||
     desc.includes('distribuidora')
@@ -181,8 +217,62 @@ export function mapearCnaeParaSegmento(
     return 'Comércio'
   }
 
-  // Serviços em geral (ou fallback Serviços)
-  return 'Serviços'
+  // Serviços explícitos (Divisões de serviços típicos ou termos de serviço)
+  if (
+    [
+      '58',
+      '59',
+      '60',
+      '61',
+      '64',
+      '65',
+      '66',
+      '68',
+      '69',
+      '70',
+      '71',
+      '72',
+      '73',
+      '74',
+      '75',
+      '77',
+      '78',
+      '79',
+      '80',
+      '81',
+      '82',
+      '90',
+      '91',
+      '92',
+      '93',
+      '94',
+      '95',
+      '96',
+    ].includes(cod2) ||
+    desc.includes('prestação de serviço') ||
+    desc.includes('prestacao de servico') ||
+    desc.includes('consultoria') ||
+    desc.includes('assessoria') ||
+    desc.includes('advocacia') ||
+    desc.includes('contabilidade') ||
+    desc.includes('locação') ||
+    desc.includes('locacao') ||
+    desc.includes('limpeza') ||
+    desc.includes('vigilância') ||
+    desc.includes('vigilancia')
+  ) {
+    return 'Serviços'
+  }
+
+  return null
+}
+
+export function mapearCnaeParaSegmento(
+  cnaeCodigo: string,
+  cnaeDescricao: string = '',
+): SegmentoEmpresa {
+  const match = mapearCnaeParaSegmentoOpcional(cnaeCodigo, cnaeDescricao)
+  return match || 'Serviços'
 }
 
 /**

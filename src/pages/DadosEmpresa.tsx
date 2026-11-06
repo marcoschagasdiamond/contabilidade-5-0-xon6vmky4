@@ -51,6 +51,7 @@ import type { ItemResultadoCnae } from '@/services/consultaCnae'
 import type { OpcoesConfirmacaoCnae } from '@/components/dadosEmpresa/ModalConfirmarDadosCnae'
 import {
   mapearCnaeParaSegmento,
+  mapearCnaeParaSegmentoOpcional,
   mapearCidadeIss,
   type DadosCnpjConsulta,
 } from '@/services/consultaCnpj'
@@ -471,7 +472,7 @@ export default function DadosEmpresa() {
             return
           }
 
-          const segSugerido = mapearCnaeParaSegmento(c.codigo, c.descricao)
+          const segSugerido = mapearCnaeParaSegmentoOpcional(c.codigo, c.descricao) || undefined
           cnaesExistentes.push({
             codigo: c.codigo,
             codigoFormatado: c.codigoFormatado,
@@ -1664,8 +1665,37 @@ export default function DadosEmpresa() {
                                 atualizado.tipoAtividade = 'industria'
                               else atualizado.tipoAtividade = 'servico'
                             }
+
+                            // Registra proveniência do segmento sugerido via CNAE Secundário
+                            const origemAnterior = prev.documentoFiscalImportado?.origemCampos || {}
+                            const dataHoraIso = new Date().toISOString()
+                            atualizado.documentoFiscalImportado = {
+                              ...(prev.documentoFiscalImportado || {
+                                tipo: 'consulta_cnpj',
+                                nomeTipo: 'Consulta CNAE Secundário',
+                                nomeArquivo: 'cnae_secundario_sugestao',
+                                dataImportacao: dataHoraIso,
+                                resumoExtracao: `Segmento ${novoSeg} definido a partir de sugestão de CNAE Secundário`,
+                                camposPreenchidos: ['segmento'],
+                              }),
+                              origemCampos: {
+                                ...origemAnterior,
+                                segmento: {
+                                  chave: 'segmento',
+                                  rotulo: 'Segmento Principal da Empresa',
+                                  documento: 'CNAE Secundário',
+                                  tipo: 'cnae_secundario',
+                                  dataImportacao: dataHoraIso,
+                                  valorFormatado: novoSeg,
+                                },
+                              },
+                            }
+
                             return atualizado
                           })
+                          if (errors.segmento) {
+                            setErrors((prev) => ({ ...prev, segmento: '' }))
+                          }
                         }}
                       />
                     )}

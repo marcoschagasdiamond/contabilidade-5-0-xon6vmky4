@@ -26,7 +26,11 @@ import {
   Layers,
 } from 'lucide-react'
 import type { DadosCnpjConsulta } from '@/services/consultaCnpj'
-import { mapearCnaeParaSegmento, mapearCidadeIss } from '@/services/consultaCnpj'
+import {
+  mapearCnaeParaSegmento,
+  mapearCnaeParaSegmentoOpcional,
+  mapearCidadeIss,
+} from '@/services/consultaCnpj'
 import { BadgeProvenienciaQsa } from '@/components/dadosEmpresa/BadgeProvenienciaQsa'
 
 export interface CamposAplicacaoCnpj {
@@ -706,7 +710,10 @@ export function ModalConfirmarDadosCnpj({
                           (item.codigo && item.codigo.length === 7
                             ? `${item.codigo.slice(0, 4)}-${item.codigo.slice(4, 5)}/${item.codigo.slice(5, 7)}`
                             : item.codigo)
-                        const segmentoItem = mapearCnaeParaSegmento(item.codigo, item.descricao)
+                        const segmentoSugeridoOpcional = mapearCnaeParaSegmentoOpcional(
+                          item.codigo,
+                          item.descricao,
+                        )
 
                         return (
                           <label
@@ -737,11 +744,12 @@ export function ModalConfirmarDadosCnpj({
                                 <span className="font-mono font-semibold text-slate-800 text-[11px]">
                                   {codigoExibicao}
                                 </span>
-                                {segmentoItem && (
-                                  <Badge className="bg-[#07132B]/10 text-[#07132B] border-none text-[10px] py-0 px-1 font-normal">
-                                    {segmentoItem}
+                                {segmentoSugeridoOpcional ? (
+                                  <Badge className="bg-[#07132B]/10 text-[#07132B] border-none text-[10px] py-0 px-1.5 font-medium flex items-center gap-1">
+                                    <Sparkles className="w-2.5 h-2.5 text-[#2ECC71]" />
+                                    Sugestão: {segmentoSugeridoOpcional}
                                   </Badge>
-                                )}
+                                ) : null}
                               </div>
                               <p className="text-[11px] text-slate-700 leading-snug">
                                 {item.descricao}
