@@ -38,6 +38,7 @@ export interface DadosEmpresaPerfil {
   // Campos operacionais para os motores de cálculo (Calculadora IBS/CBS, Comparativo e Diagnóstico Passo 2)
   faturamentoMensal: number // ex: 200000
   percentualComprasVendas: number // ex: 40 (%)
+  porcentagemComprasSimplesNacional?: number // ex: 0 (% de compras com fornecedores Simples Nacional)
   tipoAtividade: TipoAtividade // 'servico' | 'industria' | 'comercio' | 'misto'
   subatividadeServico: SubatividadeServico
   subatividadeIndustria: SubatividadeIndustria
@@ -522,6 +523,7 @@ export const DADOS_EMPRESA_PADRAO: DadosEmpresaPerfil = {
   // Campos operacionais / motores de cálculo
   faturamentoMensal: 200000,
   percentualComprasVendas: 40,
+  porcentagemComprasSimplesNacional: 0,
   tipoAtividade: 'servico',
   subatividadeServico: 'servico_comum',
   subatividadeIndustria: 'industria_comum',

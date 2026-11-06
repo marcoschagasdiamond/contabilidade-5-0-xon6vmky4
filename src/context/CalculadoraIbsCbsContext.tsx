@@ -547,6 +547,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       faturamentoMensal: perfilInicial.faturamentoMensal || CONFIGURACOES_PADRAO.faturamentoMensal,
       percentualComprasVendas:
         perfilInicial.percentualComprasVendas ?? CONFIGURACOES_PADRAO.percentualComprasVendas,
+      porcentagemComprasSimplesNacional:
+        perfilInicial.porcentagemComprasSimplesNacional ??
+        CONFIGURACOES_PADRAO.porcentagemComprasSimplesNacional,
       tipoAtividade: tipoAtividadeInicial,
       subatividadeServico: perfilInicial.subatividadeServico || 'servico_comum',
       subatividadeIndustria: perfilInicial.subatividadeIndustria || 'industria_comum',
@@ -1442,6 +1445,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       proporcaoServicoMisto,
       percentualComprasVendasComparativo,
       percentualComprasVendas: config.percentualComprasVendas ?? percentualComprasVendasComparativo,
+      porcentagemComprasSimplesNacional: config.porcentagemComprasSimplesNacional ?? 0,
       folhaPagamentoMensal,
       margemLucroEstimada,
       despesasComCreditosMensais,
@@ -1479,6 +1483,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         insumosEnergeticos: perfil.insumosEnergeticos,
         intangiveisRoyalties: perfil.intangiveisRoyalties,
         imobilizadoUltimos5Anos: perfil.imobilizadoUltimos5Anos,
+        porcentagemComprasSimplesNacional:
+          perfil.porcentagemComprasSimplesNacional ?? config.porcentagemComprasSimplesNacional,
       },
     }
   }, [
@@ -1539,6 +1545,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
           (p as any).subatividadeFoodService || p.config.subatividadeFoodService,
         proporcaoServicoMisto: p.proporcaoServicoMisto ?? p.config.proporcaoServicoMisto,
         aliquotaImpostoSeletivo: p.aliquotaImpostoSeletivo ?? p.config.aliquotaImpostoSeletivo,
+        porcentagemComprasSimplesNacional:
+          p.porcentagemComprasSimplesNacional ??
+          p.config.porcentagemComprasSimplesNacional ??
+          p.configuracoesDiagnostico?.porcentagemComprasSimplesNacional ??
+          0,
         anoTransicao: p.anoTransicao || p.config.anoTransicao,
         presetSetor: (p.presetSetor || p.config.presetSetor) as PresetSetorIbsCbs | undefined,
         etiquetasOrigem: p.config.etiquetasOrigem,
@@ -1564,6 +1575,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         subatividadeFoodService: (p as any).subatividadeFoodService || prev.subatividadeFoodService,
         proporcaoServicoMisto: p.proporcaoServicoMisto ?? prev.proporcaoServicoMisto,
         aliquotaImpostoSeletivo: p.aliquotaImpostoSeletivo ?? prev.aliquotaImpostoSeletivo,
+        porcentagemComprasSimplesNacional:
+          p.porcentagemComprasSimplesNacional ??
+          p.configuracoesDiagnostico?.porcentagemComprasSimplesNacional ??
+          prev.porcentagemComprasSimplesNacional ??
+          0,
       }))
     }
     if (p.valorOperacao !== undefined) setValorOperacao(p.valorOperacao)

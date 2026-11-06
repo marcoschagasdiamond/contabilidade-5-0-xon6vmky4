@@ -43,6 +43,7 @@ export interface ParametrosSimulacaoCalculadora {
   proporcaoServicoMisto: number
   percentualComprasVendasComparativo: number
   percentualComprasVendas?: number
+  porcentagemComprasSimplesNacional?: number
   folhaPagamentoMensal: number
   margemLucroEstimada: number
   despesasComCreditosMensais: number
@@ -102,6 +103,7 @@ export interface ParametrosSimulacaoCalculadora {
     insumosEnergeticos?: boolean
     intangiveisRoyalties?: boolean
     imobilizadoUltimos5Anos?: number
+    porcentagemComprasSimplesNacional?: number
     // Parâmetros Fiscais Fase 2
     percentualComprasSemCredito?: number
     saldoCredorAcumulado?: number

@@ -1208,6 +1208,7 @@ export interface ConfiguracoesGerais {
   regimeAtualEmpresa?: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
   faturamentoMensal?: number
   percentualComprasVendas?: number
+  porcentagemComprasSimplesNacional?: number
   tipoAtividade?: TipoAtividade
   subatividadeServico?: SubatividadeServico
   subatividadeIndustria?: SubatividadeIndustria
@@ -1262,6 +1263,7 @@ export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {
   regimeAtualEmpresa: 'Lucro Presumido',
   faturamentoMensal: 0,
   percentualComprasVendas: 0,
+  porcentagemComprasSimplesNacional: 0,
   tipoAtividade: 'servico',
   subatividadeServico: 'servico_comum',
   subatividadeIndustria: 'industria_comum',
