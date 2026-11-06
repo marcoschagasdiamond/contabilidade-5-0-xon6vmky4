@@ -367,6 +367,11 @@ export interface TotaisFiscaisImportados {
   receitaInterestadual?: number
   receitaExportacao?: number
   percentualVendasInterestaduais?: number
+  // IBS/CBS (novo modelo): preenchidos só quando o arquivo importado os traz
+  ibsDestacado?: number
+  cbsDestacado?: number
+  cstCClassTrib?: string
+  creditoIbsCbsApurado?: number
 }
 
 export type TipoDocumentoFiscalOrigem =

@@ -56,6 +56,13 @@ export interface ItemNfeExtraido {
   geraCreditoEntrada: boolean
   isMonofasicoPisCofins: boolean
   isSubstituicaoTributaria: boolean
+  // IBS/CBS (novo modelo) — presente só quando o XML trouxer o grupo IBSCBS
+  ibsCbs?: {
+    vIbs: number
+    vCbs: number
+    cst?: string
+    cClassTrib?: string
+  }
 }
 
 export interface NotaFiscalExtraida {
@@ -146,6 +153,12 @@ export interface AgregadosLoteNfe {
   empresaCnpjPrincipal?: string
   empresaNomePrincipal?: string
   empresaUfPrincipal?: string
+
+  // IBS/CBS destacados nos XML (só presentes quando o arquivo traz o grupo IBSCBS)
+  ibsDestacadoTotal?: number
+  cbsDestacadoTotal?: number
+  cstIbsCbsDetectados?: string[]
+  cClassTribDetectados?: string[]
 }
 
 export interface ResultadoParsingLoteNfe extends ResultadoParsingSped {
@@ -329,6 +342,7 @@ export function parseNfeXmlUnica(xmlTexto: string, nomeArquivo: string): NotaFis
     let cstCofins = ''
     let baseCofins = 0
     let vCofins = 0
+    let ibsCbs: ItemNfeExtraido['ibsCbs'] = undefined
 
     if (impostoEl) {
       // ICMS
@@ -358,6 +372,23 @@ export function parseNfeXmlUnica(xmlTexto: string, nomeArquivo: string): NotaFis
         baseCofins = parseNumeroXml(getDirectChildText(sub, 'vBC'))
         vCofins = parseNumeroXml(getDirectChildText(sub, 'vCOFINS'))
       }
+
+      // IBS/CBS: lido só se o grupo existir no XML; ausência não altera nada
+      const ibsCbsEl = impostoEl.getElementsByTagName('IBSCBS')[0]
+      if (ibsCbsEl) {
+        const vIbs = parseNumeroXml(getTagText(ibsCbsEl, 'vIBS'))
+        const vCbs = parseNumeroXml(getTagText(ibsCbsEl, 'vCBS'))
+        const cstIbs = getDirectChildText(ibsCbsEl, 'CST')
+        const cClass = getDirectChildText(ibsCbsEl, 'cClassTrib')
+        if (vIbs > 0 || vCbs > 0 || cstIbs || cClass) {
+          ibsCbs = {
+            vIbs,
+            vCbs,
+            cst: cstIbs || undefined,
+            cClassTrib: cClass || undefined,
+          }
+        }
+      }
     }
 
     const geraCredito = tipoOperacao === 'entrada' && geraCreditoEntradaPisCofins(cstPis)
@@ -386,6 +417,7 @@ export function parseNfeXmlUnica(xmlTexto: string, nomeArquivo: string): NotaFis
       geraCreditoEntrada: geraCredito,
       isMonofasicoPisCofins: mono,
       isSubstituicaoTributaria: st,
+      ...(ibsCbs ? { ibsCbs } : {}),
     })
   }
 
@@ -429,6 +461,13 @@ export function agregarLoteNfe(
 
   let vendasInterestaduais = 0
   let vendasEstaduais = 0
+
+  // IBS/CBS: acumulado apenas quando o XML traz o grupo (tolerante à ausência)
+  let ibsDestacadoTotal = 0
+  let cbsDestacadoTotal = 0
+  let temIbsCbs = false
+  const cstIbsSet = new Set<string>()
+  const cClassTribSet = new Set<string>()
 
   let totalVendasMonofasicas = 0
   let totalItensMonofasicos = 0
@@ -516,6 +555,13 @@ export function agregarLoteNfe(
       }
       if (it.isSubstituicaoTributaria) {
         presencaSt = true
+      }
+      if (it.ibsCbs) {
+        temIbsCbs = true
+        ibsDestacadoTotal += it.ibsCbs.vIbs || 0
+        cbsDestacadoTotal += it.ibsCbs.vCbs || 0
+        if (it.ibsCbs.cst) cstIbsSet.add(it.ibsCbs.cst)
+        if (it.ibsCbs.cClassTrib) cClassTribSet.add(it.ibsCbs.cClassTrib)
       }
 
       const ncmLimpo = it.ncm.replace(/\D/g, '')
@@ -624,6 +670,14 @@ export function agregarLoteNfe(
     empresaCnpjPrincipal: notas[0]?.emitenteCnpjCpf || perfilAtual.cnpj,
     empresaNomePrincipal: notas[0]?.emitenteNome || perfilAtual.nomeEmpresa,
     empresaUfPrincipal: notas[0]?.emitenteUf || perfilAtual.ufOrigem,
+    ...(temIbsCbs
+      ? {
+          ibsDestacadoTotal: Math.round(ibsDestacadoTotal * 100) / 100,
+          cbsDestacadoTotal: Math.round(cbsDestacadoTotal * 100) / 100,
+          cstIbsCbsDetectados: Array.from(cstIbsSet),
+          cClassTribDetectados: Array.from(cClassTribSet),
+        }
+      : {}),
   }
 }
 
