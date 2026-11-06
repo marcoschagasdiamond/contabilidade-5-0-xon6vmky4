@@ -28,6 +28,7 @@ import {
 } from '@/types/calculadoraIbsCbs'
 import { TABELAS_SIMPLES } from '@/lib/regimes'
 import { calcularIbsCbsSimplesNacional, type AnoBaseSimulacao } from '@/lib/reformaTributaria'
+import { obterAliquotasCreditoPorAno } from '@/lib/calculoFornecedores'
 import type {
   ParametrosSimulacaoCalculadora,
   ResultadosSimulacaoCalculadora,
@@ -169,7 +170,24 @@ export function calcularResultadosSimulacao(
   const debitoIbs = (vOperacao * aliqIbs) / 100
   const totalDebito = debitoCbs + debitoIbs
   const pctComprasSimples = Math.max(0, percentualComprasVendasSimples) / 100
-  const valorCreditos = vOperacao * pctComprasSimples * (totalIvaBase / 100)
+  const pctFornecSimples = Math.min(
+    1,
+    Math.max(
+      0,
+      (parametros.porcentagemComprasSimplesNacional ??
+        config.porcentagemComprasSimplesNacional ??
+        0) / 100,
+    ),
+  )
+  const anoSimplesNum =
+    typeof anoSimples === 'number' ? (anoSimples as AnoBaseSimulacao) : (2033 as AnoBaseSimulacao)
+  const aliqSimplesCreditoModulo2 =
+    obterAliquotasCreditoPorAno(anoSimplesNum).aliquotaSimplesMedia * 100
+  const aliqEfetivaComprasModulo2 =
+    pctFornecSimples > 0
+      ? (1 - pctFornecSimples) * totalIvaBase + pctFornecSimples * aliqSimplesCreditoModulo2
+      : totalIvaBase
+  const valorCreditos = vOperacao * pctComprasSimples * (aliqEfetivaComprasModulo2 / 100)
   const valorARecolher = Math.max(0, totalDebito - valorCreditos)
   const aliquotaEfetivaSimples = vOperacao > 0 ? (valorARecolher / vOperacao) * 100 : 0
 
@@ -530,7 +548,27 @@ export function calcularResultadosSimulacao(
   const valorImpostoSeletivo = (faturamentoInternoTributavel * aliqIsEfetiva) / 100
   const ibsCbsTotalNominal = cbsNominal + ibsNominal + valorImpostoSeletivo
 
-  const creditosComprasIbsCbs = (comprasValor * config.totalIvaDual) / 100
+  const pctFornecSimplesComp = Math.min(
+    1,
+    Math.max(
+      0,
+      (parametros.porcentagemComprasSimplesNacional ??
+        config.porcentagemComprasSimplesNacional ??
+        0) / 100,
+    ),
+  )
+  const anoTransicaoComp =
+    typeof config.anoTransicao === 'number'
+      ? (config.anoTransicao as AnoBaseSimulacao)
+      : (2033 as AnoBaseSimulacao)
+  const aliqSimplesCreditoModulo3 =
+    obterAliquotasCreditoPorAno(anoTransicaoComp).aliquotaSimplesMedia * 100
+  const aliqEfetivaComprasModulo3 =
+    pctFornecSimplesComp > 0
+      ? (1 - pctFornecSimplesComp) * config.totalIvaDual +
+        pctFornecSimplesComp * aliqSimplesCreditoModulo3
+      : config.totalIvaDual
+  const creditosComprasIbsCbs = (comprasValor * aliqEfetivaComprasModulo3) / 100
   const creditosDespesasIbsCbs = (despesasCreditosTotal * config.totalIvaDual) / 100
   const ibsCbsCreditosTotal = creditosComprasIbsCbs + creditosDespesasIbsCbs
   const ibsCbsTotalEfetivo = Math.max(0, ibsCbsTotalNominal - ibsCbsCreditosTotal)

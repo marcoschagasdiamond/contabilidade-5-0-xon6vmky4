@@ -50,6 +50,7 @@ import {
   type ResultadoCalculoSimplesReforma,
   type AnoBaseSimulacao,
 } from '@/lib/reformaTributaria'
+import { obterAliquotasCreditoPorAno } from '@/lib/calculoFornecedores'
 import {
   carregarDadosEmpresa,
   salvarDadosEmpresa,
@@ -1854,10 +1855,21 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const debitoIbs = (valor * aliqIbs) / 100
     const totalDebito = debitoCbs + debitoIbs
 
-    // Créditos = valor × percentual de compras × alíquota total padrão da fase
+    // Créditos = valor × percentual de compras × alíquota total ponderada da fase
     const pctCompras = Math.max(0, percentualComprasVendasSimples) / 100
-    // O crédito na aquisição ocorre na alíquota padrão plena da fase
-    const valorCreditosApurados = valor * pctCompras * (totalIvaBase / 100)
+    const pctFornecSimples = Math.min(
+      1,
+      Math.max(0, (config.porcentagemComprasSimplesNacional ?? 0) / 100),
+    )
+    const anoSimplesNum =
+      typeof ano === 'number' ? (ano as AnoBaseSimulacao) : (2033 as AnoBaseSimulacao)
+    const aliqSimplesCreditoModulo2 =
+      obterAliquotasCreditoPorAno(anoSimplesNum).aliquotaSimplesMedia * 100
+    const aliqEfetivaComprasModulo2 =
+      pctFornecSimples > 0
+        ? (1 - pctFornecSimples) * totalIvaBase + pctFornecSimples * aliqSimplesCreditoModulo2
+        : totalIvaBase
+    const valorCreditosApurados = valor * pctCompras * (aliqEfetivaComprasModulo2 / 100)
 
     // Fase 2: Redução proporcional do crédito por compras sem direito a crédito
     // Regra: crédito efetivo = crédito apurado × (1 − pctComprasSemCredito / 100)
@@ -2450,8 +2462,23 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const ibsCbsTotalNominal = cbsNominal + ibsNominal + valorImpostoSeletivo
 
     // Créditos plenos do IVA Dual:
-    // a) Compras sobre vendas (comprasValor × taxa total do IVA Dual padrão - creditamento amplo)
-    const creditosComprasIbsCbsBruto = (comprasValor * config.totalIvaDual) / 100
+    // a) Compras sobre vendas ponderadas pelo % de compras do Simples Nacional (LC 214/2025)
+    const pctFornecSimplesComp = Math.min(
+      1,
+      Math.max(0, (config.porcentagemComprasSimplesNacional ?? 0) / 100),
+    )
+    const anoTransicaoComp =
+      typeof config.anoTransicao === 'number'
+        ? (config.anoTransicao as AnoBaseSimulacao)
+        : (2033 as AnoBaseSimulacao)
+    const aliqSimplesCreditoModulo3 =
+      obterAliquotasCreditoPorAno(anoTransicaoComp).aliquotaSimplesMedia * 100
+    const aliqEfetivaComprasModulo3 =
+      pctFornecSimplesComp > 0
+        ? (1 - pctFornecSimplesComp) * config.totalIvaDual +
+          pctFornecSimplesComp * aliqSimplesCreditoModulo3
+        : config.totalIvaDual
+    const creditosComprasIbsCbsBruto = (comprasValor * aliqEfetivaComprasModulo3) / 100
     // Fase 2: Redução de créditos por compras sem direito a crédito
     // Regra: crédito efetivo = crédito apurado × (1 − pctComprasSemCredito / 100)
     const fatorCreditoAproveitavel = Math.max(0, 1 - (percentualComprasSemCredito || 0) / 100)
