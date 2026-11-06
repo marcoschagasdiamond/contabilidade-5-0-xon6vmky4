@@ -2685,7 +2685,7 @@ export default function DadosEmpresa() {
             regimeAtual={formData.regimeAtual}
             faturamentoMensalProprio={formData.faturamentoMensal || 0}
             onChangeVinculos={(novosVinculos: VinculoSocietario[]) => {
-              setFormData((prev) => ({
+              atualizarCampo((prev) => ({
                 ...prev,
                 vinculosSocietarios: novosVinculos,
               }))
