@@ -40,6 +40,14 @@ import { IndicadorValidadeFiscal } from '@/components/dadosEmpresa/IndicadorVali
 import { PainelAvisosCoerencia } from '@/components/dadosEmpresa/PainelAvisosCoerencia'
 import { SecaoImportacaoDocumentosFiscais } from '@/components/dadosEmpresa/SecaoImportacaoDocumentosFiscais'
 import { SecaoVinculosSocietarios } from '@/components/dadosEmpresa/SecaoVinculosSocietarios'
+import { CampoBuscaCnpj } from '@/components/dadosEmpresa/CampoBuscaCnpj'
+import { BadgeProvenienciaCnpj } from '@/components/dadosEmpresa/BadgeProvenienciaCnpj'
+import {
+  mapearCnaeParaSegmento,
+  mapearCidadeIss,
+  type DadosCnpjConsulta,
+} from '@/services/consultaCnpj'
+import type { CamposAplicacaoCnpj } from '@/components/dadosEmpresa/ModalConfirmarDadosCnpj'
 import { VinculoSocietario } from '@/types/dadosEmpresa'
 import { ResultadoParsingSped } from '@/lib/parseSpedFiscal'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
@@ -235,6 +243,97 @@ export default function DadosEmpresa() {
     } else if (errors.cnpj) {
       setErrors((prev) => ({ ...prev, cnpj: '' }))
     }
+  }
+
+  const handleAplicarDadosCnpj = (dados: DadosCnpjConsulta, opcoes: CamposAplicacaoCnpj) => {
+    atualizarCampo((prev) => {
+      const atualizado = { ...prev }
+
+      // Sempre garante que o CNPJ do formulário esteja com a formatação correta
+      atualizado.cnpj = dados.cnpjFormatado || formatarCNPJ(dados.cnpj)
+
+      // Razão Social / Nome da Empresa
+      if (opcoes.nomeEmpresa && dados.razaoSocial) {
+        if (!opcoes.apenasVazios || !atualizado.nomeEmpresa?.trim()) {
+          atualizado.nomeEmpresa = dados.razaoSocial
+        }
+      }
+
+      // Segmento a partir do CNAE Principal
+      if (opcoes.segmento && dados.cnaePrincipalCodigo) {
+        if (!opcoes.apenasVazios || !atualizado.segmento) {
+          atualizado.segmento = mapearCnaeParaSegmento(
+            dados.cnaePrincipalCodigo,
+            dados.cnaePrincipalDescricao,
+          )
+        }
+      }
+
+      // UF de Origem
+      if (opcoes.ufOrigem && dados.uf) {
+        if (!opcoes.apenasVazios || !atualizado.ufOrigem) {
+          atualizado.ufOrigem = dados.uf
+        }
+      }
+
+      // Cidade (ISS)
+      if (opcoes.cidade && dados.municipio) {
+        if (!opcoes.apenasVazios || !atualizado.cidade) {
+          const cid = mapearCidadeIss(dados.municipio, dados.uf)
+          atualizado.cidade = cid.cidadeId
+        }
+      }
+
+      // E-mail
+      if (opcoes.email && dados.email) {
+        if (!opcoes.apenasVazios || !atualizado.email?.trim()) {
+          atualizado.email = dados.email
+        }
+      }
+
+      // Telefone
+      if (opcoes.telefone && dados.telefone) {
+        if (!opcoes.apenasVazios || !atualizado.telefone?.trim()) {
+          atualizado.telefone = formatPhoneBR(dados.telefone)
+        }
+      }
+
+      // Guarda os metadados da consulta para proveniência
+      const enderecoFmt = [
+        dados.logradouro,
+        dados.numero ? `nº ${dados.numero}` : '',
+        dados.complemento,
+        dados.bairro ? `Bairro ${dados.bairro}` : '',
+        dados.municipio ? `${dados.municipio}/${dados.uf}` : '',
+        dados.cep ? `CEP ${dados.cep.replace(/(\d{5})(\d{3})/, '$1-$2')}` : '',
+      ]
+        .filter(Boolean)
+        .join(', ')
+
+      atualizado.dadosCnpjConsulta = {
+        razaoSocial: dados.razaoSocial,
+        nomeFantasia: dados.nomeFantasia,
+        situacaoCadastral: dados.situacaoCadastral,
+        dataAbertura: dados.dataAbertura,
+        cnaePrincipalCodigo: dados.cnaePrincipalCodigo,
+        cnaePrincipalDescricao: dados.cnaePrincipalDescricao,
+        enderecoCompleto: enderecoFmt,
+        cep: dados.cep,
+        fonte: dados.fonte,
+        consultadoEm: dados.consultadoEm,
+      }
+
+      return atualizado
+    })
+
+    // Limpa erros eventuais dos campos agora preenchidos
+    setErrors((prev) => ({
+      ...prev,
+      cnpj: '',
+      nomeEmpresa: '',
+      email: '',
+      telefone: '',
+    }))
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1009,12 +1108,48 @@ export default function DadosEmpresa() {
                 {/* Razão Social / Nome da Empresa e CNPJ da Empresa */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label
-                      htmlFor="nomeEmpresa"
-                      className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
-                    >
-                      Nome da Empresa *
-                    </Label>
+                    <CampoBuscaCnpj
+                      id="cnpjEmpresa"
+                      valor={formData.cnpj || ''}
+                      onChangeValor={(novoCnpjFormatado) => {
+                        atualizarCampo((prev) => ({ ...prev, cnpj: novoCnpjFormatado }))
+                        const erroCnpj = validarCnpjInline(novoCnpjFormatado)
+                        if (erroCnpj) {
+                          setErrors((prev) => ({ ...prev, cnpj: erroCnpj }))
+                        } else if (errors.cnpj) {
+                          setErrors((prev) => ({ ...prev, cnpj: '' }))
+                        }
+                      }}
+                      erro={errors.cnpj}
+                      valoresAtuaisFormulario={{
+                        nomeEmpresa: formData.nomeEmpresa,
+                        segmento: formData.segmento,
+                        ufOrigem: formData.ufOrigem,
+                        cidade: formData.cidade,
+                        email: formData.email,
+                        telefone: formData.telefone,
+                      }}
+                      aoAplicarDadosCnpj={handleAplicarDadosCnpj}
+                      label="CNPJ da Empresa"
+                      obrigatorio
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label
+                        htmlFor="nomeEmpresa"
+                        className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+                      >
+                        Nome da Empresa / Razão Social *
+                      </Label>
+                      {formData.dadosCnpjConsulta?.fonte && (
+                        <BadgeProvenienciaCnpj
+                          fonte={formData.dadosCnpjConsulta.fonte}
+                          consultadoEm={formData.dadosCnpjConsulta.consultadoEm}
+                        />
+                      )}
+                    </div>
                     <Input
                       id="nomeEmpresa"
                       type="text"
@@ -1034,37 +1169,6 @@ export default function DadosEmpresa() {
                       <span className="text-[11px] text-slate-500 mt-1 block">
                         Razão social ou nome fantasia utilizado em todos os módulos e relatórios.
                       </span>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <Label
-                        htmlFor="cnpjEmpresa"
-                        className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
-                      >
-                        CNPJ da Empresa *
-                      </Label>
-                      <span className="text-[11px] text-slate-400">14 dígitos</span>
-                    </div>
-                    <Input
-                      id="cnpjEmpresa"
-                      type="text"
-                      value={formData.cnpj || ''}
-                      onChange={handleCnpjChange}
-                      maxLength={18}
-                      placeholder="00.000.000/0000-00"
-                      className={`h-12 bg-white font-mono font-medium ${
-                        errors.cnpj ? 'border-red-400 bg-red-50/30' : 'border-slate-300'
-                      }`}
-                    />
-                    {errors.cnpj ? (
-                      <p className="mt-1 text-xs text-red-600 font-medium">{errors.cnpj}</p>
-                    ) : (
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        Aceita com ou sem máscara (ex: 00.000.000/0000-00). Validação de dígitos
-                        verificadores ativa.
-                      </p>
                     )}
                   </div>
                 </div>
@@ -1137,6 +1241,51 @@ export default function DadosEmpresa() {
                   </div>
                 </div>
               </div>
+
+              {/* Box Informativo de Dados Cadastrais Obtidos via Consulta de CNPJ */}
+              {formData.dadosCnpjConsulta && (
+                <div className="p-3.5 bg-sky-50/70 border border-sky-200 rounded-lg text-xs text-sky-950 space-y-1.5">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="font-semibold text-sky-900 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-sky-600" />
+                      Dados cadastrais oficiais sincronizados
+                    </span>
+                    <BadgeProvenienciaCnpj
+                      fonte={formData.dadosCnpjConsulta.fonte}
+                      consultadoEm={formData.dadosCnpjConsulta.consultadoEm}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1 text-[11px] text-sky-800">
+                    {formData.dadosCnpjConsulta.situacaoCadastral && (
+                      <div>
+                        <span className="font-medium text-sky-900">Situação:</span>{' '}
+                        {formData.dadosCnpjConsulta.situacaoCadastral}
+                      </div>
+                    )}
+                    {formData.dadosCnpjConsulta.dataAbertura && (
+                      <div>
+                        <span className="font-medium text-sky-900">Abertura:</span>{' '}
+                        {formData.dadosCnpjConsulta.dataAbertura}
+                      </div>
+                    )}
+                    {formData.dadosCnpjConsulta.cnaePrincipalCodigo && (
+                      <div
+                        className="sm:col-span-2 md:col-span-1 truncate"
+                        title={`${formData.dadosCnpjConsulta.cnaePrincipalCodigo} - ${formData.dadosCnpjConsulta.cnaePrincipalDescricao || ''}`}
+                      >
+                        <span className="font-medium text-sky-900">CNAE:</span>{' '}
+                        {formData.dadosCnpjConsulta.cnaePrincipalCodigo}
+                      </div>
+                    )}
+                    {formData.dadosCnpjConsulta.enderecoCompleto && (
+                      <div className="sm:col-span-2 md:col-span-3 text-slate-600">
+                        <span className="font-medium text-sky-900">Endereço:</span>{' '}
+                        {formData.dadosCnpjConsulta.enderecoCompleto}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* SUB-BLOCO B: LOCALIZAÇÃO (UF de Origem & Cidade ISS com box explicativo) */}
               <div className="pt-5 border-t border-slate-100 space-y-4">

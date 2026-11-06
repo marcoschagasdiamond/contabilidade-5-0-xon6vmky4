@@ -102,6 +102,20 @@ export interface DadosEmpresaPerfil {
   // 6. UFs adicionais de operação (além da UF principal de origem)
   ufsOperacao: string[]
 
+  // Consulta de CNPJ Externa
+  dadosCnpjConsulta?: {
+    razaoSocial?: string
+    nomeFantasia?: string
+    situacaoCadastral?: string
+    dataAbertura?: string
+    cnaePrincipalCodigo?: string
+    cnaePrincipalDescricao?: string
+    enderecoCompleto?: string
+    cep?: string
+    fonte?: string
+    consultadoEm?: string
+  }
+
   // Metadados e Documento Fiscal Importado
   atualizadoEm?: string
   documentoFiscalImportado?: DocumentoFiscalImportadoReferencia

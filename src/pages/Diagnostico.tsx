@@ -92,6 +92,14 @@ import { useFonteMestraSync } from '@/hooks/useFonteMestraSync'
 import { camposDivergem } from '@/lib/fonteMestra'
 import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 import { useToast } from '@/hooks/use-toast'
+import { CampoBuscaCnpj } from '@/components/dadosEmpresa/CampoBuscaCnpj'
+import { BadgeProvenienciaCnpj } from '@/components/dadosEmpresa/BadgeProvenienciaCnpj'
+import {
+  mapearCnaeParaSegmento,
+  mapearCidadeIss,
+  type DadosCnpjConsulta,
+} from '@/services/consultaCnpj'
+import type { CamposAplicacaoCnpj } from '@/components/dadosEmpresa/ModalConfirmarDadosCnpj'
 
 interface FormErrors {
   nome?: string
@@ -610,12 +618,76 @@ export default function Diagnostico() {
     }
   }
 
+  const [dadosCnpjConsultaDiag, setDadosCnpjConsultaDiag] = useState<DadosCnpjConsulta | null>(null)
+
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatarCNPJ(e.target.value)
     setFormData((prev) => ({ ...prev, cnpj: formatted }))
     if (errors.cnpj) {
       setErrors((prev) => ({ ...prev, cnpj: undefined }))
     }
+  }
+
+  const handleAplicarDadosCnpjDiagnostico = (
+    dados: DadosCnpjConsulta,
+    opcoes: CamposAplicacaoCnpj,
+  ) => {
+    setDadosCnpjConsultaDiag(dados)
+    setFormData((prev) => {
+      const atualizado = { ...prev }
+
+      atualizado.cnpj = dados.cnpjFormatado || formatarCNPJ(dados.cnpj)
+
+      if (opcoes.nomeEmpresa && dados.razaoSocial) {
+        if (!opcoes.apenasVazios || !atualizado.empresa?.trim()) {
+          atualizado.empresa = dados.razaoSocial
+        }
+      }
+
+      if (opcoes.segmento && dados.cnaePrincipalCodigo) {
+        if (!opcoes.apenasVazios || !atualizado.segmento) {
+          atualizado.segmento = mapearCnaeParaSegmento(
+            dados.cnaePrincipalCodigo,
+            dados.cnaePrincipalDescricao,
+          ) as SegmentoEmpresa
+        }
+      }
+
+      if (opcoes.ufOrigem && dados.uf) {
+        if (!opcoes.apenasVazios || !atualizado.ufOrigem) {
+          atualizado.ufOrigem = dados.uf
+        }
+      }
+
+      if (opcoes.cidade && dados.municipio) {
+        if (!opcoes.apenasVazios || !atualizado.cidade) {
+          const cid = mapearCidadeIss(dados.municipio, dados.uf)
+          atualizado.cidade = cid.cidadeId
+        }
+      }
+
+      if (opcoes.email && dados.email) {
+        if (!opcoes.apenasVazios || !atualizado.email?.trim()) {
+          atualizado.email = dados.email
+        }
+      }
+
+      if (opcoes.telefone && dados.telefone) {
+        if (!opcoes.apenasVazios || !atualizado.telefone?.trim()) {
+          atualizado.telefone = formatPhoneBR(dados.telefone)
+        }
+      }
+
+      return atualizado
+    })
+
+    setErrors((prev) => ({
+      ...prev,
+      cnpj: undefined,
+      empresa: undefined,
+      email: undefined,
+      telefone: undefined,
+    }))
   }
 
   const handleRbt12Change = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1264,11 +1336,60 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 {/* Razão Social / Nome da Empresa e CNPJ da Empresa */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
+                    {isEmpresario ? (
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                            CNPJ da Empresa *
+                          </label>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                            Somente Leitura
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          value={formData.cnpj}
+                          readOnly
+                          disabled
+                          className="w-full px-4 py-3 rounded-xl border text-sm font-mono bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200"
+                        />
+                      </div>
+                    ) : (
+                      <CampoBuscaCnpj
+                        id="cnpjEmpresaDiagnostico"
+                        valor={formData.cnpj}
+                        onChangeValor={(novoCnpjFormatado) => {
+                          setFormData((prev) => ({ ...prev, cnpj: novoCnpjFormatado }))
+                          if (errors.cnpj) setErrors((prev) => ({ ...prev, cnpj: undefined }))
+                        }}
+                        erro={errors.cnpj}
+                        valoresAtuaisFormulario={{
+                          nomeEmpresa: formData.empresa,
+                          segmento: formData.segmento,
+                          ufOrigem: formData.ufOrigem,
+                          cidade: formData.cidade,
+                          email: formData.email,
+                          telefone: formData.telefone,
+                        }}
+                        aoAplicarDadosCnpj={handleAplicarDadosCnpjDiagnostico}
+                        label="CNPJ da Empresa"
+                        obrigatorio
+                      />
+                    )}
+                  </div>
+
+                  <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                        Nome da Empresa *
+                        Nome da Empresa / Razão Social *
                       </label>
-                      {isEmpresario && (
+                      {dadosCnpjConsultaDiag?.fonte && (
+                        <BadgeProvenienciaCnpj
+                          fonte={dadosCnpjConsultaDiag.fonte}
+                          consultadoEm={dadosCnpjConsultaDiag.consultadoEm}
+                        />
+                      )}
+                      {isEmpresario && !dadosCnpjConsultaDiag?.fonte && (
                         <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
                           Somente Leitura
                         </span>
@@ -1295,44 +1416,10 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     {errors.empresa && (
                       <p className="mt-1 text-xs text-red-600 font-medium">{errors.empresa}</p>
                     )}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                        CNPJ da Empresa *
-                      </label>
-                      {isEmpresario ? (
-                        <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
-                          Somente Leitura
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-slate-400">14 dígitos</span>
-                      )}
-                    </div>
-                    <input
-                      type="text"
-                      value={formData.cnpj}
-                      onChange={handleCnpjChange}
-                      maxLength={18}
-                      placeholder="00.000.000/0000-00"
-                      disabled={isEmpresario}
-                      readOnly={isEmpresario}
-                      className={`w-full px-4 py-3 rounded-xl border text-sm font-mono ${
-                        isEmpresario
-                          ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed select-none border-slate-200'
-                          : errors.cnpj
-                            ? 'border-red-400 bg-red-50/30 text-slate-900 input-focus-ring'
-                            : 'border-slate-200 text-slate-900 bg-slate-50/50 input-focus-ring'
-                      }`}
-                    />
-                    {errors.cnpj && (
-                      <p className="mt-1 text-xs text-red-600 font-medium">{errors.cnpj}</p>
-                    )}
-                    {!errors.cnpj && (
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        Aceita com ou sem máscara (ex: 00.000.000/0000-00).
-                      </p>
+                    {!errors.empresa && (
+                      <span className="text-[11px] text-slate-500 mt-1 block">
+                        Razão social ou nome fantasia da empresa analisada.
+                      </span>
                     )}
                   </div>
                 </div>
