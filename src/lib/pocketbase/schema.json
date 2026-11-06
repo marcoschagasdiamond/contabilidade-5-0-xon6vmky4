@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-06T17:43:54.629Z",
+  "generatedAt": "2026-11-06T17:58:16.123Z",
   "collections": [
     {
       "name": "users",
@@ -954,6 +954,30 @@
         {
           "name": "cnaes_secundarios",
           "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ibs_destacado",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cbs_destacado",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cst_cclass_trib",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "credito_ibs_cbs_apurado",
+          "type": "number",
           "required": false,
           "system": false
         }
