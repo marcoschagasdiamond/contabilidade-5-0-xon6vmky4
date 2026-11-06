@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-06T11:29:18.417Z",
+  "generatedAt": "2026-11-06T11:58:17.487Z",
   "collections": [
     {
       "name": "users",
@@ -947,6 +947,12 @@
         },
         {
           "name": "vinculos_societarios",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cnaes_secundarios",
           "type": "json",
           "required": false,
           "system": false

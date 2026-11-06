@@ -44,6 +44,8 @@ import { CampoBuscaCnpj } from '@/components/dadosEmpresa/CampoBuscaCnpj'
 import { BadgeProvenienciaCnpj } from '@/components/dadosEmpresa/BadgeProvenienciaCnpj'
 import { BadgeProvenienciaQsa } from '@/components/dadosEmpresa/BadgeProvenienciaQsa'
 import { CampoBuscaCnae } from '@/components/dadosEmpresa/CampoBuscaCnae'
+import { SecaoCnaesSecundarios } from '@/components/dadosEmpresa/SecaoCnaesSecundarios'
+import type { ItemCnaeSecundarioSalvo } from '@/types/dadosEmpresa'
 import { BadgeProvenienciaCnae } from '@/components/dadosEmpresa/BadgeProvenienciaCnae'
 import type { ItemResultadoCnae } from '@/services/consultaCnae'
 import type { OpcoesConfirmacaoCnae } from '@/components/dadosEmpresa/ModalConfirmarDadosCnae'
@@ -437,6 +439,50 @@ export default function DadosEmpresa() {
         })
 
         atualizado.vinculosSocietarios = vinculosAtuais
+      }
+
+      // Integração de CNAEs Secundários
+      if (
+        opcoes.incluirCnaesSecundarios &&
+        Array.isArray(dados.cnaesSecundarios) &&
+        dados.cnaesSecundarios.length > 0 &&
+        Array.isArray(opcoes.cnaesSecundariosSelecionadosCodigos) &&
+        opcoes.cnaesSecundariosSelecionadosCodigos.length > 0
+      ) {
+        const cnaesExistentes: ItemCnaeSecundarioSalvo[] = Array.isArray(
+          atualizado.cnaesSecundarios,
+        )
+          ? [...atualizado.cnaesSecundarios]
+          : []
+
+        const cnaesParaAdicionar = dados.cnaesSecundarios.filter((c, idx) => {
+          const idOuCodigo = c.codigo || `cnae_${idx}`
+          return opcoes.cnaesSecundariosSelecionadosCodigos.includes(idOuCodigo)
+        })
+
+        cnaesParaAdicionar.forEach((c) => {
+          const limpoCodigo = (c.codigo || '').replace(/\D/g, '')
+          const jaExiste = cnaesExistentes.some(
+            (item) => (item.codigo || '').replace(/\D/g, '') === limpoCodigo,
+          )
+
+          if (jaExiste) {
+            // Deduplica por código para não sobrescrever nem duplicar
+            return
+          }
+
+          const segSugerido = mapearCnaeParaSegmento(c.codigo, c.descricao)
+          cnaesExistentes.push({
+            codigo: c.codigo,
+            codigoFormatado: c.codigoFormatado,
+            descricao: c.descricao,
+            segmentoSugerido: segSugerido,
+            fonte: dados.fonte,
+            consultadoEm: dados.consultadoEm,
+          })
+        })
+
+        atualizado.cnaesSecundarios = cnaesExistentes
       }
 
       return atualizado
@@ -1593,6 +1639,36 @@ export default function DadosEmpresa() {
                       />
                     </div>
                   )}
+
+                  {/* Seção de CNAEs Secundários salvos com badge de proveniência */}
+                  {Array.isArray(formData.cnaesSecundarios) &&
+                    formData.cnaesSecundarios.length > 0 && (
+                      <SecaoCnaesSecundarios
+                        cnaes={formData.cnaesSecundarios}
+                        segmentoAtual={formData.segmento}
+                        onRemoverItem={(codRemover) => {
+                          const limpoCod = (codRemover || '').replace(/\D/g, '')
+                          atualizarCampo((prev) => ({
+                            ...prev,
+                            cnaesSecundarios: (prev.cnaesSecundarios || []).filter(
+                              (item) => (item.codigo || '').replace(/\D/g, '') !== limpoCod,
+                            ),
+                          }))
+                        }}
+                        onSugerirSegmento={(novoSeg) => {
+                          atualizarCampo((prev) => {
+                            const atualizado = { ...prev, segmento: novoSeg }
+                            if (!prev.atividadeMista) {
+                              if (novoSeg === 'Comércio') atualizado.tipoAtividade = 'comercio'
+                              else if (novoSeg === 'Indústria')
+                                atualizado.tipoAtividade = 'industria'
+                              else atualizado.tipoAtividade = 'servico'
+                            }
+                            return atualizado
+                          })
+                        }}
+                      />
+                    )}
                 </div>
 
                 <div className="flex items-center justify-between mb-2">

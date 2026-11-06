@@ -41,6 +41,9 @@ export interface CamposAplicacaoCnpj {
   incluirQsa: boolean
   sociosSelecionadosIds: string[]
   modoQsa: 'vinculos' | 'informativo'
+  // Opções de CNAEs Secundários
+  incluirCnaesSecundarios: boolean
+  cnaesSecundariosSelecionadosCodigos: string[]
 }
 
 interface ModalConfirmarDadosCnpjProps {
@@ -77,6 +80,8 @@ export function ModalConfirmarDadosCnpj({
     incluirQsa: true,
     sociosSelecionadosIds: [],
     modoQsa: 'vinculos',
+    incluirCnaesSecundarios: true,
+    cnaesSecundariosSelecionadosCodigos: [],
   })
 
   // Sincroniza estado inicial sempre que novos dados chegarem
@@ -84,6 +89,8 @@ export function ModalConfirmarDadosCnpj({
     if (dados) {
       const qsaList = Array.isArray(dados.qsa) ? dados.qsa : []
       const idsIniciais = qsaList.map((s, idx) => s.id || `qsa_${idx}`)
+      const cnaesSecList = Array.isArray(dados.cnaesSecundarios) ? dados.cnaesSecundarios : []
+      const codigosCnaesIniciais = cnaesSecList.map((c, idx) => c.codigo || `cnae_${idx}`)
       setSelecao({
         nomeEmpresa: true,
         segmento: true,
@@ -95,6 +102,8 @@ export function ModalConfirmarDadosCnpj({
         incluirQsa: qsaList.length > 0,
         sociosSelecionadosIds: idsIniciais,
         modoQsa: 'vinculos',
+        incluirCnaesSecundarios: cnaesSecList.length > 0,
+        cnaesSecundariosSelecionadosCodigos: codigosCnaesIniciais,
       })
     }
   }, [dados])
@@ -611,6 +620,141 @@ export function ModalConfirmarDadosCnpj({
                 </div>
               </div>
             )}
+
+            {/* SEÇÃO 3: ATIVIDADES ECONÔMICAS SECUNDÁRIAS (CNAES SECUNDÁRIOS) */}
+            <div className="pt-2 border-t border-slate-200">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 rounded bg-[#07132B]/10 text-[#07132B]">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-semibold text-slate-800 text-xs block">
+                      Atividades Econômicas Secundárias (CNAEs Secundários)
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      {Array.isArray(dados.cnaesSecundarios) && dados.cnaesSecundarios.length > 0
+                        ? `${dados.cnaesSecundarios.length} atividade(s) secundária(s) localizada(s) no CNPJ`
+                        : 'Nenhuma atividade secundária informada ou disponível nesta fonte'}
+                    </span>
+                  </div>
+                </div>
+
+                {Array.isArray(dados.cnaesSecundarios) && dados.cnaesSecundarios.length > 0 && (
+                  <Badge className="bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/30 text-[10px]">
+                    {dados.cnaesSecundarios.length} CNAE(s)
+                  </Badge>
+                )}
+              </div>
+
+              {(!Array.isArray(dados.cnaesSecundarios) || dados.cnaesSecundarios.length === 0) && (
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-500 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>
+                    CNAEs secundários não disponíveis nesta fonte ou a empresa não possui atividades
+                    secundárias registradas.
+                  </span>
+                </div>
+              )}
+
+              {Array.isArray(dados.cnaesSecundarios) && dados.cnaesSecundarios.length > 0 && (
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between text-xs text-slate-600 px-1">
+                    <label className="flex items-center gap-2 font-medium text-slate-700 cursor-pointer">
+                      <Checkbox
+                        checked={selecao.incluirCnaesSecundarios}
+                        onCheckedChange={(checked) =>
+                          setSelecao((prev) => ({ ...prev, incluirCnaesSecundarios: !!checked }))
+                        }
+                      />
+                      <span>Importar CNAEs secundários selecionados</span>
+                    </label>
+
+                    {selecao.incluirCnaesSecundarios && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const todosCodigos = (dados.cnaesSecundarios || []).map(
+                            (c, idx) => c.codigo || `cnae_${idx}`,
+                          )
+                          const todosMarcados =
+                            selecao.cnaesSecundariosSelecionadosCodigos.length ===
+                            todosCodigos.length
+                          setSelecao((prev) => ({
+                            ...prev,
+                            cnaesSecundariosSelecionadosCodigos: todosMarcados ? [] : todosCodigos,
+                          }))
+                        }}
+                        className="text-[11px] text-[#07132B] hover:underline font-semibold"
+                      >
+                        {selecao.cnaesSecundariosSelecionadosCodigos.length ===
+                        (dados.cnaesSecundarios || []).length
+                          ? 'Desmarcar todos'
+                          : 'Marcar todos'}
+                      </button>
+                    )}
+                  </div>
+
+                  {selecao.incluirCnaesSecundarios && (
+                    <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
+                      {dados.cnaesSecundarios.map((item, idx) => {
+                        const codigoId = item.codigo || `cnae_${idx}`
+                        const marcado =
+                          selecao.cnaesSecundariosSelecionadosCodigos.includes(codigoId)
+                        const codigoExibicao =
+                          item.codigoFormatado ||
+                          (item.codigo && item.codigo.length === 7
+                            ? `${item.codigo.slice(0, 4)}-${item.codigo.slice(4, 5)}/${item.codigo.slice(5, 7)}`
+                            : item.codigo)
+                        const segmentoItem = mapearCnaeParaSegmento(item.codigo, item.descricao)
+
+                        return (
+                          <label
+                            key={codigoId}
+                            className={`p-2 rounded-lg border text-xs flex items-start gap-2.5 cursor-pointer transition ${
+                              marcado
+                                ? 'bg-white border-slate-300 shadow-xs'
+                                : 'bg-slate-100/70 border-slate-200 opacity-60 hover:opacity-100'
+                            }`}
+                          >
+                            <Checkbox
+                              checked={marcado}
+                              onCheckedChange={(checked) => {
+                                setSelecao((prev) => {
+                                  const novo = checked
+                                    ? [...prev.cnaesSecundariosSelecionadosCodigos, codigoId]
+                                    : prev.cnaesSecundariosSelecionadosCodigos.filter(
+                                        (x) => x !== codigoId,
+                                      )
+                                  return { ...prev, cnaesSecundariosSelecionadosCodigos: novo }
+                                })
+                              }}
+                              className="mt-0.5"
+                            />
+
+                            <div className="flex-1 min-w-0 space-y-0.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-mono font-semibold text-slate-800 text-[11px]">
+                                  {codigoExibicao}
+                                </span>
+                                {segmentoItem && (
+                                  <Badge className="bg-[#07132B]/10 text-[#07132B] border-none text-[10px] py-0 px-1 font-normal">
+                                    {segmentoItem}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-700 leading-snug">
+                                {item.descricao}
+                              </p>
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

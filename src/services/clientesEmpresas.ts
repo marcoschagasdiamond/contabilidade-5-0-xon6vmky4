@@ -57,6 +57,8 @@ export interface ClienteEmpresaModel {
   numero_filiais?: number
   ufs_operacao?: string[]
   documento_fiscal_importado?: any
+  vinculos_societarios?: any
+  cnaes_secundarios?: any
   created?: string
   updated?: string
 }
@@ -170,6 +172,9 @@ export function perfilToRecord(
 
   if (perfil.vinculosSocietarios !== undefined)
     (result as any).vinculos_societarios = perfil.vinculosSocietarios
+
+  if (perfil.cnaesSecundarios !== undefined)
+    (result as any).cnaes_secundarios = perfil.cnaesSecundarios
 
   return result
 }
@@ -333,6 +338,18 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
         ? (() => {
             try {
               const parsed = JSON.parse((rec as any).vinculos_societarios)
+              return Array.isArray(parsed) ? parsed : []
+            } catch {
+              return []
+            }
+          })()
+        : [],
+    cnaesSecundarios: Array.isArray((rec as any).cnaes_secundarios)
+      ? (rec as any).cnaes_secundarios
+      : typeof (rec as any).cnaes_secundarios === 'string'
+        ? (() => {
+            try {
+              const parsed = JSON.parse((rec as any).cnaes_secundarios)
               return Array.isArray(parsed) ? parsed : []
             } catch {
               return []

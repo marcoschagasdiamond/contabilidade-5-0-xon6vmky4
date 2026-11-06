@@ -1072,6 +1072,13 @@ export default function DiagnosticoRelatorioConsolidado() {
                       Segmento Homologado
                     </span>
                     <strong className="text-slate-800 text-sm">{dadosEmpresa.segmento}</strong>
+                    {Array.isArray(dadosEmpresa.cnaesSecundarios) &&
+                      dadosEmpresa.cnaesSecundarios.length > 0 && (
+                        <span className="text-[10px] text-slate-500 block mt-0.5">
+                          +{dadosEmpresa.cnaesSecundarios.length} CNAE(s) secundário(s)
+                          registrado(s)
+                        </span>
+                      )}
                   </div>
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
                     <span className="text-slate-400 uppercase font-semibold block text-[10px]">

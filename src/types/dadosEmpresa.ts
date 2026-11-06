@@ -153,6 +153,18 @@ export interface DadosEmpresaPerfil {
 
   // Módulo Vínculos Societários & Risco de Regime (LC 123/2006, art. 3º)
   vinculosSocietarios?: VinculoSocietario[]
+
+  // Atividades Econômicas Secundárias (CNAEs Secundários) com Metadados de Proveniência
+  cnaesSecundarios?: ItemCnaeSecundarioSalvo[]
+}
+
+export interface ItemCnaeSecundarioSalvo {
+  codigo: string
+  codigoFormatado?: string
+  descricao: string
+  segmentoSugerido?: string
+  fonte?: string
+  consultadoEm?: string
 }
 
 // ============================================================================

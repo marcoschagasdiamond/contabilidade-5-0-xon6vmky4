@@ -11,6 +11,7 @@ import { SegmentoEmpresa, CIDADES_ISS_MAPA } from '@/lib/regimes'
 
 export interface ItemCnaeConsulta {
   codigo: string
+  codigoFormatado?: string
   descricao: string
 }
 
@@ -372,29 +373,51 @@ async function consultarMinhaReceita(cnpjLimpo: string): Promise<DadosCnpjConsul
 }
 
 /**
- * Tenta enriquecer uma consulta que veio sem sócios (ou com lista vazia) buscando especificamente
- * o QSA via Minha Receita ou ReceitaWS.
+ * Tenta enriquecer uma consulta que veio sem sócios ou sem CNAEs secundários
+ * buscando especificamente via Minha Receita ou ReceitaWS.
  */
-async function enriquecerQsaSeNecessario(dados: DadosCnpjConsulta): Promise<DadosCnpjConsulta> {
-  if (Array.isArray(dados.qsa) && dados.qsa.length > 0) {
+async function enriquecerDadosCnpjSeNecessario(
+  dados: DadosCnpjConsulta,
+): Promise<DadosCnpjConsulta> {
+  const precisaQsa = !Array.isArray(dados.qsa) || dados.qsa.length === 0
+  const precisaCnaesSecundarios =
+    !Array.isArray(dados.cnaesSecundarios) || dados.cnaesSecundarios.length === 0
+
+  if (!precisaQsa && !precisaCnaesSecundarios) {
     return dados
   }
 
-  // Se não tem QSA, tenta Minha Receita para obter os sócios
+  // Se falta QSA ou CNAEs secundários, tenta Minha Receita
   try {
     const resM = await consultarMinhaReceita(dados.cnpj)
-    if (Array.isArray(resM.qsa) && resM.qsa.length > 0) {
-      return {
-        ...dados,
-        qsa: resM.qsa,
-        qsaFonte: 'minhareceita',
-      }
+    let alterado = false
+    const copia = { ...dados }
+
+    if (precisaQsa && Array.isArray(resM.qsa) && resM.qsa.length > 0) {
+      copia.qsa = resM.qsa
+      copia.qsaFonte = 'minhareceita'
+      alterado = true
     }
+
+    if (
+      precisaCnaesSecundarios &&
+      Array.isArray(resM.cnaesSecundarios) &&
+      resM.cnaesSecundarios.length > 0
+    ) {
+      copia.cnaesSecundarios = resM.cnaesSecundarios
+      alterado = true
+    }
+
+    if (alterado) return copia
   } catch (_e) {
     // Silencioso se Minha Receita falhar
   }
 
   return dados
+}
+
+async function enriquecerQsaSeNecessario(dados: DadosCnpjConsulta): Promise<DadosCnpjConsulta> {
+  return enriquecerDadosCnpjSeNecessario(dados)
 }
 
 /**
@@ -576,7 +599,7 @@ export async function consultarCnpjExterno(cnpjInformado: string): Promise<Resul
   // 1. Tentar BrasilAPI primeiro
   try {
     const dadosBrasil = await consultarBrasilApi(cnpjLimpo)
-    const dadosEnriquecidos = await enriquecerQsaSeNecessario(dadosBrasil)
+    const dadosEnriquecidos = await enriquecerDadosCnpjSeNecessario(dadosBrasil)
     return { sucesso: true, dados: dadosEnriquecidos }
   } catch (errBrasil: any) {
     const msgBrasil = errBrasil?.message || ''
@@ -600,7 +623,7 @@ export async function consultarCnpjExterno(cnpjInformado: string): Promise<Resul
       // 3. Fallback: ReceitaWS
       try {
         const dadosRws = await consultarReceitaWs(cnpjLimpo)
-        const dadosEnriquecidos = await enriquecerQsaSeNecessario(dadosRws)
+        const dadosEnriquecidos = await enriquecerDadosCnpjSeNecessario(dadosRws)
         return {
           sucesso: true,
           dados: dadosEnriquecidos,
