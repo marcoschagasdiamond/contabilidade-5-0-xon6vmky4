@@ -828,6 +828,59 @@ export default function DadosEmpresa() {
       receitaInterestadual: resultado.detalhes.receitaInterestadual,
       receitaExportacao: resultado.detalhes.receitaExportacao,
       percentualVendasInterestaduais: resultado.detalhes.percentualVendasInterestaduais,
+      // IBS/CBS (novo modelo): só entram quando o arquivo importado os trouxe
+      ...(resultado.detalhes.ibsDestacado !== undefined
+        ? {
+            ibsDestacado: resultado.detalhes.ibsDestacado,
+            cbsDestacado: resultado.detalhes.cbsDestacado,
+            cstCClassTrib:
+              [
+                ...(resultado.detalhes.cstIbsCbsDetectados || []),
+                ...(resultado.detalhes.cClassTribDetectados || []),
+              ]
+                .filter(Boolean)
+                .join(', ') || undefined,
+            creditoIbsCbsApurado: resultado.detalhes.creditoIbsCbsApurado,
+          }
+        : {}),
+    }
+
+    // Proveniência dos campos de IBS/CBS (badges no quadro de totais)
+    if (resultado.detalhes.ibsDestacado !== undefined) {
+      const fmtMoedaIbs = (v?: number) =>
+        (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      const registrarOrigemIbs = (chave: string, rotulo: string, valor?: string) => {
+        mapaOrigemCampos[chave] = {
+          chave,
+          rotulo,
+          documento: resultado.metadados.nomeArquivo,
+          tipo: tipoDoc,
+          dataImportacao: dataHoraIso,
+          valorFormatado: valor,
+        }
+      }
+      registrarOrigemIbs(
+        'ibsDestacado',
+        'IBS Destacado (Total)',
+        fmtMoedaIbs(resultado.detalhes.ibsDestacado),
+      )
+      if (resultado.detalhes.cbsDestacado !== undefined) {
+        registrarOrigemIbs(
+          'cbsDestacado',
+          'CBS Destacada (Total)',
+          fmtMoedaIbs(resultado.detalhes.cbsDestacado),
+        )
+      }
+      if (totaisFiscais.cstCClassTrib) {
+        registrarOrigemIbs('cstCClassTrib', 'CST / cClassTrib IBS-CBS', totaisFiscais.cstCClassTrib)
+      }
+      if (totaisFiscais.creditoIbsCbsApurado !== undefined) {
+        registrarOrigemIbs(
+          'creditoIbsCbsApurado',
+          'Crédito IBS/CBS Apurado',
+          fmtMoedaIbs(totaisFiscais.creditoIbsCbsApurado),
+        )
+      }
     }
 
     // Agregados Contábeis (se vierem de balancete)

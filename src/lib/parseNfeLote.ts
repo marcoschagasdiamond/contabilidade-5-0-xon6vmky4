@@ -787,6 +787,20 @@ export function construirResultadoParsingLoteNfe(
     ufsOperacaoDetectadas: agregados.ufsDetectadas,
     regimeEspecialSugerido: regimeSugerido,
     avisos,
+    // IBS/CBS (integração antecipada): mapeados para totaisFiscais apenas quando
+    // o lote de NF-e trouxe o grupo IBSCBS; ausência não altera a saída
+    ...(agregados.ibsDestacadoTotal !== undefined
+      ? {
+          ibsDestacado: agregados.ibsDestacadoTotal,
+          cbsDestacado: agregados.cbsDestacadoTotal,
+          cstIbsCbsDetectados: agregados.cstIbsCbsDetectados || [],
+          cClassTribDetectados: agregados.cClassTribDetectados || [],
+          creditoIbsCbsApurado:
+            Math.round(
+              ((agregados.ibsDestacadoTotal || 0) + (agregados.cbsDestacadoTotal || 0)) * 100,
+            ) / 100,
+        }
+      : {}),
   }
 
   // Prepara campos sugeridos para Fonte Mestra

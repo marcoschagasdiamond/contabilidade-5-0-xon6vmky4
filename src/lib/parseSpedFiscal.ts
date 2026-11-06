@@ -87,6 +87,14 @@ export interface DetalhesExtracaoSped {
   // Saldo credor acumulado apurado
   saldoCredorAcumulado: number
 
+  // IBS/CBS (novo modelo 2026+): preenchidos apenas quando o arquivo importado
+  // traz o grupo IBSCBS / CST do novo sistema; ausência não altera a extração
+  ibsDestacado?: number
+  cbsDestacado?: number
+  cstIbsCbsDetectados?: string[]
+  cClassTribDetectados?: string[]
+  creditoIbsCbsApurado?: number
+
   // Estabelecimentos e UFs
   filiaisDetectadas: number
   ufsOperacaoDetectadas: string[]
