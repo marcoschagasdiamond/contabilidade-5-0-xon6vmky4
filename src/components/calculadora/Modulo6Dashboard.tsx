@@ -766,7 +766,7 @@ export default function Modulo6Dashboard({
             </div>
 
             {/* Grupo de Botões de Ação com Destaque e Hierarquia Visual Clara (flex-wrap: nunca escapa do card) */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 min-w-0 max-w-full bg-white/5 p-1.5 rounded-xl border border-white/10 shadow-inner">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full min-w-0 max-w-full bg-white/5 p-1.5 rounded-xl border border-white/10 shadow-inner">
               {/* Botão Limpar Dashboard (outline Dourado/Navy, sem ícones) */}
               <Button
                 type="button"
