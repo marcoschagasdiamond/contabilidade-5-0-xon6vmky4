@@ -11,8 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Sliders, RotateCcw, Info, CheckCircle2, ShieldCheck, Zap } from 'lucide-react'
+import { Sliders, RotateCcw, Info, CheckCircle2, ShieldCheck, Zap, HelpCircle } from 'lucide-react'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   AnoTransicaoIbsCbs,
   PresetSetorIbsCbs,
@@ -1234,6 +1235,65 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
               </div>
               <span className="text-[11px] text-slate-500 block leading-tight">
                 Percentual médio de insumos e compras tributáveis.
+              </span>
+            </div>
+
+            {/* % das compras vindas de fornecedores do Simples Nacional */}
+            <div className="min-w-0 w-full space-y-1.5">
+              <div className="flex items-center justify-between gap-1 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                  <Label
+                    htmlFor="pctComprasSimplesNacionalM1"
+                    className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
+                  >
+                    % das compras vindas de fornecedores do Simples Nacional
+                  </Label>
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center w-4 h-4 rounded-full text-slate-400 hover:text-[#D4AF37] bg-slate-100 hover:bg-[#07132B] transition-colors cursor-pointer shrink-0 focus:outline-none"
+                          aria-label="Ajuda sobre compras de fornecedores do Simples Nacional"
+                          title="Compras de fornecedores optantes do Simples Nacional geram crédito presumido/reduzido de IBS/CBS conforme a LC 214/2025."
+                        >
+                          <HelpCircle className="w-3 h-3" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        align="center"
+                        className="max-w-xs text-xs p-2.5 bg-[#07132B] text-slate-100 border border-[#D4AF37]/40 shadow-lg rounded-lg"
+                      >
+                        Compras de fornecedores optantes do Simples Nacional geram crédito
+                        presumido/reduzido de IBS/CBS conforme a LC 214/2025.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <span className="text-[10px] text-slate-500 font-medium break-words shrink-0">
+                  LC 214/2025
+                </span>
+              </div>
+              <div className="relative">
+                <Input
+                  id="pctComprasSimplesNacionalM1"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={config.porcentagemComprasSimplesNacional ?? 0}
+                  onChange={(e) => {
+                    const raw = e.target.value
+                    const v = raw === '' ? 0 : Math.min(100, Math.max(0, Number(raw)))
+                    updateConfig({ porcentagemComprasSimplesNacional: v })
+                  }}
+                  className="h-11 bg-white border-slate-300 text-[#07132B] font-mono font-bold shadow-sm pr-9"
+                />
+                <span className="absolute right-3.5 top-3 text-slate-400 font-bold text-xs">%</span>
+              </div>
+              <span className="text-[11px] text-slate-500 block leading-tight">
+                Parcela de insumos com crédito presumido da LC 214/2025.
               </span>
             </div>
           </div>
