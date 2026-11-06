@@ -168,6 +168,9 @@ export function perfilToRecord(
   if (perfil.historicoDocumentosFiscais !== undefined)
     (result as any).historico_documentos_fiscais = perfil.historicoDocumentosFiscais
 
+  if (perfil.vinculosSocietarios !== undefined)
+    (result as any).vinculos_societarios = perfil.vinculosSocietarios
+
   return result
 }
 
@@ -318,6 +321,18 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
         ? (() => {
             try {
               const parsed = JSON.parse((rec as any).historico_documentos_fiscais)
+              return Array.isArray(parsed) ? parsed : []
+            } catch {
+              return []
+            }
+          })()
+        : [],
+    vinculosSocietarios: Array.isArray((rec as any).vinculos_societarios)
+      ? (rec as any).vinculos_societarios
+      : typeof (rec as any).vinculos_societarios === 'string'
+        ? (() => {
+            try {
+              const parsed = JSON.parse((rec as any).vinculos_societarios)
               return Array.isArray(parsed) ? parsed : []
             } catch {
               return []

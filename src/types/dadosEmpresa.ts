@@ -109,6 +109,40 @@ export interface DadosEmpresaPerfil {
   // Etapa 1: Integração Fiscal (Certidões & Consultas + Histórico Unificado)
   certidoesFiscais?: CertidaoFiscalRegistro[]
   historicoDocumentosFiscais?: ItemHistoricoDocumentoFiscal[]
+
+  // Módulo Vínculos Societários & Risco de Regime (LC 123/2006, art. 3º)
+  vinculosSocietarios?: VinculoSocietario[]
+}
+
+// ============================================================================
+// VÍNCULOS SOCIETÁRIOS & RISCO DE REGIME (LC 123/2006, art. 3º)
+// ============================================================================
+
+export type PapelClienteNoVinculo =
+  | 'socio_pf' // Sócio Pessoa Física da outra empresa
+  | 'administrador' // Administrador / Diretor da outra empresa
+  | 'pj_socia_holding' // PJ (holding/outra) como sócia da empresa analisada (Vedação art. 3º, §4º, I)
+  | 'empresa_participa_outra' // A empresa analisada participa do capital de outra PJ (Vedação art. 3º, §4º, VII)
+
+export type RegimeOutraEmpresa =
+  | 'Simples Nacional'
+  | 'Lucro Presumido'
+  | 'Lucro Real'
+  | 'MEI'
+  | 'Outro'
+
+export interface VinculoSocietario {
+  id: string
+  nomeEmpresa: string
+  cnpj: string
+  papelCliente: PapelClienteNoVinculo
+  percentualParticipacao: number // 0 a 100
+  exerceAdministracao: boolean
+  regimeEmpresa: RegimeOutraEmpresa
+  faturamentoAnual: number // Faturamento bruto anual da outra empresa (R$)
+  excecaoLegal?: boolean // Para empresa_participa_outra: cooperativa, central de compras, consórcio etc.
+  observacoes?: string
+  dataCadastro?: string // ISO string
 }
 
 // ============================================================================
@@ -453,6 +487,9 @@ export const DADOS_EMPRESA_PADRAO: DadosEmpresaPerfil = {
   obrigacoesAcessoriasAtraso: false,
   numeroFiliais: 1,
   ufsOperacao: [],
+
+  // Vínculos Societários
+  vinculosSocietarios: [],
 }
 
 const STORAGE_KEY = 'contabilidade5_dados_empresa'

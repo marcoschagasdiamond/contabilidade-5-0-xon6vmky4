@@ -286,6 +286,17 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
                   : dadosEmpresa.ufOrigem || 'SP'}
               </strong>
             </span>
+            {dadosEmpresa.vinculosSocietarios && dadosEmpresa.vinculosSocietarios.length > 0 && (
+              <>
+                <span>•</span>
+                <span>
+                  Vínculos:{' '}
+                  <strong className="text-amber-800">
+                    {dadosEmpresa.vinculosSocietarios.length} empresa(s)
+                  </strong>
+                </span>
+              </>
+            )}
           </div>
           <span className="text-[10px] font-mono text-slate-400">Fase 3 • Informativo</span>
         </div>

@@ -1011,6 +1011,18 @@ export default function ModuloConfiguracoesRecuperador({
                   : `${dadosEmpresa.ufOrigem || 'UF'} (Única)`}
               </strong>
             </div>
+
+            {dadosEmpresa.vinculosSocietarios && dadosEmpresa.vinculosSocietarios.length > 0 && (
+              <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200 col-span-2 md:col-span-3">
+                <span className="text-[10px] text-amber-700 block font-semibold uppercase">
+                  Vínculos Societários Mapeados (LC 123)
+                </span>
+                <strong className="text-amber-900 text-[11px]">
+                  {dadosEmpresa.vinculosSocietarios.length} outra(s) empresa(s) vinculada(s)
+                  (avaliação preventiva de regime)
+                </strong>
+              </div>
+            )}
           </div>
         </div>
       </div>

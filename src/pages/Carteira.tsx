@@ -9,6 +9,9 @@ import {
   listarHistoricoRelatoriosPorCliente,
   type HistoricoRelatorioRecord,
 } from '@/services/historicoRelatorios'
+import { listarClientesEmpresas } from '@/services/clientesEmpresas'
+import { carregarDadosEmpresa, VinculoSocietario } from '@/types/dadosEmpresa'
+import { analisarVinculosSocietarios } from '@/lib/vinculosSocietarios'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { useAuth } from '@/context/AuthContext'
 import { Badge } from '@/components/ui/badge'
@@ -72,6 +75,7 @@ export default function Carteira() {
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoRecord[]>([])
   const [conversas, setConversas] = useState<ConversaAssistente[]>([])
   const [relatorios, setRelatorios] = useState<HistoricoRelatorioRecord[]>([])
+  const [empresasCadastradas, setEmpresasCadastradas] = useState<any[]>([])
 
   // Feedback banner
   const [bannerFeedback, setBannerFeedback] = useState<{
@@ -110,7 +114,7 @@ export default function Carteira() {
 
     try {
       setCarregando(true)
-      const [listaClientes, listaSims, listaRecup, listaDiags, listaConvs, listaRelats] =
+      const [listaClientes, listaSims, listaRecup, listaDiags, listaConvs, listaRelats, listaEmps] =
         await Promise.all([
           listarClientes(),
           listarSimulacoes(),
@@ -118,6 +122,7 @@ export default function Carteira() {
           getDiagnosticos(),
           listarConversasAssistente(),
           listarHistoricoRelatoriosPorCliente(),
+          listarClientesEmpresas().catch(() => []),
         ])
 
       setClientes(listaClientes)
@@ -126,6 +131,7 @@ export default function Carteira() {
       setDiagnosticos(listaDiags)
       setConversas(listaConvs)
       setRelatorios(listaRelats)
+      setEmpresasCadastradas(listaEmps)
     } catch (err) {
       console.error('Erro ao consolidar dados da carteira:', err)
     } finally {
@@ -187,12 +193,39 @@ export default function Carteira() {
       }
     })
 
+    const dadosEmpresaLocal = carregarDadosEmpresa()
+
     return clientes.map((cliente) => {
       const cliSims = simsPorCliente.get(cliente.id) || []
       const cliRecup = recupPorCliente.get(cliente.id) || []
       const cliDiags = diagsPorCliente.get(cliente.id) || []
       const cliConvs = convsPorCliente.get(cliente.id) || []
       const cliRelats = relatsPorCliente.get(cliente.id) || []
+
+      // Vínculos societários: busca em clientes_empresas ou fallback para localStorage
+      const empBanco = empresasCadastradas.find(
+        (e) =>
+          e.id === cliente.empresa_id ||
+          (e.cnpj &&
+            cliente.cnpj_cpf &&
+            e.cnpj.replace(/\D/g, '') === cliente.cnpj_cpf.replace(/\D/g, '')),
+      )
+      let vinculosDoCliente: VinculoSocietario[] = []
+      if (empBanco?.vinculos_societarios) {
+        try {
+          vinculosDoCliente = Array.isArray(empBanco.vinculos_societarios)
+            ? empBanco.vinculos_societarios
+            : JSON.parse(empBanco.vinculos_societarios)
+        } catch {
+          vinculosDoCliente = []
+        }
+      } else if (
+        dadosEmpresaLocal.cnpj &&
+        cliente.cnpj_cpf &&
+        dadosEmpresaLocal.cnpj.replace(/\D/g, '') === cliente.cnpj_cpf.replace(/\D/g, '')
+      ) {
+        vinculosDoCliente = dadosEmpresaLocal.vinculosSocietarios || []
+      }
 
       const totalRecuperavelCreditos = cliRecup.reduce(
         (acc, curr) => acc + (curr.total_recuperavel_integral || 0),
@@ -243,7 +276,7 @@ export default function Carteira() {
       // Alerta do Simples Nacional:
       // Verifica simulações do cliente. Se faturamentoAnual >= 4.320.000 (90% do teto) ou > 4.800.000, ou sublimite 3.600.000
       let temAlertaSimples = false
-      let alertaTipo: 'desenquadrado' | 'hibrido' | 'atencao' | null = null
+      let alertaTipo: 'desenquadrado' | 'hibrido' | 'atencao' | 'vedacao_societaria' | null = null
       let fatMax = 0
 
       cliSims.forEach((s) => {
@@ -260,15 +293,36 @@ export default function Carteira() {
         if (rbt > fatMax) fatMax = rbt
       })
 
-      if (fatMax > 4800000) {
-        temAlertaSimples = true
-        alertaTipo = 'desenquadrado'
-      } else if (fatMax >= 4320000) {
-        temAlertaSimples = true
-        alertaTipo = 'atencao'
-      } else if (fatMax > 3600000) {
-        temAlertaSimples = true
-        alertaTipo = 'hibrido'
+      // Se houver vínculos societários cadastrados, analisa o faturamento global e vedações
+      if (vinculosDoCliente.length > 0) {
+        const analiseVinc = analisarVinculosSocietarios({
+          regimeAtual: cliente.regime_atual,
+          faturamentoAnualProprio: fatMax,
+          vinculos: vinculosDoCliente,
+        })
+        const fatGlobal = Math.max(
+          analiseVinc.faturamentoGlobalSimples,
+          analiseVinc.faturamentoSomaCondicional,
+        )
+        if (fatGlobal > fatMax) fatMax = fatGlobal
+
+        if (analiseVinc.temVedacaoCritica) {
+          temAlertaSimples = true
+          alertaTipo = 'vedacao_societaria'
+        }
+      }
+
+      if (alertaTipo !== 'vedacao_societaria') {
+        if (fatMax > 4800000) {
+          temAlertaSimples = true
+          alertaTipo = 'desenquadrado'
+        } else if (fatMax >= 4320000) {
+          temAlertaSimples = true
+          alertaTipo = 'atencao'
+        } else if (fatMax > 3600000) {
+          temAlertaSimples = true
+          alertaTipo = 'hibrido'
+        }
       }
 
       // Se o regime for Simples Nacional e o faturamento estiver próximo, reforça o alerta
@@ -317,7 +371,15 @@ export default function Carteira() {
         conversaMaisRecente: convMaisRecente,
       }
     })
-  }, [clientes, simulacoes, recuperadorSims, diagnosticos, conversas, relatorios])
+  }, [
+    clientes,
+    simulacoes,
+    recuperadorSims,
+    diagnosticos,
+    conversas,
+    relatorios,
+    empresasCadastradas,
+  ])
 
   // Separação por arquivado / ativo para abas e contadores
   const totalAtivos = useMemo(
@@ -1098,11 +1160,18 @@ export default function Carteira() {
                           )}
                         </td>
 
-                        {/* COLUNA 7: ALERTA DO SIMPLES NACIONAL (R$ 4,8M / SUBLIMITE) */}
+                        {/* COLUNA 7: ALERTA DO SIMPLES NACIONAL (R$ 4,8M / SUBLIMITE / VEDAÇÃO) */}
                         <td className="py-3.5 px-3 text-center">
-                          {item.alertaSimplesTipo === 'desenquadrado' ? (
+                          {item.alertaSimplesTipo === 'vedacao_societaria' ? (
                             <span
-                              title={`Faturamento anual projetado (${formatarMoeda(item.faturamentoSimplesMax)}) ultrapassa o teto de R$ 4,8M.`}
+                              title="Vedação societária expressa identificada (art. 3º, §4º da LC 123/2006): holding/PJ no quadro ou participação vedada em outra PJ."
+                              className="inline-block bg-rose-100 text-rose-900 border border-rose-400 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                            >
+                              🔴 Vedação LC 123
+                            </span>
+                          ) : item.alertaSimplesTipo === 'desenquadrado' ? (
+                            <span
+                              title={`Faturamento anual global/projetado (${formatarMoeda(item.faturamentoSimplesMax)}) ultrapassa o teto de R$ 4,8M.`}
                               className="inline-block bg-rose-100 text-rose-900 border border-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full"
                             >
                               Teto R$ 4,8M Excedido

@@ -39,6 +39,8 @@ import {
 import { IndicadorValidadeFiscal } from '@/components/dadosEmpresa/IndicadorValidadeFiscal'
 import { PainelAvisosCoerencia } from '@/components/dadosEmpresa/PainelAvisosCoerencia'
 import { SecaoImportacaoDocumentosFiscais } from '@/components/dadosEmpresa/SecaoImportacaoDocumentosFiscais'
+import { SecaoVinculosSocietarios } from '@/components/dadosEmpresa/SecaoVinculosSocietarios'
+import { VinculoSocietario } from '@/types/dadosEmpresa'
 import { ResultadoParsingSped } from '@/lib/parseSpedFiscal'
 import { DiamondHeader, DiamondFooterCTA } from '@/components/reforma/DiamondLayout'
 import { Card, CardContent } from '@/components/ui/card'
@@ -2676,6 +2678,19 @@ export default function DadosEmpresa() {
               </div>
             </CardContent>
           </Card>
+
+          {/* BLOCO 6: VÍNCULOS SOCIETÁRIOS & RISCO DE REGIME (LC 123/2006, art. 3º) */}
+          <SecaoVinculosSocietarios
+            vinculos={formData.vinculosSocietarios || []}
+            regimeAtual={formData.regimeAtual}
+            faturamentoMensalProprio={formData.faturamentoMensal || 0}
+            onChangeVinculos={(novosVinculos: VinculoSocietario[]) => {
+              setFormData((prev) => ({
+                ...prev,
+                vinculosSocietarios: novosVinculos,
+              }))
+            }}
+          />
 
           {/* PAINEL INFORMATIVO DE AVISOS DE COERÊNCIA FISCAL (NÃO BLOQUEANTE) */}
           {resultadoValidacao.avisosCoerencia.length > 0 && (

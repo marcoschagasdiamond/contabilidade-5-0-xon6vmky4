@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-05T21:32:28.869Z",
+  "generatedAt": "2026-11-06T00:15:17.624Z",
   "collections": [
     {
       "name": "users",
@@ -941,6 +941,12 @@
         },
         {
           "name": "historico_documentos_fiscais",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vinculos_societarios",
           "type": "json",
           "required": false,
           "system": false
