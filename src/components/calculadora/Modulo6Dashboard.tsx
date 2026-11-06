@@ -746,27 +746,27 @@ export default function Modulo6Dashboard({
   return (
     <div id="modulo6-dashboard-painel" className="space-y-8 animate-fade-in">
       {/* Cabeçalho do Módulo com hierarquia visual destacada para os 3 botões */}
-      <div className="bg-[#07132B]/95 backdrop-blur-md border-2 border-[#D4AF37]/50 rounded-2xl p-5 sm:p-6 text-white relative shadow-2xl transition-all">
+      <div className="bg-[#07132B]/95 backdrop-blur-md border-2 border-[#D4AF37]/50 rounded-2xl p-5 sm:p-6 text-white relative shadow-2xl transition-all overflow-hidden">
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/15 border border-[#D4AF37]/40 tracking-wider uppercase">
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            Módulo 6 • Painel Executivo Integrado
+        <div className="relative space-y-3 min-w-0">
+          <div className="inline-flex max-w-full items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/15 border border-[#D4AF37]/40 tracking-wider uppercase">
+            <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Módulo 6 • Painel Executivo Integrado</span>
           </div>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-heading font-extrabold text-white tracking-tight">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 min-w-0">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-heading font-extrabold text-white tracking-tight leading-tight break-words">
                 Dashboard Executivo da Reforma Tributária
               </h2>
-              <p className="text-slate-300 text-xs sm:text-sm max-w-2xl mt-1 leading-snug">
+              <p className="text-slate-300 text-xs sm:text-sm max-w-2xl mt-1 leading-snug break-words">
                 Visão gerencial consolidada que consome todos os módulos anteriores. Visualize KPIs
                 de impacto, gráficos comparativos de regimes e evolução temporal das obrigações
                 fiscais.
               </p>
             </div>
 
-            {/* Grupo de Botões de Ação com Destaque e Hierarquia Visual Clara */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0 bg-white/5 p-1.5 rounded-xl border border-white/10 shadow-inner">
+            {/* Grupo de Botões de Ação com Destaque e Hierarquia Visual Clara (flex-wrap: nunca escapa do card) */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 min-w-0 max-w-full bg-white/5 p-1.5 rounded-xl border border-white/10 shadow-inner">
               {/* Botão Limpar Dashboard (outline Dourado/Navy, sem ícones) */}
               <Button
                 type="button"
@@ -782,7 +782,7 @@ export default function Modulo6Dashboard({
               <Button
                 type="button"
                 onClick={handleAbrirExportarDados}
-                className="bg-[#07132B] hover:bg-[#0d224d] text-white border-2 border-[#D4AF37]/80 font-extrabold text-xs h-10 px-3.5 shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="bg-[#07132B] hover:bg-[#0d224d] text-white border-2 border-[#D4AF37]/80 font-extrabold text-xs h-10 px-3.5 shadow-md transition-colors"
                 title="Exportar planilha (CSV/Excel) e relatório com todos os parâmetros e resultados"
               >
                 <span>Exportar dados</span>
@@ -793,7 +793,7 @@ export default function Modulo6Dashboard({
                 type="button"
                 variant="outline"
                 onClick={() => setModalCompartilharAberto(true)}
-                className="bg-[#07132B] hover:bg-white/15 text-[#D4AF37] border-2 border-[#D4AF37]/60 font-bold text-xs h-10 px-3.5 shadow-md flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="bg-[#07132B] hover:bg-white/15 text-[#D4AF37] border-2 border-[#D4AF37]/60 font-bold text-xs h-10 px-3.5 shadow-md flex items-center gap-1.5 transition-colors"
                 title="Compartilhar link da simulação"
               >
                 <Share2 className="w-4 h-4 text-[#D4AF37]" />
@@ -804,7 +804,7 @@ export default function Modulo6Dashboard({
               <Button
                 type="button"
                 onClick={() => setModalSalvarAberto(true)}
-                className="bg-gradient-to-r from-[#D4AF37] to-[#E5C158] hover:from-[#c49f2e] hover:to-[#D4AF37] text-[#07132B] font-extrabold text-xs h-10 px-4 shadow-lg border border-[#D4AF37] flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="bg-gradient-to-r from-[#D4AF37] to-[#E5C158] hover:from-[#c49f2e] hover:to-[#D4AF37] text-[#07132B] font-extrabold text-xs h-10 px-4 shadow-lg border border-[#D4AF37] flex items-center gap-1.5 transition-colors"
                 title="Salvar esta simulação na sua conta"
               >
                 <BookmarkPlus className="w-4 h-4 stroke-[2.5]" />
@@ -816,7 +816,7 @@ export default function Modulo6Dashboard({
                 type="button"
                 onClick={handleAbrirModalPdfDashboard}
                 disabled={gerandoPdf}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs h-10 px-4 shadow-[0_0_15px_rgba(16,185,129,0.4)] border border-emerald-400 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs h-10 px-4 shadow-[0_0_15px_rgba(16,185,129,0.4)] border border-emerald-400 transition-colors"
                 title="Gerar parecer da calculadora em PDF"
               >
                 <span>{gerandoPdf ? 'Gerando...' : 'Gerar parecer da calculadora'}</span>
