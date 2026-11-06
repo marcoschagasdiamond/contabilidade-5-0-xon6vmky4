@@ -376,6 +376,7 @@ export type TipoDocumentoFiscalOrigem =
   | 'nfe_xml'
   | 'consulta_cnpj'
   | 'cnae_secundario'
+  | 'cnae_principal'
   | 'outro'
 
 export interface ItemNcmImportadoReferencia {

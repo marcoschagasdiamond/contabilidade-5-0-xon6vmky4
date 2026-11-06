@@ -45,6 +45,14 @@ import { BadgeProvenienciaCnpj } from '@/components/dadosEmpresa/BadgeProvenienc
 import { BadgeProvenienciaQsa } from '@/components/dadosEmpresa/BadgeProvenienciaQsa'
 import { CampoBuscaCnae } from '@/components/dadosEmpresa/CampoBuscaCnae'
 import { SecaoCnaesSecundarios } from '@/components/dadosEmpresa/SecaoCnaesSecundarios'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import type { ItemCnaeSecundarioSalvo } from '@/types/dadosEmpresa'
 import { BadgeProvenienciaCnae } from '@/components/dadosEmpresa/BadgeProvenienciaCnae'
 import type { ItemResultadoCnae } from '@/services/consultaCnae'
@@ -203,6 +211,97 @@ export default function DadosEmpresa() {
     },
     [],
   )
+
+  // Modal de confirmação para troca de segmento via CNAE Principal
+  const [modalConfirmarTrocaSegmentoCnaePrincipal, setModalConfirmarTrocaSegmentoCnaePrincipal] =
+    useState(false)
+  const [segmentoPendenteCnaePrincipal, setSegmentoPendenteCnaePrincipal] = useState<{
+    segmento: SegmentoEmpresa
+    cnaeCodigo: string
+    cnaeDescricao: string
+  } | null>(null)
+
+  // Aplica o segmento sugerido a partir do CNAE Principal registrando proveniência
+  const aplicarSegmentoSugeridoCnaePrincipal = React.useCallback(
+    (novoSeg: SegmentoEmpresa, cnaeCod?: string, cnaeDesc?: string) => {
+      atualizarCampo((prev) => {
+        const atualizado = { ...prev, segmento: novoSeg }
+        if (!prev.atividadeMista) {
+          if (novoSeg === 'Comércio') atualizado.tipoAtividade = 'comercio'
+          else if (novoSeg === 'Indústria') atualizado.tipoAtividade = 'industria'
+          else atualizado.tipoAtividade = 'servico'
+        }
+
+        const origemAnterior = prev.documentoFiscalImportado?.origemCampos || {}
+        const dataHoraIso = new Date().toISOString()
+        const rotuloCnae = cnaeCod ? `CNAE Principal ${cnaeCod}` : 'CNAE Principal'
+
+        atualizado.documentoFiscalImportado = {
+          ...(prev.documentoFiscalImportado || {
+            tipo: 'consulta_cnpj',
+            nomeTipo: 'Consulta CNAE Principal',
+            nomeArquivo: 'cnae_principal_sugestao',
+            dataImportacao: dataHoraIso,
+            resumoExtracao: `Segmento ${novoSeg} definido a partir de sugestão do CNAE Principal`,
+            camposPreenchidos: ['segmento'],
+          }),
+          origemCampos: {
+            ...origemAnterior,
+            segmento: {
+              chave: 'segmento',
+              rotulo: 'Segmento Principal da Empresa',
+              documento: rotuloCnae,
+              tipo: 'cnae_principal',
+              dataImportacao: dataHoraIso,
+              valorFormatado: novoSeg,
+            },
+          },
+        }
+
+        return atualizado
+      })
+
+      setErrors((prev) => (prev.segmento ? { ...prev, segmento: '' } : prev))
+    },
+    [atualizarCampo],
+  )
+
+  const handleAcionarSugestaoCnaePrincipal = (
+    segmentoSugerido: SegmentoEmpresa,
+    cnaeCodigo: string,
+    cnaeDescricao: string,
+  ) => {
+    // Se não há segmento atual definido, aplica direto
+    if (!formData.segmento) {
+      aplicarSegmentoSugeridoCnaePrincipal(segmentoSugerido, cnaeCodigo, cnaeDescricao)
+      return
+    }
+
+    // Se já é o mesmo segmento, nada a fazer
+    if (formData.segmento === segmentoSugerido) {
+      return
+    }
+
+    // Se já há segmento preenchido e é diferente, abre dialog de confirmação
+    setSegmentoPendenteCnaePrincipal({
+      segmento: segmentoSugerido,
+      cnaeCodigo,
+      cnaeDescricao,
+    })
+    setModalConfirmarTrocaSegmentoCnaePrincipal(true)
+  }
+
+  const handleConfirmarTrocaCnaePrincipal = () => {
+    if (segmentoPendenteCnaePrincipal) {
+      aplicarSegmentoSugeridoCnaePrincipal(
+        segmentoPendenteCnaePrincipal.segmento,
+        segmentoPendenteCnaePrincipal.cnaeCodigo,
+        segmentoPendenteCnaePrincipal.cnaeDescricao,
+      )
+    }
+    setModalConfirmarTrocaSegmentoCnaePrincipal(false)
+    setSegmentoPendenteCnaePrincipal(null)
+  }
 
   // Auto-save com debounce de 600ms no localStorage dedicado
   useEffect(() => {
@@ -1640,6 +1739,72 @@ export default function DadosEmpresa() {
                       />
                     </div>
                   )}
+
+                  {/* Sugestão de segmento contextual para o CNAE PRINCIPAL */}
+                  {(() => {
+                    const cnaeCodPrincipal =
+                      formData.dadosCnaeConsulta?.codigoFormatado ||
+                      formData.dadosCnpjConsulta?.cnaePrincipalCodigo ||
+                      ''
+                    const cnaeDescPrincipal =
+                      formData.dadosCnaeConsulta?.descricao ||
+                      formData.dadosCnpjConsulta?.cnaePrincipalDescricao ||
+                      ''
+                    const segmentoSugeridoPrincipal =
+                      mapearCnaeParaSegmentoOpcional(cnaeCodPrincipal)
+
+                    if (!segmentoSugeridoPrincipal) return null
+
+                    const jaPreenchido = !!formData.segmento
+                    const mesmoSegmento = formData.segmento === segmentoSugeridoPrincipal
+
+                    return (
+                      <div className="mt-2.5 p-3 rounded-lg bg-emerald-50/70 border border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-2 flex-wrap min-w-0">
+                          <span className="text-xs font-semibold text-emerald-950 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            Sugestão do CNAE Principal:
+                          </span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            {segmentoSugeridoPrincipal}
+                          </span>
+                          {mesmoSegmento ? (
+                            <span className="text-[11px] text-emerald-700 font-medium">
+                              (já aplicado ao formulário)
+                            </span>
+                          ) : jaPreenchido ? (
+                            <span className="text-[11px] text-slate-600">
+                              (atual: <strong>{formData.segmento}</strong>)
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-slate-600">
+                              (campo segmento ainda em branco)
+                            </span>
+                          )}
+                        </div>
+
+                        {!mesmoSegmento && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() =>
+                              handleAcionarSugestaoCnaePrincipal(
+                                segmentoSugeridoPrincipal,
+                                cnaeCodPrincipal,
+                                cnaeDescPrincipal,
+                              )
+                            }
+                            className="text-xs font-semibold h-7 px-3 bg-[#145A32] hover:bg-[#114b2a] text-white shrink-0 self-start sm:self-auto shadow-sm"
+                          >
+                            <Sparkles className="w-3 h-3 mr-1 text-emerald-300" />
+                            {jaPreenchido
+                              ? `Trocar para ${segmentoSugeridoPrincipal}`
+                              : `Sugerir segmento ${segmentoSugeridoPrincipal}`}
+                          </Button>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   {/* Seção de CNAEs Secundários salvos com badge de proveniência */}
                   {Array.isArray(formData.cnaesSecundarios) &&
@@ -3289,6 +3454,67 @@ export default function DadosEmpresa() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Confirmação para Troca de Segmento via CNAE Principal */}
+      <Dialog
+        open={modalConfirmarTrocaSegmentoCnaePrincipal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setModalConfirmarTrocaSegmentoCnaePrincipal(false)
+            setSegmentoPendenteCnaePrincipal(null)
+          }
+        }}
+      >
+        <DialogContent className="max-w-md bg-white border-slate-200">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-600" />
+              Substituir Segmento Atual?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-600 leading-relaxed pt-2">
+              O formulário já possui o segmento{' '}
+              <strong className="text-slate-800 font-semibold font-mono">
+                "{formData.segmento}"
+              </strong>{' '}
+              preenchido.
+              <br />
+              Deseja substituí-lo pela sugestão do CNAE Principal{' '}
+              {segmentoPendenteCnaePrincipal?.cnaeCodigo && (
+                <span className="font-mono font-semibold text-slate-800">
+                  ({segmentoPendenteCnaePrincipal.cnaeCodigo})
+                </span>
+              )}
+              :
+              <span className="block mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950 font-bold text-sm">
+                Segmento sugerido: {segmentoPendenteCnaePrincipal?.segmento}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex flex-row items-center justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setModalConfirmarTrocaSegmentoCnaePrincipal(false)
+                setSegmentoPendenteCnaePrincipal(null)
+              }}
+              className="text-xs text-slate-600"
+            >
+              Manter "{formData.segmento}"
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleConfirmarTrocaCnaePrincipal}
+              className="text-xs font-semibold bg-[#145A32] hover:bg-[#114b2a] text-white"
+            >
+              Confirmar e Trocar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* FOOTER CTA DIAMOND */}
       <DiamondFooterCTA

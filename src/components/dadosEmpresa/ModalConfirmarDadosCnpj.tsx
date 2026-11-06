@@ -207,18 +207,33 @@ export function ModalConfirmarDadosCnpj({
 
             <div className="flex items-start gap-2">
               <FileText className="w-4 h-4 text-[#145A32] shrink-0 mt-0.5" />
-              <div>
+              <div className="flex-1 min-w-0">
                 <span className="font-semibold text-slate-700 block">
                   CNAE Principal ({dados.cnaePrincipalCodigo || 'N/D'}):
                 </span>
                 <span className="text-slate-900 font-medium leading-relaxed">
                   {dados.cnaePrincipalDescricao || 'Atividade principal não informada'}
                 </span>
-                <div className="mt-1 flex items-center gap-1.5">
+                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                   <span className="text-[11px] text-slate-500">Segmento sugerido no sistema:</span>
-                  <Badge className="bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/30 text-[10px] py-0">
+                  <Badge className="bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/30 text-[10px] py-0 flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5 text-[#2ECC71]" />
                     {segmentoMapeado}
                   </Badge>
+                  {(() => {
+                    const segmentoSugeridoOpcional = mapearCnaeParaSegmentoOpcional(
+                      dados.cnaePrincipalCodigo,
+                    )
+                    if (segmentoSugeridoOpcional) {
+                      return (
+                        <Badge className="bg-[#145A32]/10 text-[#145A32] border border-[#145A32]/20 text-[10px] py-0 px-1.5 font-medium flex items-center gap-1">
+                          <CheckCircle2 className="w-2.5 h-2.5 text-[#2ECC71]" />
+                          Mapeado: {segmentoSugeridoOpcional}
+                        </Badge>
+                      )
+                    }
+                    return null
+                  })()}
                 </div>
               </div>
             </div>

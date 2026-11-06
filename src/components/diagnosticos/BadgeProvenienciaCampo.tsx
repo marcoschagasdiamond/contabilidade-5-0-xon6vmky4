@@ -35,9 +35,11 @@ export function BadgeProvenienciaCampo({
             ? 'NF-e (Lote XML)'
             : origem.tipo === 'cnae_secundario'
               ? 'CNAE Secundário'
-              : origem.tipo === 'consulta_cnpj'
-                ? 'Consulta CNPJ'
-                : 'Documento Fiscal'
+              : origem.tipo === 'cnae_principal'
+                ? 'CNAE Principal'
+                : origem.tipo === 'consulta_cnpj'
+                  ? 'Consulta CNPJ'
+                  : 'Documento Fiscal'
 
   const dataFmt = formatarData(origem.dataImportacao)
   const textoTooltip = `Preenchido via ${rotuloTipo} (${origem.documento}) importado em ${dataFmt}`
