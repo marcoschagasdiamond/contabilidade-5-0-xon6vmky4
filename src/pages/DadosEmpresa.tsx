@@ -45,6 +45,7 @@ import { BadgeProvenienciaCnpj } from '@/components/dadosEmpresa/BadgeProvenienc
 import { BadgeProvenienciaQsa } from '@/components/dadosEmpresa/BadgeProvenienciaQsa'
 import { CampoBuscaCnae } from '@/components/dadosEmpresa/CampoBuscaCnae'
 import { SecaoCnaesSecundarios } from '@/components/dadosEmpresa/SecaoCnaesSecundarios'
+import { PainelTributosAtividade } from '@/components/dadosEmpresa/PainelTributosAtividade'
 import {
   Dialog,
   DialogContent,
@@ -1866,6 +1867,21 @@ export default function DadosEmpresa() {
                         }}
                       />
                     )}
+
+                  {/* Painel informativo "Tributos aplicáveis à atividade" (somente indicação) */}
+                  <PainelTributosAtividade
+                    cnaeCodigo={
+                      formData.dadosCnaeConsulta?.codigoFormatado ||
+                      formData.dadosCnpjConsulta?.cnaePrincipalCodigo ||
+                      ''
+                    }
+                    cnaeDescricao={
+                      formData.dadosCnaeConsulta?.descricao ||
+                      formData.dadosCnpjConsulta?.cnaePrincipalDescricao ||
+                      ''
+                    }
+                    segmento={formData.segmento}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between mb-2">

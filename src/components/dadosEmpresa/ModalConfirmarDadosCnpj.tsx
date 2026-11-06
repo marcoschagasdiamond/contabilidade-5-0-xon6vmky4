@@ -32,6 +32,10 @@ import {
   mapearCidadeIss,
 } from '@/services/consultaCnpj'
 import { BadgeProvenienciaQsa } from '@/components/dadosEmpresa/BadgeProvenienciaQsa'
+import {
+  mapearTributosPorAtividade,
+  CORES_CATEGORIA_TRIBUTO,
+} from '@/services/mapaTributosAtividade'
 
 export interface CamposAplicacaoCnpj {
   nomeEmpresa: boolean
@@ -236,6 +240,39 @@ export function ModalConfirmarDadosCnpj({
                     return null
                   })()}
                 </div>
+                {(() => {
+                  const tributosAtividade = mapearTributosPorAtividade(
+                    dados.cnaePrincipalCodigo,
+                    dados.cnaePrincipalDescricao || '',
+                    segmentoMapeado,
+                  )
+                  if (!tributosAtividade.grupoAtividade || tributosAtividade.tributos.length === 0)
+                    return null
+                  return (
+                    <div className="mt-2 pt-2 border-t border-slate-200/60">
+                      <span className="text-[11px] text-slate-500 block mb-1">
+                        Tributos aplicáveis (indicativo):
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {tributosAtividade.tributos.map((trib) => (
+                          <span
+                            key={trib.id}
+                            title={trib.descricao}
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-help ${CORES_CATEGORIA_TRIBUTO[trib.categoria]}`}
+                          >
+                            {trib.nome}
+                          </span>
+                        ))}
+                        <span
+                          title={tributosAtividade.impostoSeletivo.observacao}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium border border-slate-200 bg-slate-50 text-slate-600 cursor-help"
+                        >
+                          IS: não sujeito (regra geral)
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             </div>
 
