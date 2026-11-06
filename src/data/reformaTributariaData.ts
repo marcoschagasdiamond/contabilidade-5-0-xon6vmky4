@@ -690,12 +690,13 @@ export const MAPA_EXCECOES: ExcecaoTributaria[] = [
       'O regime simplificado está mantido na Constituição. A empresa continua pagando tudo em guia única, mas transfere créditos proporcionais.',
   },
   {
-    categoria: 'Simples Híbrido (Opção Anual)',
+    categoria: 'Simples Híbrido (Opção Semestral)',
     reducao: 'IBS e CBS no regime regular + demais no Simples',
     aliquotaEfetivaAprox: '26,5% de IBS/CBS + IRPJ/CSLL/INSS no DAS',
     baseLegal: 'Art. 41, §3º da LC 214/2025',
     itensInclusos: [
-      'Opção formal até o último dia útil de setembro do ano anterior',
+      'Opção semestral, com janelas em março e setembro para valer no semestre seguinte (janela de 2026 até 30/10, valendo para o 1º semestre de 2027)',
+      'Renúncia possível na janela posterior (a escolha não é irretratável para o ano inteiro)',
       'Recolhe IBS e CBS por fora pela regra geral de débito e crédito',
       'Transfere 100% de crédito tributário para clientes de grande porte',
       'Aproveita crédito integral de todos os insumos adquiridos',
@@ -839,7 +840,8 @@ export const CENARIOS_COMUNS_COMPARADOR = [
       'Uma estamparia, usinagem ou agência B2B faturando R$ 1,8M a R$ 3,5M ao ano, fornecendo para montadoras ou grandes redes.',
     motivo:
       'No Simples Tradicional, seu cliente só aproveitaria crédito irrisório (3% a 5%). Ao optar pelo Simples Híbrido, seu cliente PJ recebe 100% de crédito (~26,5%), garantindo sua competitividade, enquanto sua folha e IRPJ/CSLL continuam protegidos na guia unificada do Simples.',
-    dicaOuro: 'A opção deve ser exercida anualmente até 30 de setembro para valer no ano seguinte!',
+    dicaOuro:
+      'A opção é semestral, com janelas em março e setembro para valer no semestre seguinte (a janela atual de 2026 vai até 30 de outubro, valendo para o 1º semestre de 2027). E, se o híbrido não compensar, é possível renunciar na janela seguinte!',
   },
   {
     titulo: 'Cenário 3: Empresa com Alto Insumo ou Faturamento Acima de R$ 3,6M',
@@ -1132,7 +1134,8 @@ export const CLIENTES_EXEMPLO_CARTEIRA: ClienteAcompanhamento[] = [
     etapaAtual: 'diagnosticado',
     farol: 'vermelho',
     responsavel: 'Dra. Camila (Fiscal)',
-    proximaAcao: 'Decisão sobre Simples Híbrido até 30/09 para não perder contratos com montadoras',
+    proximaAcao:
+      'Decisão sobre Simples Híbrido na janela semestral (março/setembro; janela de 2026 até 30/10) para não perder contratos com montadoras',
     prazo: '15 dias',
   },
   {

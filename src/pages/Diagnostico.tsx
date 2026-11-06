@@ -3524,13 +3524,14 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
                   <div className="flex items-center gap-2 mb-2 text-slate-900 font-heading font-bold text-sm">
                     <CheckCircle2 className="w-4 h-4 text-[#2ECC71]" />
-                    Opção Anual pelo Regime Regular de IBS/CBS (Simples Híbrido)
+                    Opção Semestral pelo Regime Regular de IBS/CBS (Simples Híbrido)
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     Conforme o <strong>art. 41, §3º da LC 214/2025</strong>, o optante do Simples
-                    pode escolher apurar IBS e CBS pelo regime regular. Janela de opção:{' '}
-                    <strong>1º a 30 de setembro</strong> do ano anterior. Decisivo para quem vende
-                    para PJ e precisa transferir créditos integrais.
+                    pode escolher apurar IBS e CBS pelo regime regular. Janelas de opção{' '}
+                    <strong>semestrais (março e setembro)</strong>, com efeitos no semestre seguinte
+                    — e renúncia possível na janela posterior. Decisivo para quem vende para PJ e
+                    precisa transferir créditos integrais.
                   </p>
                   <div className="mt-2 text-[11px] font-semibold text-slate-700">
                     Crédito transferido no Simples: ~
@@ -4303,10 +4304,10 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                   </p>
                   <ul className="list-disc pl-5 space-y-1 text-amber-900/90">
                     <li>
-                      <strong>Janela de Opção Anual do Simples Híbrido:</strong> Conforme o art. 41,
-                      §3º da LC 214/2025, a opção por recolher IBS e CBS pelo regime regular deve
-                      ser formalizada anualmente entre <strong>1º e 30 de setembro</strong> do
-                      ano-calendário anterior.
+                      <strong>Janelas de Opção Semestral do Simples Híbrido:</strong> Conforme o
+                      art. 41, §3º da LC 214/2025, a opção por recolher IBS e CBS pelo regime
+                      regular é manifestada em janelas semestrais (março e setembro), com efeitos no
+                      semestre seguinte — e admite renúncia na janela posterior.
                     </li>
                     <li>
                       <strong>Sublimite Estadual de R$ 3,6M:</strong> Empresas com faturamento entre

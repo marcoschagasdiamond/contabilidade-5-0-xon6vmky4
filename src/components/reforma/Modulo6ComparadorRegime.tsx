@@ -836,8 +836,11 @@ export function Modulo6ComparadorRegime({
 
             <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 leading-relaxed mb-6">
               <strong className="text-white block mb-1">Observação do Especialista Diamond:</strong>
-              A opção pelo Simples Híbrido é anual e deve ser manifestada perante a Receita Federal
-              até o último dia útil de setembro de cada ano, para vigorar no ano fiscal seguinte.
+              A opção pelo Simples Híbrido (recolher IBS/CBS pelo regime regular) é semestral, com
+              janelas de manifestação perante a Receita Federal em março e setembro de cada ano,
+              valendo para o semestre seguinte — e pode ser renunciada na janela posterior, não
+              sendo irretratável para o ano inteiro. Não confunda com a opção ANUAL pelo Simples
+              Nacional em si, que segue até o último dia útil de setembro para o exercício seguinte.
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">

@@ -192,8 +192,8 @@ export default function ReformaTributariaHub() {
                 Suporte Especializado
               </h4>
               <p className="text-sm text-slate-300 leading-relaxed">
-                Dúvidas sobre sublimite estadual de R$ 3,6M, opção anual pelo Simples Híbrido até
-                30/09 ou alíquotas de teste? Nossa equipe responde.
+                Dúvidas sobre sublimite estadual de R$ 3,6M, janelas semestrais do Simples Híbrido
+                (março e setembro) ou alíquotas de teste? Nossa equipe responde.
               </p>
             </div>
           </div>
