@@ -1,8 +1,14 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import type { ClienteGlobalItem } from '@/types/master'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { ModalExcluirClienteGlobal } from '@/components/admin/ModalExcluirClienteGlobal'
 import { FunilVendasKanban } from '@/components/admin/FunilVendasKanban'
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion'
 import { listarResumoTarefasPendentes } from '@/services/crm'
 import type { CrmTarefa, EstagioFunilCrm } from '@/types/crm'
 import { useAuth } from '@/context/AuthContext'
@@ -35,6 +41,7 @@ export function AbaClientesVisaoGlobal({
   const [filtroSegmento, setFiltroSegmento] = useState('todos')
   const [filtroRegime, setFiltroRegime] = useState('todos')
   const [filtroEstagio, setFiltroEstagio] = useState<string>('todos')
+  const [modoAgrupamento, setModoAgrupamento] = useState<'nenhum' | 'tecnico'>('nenhum')
   const [clienteParaExcluir, setClienteParaExcluir] = useState<ClienteGlobalItem | null>(null)
 
   // Resumo discreto de tarefas no topo
@@ -85,6 +92,60 @@ export function AbaClientesVisaoGlobal({
 
     return matchBusca && matchOrigem && matchSegmento && matchRegime && matchEstagio
   })
+
+  // Agrupamento por técnico / responsável (ou Cadastro Direto)
+  const gruposPorTecnico = useMemo(() => {
+    if (modoAgrupamento !== 'tecnico') return []
+
+    const mapa = new Map<
+      string,
+      {
+        chave: string
+        nome: string
+        email?: string
+        tipo: 'analista' | 'direto'
+        itens: ClienteGlobalItem[]
+      }
+    >()
+
+    clientesFiltrados.forEach((cliente) => {
+      const isAnalista = cliente.origem_tipo === 'analista'
+      const chave = isAnalista
+        ? cliente.analista_id || cliente.analista_nome || 'analista_desconhecido'
+        : '__cadastro_direto__'
+
+      const nomeResponsavel = isAnalista
+        ? cliente.analista_nome || 'Analista Parceiro'
+        : 'Cadastro Direto (Empresário)'
+
+      const emailResponsavel = isAnalista ? cliente.analista_email : undefined
+
+      const grupoExistente = mapa.get(chave)
+      if (grupoExistente) {
+        grupoExistente.itens.push(cliente)
+      } else {
+        mapa.set(chave, {
+          chave,
+          nome: nomeResponsavel,
+          email: emailResponsavel,
+          tipo: isAnalista ? 'analista' : 'direto',
+          itens: [cliente],
+        })
+      }
+    })
+
+    // Ordenação: primeiro os analistas em ordem alfabética de nome, depois Cadastro Direto por último
+    return Array.from(mapa.values()).sort((a, b) => {
+      if (a.tipo === 'analista' && b.tipo === 'direto') return -1
+      if (a.tipo === 'direto' && b.tipo === 'analista') return 1
+      return a.nome.localeCompare(b.nome, 'pt-BR')
+    })
+  }, [clientesFiltrados, modoAgrupamento])
+
+  // Total de técnicos únicos encontrados
+  const totalTecnicosComClientes = useMemo(() => {
+    return gruposPorTecnico.filter((g) => g.tipo === 'analista').length
+  }, [gruposPorTecnico])
 
   // Métricas rápidas da visão global
   const totalGeral = clientes.length
@@ -274,6 +335,19 @@ export function AbaClientesVisaoGlobal({
 
             <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
               <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-500 font-medium">Agrupar por:</span>
+                <select
+                  value={modoAgrupamento}
+                  onChange={(e) => setModoAgrupamento(e.target.value as 'nenhum' | 'tecnico')}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 bg-slate-50 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  aria-label="Agrupar lista de clientes"
+                >
+                  <option value="nenhum">Nenhum (Lista Plana)</option>
+                  <option value="tecnico">Técnico (Responsável)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5">
                 <span className="text-xs text-slate-500 font-medium">Origem:</span>
                 <select
                   value={filtroOrigem}
@@ -360,7 +434,254 @@ export function AbaClientesVisaoGlobal({
                   Refine os termos da busca por analista, nome ou CNPJ.
                 </p>
               </div>
+            ) : modoAgrupamento === 'tecnico' ? (
+              /* MODO AGRUPADO POR TÉCNICO (RESPONSÁVEL) */
+              <div className="p-4 sm:p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-600">
+                  <div>
+                    Exibindo{' '}
+                    <strong className="text-slate-900 font-bold">{clientesFiltrados.length}</strong>{' '}
+                    {clientesFiltrados.length === 1
+                      ? 'empresa distribuída'
+                      : 'empresas distribuídas'}{' '}
+                    em{' '}
+                    <strong className="text-[#07132B] font-bold">
+                      {gruposPorTecnico.length} {gruposPorTecnico.length === 1 ? 'grupo' : 'grupos'}
+                    </strong>
+                    {totalTecnicosComClientes > 0 && (
+                      <span className="ml-1 text-slate-500">
+                        ({totalTecnicosComClientes}{' '}
+                        {totalTecnicosComClientes === 1 ? 'técnico/analista' : 'técnicos/analistas'}
+                        )
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    Clique em um responsável para expandir/recolher as empresas dele.
+                  </span>
+                </div>
+
+                <Accordion
+                  type="multiple"
+                  defaultValue={gruposPorTecnico.map((g) => g.chave)}
+                  className="space-y-3"
+                >
+                  {gruposPorTecnico.map((grupo) => (
+                    <AccordionItem
+                      key={grupo.chave}
+                      value={grupo.chave}
+                      className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs bg-white"
+                    >
+                      <AccordionTrigger className="px-4 py-3.5 bg-slate-50/80 hover:bg-slate-100 transition-colors hover:no-underline data-[state=open]:border-b data-[state=open]:border-slate-200">
+                        <div className="flex flex-wrap items-center gap-2.5 text-left">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                              grupo.tipo === 'analista'
+                                ? 'bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/40'
+                                : 'bg-slate-200 text-slate-800 border border-slate-300'
+                            }`}
+                          >
+                            {grupo.tipo === 'analista' ? 'Técnico Responsável' : 'Origem'}
+                          </span>
+                          <span className="font-heading font-extrabold text-sm sm:text-base text-[#07132B]">
+                            {grupo.nome}
+                          </span>
+                          {grupo.email && (
+                            <span className="text-xs text-slate-500 font-normal">
+                              ({grupo.email})
+                            </span>
+                          )}
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#D4AF37]/20 text-[#07132B] border border-[#D4AF37]/50 ml-auto sm:ml-2">
+                            {grupo.itens.length} {grupo.itens.length === 1 ? 'empresa' : 'empresas'}
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+
+                      <AccordionContent className="p-0">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-sm">
+                            <thead className="bg-[#07132B]/90 text-white font-semibold text-xs uppercase tracking-wider">
+                              <tr>
+                                <th className="py-3 px-5">Cliente / Empresa</th>
+                                <th className="py-3 px-5">Origem & Analista Responsável</th>
+                                <th className="py-3 px-5">Estágio Funil (CRM)</th>
+                                <th className="py-3 px-5">Segmento & UF</th>
+                                <th className="py-3 px-5">Regime Atual</th>
+                                <th className="py-3 px-5 text-center">Diagnósticos</th>
+                                <th className="py-3 px-5 text-center">Simulações</th>
+                                <th className="py-3 px-5 text-right">Ação</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {grupo.itens.map((item) => {
+                                const estagio = item.estagio_funil || 'lead'
+                                const estagioRotulo =
+                                  estagio === 'lead'
+                                    ? 'Lead'
+                                    : estagio === 'diagnostico'
+                                      ? 'Diagnóstico'
+                                      : estagio === 'proposta'
+                                        ? 'Proposta'
+                                        : estagio === 'cliente_ativo'
+                                          ? 'Cliente Ativo'
+                                          : 'Descartado'
+
+                                return (
+                                  <tr
+                                    key={`${item.collection_origem}_${item.id}`}
+                                    onClick={() => onSelecionarCliente(item)}
+                                    className="hover:bg-slate-50 cursor-pointer transition-colors"
+                                  >
+                                    <td className="py-3.5 px-5">
+                                      <div className="font-bold text-slate-900">
+                                        {item.nome || item.empresa}
+                                      </div>
+                                      <div className="text-xs font-mono text-slate-500">
+                                        CNPJ/CPF: {item.cnpj_cpf || 'Não informado'}
+                                      </div>
+                                      {item.email && (
+                                        <div className="text-xs text-slate-500 mt-0.5">
+                                          {item.email}
+                                        </div>
+                                      )}
+                                    </td>
+
+                                    <td className="py-3.5 px-5">
+                                      {item.origem_tipo === 'analista' ? (
+                                        <div>
+                                          <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#07132B] text-[#D4AF37] border border-[#D4AF37]/40">
+                                            Analista Parceiro
+                                          </span>
+                                          <div className="text-xs font-semibold text-slate-800 mt-1">
+                                            {item.analista_nome}
+                                          </div>
+                                          {item.analista_email && (
+                                            <div className="text-[11px] text-slate-500">
+                                              {item.analista_email}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div>
+                                          <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
+                                            Cadastro Direto no Site
+                                          </span>
+                                          <div className="text-xs text-slate-500 mt-1">
+                                            Sem analista vinculado (Portal Direto)
+                                          </div>
+                                        </div>
+                                      )}
+                                    </td>
+
+                                    <td className="py-3.5 px-5">
+                                      <span
+                                        className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                                          estagio === 'cliente_ativo'
+                                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                            : estagio === 'proposta'
+                                              ? 'bg-[#D4AF37]/20 text-[#07132B] border-[#D4AF37]'
+                                              : estagio === 'diagnostico'
+                                                ? 'bg-blue-50 text-blue-800 border-blue-200'
+                                                : estagio === 'descartado'
+                                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                                  : 'bg-slate-100 text-slate-700 border-slate-300'
+                                        }`}
+                                      >
+                                        {estagioRotulo}
+                                      </span>
+                                    </td>
+
+                                    <td className="py-3.5 px-5">
+                                      <div className="text-xs font-semibold text-slate-800">
+                                        {item.segmento}
+                                      </div>
+                                      <div className="text-xs text-slate-500">
+                                        {item.cidade ? `${item.cidade} / ` : ''}
+                                        {item.uf}
+                                      </div>
+                                    </td>
+
+                                    <td className="py-3.5 px-5">
+                                      <span
+                                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                          item.regime_atual === 'Simples Nacional'
+                                            ? 'bg-emerald-100 text-[#145A32]'
+                                            : item.regime_atual === 'Lucro Presumido'
+                                              ? 'bg-amber-100 text-amber-900'
+                                              : 'bg-blue-100 text-blue-900'
+                                        }`}
+                                      >
+                                        {item.regime_atual}
+                                      </span>
+                                      {item.faturamento_mensal && item.faturamento_mensal > 0 && (
+                                        <div className="text-[11px] text-slate-500 mt-1">
+                                          Fat: {formatarMoeda(item.faturamento_mensal)}/mês
+                                        </div>
+                                      )}
+                                    </td>
+
+                                    <td className="py-3.5 px-5 text-center">
+                                      <span
+                                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                          item.total_diagnosticos > 0
+                                            ? 'bg-[#07132B] text-white'
+                                            : 'bg-slate-100 text-slate-400'
+                                        }`}
+                                      >
+                                        {item.total_diagnosticos}
+                                      </span>
+                                    </td>
+
+                                    <td className="py-3.5 px-5 text-center">
+                                      <span
+                                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                          item.total_simulacoes > 0
+                                            ? 'bg-[#D4AF37]/20 text-[#07132B] border border-[#D4AF37]'
+                                            : 'bg-slate-100 text-slate-400'
+                                        }`}
+                                      >
+                                        {item.total_simulacoes}
+                                      </span>
+                                    </td>
+
+                                    <td className="py-3.5 px-5 text-right">
+                                      <div className="flex items-center justify-end gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            onSelecionarCliente(item)
+                                          }}
+                                          className="px-3 py-1.5 rounded-lg bg-[#07132B] hover:bg-[#07132B]/90 text-white text-xs font-semibold transition-colors"
+                                        >
+                                          Ver Detalhes
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setClienteParaExcluir(item)
+                                          }}
+                                          className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition-colors"
+                                          title="Excluir cliente e dados vinculados"
+                                        >
+                                          Excluir Cliente
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
             ) : (
+              /* MODO PLANO ORIGINAL ("Nenhum") */
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-[#07132B] text-white font-semibold text-xs uppercase tracking-wider">
