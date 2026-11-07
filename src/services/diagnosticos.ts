@@ -84,10 +84,55 @@ export interface Diagnostico {
 
 export type DiagnosticoRecord = Diagnostico & RecordModel
 
+const STORAGE_CLIENTE_ATIVO_ID_KEY = 'contabilidade50_cliente_ativo_id_v1'
+
+/**
+ * Garante o vínculo do diagnóstico com o Cliente Ativo (coleção 'diagnosticos'.cliente_id).
+ * Quando o chamador não informa cliente_id (etapas antigas do Diagnóstico), recupera o
+ * Cliente Ativo selecionado do localStorage (mesma chave usada pelo ClienteAtivoContext)
+ * para que o registro NUNCA fique órfão quando há cliente selecionado.
+ */
+function resolverClienteId(data: { cliente_id?: string | null }): {
+  clienteId: string
+  veioDoFallback: boolean
+} {
+  const informado = (data.cliente_id || '').trim()
+  if (informado) return { clienteId: informado, veioDoFallback: false }
+
+  let doStorage = ''
+  try {
+    doStorage = (localStorage.getItem(STORAGE_CLIENTE_ATIVO_ID_KEY) || '').trim()
+  } catch {
+    doStorage = ''
+  }
+  return { clienteId: doStorage, veioDoFallback: Boolean(doStorage) }
+}
+
 export async function createDiagnostico(
   data: Omit<Diagnostico, 'id' | 'created' | 'updated'>,
 ): Promise<DiagnosticoRecord> {
-  const record = await pb.collection('diagnosticos').create<DiagnosticoRecord>(data)
+  // Correção de diagnósticos órfãos: grava cliente_id sempre que houver Cliente Ativo
+  const { clienteId, veioDoFallback } = resolverClienteId(data as { cliente_id?: string | null })
+  const payload = { ...data, cliente_id: clienteId }
+
+  if (!clienteId) {
+    console.warn(
+      '[Diagnósticos] Registro salvo SEM vínculo de cliente (cliente_id vazio): nenhum Cliente Ativo selecionado.',
+    )
+    try {
+      window.dispatchEvent(
+        new CustomEvent('contabilidade50_diagnostico_salvo_sem_vinculo', {
+          detail: { tipo: (data as any).tipo_diagnostico || '' },
+        }),
+      )
+    } catch {
+      /* ambiente sem window — ignora */
+    }
+  } else if (veioDoFallback) {
+    console.info('[Diagnósticos] cliente_id aplicado via Cliente Ativo do localStorage.')
+  }
+
+  const record = await pb.collection('diagnosticos').create<DiagnosticoRecord>(payload)
 
   // Se o usuário estiver autenticado, atualiza progresso de onboarding
   const userId = (data as any).user_id || pb.authStore.record?.id
