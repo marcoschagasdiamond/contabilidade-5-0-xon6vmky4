@@ -56,8 +56,16 @@ import Modulo3ComparativoRegimes from '@/components/calculadora/Modulo3Comparati
 import Modulo4SimuladorCreditos from '@/components/calculadora/Modulo4SimuladorCreditos'
 import Modulo5TransicaoCronograma from '@/components/calculadora/Modulo5TransicaoCronograma'
 import Modulo6Dashboard from '@/components/calculadora/Modulo6Dashboard'
+import ModuloDesoneracao from '@/components/calculadora/ModuloDesoneracao'
 
-type ModuloId = 'modulo1' | 'modulo2' | 'modulo3' | 'modulo4' | 'modulo5' | 'modulo6'
+type ModuloId =
+  | 'modulo1'
+  | 'modulo2'
+  | 'modulo3'
+  | 'modulo4'
+  | 'modulo5'
+  | 'modulo6'
+  | 'desoneracao'
 
 interface NavItem {
   id: ModuloId
@@ -109,6 +117,13 @@ const MODULOS_NAV: NavItem[] = [
     titulo: 'Dashboard Executivo',
     subtitulo: 'KPIs, Gráficos e Resumo',
     icon: LayoutDashboard,
+  },
+  {
+    id: 'desoneracao',
+    numero: '★',
+    titulo: 'Simulação de Desoneração',
+    subtitulo: 'Folha (CPRB) & Exportação',
+    icon: Sparkles,
   },
 ]
 
@@ -778,6 +793,15 @@ function CalculadoraConteudo() {
                 onBaixarPdf={handleBaixarPdfAtual}
                 onExportarDados={() => setModalExportarDadosAberto(true)}
                 onImportarFaturamento={() => setModalImportarFaturamentoAberto(true)}
+                gerandoPdf={gerandoPdf}
+              />
+            )}
+            {moduloAtivo === 'desoneracao' && (
+              <ModuloDesoneracao
+                onNavegarModulo={(id) => setModuloAtivo(id)}
+                onSalvarSimulacao={handleTentarSalvarSimulacao}
+                onBaixarPdf={handleBaixarPdfAtual}
+                onExportarDados={() => setModalExportarDadosAberto(true)}
                 gerandoPdf={gerandoPdf}
               />
             )}

@@ -7,6 +7,7 @@ export type ModuloCalculadoraId =
   | 'modulo4'
   | 'modulo5'
   | 'modulo6'
+  | 'desoneracao'
 
 export interface BotaoProximoPasso {
   label: string
@@ -350,21 +351,21 @@ export function PainelProximosPassosCalculadora({
     modulo6: {
       etapaConcluidaNumero: '06',
       etapaConcluidaNome: 'Dashboard Executivo',
-      proximaEtapaNome: 'Conclusão da Análise',
+      proximaEtapaNome: 'Simulação de Desoneração (Folha & Exportação)',
       proximaEtapaDescricao:
-        'Você concluiu os 6 módulos da Calculadora IBS/CBS. Agora você pode emitir o dossiê oficial em PDF, salvar esta simulação ou navegar entre os módulos para refinar os parâmetros.',
+        'Você concluiu os módulos centrais da Calculadora IBS/CBS. O próximo passo é simular as desonerações da Folha de Pagamento (CPRB) e Imunidade de Exportação de Serviços (LC 214/2025 art. 46).',
       botoes: [
+        {
+          label: 'Simulação de Desoneração',
+          moduloId: 'desoneracao',
+          destaque: true,
+          subtitulo: 'Folha de pagamento (CPRB) e imunidade na exportação',
+        },
         {
           label: 'Revisar Configurações (Módulo 1)',
           moduloId: 'modulo1',
-          destaque: true,
-          subtitulo: 'Alterar faturamento, ano de transição ou regime atual',
-        },
-        {
-          label: 'Calculadora Simples (Módulo 2)',
-          moduloId: 'modulo2',
           destaque: false,
-          subtitulo: 'Simular outra operação unitária por nota fiscal',
+          subtitulo: 'Alterar faturamento, ano de transição ou regime atual',
         },
         {
           label: 'Comparativo de Regimes (Módulo 3)',
@@ -373,10 +374,43 @@ export function PainelProximosPassosCalculadora({
           subtitulo: 'Revisar margens, presunção e alíquotas por regime',
         },
         {
-          label: 'Split Payment & Créditos (Módulo 4)',
-          moduloId: 'modulo4',
+          label: 'Transição 2026-2033 (Módulo 5)',
+          moduloId: 'modulo5',
           destaque: false,
-          subtitulo: 'Ajustar as 18 categorias de insumos e despesas',
+          subtitulo: 'Curva de transição e estoque de transição',
+        },
+      ],
+    },
+    desoneracao: {
+      etapaConcluidaNumero: '★',
+      etapaConcluidaNome: 'Simulação de Desoneração',
+      proximaEtapaNome: 'Dashboard Executivo & Conclusão',
+      proximaEtapaDescricao:
+        'Simulações de CPRB e imunidade de exportação concluídas. Agora você pode emitir o dossiê oficial em PDF, salvar esta simulação ou revisar os regimes e créditos.',
+      botoes: [
+        {
+          label: 'Dashboard Executivo',
+          moduloId: 'modulo6',
+          destaque: true,
+          subtitulo: 'Ver gráficos consolidados e assistente de IA',
+        },
+        {
+          label: 'Comparativo de Regimes',
+          moduloId: 'modulo3',
+          destaque: false,
+          subtitulo: 'Revisar impacto no Simples, Presumido e Real',
+        },
+        {
+          label: 'Cronograma da Transição',
+          moduloId: 'modulo5',
+          destaque: false,
+          subtitulo: 'Acompanhar alíquotas de 2026 a 2033',
+        },
+        {
+          label: 'Revisar Configurações',
+          moduloId: 'modulo1',
+          destaque: false,
+          subtitulo: 'Ajustar parâmetros de faturamento e setor',
         },
       ],
     },
