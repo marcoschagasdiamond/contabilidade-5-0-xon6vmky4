@@ -24,6 +24,7 @@ import {
   ShieldAlert,
   RotateCcw,
   Building2,
+  Sparkles,
 } from 'lucide-react'
 import {
   LineChart,
@@ -120,6 +121,9 @@ export default function Modulo5TransicaoCronograma({
   )
   const diferencaAcumulada = totalTransicaoAcumulado - totalAtualAcumulado
 
+  // Perfil 100% prestador de serviços (mesma convenção adotada nos Módulos 1, 2, 3, 4 e 6)
+  const isPerfilServico = setorTransicao === 'servico'
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Cabeçalho do Módulo */}
@@ -148,8 +152,9 @@ export default function Modulo5TransicaoCronograma({
             Transição Tributária 2026 a 2033
           </h2>
           <p className="text-slate-300 text-sm sm:text-base max-w-2xl">
-            Acompanhe o cronograma de 8 anos da reforma constitucional. Simule o desembolso ano a
-            ano e monitore os anos críticos da substituição do ICMS, ISS e PIS/COFINS por IBS e CBS.
+            {isPerfilServico
+              ? 'Acompanhe o cronograma de 8 anos da reforma constitucional para prestadores de serviços. Simule o desembolso ano a ano e monitore a transição do ISS municipal e PIS/COFINS para o modelo IBS e CBS com direito a crédito de insumos operacionais e serviços tomados.'
+              : 'Acompanhe o cronograma de 8 anos da reforma constitucional. Simule o desembolso ano a ano e monitore os anos críticos da substituição do ICMS, ISS e PIS/COFINS por IBS e CBS.'}
           </p>
         </div>
       </div>
@@ -204,7 +209,9 @@ export default function Modulo5TransicaoCronograma({
             className="text-lg font-bold font-mono text-[#07132B] bg-white border-slate-300 h-12 shadow-sm"
           />
           <span className="text-[11px] text-slate-500">
-            Receita anual projetada para cálculo do desembolso tributário.
+            {isPerfilServico
+              ? 'Receita bruta anual de prestação de serviços projetada para cálculo do desembolso tributário.'
+              : 'Receita anual projetada para cálculo do desembolso tributário.'}
           </span>
         </div>
 
@@ -249,10 +256,74 @@ export default function Modulo5TransicaoCronograma({
             </SelectContent>
           </Select>
           <span className="text-[11px] text-slate-500">
-            Define o regime tributário de partida e os tributos afetados ano a ano.
+            {isPerfilServico
+              ? 'Define o perfil de prestação de serviços e a trajetória do ISS municipal para IBS/CBS.'
+              : 'Define o regime tributário de partida e os tributos afetados ano a ano.'}
           </span>
         </div>
       </div>
+
+      {/* CARD ORIENTATIVO PARA 100% PRESTADOR DE SERVIÇOS (sem estoque de mercadorias) */}
+      {isPerfilServico && (
+        <Card className="border border-blue-200/80 shadow-sm bg-gradient-to-br from-blue-50/60 to-white overflow-hidden">
+          <CardContent className="p-5 sm:p-6 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-blue-600 shrink-0" />
+                <h3 className="text-base font-heading font-bold text-[#07132B]">
+                  Transição para Prestadores de Serviços • LC 214/2025
+                </h3>
+              </div>
+              <span className="text-[11px] font-bold text-blue-800 bg-blue-100 border border-blue-200 px-2.5 py-0.5 rounded-full">
+                Atividade Sem Estoque Físico
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Como empresa 100% prestadora de serviços, não há apuração de estoque presumido de
+              mercadorias na virada de 2026 para 2027. O direito a créditos na transição
+              concentra-se integralmente sobre{' '}
+              <strong>
+                insumos operacionais, licenças de software, serviços de terceiros, tecnologia,
+                telecomunicações e locações corporativas
+              </strong>
+              , garantindo a não-cumulatividade plena da CBS e do IBS.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+              <div className="p-3 bg-white border border-slate-200 rounded-lg">
+                <span className="text-[11px] text-slate-500 font-semibold block uppercase">
+                  Créditos de Transição
+                </span>
+                <span className="font-bold text-[#07132B] mt-0.5 block">
+                  Insumos e Serviços Tomados
+                </span>
+                <span className="text-[11px] text-slate-400 block mt-0.5">
+                  Softwares, nuvem, subcontratações e despesas operacionais da atividade.
+                </span>
+              </div>
+              <div className="p-3 bg-white border border-slate-200 rounded-lg">
+                <span className="text-[11px] text-slate-500 font-semibold block uppercase">
+                  Tributo Subnacional
+                </span>
+                <span className="font-bold text-emerald-800 mt-0.5 block">
+                  Transição Gradual do ISS
+                </span>
+                <span className="text-[11px] text-slate-400 block mt-0.5">
+                  ISS municipal reduzido gradualmente (90% a 60%) entre 2029 e 2032.
+                </span>
+              </div>
+              <div className="p-3 bg-white border border-slate-200 rounded-lg">
+                <span className="text-[11px] text-slate-500 font-semibold block uppercase">
+                  Tributo Federal
+                </span>
+                <span className="font-bold text-blue-900 mt-0.5 block">CBS Plena em 2027</span>
+                <span className="text-[11px] text-slate-400 block mt-0.5">
+                  Extinção do PIS/COFINS e início da CBS (8,80%) com crédito financeiro amplo.
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ETAPA 5: BLOCO DE CRÉDITO PRESUMIDO DE ESTOQUE NA TRANSIÇÃO (apenas para atividades com estoque físico) */}
       {setorTransicao !== 'servico' && (
@@ -417,7 +488,11 @@ export default function Modulo5TransicaoCronograma({
               {anoAtualDetalhe.ano === 'atual' ? 'Ano atual (sistema atual)' : anoAtualDetalhe.ano}
             </div>
             <h3 className="text-xl font-heading font-extrabold text-white">
-              {anoAtualDetalhe.fase}
+              {isPerfilServico
+                ? anoAtualDetalhe.fase
+                    .replace('do ICMS e ISS', 'do ISS municipal')
+                    .replace('ICMS e ISS 100% extintos', 'ISS municipal 100% extinto')
+                : anoAtualDetalhe.fase}
             </h3>
           </div>
 
@@ -440,7 +515,15 @@ export default function Modulo5TransicaoCronograma({
                 <strong className="block text-sm font-bold text-amber-950">
                   Atenção ao Ano Crítico da Reforma ({anoAtualDetalhe.ano})
                 </strong>
-                <p className="text-xs mt-0.5 leading-relaxed">{anoAtualDetalhe.alertaCritico}</p>
+                <p className="text-xs mt-0.5 leading-relaxed">
+                  {isPerfilServico
+                    ? anoAtualDetalhe.ano === 2027
+                      ? 'Ano Crítico: Extinção definitiva de PIS/COFINS e início da CBS (8,80%) com crédito amplo sobre insumos operacionais, softwares e serviços de terceiros contratados.'
+                      : anoAtualDetalhe.ano === 2033
+                        ? 'Ano Crítico: Modelo pleno definitivo. ISS municipal 100% extinto e substituído pelo IBS; apuração e split payment 100% unificados.'
+                        : anoAtualDetalhe.alertaCritico
+                    : anoAtualDetalhe.alertaCritico}
+                </p>
               </div>
             </div>
           )}
@@ -468,13 +551,13 @@ export default function Modulo5TransicaoCronograma({
             <div className="p-3 bg-white border border-slate-200 rounded-xl">
               <span className="font-semibold text-slate-500 block">Status IPI</span>
               <span className="font-semibold text-slate-800 mt-1 block">
-                {anoAtualDetalhe.statusIpi}
+                {isPerfilServico ? 'Não aplicável (Serviços)' : anoAtualDetalhe.statusIpi}
               </span>
             </div>
             <div className="p-3 bg-white border border-slate-200 rounded-xl">
               <span className="font-semibold text-slate-500 block">Status ICMS</span>
               <span className="font-semibold text-slate-800 mt-1 block">
-                {anoAtualDetalhe.statusIcms}
+                {isPerfilServico ? 'Não aplicável (Serviços)' : anoAtualDetalhe.statusIcms}
               </span>
             </div>
             <div className="p-3 bg-white border border-slate-200 rounded-xl">
@@ -521,7 +604,9 @@ export default function Modulo5TransicaoCronograma({
               Evolução da Alíquota Efetiva na Transição (2026–2033)
             </h3>
             <p className="text-xs text-slate-500">
-              Curva de convergência da tributação sobre consumo ao longo das etapas constitucionais.
+              {isPerfilServico
+                ? 'Curva de convergência da tributação sobre serviços ao longo das etapas constitucionais (ISS → IBS/CBS).'
+                : 'Curva de convergência da tributação sobre consumo ao longo das etapas constitucionais.'}
               {config.presetSetor && config.presetSetor !== 'nenhum' && (
                 <span className="ml-1 font-semibold text-[#07132B]">
                   • Preset:{' '}
@@ -562,7 +647,9 @@ export default function Modulo5TransicaoCronograma({
                 <Line
                   type="monotone"
                   dataKey="aliquotaEfetiva"
-                  name="Alíquota Efetiva Total"
+                  name={
+                    isPerfilServico ? 'Alíquota Efetiva Total (Serviços)' : 'Alíquota Efetiva Total'
+                  }
                   stroke="#D4AF37"
                   strokeWidth={3}
                   dot={{ r: 5, fill: '#D4AF37' }}
@@ -579,7 +666,7 @@ export default function Modulo5TransicaoCronograma({
                 <Line
                   type="monotone"
                   dataKey="aliquotaIbs"
-                  name="IBS (Est./Mun.)"
+                  name={isPerfilServico ? 'IBS (Substituição do ISS)' : 'IBS (Est./Mun.)'}
                   stroke="#10B981"
                   strokeWidth={2}
                   strokeDasharray="4 4"
@@ -605,10 +692,11 @@ export default function Modulo5TransicaoCronograma({
                 {formatarMoeda(totalAtualAcumulado)}
               </p>
               <span className="text-[11px] text-slate-400 block mt-1">
-                Se as regras vigentes permanecessem inalteradas
+                {isPerfilServico
+                  ? 'Carga tributária atual de serviços (PIS/COFINS + ISS) repetida até 2033'
+                  : 'Se as regras vigentes permanecessem inalteradas'}
               </span>
             </div>
-
             <div className="p-4 bg-white border border-slate-200 rounded-xl">
               <span className="text-xs text-slate-500 font-semibold block">
                 Cenário de Transição Reforma (8 anos)
@@ -617,10 +705,11 @@ export default function Modulo5TransicaoCronograma({
                 {formatarMoeda(totalTransicaoAcumulado)}
               </p>
               <span className="text-[11px] text-slate-400 block mt-1">
-                Soma real das alíquotas escalonadas ano a ano
+                {isPerfilServico
+                  ? 'Soma real com transição do ISS e tomada de créditos de insumos/serviços'
+                  : 'Soma real das alíquotas escalonadas ano a ano'}
               </span>
             </div>
-
             <div className="p-4 bg-[#07132B] text-white border border-[#D4AF37]/40 rounded-xl">
               <span className="text-xs text-[#D4AF37] font-bold block uppercase">
                 Diferença Acumulada no Período
@@ -630,10 +719,14 @@ export default function Modulo5TransicaoCronograma({
               </p>
               <span className="text-[11px] text-slate-300 block mt-1">
                 {diferencaAcumulada <= 0
-                  ? 'Economia global de caixa acumulada na transição'
-                  : 'Ajuste de caixa absorvido pelo crédito irrestrito'}
+                  ? isPerfilServico
+                    ? 'Economia global de caixa acumulada na transição para serviços'
+                    : 'Economia global de caixa acumulada na transição'
+                  : isPerfilServico
+                    ? 'Ajuste de caixa absorvido pelo crédito amplo sobre insumos e serviços tomados'
+                    : 'Ajuste de caixa absorvido pelo crédito irrestrito'}
               </span>
-            </div>
+            </div>{' '}
           </div>
         </CardContent>
       </Card>
