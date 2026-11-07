@@ -12,6 +12,7 @@ import {
 import { listarResumoTarefasPendentes } from '@/services/crm'
 import type { CrmTarefa, EstagioFunilCrm } from '@/types/crm'
 import { useAuth } from '@/context/AuthContext'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface AbaClientesVisaoGlobalProps {
   clientes: ClienteGlobalItem[]
@@ -621,15 +622,7 @@ export function AbaClientesVisaoGlobal({
                                     </td>
 
                                     <td className="py-3.5 px-5 text-center">
-                                      <span
-                                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                                          item.total_diagnosticos > 0
-                                            ? 'bg-[#07132B] text-white'
-                                            : 'bg-slate-100 text-slate-400'
-                                        }`}
-                                      >
-                                        {item.total_diagnosticos}
-                                      </span>
+                                      <BadgeContagemDiagnosticos total={item.total_diagnosticos} />
                                     </td>
 
                                     <td className="py-3.5 px-5 text-center">
@@ -803,15 +796,7 @@ export function AbaClientesVisaoGlobal({
                           </td>
 
                           <td className="py-4 px-5 text-center">
-                            <span
-                              className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                                item.total_diagnosticos > 0
-                                  ? 'bg-[#07132B] text-white'
-                                  : 'bg-slate-100 text-slate-400'
-                              }`}
-                            >
-                              {item.total_diagnosticos}
-                            </span>
+                            <BadgeContagemDiagnosticos total={item.total_diagnosticos} />
                           </td>
 
                           <td className="py-4 px-5 text-center">
@@ -955,5 +940,47 @@ export function AbaClientesVisaoGlobal({
         }}
       />
     </div>
+  )
+}
+
+/**
+ * Badge de contagem de diagnósticos na Visão Global de Clientes.
+ * Quando o cliente NÃO tem nenhum diagnóstico vinculado (contagem 0), o motivo
+ * claro é exibido no tooltip e abaixo do badge — normalmente ocorre porque os
+ * diagnósticos foram salvos sem vínculo com este cliente (cliente_id vazio/órfão).
+ */
+function BadgeContagemDiagnosticos({ total }: { total: number }) {
+  const semVinculo = !total || total <= 0
+  return (
+    <TooltipProvider delayDuration={200}>
+      <div className="inline-flex flex-col items-center gap-0.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              tabIndex={0}
+              className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold cursor-help ${
+                semVinculo ? 'bg-slate-100 text-slate-400' : 'bg-[#07132B] text-white'
+              }`}
+            >
+              {total}
+            </span>
+          </TooltipTrigger>
+          {semVinculo && (
+            <TooltipContent className="max-w-[260px] text-center bg-[#07132B] text-white border-[#D4AF37]/40">
+              <p className="font-semibold">Concluído — sem resultado para este cliente</p>
+              <p className="font-normal text-slate-300 mt-1">
+                Sem diagnóstico vinculado a este cliente. O diagnóstico pode ter sido salvo sem um
+                Cliente Ativo selecionado (registro órfão), por isso não aparece nesta contagem.
+              </p>
+            </TooltipContent>
+          )}
+        </Tooltip>
+        {semVinculo && (
+          <span className="text-[10px] leading-tight text-slate-400 max-w-[120px]">
+            sem diagnóstico vinculado a este cliente
+          </span>
+        )}
+      </div>
+    </TooltipProvider>
   )
 }

@@ -18,8 +18,11 @@ import { PaywallModal } from '@/components/freemium/PaywallModal'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import { useAvisoDiagnosticoSemVinculo } from '@/hooks/useAvisoDiagnosticoSemVinculo'
 
 export default function DiagnosticoTransicao() {
+  // Aviso visual quando o diagnóstico é salvo sem vínculo com o Cliente Ativo
+  useAvisoDiagnosticoSemVinculo()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const idCarregamento = searchParams.get('id')

@@ -92,6 +92,7 @@ import { useFonteMestraSync } from '@/hooks/useFonteMestraSync'
 import { camposDivergem } from '@/lib/fonteMestra'
 import { PainelSucessoFluxoGuiado } from '@/components/diagnosticos/PainelSucessoFluxoGuiado'
 import { useToast } from '@/hooks/use-toast'
+import { useAvisoDiagnosticoSemVinculo } from '@/hooks/useAvisoDiagnosticoSemVinculo'
 import { CampoBuscaCnpj } from '@/components/dadosEmpresa/CampoBuscaCnpj'
 import { BadgeProvenienciaCnpj } from '@/components/dadosEmpresa/BadgeProvenienciaCnpj'
 import { CampoBuscaCnae } from '@/components/dadosEmpresa/CampoBuscaCnae'
@@ -133,6 +134,8 @@ export default function Diagnostico() {
   } = useAuth()
   const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
   const { toast } = useToast()
+  // Aviso visual quando o diagnóstico é salvo sem vínculo com o Cliente Ativo
+  useAvisoDiagnosticoSemVinculo()
   const [paywallModalOpen, setPaywallModalOpen] = useState(false)
   const [paywallMotivo, setPaywallMotivo] = useState<'diagnostico' | 'pdf'>('diagnostico')
 

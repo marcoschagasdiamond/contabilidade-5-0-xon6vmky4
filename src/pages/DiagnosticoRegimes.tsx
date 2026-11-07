@@ -14,8 +14,11 @@ import { PaywallModal } from '@/components/freemium/PaywallModal'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import { useAvisoDiagnosticoSemVinculo } from '@/hooks/useAvisoDiagnosticoSemVinculo'
 
 export default function DiagnosticoRegimes() {
+  // Aviso visual quando o diagnóstico é salvo sem vínculo com o Cliente Ativo
+  useAvisoDiagnosticoSemVinculo()
   const navigate = useNavigate()
   const { temDadosSalvos, dadosEmpresa } = useDadosEmpresa()
   const { isPremium, podeDiagnosticar, recarregarUsuario } = useAuth()

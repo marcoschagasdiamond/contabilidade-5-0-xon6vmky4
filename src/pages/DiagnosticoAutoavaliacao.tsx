@@ -15,6 +15,7 @@ import { FreemiumBadge } from '@/components/freemium/FreemiumBadge'
 import { PaywallModal } from '@/components/freemium/PaywallModal'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
+import { useAvisoDiagnosticoSemVinculo } from '@/hooks/useAvisoDiagnosticoSemVinculo'
 import {
   SETE_RISCOS_360,
   normalizarAvaliacoesRetrocompativeis,
@@ -22,6 +23,8 @@ import {
 } from '@/pages/Diagnostico360'
 
 export default function DiagnosticoAutoavaliacao() {
+  // Aviso visual quando o diagnóstico é salvo sem vínculo com o Cliente Ativo
+  useAvisoDiagnosticoSemVinculo()
   const navigate = useNavigate()
   const { temDadosSalvos, dadosEmpresa } = useDadosEmpresa()
   const { isAuthenticated, isLoading: authLoading, podeDiagnosticar, recarregarUsuario } = useAuth()

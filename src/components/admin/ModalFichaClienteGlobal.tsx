@@ -282,13 +282,23 @@ export function ModalFichaClienteGlobal({
                   <span className="text-[11px] uppercase tracking-wider text-[#D4AF37] font-semibold block">
                     Diagnósticos Tributários
                   </span>
-                  <p className="font-heading font-extrabold text-3xl text-white mt-1">
+                  <p
+                    className="font-heading font-extrabold text-3xl text-white mt-1"
+                    title={
+                      !cliente.total_diagnosticos || cliente.total_diagnosticos <= 0
+                        ? 'Sem diagnóstico vinculado a este cliente. O diagnóstico pode ter sido salvo sem um Cliente Ativo selecionado (registro órfão), por isso não aparece nesta contagem.'
+                        : undefined
+                    }
+                  >
                     {cliente.total_diagnosticos}
                   </p>
-                  <span className="text-[11px] text-slate-300 mt-1 block">
+                  <span
+                    className="text-[11px] text-slate-300 mt-1 block"
+                    title="Sem diagnóstico vinculado a este cliente. O diagnóstico pode ter sido salvo sem um Cliente Ativo selecionado (registro órfão), por isso não aparece nesta contagem."
+                  >
                     {cliente.ultimo_diagnostico_data
                       ? `Último em: ${new Date(cliente.ultimo_diagnostico_data).toLocaleDateString('pt-BR')}`
-                      : 'Nenhum diagnóstico gerado'}
+                      : 'Sem diagnóstico vinculado a este cliente'}
                   </span>
                 </div>
 
