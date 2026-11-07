@@ -443,15 +443,21 @@ export default function Modulo6Dashboard({
       { nome: 'Lucro Real', total: resultadoComparativo.lucroReal.totalEfetivo },
       { nome: 'Lucro Presumido', total: resultadoComparativo.lucroPresumido.totalEfetivo },
       { nome: 'Simples Nacional', total: resultadoComparativo.simplesNacional.totalEfetivo },
-      ...(is2026OuAtual ? [] : [{ nome: 'IBS/CBS', total: ibsCbsAnoDashboard.totalEfetivo }]),
+      ...(is2026OuAtual
+        ? []
+        : [{ nome: 'Regime Regular (IBS/CBS)', total: ibsCbsAnoDashboard.totalEfetivo }]),
     ].sort((a, b) => a.total - b.total)
+
+    const recomendado = cenarios[0]?.nome || resultadoComparativo.regimeMaisVantajoso
+    const regimeRecomendadoFormatado =
+      recomendado === 'IBS/CBS' ? 'Regime Regular (IBS/CBS)' : recomendado
 
     return {
       aliquotaEfetivaAtual: aliqAtual,
       aliquotaEfetivaNova: aliqNova,
       economiaMensalProjetada: economiaMensal,
       economiaAnualProjetada: economiaAnual,
-      regimeRecomendado: cenarios[0]?.nome || resultadoComparativo.regimeMaisVantajoso,
+      regimeRecomendado: regimeRecomendadoFormatado,
     }
   }, [regimeAtualFiltro, resultadoComparativo, ibsCbsAnoDashboard, anoSimulacaoSelecionado])
 
@@ -598,8 +604,8 @@ export default function Modulo6Dashboard({
     {
       regime:
         anoSimulacaoSelecionado === 'atual'
-          ? 'IBS / CBS (Ano Atual)'
-          : `IBS / CBS (${anoSimulacaoSelecionado})`,
+          ? 'Regime Regular (IBS/CBS) (Ano Atual)'
+          : `Regime Regular (IBS/CBS) (${anoSimulacaoSelecionado})`,
       carga: ibsCbsAnoDashboard.totalEfetivo * mult,
       aliquota: ibsCbsAnoDashboard.aliquotaEfetiva,
       fill: '#D4AF37',
@@ -727,7 +733,7 @@ export default function Modulo6Dashboard({
         { nome: 'Lucro Real', total: lrTotal },
         { nome: 'Lucro Presumido', total: lpTotal },
         { nome: 'Simples Nacional', total: snTotal },
-        { nome: 'IBS/CBS', total: ibsCbsTotalAno },
+        { nome: 'Regime Regular (IBS/CBS)', total: ibsCbsTotalAno },
       ].sort((a, b) => a.total - b.total)
 
       mapa[String(ano)] = cenarios[0].nome
@@ -1165,7 +1171,7 @@ export default function Modulo6Dashboard({
                       <span className="font-mono text-[#D4AF37] bg-[#07132B] px-2 py-0.5 rounded text-[10px] font-bold shrink-0 whitespace-nowrap">
                         {regimeAtualFiltro === 'Simples Nacional'
                           ? 'CBS no DAS + IBS'
-                          : 'IBS / CBS'}
+                          : 'Regime Regular (IBS/CBS)'}
                       </span>
                     </div>
                     <div className="py-0.5 min-w-0 overflow-hidden">
@@ -1648,7 +1654,7 @@ export default function Modulo6Dashboard({
                       item.ano === 'atual' ? 0 : cargaAtualPeriodo - cargaPeriodo
 
                     const regimeMaisEconomico =
-                      regimesMaisEconomicosPorAno[String(item.ano)] || 'IBS/CBS'
+                      regimesMaisEconomicosPorAno[String(item.ano)] || 'Regime Regular (IBS/CBS)'
 
                     return (
                       <tr
@@ -1753,9 +1759,10 @@ export default function Modulo6Dashboard({
                             <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-amber-50 text-amber-900 border border-[#D4AF37] shadow-sm">
                               Lucro Presumido
                             </span>
-                          ) : regimeMaisEconomico === 'IBS/CBS' ? (
+                          ) : regimeMaisEconomico === 'IBS/CBS' ||
+                            regimeMaisEconomico === 'Regime Regular (IBS/CBS)' ? (
                             <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-sm">
-                              IBS/CBS
+                              Regime Regular (IBS/CBS)
                             </span>
                           ) : (
                             <span className="inline-block px-2.5 py-1 text-xs font-medium text-slate-700 bg-slate-100 rounded-md">
@@ -2309,13 +2316,13 @@ export default function Modulo6Dashboard({
                     </td>
                   </tr>
 
-                  {/* Linha 4: IBS / CBS (Novo) */}
+                  {/* Linha 4: Regime Regular (IBS/CBS) */}
                   <tr className="bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 font-bold">
                     <td className="px-6 py-4 text-[#07132B] flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" />
                       {anoSimulacaoSelecionado === 'atual'
-                        ? 'IBS / CBS (Ano Atual)'
-                        : `IBS / CBS (${anoSimulacaoSelecionado})`}
+                        ? 'Regime Regular (IBS/CBS) (Ano Atual)'
+                        : `Regime Regular (IBS/CBS) (${anoSimulacaoSelecionado})`}
                     </td>
                     <td className="px-6 py-4 text-center font-mono font-extrabold text-[#07132B]">
                       {formatarMoeda(ibsCbsAnoDashboard.totalEfetivo)}
@@ -2329,12 +2336,16 @@ export default function Modulo6Dashboard({
                     <td className="px-6 py-4 text-center">
                       <span
                         className={`inline-block px-2.5 py-1 text-xs font-semibold rounded-full ${
-                          regimeRecomendado === 'IBS/CBS'
+                          regimeRecomendado === 'IBS/CBS' ||
+                          regimeRecomendado === 'Regime Regular (IBS/CBS)'
                             ? 'bg-emerald-600 text-white font-bold'
                             : 'bg-[#D4AF37]/30 text-amber-950 font-bold'
                         }`}
                       >
-                        {regimeRecomendado === 'IBS/CBS' ? '★ Mais Econômico' : 'Novo Modelo Legal'}
+                        {regimeRecomendado === 'IBS/CBS' ||
+                        regimeRecomendado === 'Regime Regular (IBS/CBS)'
+                          ? '★ Mais Econômico'
+                          : 'Novo Modelo Legal'}
                       </span>
                     </td>
                   </tr>

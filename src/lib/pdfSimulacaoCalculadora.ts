@@ -1598,7 +1598,7 @@ export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions
         `${formatarMoeda(s.resultados.resultadoComparativo.lucroReal.totalEfetivo)} (${s.resultados.resultadoComparativo.lucroReal.aliquotaEfetiva.toFixed(2)}%)`,
     },
     {
-      titulo: 'IBS / CBS (Reforma)',
+      titulo: 'Regime Regular (IBS/CBS)',
       isDestaque: true,
       getValores: (s) => {
         const anoSim =

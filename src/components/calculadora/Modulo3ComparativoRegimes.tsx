@@ -1283,7 +1283,9 @@ export default function Modulo3ComparativoRegimes({
               </span>
             </div>
             <p className="text-3xl font-heading font-extrabold text-white">
-              {resultadoComparativo.regimeMaisVantajoso}
+              {resultadoComparativo.regimeMaisVantajoso === 'IBS/CBS'
+                ? 'Regime Regular (IBS/CBS)'
+                : resultadoComparativo.regimeMaisVantajoso}
             </p>
             <p className="text-xs text-slate-300">
               Apresenta a menor alíquota efetiva e o menor desembolso de impostos sobre o consumo.
@@ -1552,7 +1554,7 @@ export default function Modulo3ComparativoRegimes({
                 <TableHead className="font-bold text-[#07132B] text-center min-w-[160px] bg-[#D4AF37]/15 border-x-2 border-[#D4AF37]/40">
                   <span className="inline-flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
-                    IBS / CBS (Novo)
+                    Regime Regular (IBS/CBS)
                   </span>
                 </TableHead>
               </TableRow>

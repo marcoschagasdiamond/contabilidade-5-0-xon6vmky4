@@ -478,11 +478,55 @@ export function ModalMetodologiaCalculo({
                           </strong>
                         </div>
                         <div className="flex justify-between border-t border-slate-100 pt-0.5 text-blue-900 font-extrabold">
-                          <span>IBS/CBS Efetiva:</span>
+                          <span>Regime Regular (IBS/CBS) Efetiva:</span>
                           <strong>{formatarPorcentagem(ibsCbs.aliquotaEfetiva)}</strong>
                         </div>
                       </div>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* EXPLICATIVO DO REGIME REGULAR (IBS/CBS) E ART. 348 DA LC 214/2025 */}
+              <Card className="border-blue-200 bg-blue-50/50 shadow-xs">
+                <CardContent className="p-4 space-y-2.5">
+                  <div className="flex items-center gap-2 border-b border-blue-200/80 pb-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#07132B]" />
+                    <h4 className="font-bold text-[#07132B] text-sm">
+                      Natureza do Cenário: Regime Regular (IBS/CBS) e Regra de Concorrência
+                    </h4>
+                  </div>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    O cenário intitulado <strong>Regime Regular (IBS/CBS)</strong> representa o
+                    regime geral e não-cumulativo do novo sistema tributário da reforma (EC 132/2023
+                    e LC 214/2025), caracterizado pelo{' '}
+                    <strong>crédito amplo sobre compras, insumos e despesas operacionais</strong>.
+                    Ele é estruturalmente distinto dos regimes tradicionais do sistema tributário
+                    atual —<strong> Lucro Real</strong> (regime não-cumulativo setorial da Lei
+                    10.833/03),
+                    <strong> Lucro Presumido</strong> (regime cumulativo da Lei 9.718/98) e
+                    <strong> Simples Nacional</strong> (regime unificado da LC 123/2006).
+                  </p>
+                  <div className="bg-white p-3 rounded-lg border border-blue-200 text-xs text-slate-700 space-y-1.5">
+                    <div className="font-bold text-[#07132B] flex items-center gap-1.5">
+                      <Info className="w-3.5 h-3.5 text-blue-700" />
+                      <span>Fase-Piloto em 2026 / Ano Atual (art. 348 da LC 214/2025):</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Em <strong>2026 e no ano atual</strong>, o IBS e a CBS operam exclusivamente
+                      em fase-piloto e teste institucional (CBS de 0,9% e IBS de 0,1%), com
+                      recolhimentos integralmente compensáveis com PIS/COFINS e sem extinção dos
+                      tributos do consumo vigentes. Por esse motivo legal (art. 348 da LC 214/2025),
+                      o Regime Regular (IBS/CBS)
+                      <strong>
+                        {' '}
+                        não concorre na recomendação do regime mais vantajoso em 2026/ano atual
+                      </strong>{' '}
+                      (a recomendação é disputada apenas entre Lucro Real, Lucro Presumido e Simples
+                      Nacional). O Regime Regular passa a concorrer ativamente na recomendação
+                      econômica apenas de <strong>2027 a 2033</strong>, período no qual o novo IVA
+                      Dual entra em eficácia plena e substitui os tributos federais e subnacionais.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -628,13 +672,14 @@ export function ModalMetodologiaCalculo({
                   <CardContent className="p-3.5 space-y-1.5">
                     <div className="flex items-center gap-1.5 font-bold text-[#07132B]">
                       <FileText className="w-3.5 h-3.5 text-blue-600" />
-                      Art. 28 a 33 da LC 214/2025 — Não Cumulatividade Ampla
+                      Art. 28 a 33 da LC 214/2025 — Não Cumulatividade Ampla (Regime Regular)
                     </div>
                     <p className="text-slate-600 leading-relaxed text-[11px]">
-                      Garante ao contribuinte do IBS e da CBS o direito de apropriar créditos do
-                      imposto cobrado e destacado nas operações de aquisição de quaisquer bens
-                      materiais ou imateriais, inclusive direitos e serviços, utilizados na
-                      atividade econômica, superando o conceito restritivo de insumos do PIS/COFINS.
+                      Institui o <strong>Regime Regular não-cumulativo</strong>, garantindo ao
+                      contribuinte do IBS e da CBS o direito de apropriar créditos amplos do imposto
+                      cobrado e destacado nas operações de aquisição de quaisquer bens materiais ou
+                      imateriais, inclusive direitos e serviços, superando o conceito restritivo de
+                      insumos do PIS/COFINS.
                     </p>
                   </CardContent>
                 </Card>
@@ -673,13 +718,14 @@ export function ModalMetodologiaCalculo({
                   <CardContent className="p-3.5 space-y-1.5">
                     <div className="flex items-center gap-1.5 font-bold text-[#07132B]">
                       <FileText className="w-3.5 h-3.5 text-purple-600" />
-                      Art. 347 e 348 da LC 214/2025 — Cronograma de Transição 2026–2033
+                      Art. 347 e 348 da LC 214/2025 — Cronograma e Fase-Piloto (2026–2033)
                     </div>
                     <p className="text-slate-600 leading-relaxed text-[11px]">
-                      Fixa a fase de teste em 2026 (CBS 0,9% e IBS 0,1%), a extinção do PIS/COFINS
-                      em 2027 com CBS plena (8,7%), e a transição gradual federativa do ICMS e ISS
-                      para o IBS de 2029 a 2032 (à razão de 1/10 ao ano), culminando no modelo pleno
-                      em 2033.
+                      Fixa a fase de teste em 2026 (CBS 0,9% e IBS 0,1%), período em que o novo
+                      tributo não concorre na escolha de regime (compensação total), a extinção do
+                      PIS/COFINS em 2027 com CBS plena (8,7%), e a transição gradual federativa do
+                      ICMS e ISS para o IBS de 2029 a 2032 (à razão de 1/10 ao ano), culminando no
+                      modelo pleno em 2033.
                     </p>
                   </CardContent>
                 </Card>

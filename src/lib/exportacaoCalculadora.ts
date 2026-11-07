@@ -191,12 +191,16 @@ export function gerarCsvSimulacao(dados: DadosParaExportacaoSimulacao): string {
     d.regimeRecomendado === 'Lucro Real' ? 'RECOMENDADO' : '',
   )
   adicionarLinha(
-    'IBS / CBS (Reforma)',
+    'Regime Regular (IBS/CBS)',
     formatarMoeda(c.ibsCbs.totalNominal),
     formatarMoeda(c.ibsCbs.creditos),
     formatarMoeda(c.ibsCbs.totalEfetivo),
     `${c.ibsCbs.aliquotaEfetiva.toFixed(2)}%`,
-    d.regimeRecomendado === 'IBS/CBS' || d.regimeRecomendado === 'IBS / CBS' ? 'RECOMENDADO' : '',
+    d.regimeRecomendado === 'IBS/CBS' ||
+      d.regimeRecomendado === 'IBS / CBS' ||
+      d.regimeRecomendado === 'Regime Regular (IBS/CBS)'
+      ? 'RECOMENDADO'
+      : '',
   )
   adicionarLinha('')
 
