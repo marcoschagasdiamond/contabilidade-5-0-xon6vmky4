@@ -31,6 +31,9 @@ import {
   ModuloCalculadoraId,
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
 import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
+import { ComposicaoCreditoCompras } from '@/components/calculadora/ComposicaoCreditoCompras'
+import { obterAliquotasCreditoPorAno } from '@/lib/calculoFornecedores'
+import { type AnoBaseSimulacao } from '@/lib/reformaTributaria'
 
 export interface Modulo4SimuladorCreditosProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
@@ -100,6 +103,35 @@ export default function Modulo4SimuladorCreditos({
       ? `− ${formatarPorcentagem(Math.abs(aumentoPercentual), 1)}`
       : `+ ${formatarPorcentagem(aumentoPercentual, 1)}`
   const strEconomiaAnual = formatarMoeda(economiaAnual)
+
+  // Dados para a Seção de Composição do Crédito de Compras (LC 214/2025 • Fornecedores Simples Nacional)
+  const anoNumModulo4: AnoBaseSimulacao =
+    typeof anoEfetivoCreditos === 'number' ? (anoEfetivoCreditos as AnoBaseSimulacao) : 2033
+  const aliquotaSimplesMediaModulo4 =
+    obterAliquotasCreditoPorAno(anoNumModulo4).aliquotaSimplesMedia * 100
+  const aliquotaCheiaModulo4 = isAliquotaZero ? 0 : aliqRefCreditos
+
+  const pctFornecSimplesModulo4 = Math.min(
+    100,
+    Math.max(0, config.porcentagemComprasSimplesNacional ?? 0),
+  )
+
+  // As categorias de compras diretas/suprimentos (mercadoria_revenda, materia_prima, embalagens)
+  const idsCategoriasCompras = new Set(['mercadoria_revenda', 'materia_prima', 'embalagens'])
+  const despesasCompras = despesasCreditos.filter((d) => idsCategoriasCompras.has(d.id))
+  const valorTotalComprasModulo4 = despesasCompras.reduce((acc, d) => acc + (d.valorMensal || 0), 0)
+
+  // Crédito do cenário cheio (100% regime regular) sobre as compras
+  const creditoCheioModulo4 = (valorTotalComprasModulo4 * aliquotaCheiaModulo4) / 100
+
+  // Crédito ponderado considerando o % de compras do Simples Nacional da LC 214/2025
+  const aliqPonderadaComprasModulo4 =
+    pctFornecSimplesModulo4 > 0
+      ? (1 - pctFornecSimplesModulo4 / 100) * aliquotaCheiaModulo4 +
+        (pctFornecSimplesModulo4 / 100) * aliquotaSimplesMediaModulo4
+      : aliquotaCheiaModulo4
+  const creditoPonderadoModulo4 = (valorTotalComprasModulo4 * aliqPonderadaComprasModulo4) / 100
+  const diferencaCreditoModulo4 = Math.max(0, creditoCheioModulo4 - creditoPonderadoModulo4)
 
   // Escala responsiva da fonte com base na quantidade de caracteres para evitar estouro em cards compactos
   const obterClasseTamanhoFonte = (texto: string) => {
@@ -252,6 +284,18 @@ export default function Modulo4SimuladorCreditos({
           </span>
         </div>
       )}
+
+      {/* SEÇÃO COMPOSIÇÃO DO CRÉDITO DE COMPRAS (LC 214/2025 • FORNECEDORES SIMPLES) */}
+      <ComposicaoCreditoCompras
+        ano={anoEfetivoCreditos}
+        aliquotaCheia={aliquotaCheiaModulo4}
+        aliquotaSimplesMedia={aliquotaSimplesMediaModulo4}
+        porcentagemSimples={pctFornecSimplesModulo4}
+        creditoCheio={creditoCheioModulo4}
+        creditoPonderado={creditoPonderadoModulo4}
+        diferenca={diferencaCreditoModulo4}
+        origemModulo="modulo4"
+      />
 
       {/* Cards de Resumo e Métricas Conforme Especificação */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

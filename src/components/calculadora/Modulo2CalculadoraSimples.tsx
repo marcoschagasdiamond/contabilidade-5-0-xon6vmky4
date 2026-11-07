@@ -36,6 +36,9 @@ import {
   ModuloCalculadoraId,
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
 import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
+import { ComposicaoCreditoCompras } from '@/components/calculadora/ComposicaoCreditoCompras'
+import { obterAliquotasCreditoPorAno } from '@/lib/calculoFornecedores'
+import { type AnoBaseSimulacao } from '@/lib/reformaTributaria'
 
 export interface Modulo2CalculadoraSimplesProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
@@ -631,6 +634,26 @@ export default function Modulo2CalculadoraSimples({
           return 'text-2xl sm:text-3xl'
         }
 
+        // Dados para a Seção de Composição do Crédito de Compras
+        const anoNumModulo2: AnoBaseSimulacao =
+          typeof anoOperacao === 'number' ? (anoOperacao as AnoBaseSimulacao) : 2033
+        const aliquotaSimplesMediaModulo2 =
+          obterAliquotasCreditoPorAno(anoNumModulo2).aliquotaSimplesMedia * 100
+        const aliquotaCheiaModulo2 =
+          typeof anoOperacao === 'number' && CRONOGRAMA_FASES_TRANSICAO[anoOperacao]
+            ? CRONOGRAMA_FASES_TRANSICAO[anoOperacao].totalIvaDual
+            : config.totalIvaDual
+
+        const pctFornecSimplesModulo2 = Math.min(
+          100,
+          Math.max(0, config.porcentagemComprasSimplesNacional ?? 0),
+        )
+        const valorComprasModulo2 =
+          Math.max(0, valorOperacao) * (Math.max(0, percentualComprasVendasSimples) / 100)
+        const creditoCheioModulo2 = (valorComprasModulo2 * aliquotaCheiaModulo2) / 100
+        const creditoPonderadoModulo2 = resultadoSimples.valorCreditos
+        const diferencaCreditoModulo2 = Math.max(0, creditoCheioModulo2 - creditoPonderadoModulo2)
+
         return (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-1">
@@ -827,6 +850,18 @@ export default function Modulo2CalculadoraSimples({
                 </CardContent>
               </Card>
             </div>
+
+            {/* SEÇÃO COMPOSIÇÃO DO CRÉDITO DE COMPRAS (LC 214/2025 • FORNECEDORES SIMPLES) */}
+            <ComposicaoCreditoCompras
+              ano={anoOperacao}
+              aliquotaCheia={aliquotaCheiaModulo2}
+              aliquotaSimplesMedia={aliquotaSimplesMediaModulo2}
+              porcentagemSimples={pctFornecSimplesModulo2}
+              creditoCheio={creditoCheioModulo2}
+              creditoPonderado={creditoPonderadoModulo2}
+              diferenca={diferencaCreditoModulo2}
+              origemModulo="modulo2"
+            />
           </div>
         )
       })()}
