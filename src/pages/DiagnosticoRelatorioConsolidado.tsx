@@ -7,8 +7,14 @@ import TrilhaDiagnosticoNav from '@/components/diagnosticos/TrilhaDiagnosticoNav
 import {
   getDiagnosticos,
   getDiagnosticosPorCliente,
+  buscarDiagnosticosPorEmpresa,
   type DiagnosticoRecord,
 } from '@/services/diagnosticos'
+import {
+  getClienteEmpresaPorClienteAtivo,
+  recordToPerfil,
+  perfilToRecord,
+} from '@/services/clientesEmpresas'
 import { formatarCNPJ } from '@/lib/cnpj'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { URL_SISTEMA_ANALISE_FINANCEIRA } from '@/lib/configSistemasExternos'
@@ -34,6 +40,7 @@ import {
   type SegmentoEmpresa,
 } from '@/lib/regimes'
 import { useToast } from '@/hooks/use-toast'
+import type { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
 import {
   listarHistoricoRelatoriosPorCliente,
   registrarVersaoRelatorio,
@@ -48,7 +55,11 @@ export default function DiagnosticoRelatorioConsolidado() {
   const { toast } = useToast()
   const navigate = useNavigate()
   const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
-  const { dadosEmpresa, temDadosSalvos } = useDadosEmpresa()
+  const { dadosEmpresa: dadosEmpresaSessao, temDadosSalvos } = useDadosEmpresa()
+  // Fonte da Etapa 1: sessão do usuário logado; quando ele não tem cadastro próprio
+  // (ex.: master visualizando cliente de outro técnico), usa o cadastro do cliente ativo
+  const dadosEmpresa = temDadosSalvos ? dadosEmpresaSessao : dadosEmpresaFallback
+  const temDadosEmpresaExibir = Boolean(dadosEmpresa)
 
   const [carregando, setCarregando] = useState(true)
   const [todosDiagnosticos, setTodosDiagnosticos] = useState<DiagnosticoRecord[]>([])
@@ -58,6 +69,9 @@ export default function DiagnosticoRelatorioConsolidado() {
   const [salvandoSnapshotManual, setSalvandoSnapshotManual] = useState(false)
   const [sucessoSnapshotMsg, setSucessoSnapshotMsg] = useState<string | null>(null)
   const [modalTrocarEmpresaAberto, setModalTrocarEmpresaAberto] = useState(false)
+  // Dados da Empresa (Etapa 1) carregados do cadastro do cliente ativo quando a
+  // sessão do usuário logado não tem registro próprio em clientes_empresas
+  const [dadosEmpresaFallback, setDadosEmpresaFallback] = useState<DadosEmpresaPerfil | null>(null)
 
   const [abaAtiva, setAbaAtiva] = useState<
     | 'consolidado'
@@ -77,14 +91,29 @@ export default function DiagnosticoRelatorioConsolidado() {
     }
   }, [abaUrl])
 
-  // Carrega os diagnósticos do cliente ativo ou gerais
+  // Carrega os diagnósticos do cliente ativo (com fallback por empresa) ou gerais
   useEffect(() => {
     let montado = true
     const carregar = async () => {
       setCarregando(true)
       try {
         if (clienteAtivoId) {
-          const list = await getDiagnosticosPorCliente(clienteAtivoId)
+          let list = await getDiagnosticosPorCliente(clienteAtivoId)
+          // Fallback: o cliente pode ter diagnósticos salvos por outro usuário
+          // (regras globais master/admin da migração 0063 permitem vê-los),
+          // sem vínculo de cliente_id — busca pela empresa vinculada.
+          if (list.length === 0) {
+            const listaFallback = await buscarDiagnosticosPorEmpresa(
+              clienteAtivo?.nome,
+              clienteAtivo?.cnpj_cpf,
+            )
+            if (listaFallback.length > 0 && montado) {
+              console.info(
+                `[Relatório Consolidado] Nenhum diagnóstico vinculado ao cliente ${clienteAtivoId}; usando ${listaFallback.length} registro(s) da empresa vinculada (salvo por outro usuário).`,
+              )
+              list = listaFallback
+            }
+          }
           if (montado) setTodosDiagnosticos(list)
         } else {
           const list = await getDiagnosticos()
@@ -127,6 +156,35 @@ export default function DiagnosticoRelatorioConsolidado() {
     }
   }, [clienteAtivoId])
 
+  // Fallback da Etapa 1 (Configurações): quando a sessão do usuário logado não tem
+  // dados próprios em clientes_empresas, carrega o cadastro da empresa vinculada
+  // ao Cliente Ativo (ex.: cliente cadastrado por outro usuário e visualizado
+  // pelo master em /admin). Sem alterar cálculos — apenas a fonte dos dados.
+  useEffect(() => {
+    let montado = true
+    const carregarEmpresaVinculada = async () => {
+      try {
+        if (temDadosSalvos || !clienteAtivoId || !clienteAtivo) return
+        const registroEmpresa = await getClienteEmpresaPorClienteAtivo(clienteAtivo)
+        if (registroEmpresa && montado) {
+          const perfilEmpresa = recordToPerfil(registroEmpresa)
+          setDadosEmpresaFallback(perfilEmpresa)
+          if (import.meta.env.DEV) {
+            console.info(
+              '[Relatório Consolidado] Sessão sem dados próprios: Etapa 1 carregada do cadastro de clientes_empresas do cliente ativo.',
+            )
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar empresa vinculada do cliente ativo:', err)
+      }
+    }
+    carregarEmpresaVinculada()
+    return () => {
+      montado = false
+    }
+  }, [clienteAtivoId, clienteAtivo, temDadosSalvos])
+
   // Separação dos registros de cada etapa para o cliente ativo ou geral
   const diagAutoavaliacao = useMemo(() => {
     return todosDiagnosticos.find((d) => d.tipo_diagnostico === '360') || null
@@ -160,7 +218,7 @@ export default function DiagnosticoRelatorioConsolidado() {
   const handleBaixarConsolidado = () => {
     exportarPdfRelatorioConsolidado({
       clienteNome: nomeClienteExibir,
-      dadosEmpresa: temDadosSalvos ? dadosEmpresa : null,
+      dadosEmpresa: dadosEmpresa,
       diagnosticoAutoavaliacao: diagAutoavaliacao,
       diagnosticoTransicao: diagTransicao,
       diagnosticoRegimes: diagRegimes,
@@ -169,7 +227,7 @@ export default function DiagnosticoRelatorioConsolidado() {
   }
 
   const handleBaixarConfiguracoes = () => {
-    exportarPdfEtapaConfiguracoes(temDadosSalvos ? dadosEmpresa : null, nomeClienteExibir)
+    exportarPdfEtapaConfiguracoes(dadosEmpresa, nomeClienteExibir)
   }
 
   const handleBaixarAutoavaliacao = () => {
@@ -189,6 +247,10 @@ export default function DiagnosticoRelatorioConsolidado() {
   const handleBaixarParecerEnquadramento = () => {
     if (!diagEnquadramento) return
 
+    // Mesma fonte da Etapa 1 (sessão do usuário ou cadastro do cliente ativo),
+    // para o parecer usar os dados corretos quando o master visualiza cliente de outro usuário
+    const dadosEmpresaParecer = dadosEmpresa
+
     setGerandoParecerEnquadramento(true)
     try {
       const cfg = diagEnquadramento.configuracoes_diagnostico_json || {}
@@ -196,77 +258,84 @@ export default function DiagnosticoRelatorioConsolidado() {
 
       const nomeContatoFinal =
         cfg.nome_contato ||
-        dadosEmpresa?.nomeContato ||
+        dadosEmpresaParecer?.nomeContato ||
         diagEnquadramento.nome ||
         nomeClienteExibir ||
         'Não informado'
 
-      const emailFinal = dadosEmpresa?.email || diagEnquadramento.email || ''
-      const telefoneFinal = dadosEmpresa?.telefone || diagEnquadramento.telefone || ''
+      const emailFinal = dadosEmpresaParecer?.email || diagEnquadramento.email || ''
+      const telefoneFinal = dadosEmpresaParecer?.telefone || diagEnquadramento.telefone || ''
       const empresaFinal =
         cfg.razao_social ||
-        dadosEmpresa?.nomeEmpresa ||
+        dadosEmpresaParecer?.nomeEmpresa ||
         diagEnquadramento.empresa ||
         nomeEmpresaExibir
 
-      const cnpjFinal = cfg.cnpj || dadosEmpresa?.cnpj || diagEnquadramento.cnpj || ''
+      const cnpjFinal = cfg.cnpj || dadosEmpresaParecer?.cnpj || diagEnquadramento.cnpj || ''
       const segmentoFinal = (cfg.segmento ||
-        dadosEmpresa?.segmento ||
+        dadosEmpresaParecer?.segmento ||
         diagEnquadramento.segmento ||
         'Serviços') as SegmentoEmpresa
 
       const rbt12Final =
         diagEnquadramento.rbt12 ||
-        (dadosEmpresa?.faturamentoMensal ? dadosEmpresa.faturamentoMensal * 12 : 600000)
+        (dadosEmpresaParecer?.faturamentoMensal
+          ? dadosEmpresaParecer.faturamentoMensal * 12
+          : 600000)
 
       const folha12Final =
         diagEnquadramento.folha12 ||
-        (dadosEmpresa?.folhaPagamentoMensal ? dadosEmpresa.folhaPagamentoMensal * 12 : 120000)
+        (dadosEmpresaParecer?.folhaPagamentoMensal
+          ? dadosEmpresaParecer.folhaPagamentoMensal * 12
+          : 120000)
 
       const folhaMensalFinal =
         diagEnquadramento.folha_pagamento ||
-        dadosEmpresa?.folhaPagamentoMensal ||
+        dadosEmpresaParecer?.folhaPagamentoMensal ||
         Math.round(folha12Final / 12)
 
       const despesasCreditosFinal =
-        diagEnquadramento.despesas_creditos || dadosEmpresa?.despesasComCreditosMensais || 0
+        diagEnquadramento.despesas_creditos || dadosEmpresaParecer?.despesasComCreditosMensais || 0
 
       const percentualExportacaoFinal =
-        diagEnquadramento.percentual_exportacao ?? dadosEmpresa?.percentualExportacao ?? 0
+        diagEnquadramento.percentual_exportacao ?? dadosEmpresaParecer?.percentualExportacao ?? 0
 
       const ufOrigemFinal =
-        diagEnquadramento.uf_origem || cfg.uf_origem || dadosEmpresa?.ufOrigem || 'SP'
+        diagEnquadramento.uf_origem || cfg.uf_origem || dadosEmpresaParecer?.ufOrigem || 'SP'
 
       const margemLucroFinal =
-        diagEnquadramento.margem_lucro ?? dadosEmpresa?.margemLucroEstimada ?? 25
+        diagEnquadramento.margem_lucro ?? dadosEmpresaParecer?.margemLucroEstimada ?? 25
 
       const funcionariosFinal =
-        diagEnquadramento.funcionarios || cfg.funcionarios || dadosEmpresa?.funcionarios || '1–5'
+        diagEnquadramento.funcionarios ||
+        cfg.funcionarios ||
+        dadosEmpresaParecer?.funcionarios ||
+        '1–5'
 
       const emissaoNfFinal =
-        diagEnquadramento.emissao_nf || cfg.emissao_nf || dadosEmpresa?.emissaoNf || 'B2B'
+        diagEnquadramento.emissao_nf || cfg.emissao_nf || dadosEmpresaParecer?.emissaoNf || 'B2B'
 
       const atividadeMistaFinal =
         diagEnquadramento.atividade_mista ??
         cfg.atividade_mista ??
-        (typeof dadosEmpresa?.atividadeMista === 'boolean'
-          ? dadosEmpresa.atividadeMista
-          : dadosEmpresa?.tipoAtividade === 'misto')
+        (typeof dadosEmpresaParecer?.atividadeMista === 'boolean'
+          ? dadosEmpresaParecer.atividadeMista
+          : dadosEmpresaParecer?.tipoAtividade === 'misto')
 
       const regimeAtualFinal =
         diagEnquadramento.regime_atual ||
         cfg.regime_atual ||
-        dadosEmpresa?.regimeAtual ||
+        dadosEmpresaParecer?.regimeAtual ||
         'Simples Nacional'
 
       const cidadeFinal =
-        diagEnquadramento.cidade || cfg.cidade || dadosEmpresa?.cidade || 'São Paulo - SP'
+        diagEnquadramento.cidade || cfg.cidade || dadosEmpresaParecer?.cidade || 'São Paulo - SP'
 
       const anoBaseFinal =
         diagEnquadramento.ano_base ||
         detRef.anoBase ||
         cfg.ano_base_transicao ||
-        dadosEmpresa?.anoBaseTransicao ||
+        dadosEmpresaParecer?.anoBaseTransicao ||
         2026
 
       const inputDiagnostico: DadosEntradaDiagnostico = {
@@ -320,7 +389,7 @@ export default function DiagnosticoRelatorioConsolidado() {
     try {
       const dadosAtuais: DadosRelatorioConsolidado = {
         clienteNome: nomeClienteExibir,
-        dadosEmpresa: temDadosSalvos ? dadosEmpresa : null,
+        dadosEmpresa: dadosEmpresa,
         diagnosticoAutoavaliacao: diagAutoavaliacao,
         diagnosticoTransicao: diagTransicao,
         diagnosticoRegimes: diagRegimes,
@@ -390,7 +459,7 @@ export default function DiagnosticoRelatorioConsolidado() {
       <TrilhaDiagnosticoNav
         paginaAtual="relatorio"
         nomeEmpresa={nomeEmpresaExibir}
-        temDadosSalvos={temDadosSalvos}
+        temDadosSalvos={temDadosEmpresaExibir}
       />
 
       {/* HERO SECTION DO RELATÓRIO */}
@@ -999,11 +1068,11 @@ export default function DiagnosticoRelatorioConsolidado() {
 
             {/* QUADRO: MUDANÇAS PARA O SEU PERFIL (LEGISLAÇÃO CONTEXTUAL & RADAR) */}
             <QuadroMudancasPerfilConsolidado
-              segmento={dadosEmpresa.segmento}
-              regimeAtual={dadosEmpresa.regimeAtual}
-              perfilNf={dadosEmpresa.emissaoNf}
-              atividadeMista={dadosEmpresa.atividadeMista}
-              temDadosSalvos={temDadosSalvos}
+              segmento={dadosEmpresa?.segmento}
+              regimeAtual={dadosEmpresa?.regimeAtual}
+              perfilNf={dadosEmpresa?.emissaoNf}
+              atividadeMista={dadosEmpresa?.atividadeMista}
+              temDadosSalvos={temDadosEmpresaExibir}
             />
 
             {/* SEÇÃO 1: CONFIGURAÇÕES */}
@@ -1035,7 +1104,7 @@ export default function DiagnosticoRelatorioConsolidado() {
                 </div>
               </div>
 
-              {temDadosSalvos ? (
+              {temDadosEmpresaExibir ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
                     <span className="text-slate-400 uppercase font-semibold block text-[10px]">
@@ -1457,7 +1526,7 @@ export default function DiagnosticoRelatorioConsolidado() {
             </div>
 
             {/* SEÇÃO DADOS GERENCIAIS DOS DOCUMENTOS IMPORTADOS (BALANCETE & EFDs) */}
-            {temDadosSalvos && dadosEmpresa.documentoFiscalImportado && (
+            {dadosEmpresa?.documentoFiscalImportado && (
               <SecaoDadosGerenciaisImportados
                 documentoFiscal={dadosEmpresa.documentoFiscalImportado}
                 nomeEmpresa={dadosEmpresa.nomeEmpresa}
@@ -1465,18 +1534,16 @@ export default function DiagnosticoRelatorioConsolidado() {
             )}
 
             {/* SEÇÃO ANÁLISE DE VÍNCULOS SOCIETÁRIOS & RISCO DE REGIME */}
-            {temDadosSalvos &&
-              dadosEmpresa.vinculosSocietarios &&
-              dadosEmpresa.vinculosSocietarios.length > 0 && (
-                <SecaoVinculosSocietariosConsolidado
-                  vinculos={dadosEmpresa.vinculosSocietarios}
-                  regimeAtual={dadosEmpresa.regimeAtual}
-                  faturamentoProprio={
-                    dadosEmpresa.faturamentoMensal ? dadosEmpresa.faturamentoMensal * 12 : 0
-                  }
-                  nomeEmpresa={dadosEmpresa.nomeEmpresa}
-                />
-              )}
+            {dadosEmpresa?.vinculosSocietarios && dadosEmpresa.vinculosSocietarios.length > 0 && (
+              <SecaoVinculosSocietariosConsolidado
+                vinculos={dadosEmpresa.vinculosSocietarios}
+                regimeAtual={dadosEmpresa.regimeAtual}
+                faturamentoProprio={
+                  dadosEmpresa.faturamentoMensal ? dadosEmpresa.faturamentoMensal * 12 : 0
+                }
+                nomeEmpresa={dadosEmpresa.nomeEmpresa}
+              />
+            )}
 
             {/* SEÇÃO 2: AUTOAVALIAÇÃO DAS 7 FRENTES */}
             <div className="bg-white rounded-[24px] p-6 sm:p-8 border border-slate-200 shadow-md space-y-5">
@@ -1968,7 +2035,7 @@ export default function DiagnosticoRelatorioConsolidado() {
               </div>
             </div>
 
-            {temDadosSalvos ? (
+            {dadosEmpresa ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                   <span className="text-slate-400 uppercase text-xs font-bold block">Empresa</span>
@@ -2309,7 +2376,7 @@ export default function DiagnosticoRelatorioConsolidado() {
               </div>
             </div>
 
-            {diagEnquadramento ? (
+            {diagEnquadramento || diagAutoavaliacao || diagTransicao || diagRegimes ? (
               <div className="space-y-4">
                 <div className="p-6 rounded-2xl bg-[#07132B] text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
@@ -2362,7 +2429,7 @@ export default function DiagnosticoRelatorioConsolidado() {
         {abaAtiva === 'fornecedores' && (
           <SecaoFornecedoresConsolidado
             clienteAtivoId={clienteAtivoId}
-            dadosEmpresa={temDadosSalvos ? dadosEmpresa : null}
+            dadosEmpresa={dadosEmpresa}
           />
         )}
       </div>
