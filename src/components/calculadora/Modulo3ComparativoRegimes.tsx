@@ -332,7 +332,9 @@ export default function Modulo3ComparativoRegimes({
                     htmlFor="pctComprasComp"
                     className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
                   >
-                    % de Compras sobre Vendas
+                    {tipoAtividade === 'servico'
+                      ? '% de Insumos / Serviços s/ Faturamento'
+                      : '% de Compras sobre Vendas'}
                   </Label>
                   {origensPropagadas?.modulo3PercentualCompras && (
                     <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
@@ -355,7 +357,9 @@ export default function Modulo3ComparativoRegimes({
                 <span className="absolute right-4 top-3 text-slate-400 font-bold">%</span>
               </div>
               <span className="text-[11px] text-slate-500 block break-words">
-                Base de compras diretas para apropriação de créditos.
+                {tipoAtividade === 'servico'
+                  ? 'Base de insumos operacionais, licenças e serviços de terceiros para tomada de créditos.'
+                  : 'Base de compras diretas para apropriação de créditos.'}
               </span>
             </div>
           </div>
@@ -1084,7 +1088,9 @@ export default function Modulo3ComparativoRegimes({
                   htmlFor="m3ComprasSemCredito"
                   className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
                 >
-                  Compras s/ Crédito (%)
+                  {tipoAtividade === 'servico'
+                    ? 'Insumos/Serviços s/ Crédito (%)'
+                    : 'Compras s/ Crédito (%)'}
                 </Label>
                 <span className="text-xs font-mono font-bold text-slate-700 bg-slate-200 px-1.5 py-0.2 rounded">
                   {percentualComprasSemCredito}%
@@ -1103,7 +1109,9 @@ export default function Modulo3ComparativoRegimes({
                 <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">%</span>
               </div>
               <span className="text-[11px] text-slate-500 block leading-tight break-words">
-                Insumos sem apropriação de crédito IBS/CBS.
+                {tipoAtividade === 'servico'
+                  ? 'Insumos ou serviços de terceiros sem apropriação de crédito IBS/CBS.'
+                  : 'Insumos sem apropriação de crédito IBS/CBS.'}
               </span>
             </div>
 

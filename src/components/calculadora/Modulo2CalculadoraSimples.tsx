@@ -84,7 +84,10 @@ export default function Modulo2CalculadoraSimples({
     percentualRetencaoSplit,
     setPercentualRetencaoSplit,
     editadoLocalmente,
+    tipoAtividade,
   } = useCalculadoraIbsCbs()
+
+  const isPerfilServico = (config.tipoAtividade || tipoAtividade) === 'servico'
 
   // Presets divididos pelos grupos legais da LC 214/2025 (mesma estrutura do Módulo 1, sem ícones)
   const presetsPadrao = PRESETS_SETORES_LC214.filter((p) => p.grupo === 'geral')
@@ -373,7 +376,9 @@ export default function Modulo2CalculadoraSimples({
                 htmlFor="percentualCompras"
                 className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
               >
-                % de Compras sobre Vendas
+                {isPerfilServico
+                  ? '% de Compras de Insumos / Serviços s/ Faturamento'
+                  : '% de Compras sobre Vendas'}
               </Label>
               {origensPropagadas?.modulo2PercentualCompras && (
                 <BadgeOrigemPropagada texto="vindo do Módulo 1 — editável aqui" />
@@ -396,7 +401,9 @@ export default function Modulo2CalculadoraSimples({
             <span className="absolute right-4 top-3 text-slate-400 font-bold">%</span>
           </div>
           <span className="text-[11px] text-slate-500 block break-words">
-            Insumos com crédito amplo apropriado na operação.
+            {isPerfilServico
+              ? 'Insumos operacionais, softwares e serviços de terceiros com direito a crédito amplo.'
+              : 'Insumos com crédito amplo apropriado na operação.'}
           </span>
         </div>
       </div>
@@ -436,7 +443,7 @@ export default function Modulo2CalculadoraSimples({
                 htmlFor="m2ComprasSemCredito"
                 className="text-xs font-medium break-words leading-snug text-[#07132B]"
               >
-                Compras s/ Crédito (%)
+                {isPerfilServico ? 'Insumos/Serviços s/ Crédito (%)' : 'Compras s/ Crédito (%)'}
               </Label>
               <span className="text-xs font-mono font-bold text-slate-700 bg-slate-200 px-1.5 py-0.2 rounded">
                 {percentualComprasSemCredito}%
@@ -455,7 +462,9 @@ export default function Modulo2CalculadoraSimples({
               <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">%</span>
             </div>
             <span className="text-[11px] text-slate-500 block leading-tight break-words">
-              Uso, consumo ou isentas.
+              {isPerfilServico
+                ? 'Despesas de uso/consumo ou serviços isentos sem apropriação de crédito.'
+                : 'Uso, consumo ou isentas.'}
             </span>
           </div>
 
@@ -861,6 +870,7 @@ export default function Modulo2CalculadoraSimples({
               creditoPonderado={creditoPonderadoModulo2}
               diferenca={diferencaCreditoModulo2}
               origemModulo="modulo2"
+              isServico={isPerfilServico}
             />
           </div>
         )

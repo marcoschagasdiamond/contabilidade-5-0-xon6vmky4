@@ -13,6 +13,7 @@ export interface ComposicaoCreditoComprasProps {
   diferenca: number
   origemModulo?: 'modulo2' | 'modulo4'
   className?: string
+  isServico?: boolean
 }
 
 function ComposicaoCreditoComprasComponent({
@@ -25,6 +26,7 @@ function ComposicaoCreditoComprasComponent({
   diferenca,
   origemModulo = 'modulo2',
   className = '',
+  isServico = false,
 }: ComposicaoCreditoComprasProps) {
   const strCreditoCheio = formatarMoeda(creditoCheio)
   const strCreditoPonderado = formatarMoeda(creditoPonderado)
@@ -59,15 +61,18 @@ function ComposicaoCreditoComprasComponent({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#07132B]">
-                Composição do Crédito de Compras • LC 214/2025
+                {isServico
+                  ? 'Composição do Crédito de Insumos / Serviços • LC 214/2025'
+                  : 'Composição do Crédito de Compras • LC 214/2025'}
               </span>
               <span className="text-[10px] font-bold text-amber-900 bg-amber-100/90 border border-amber-300/80 px-2 py-0.5 rounded-full">
                 Simples Nacional: {porcentagemSimples}%
               </span>
             </div>
             <span className="text-[11px] text-slate-500 block">
-              Ponderação entre aquisições do regime regular e compras de optantes do Simples
-              Nacional ({anoRotulo}).
+              {isServico
+                ? `Ponderação entre aquisições/serviços do regime regular e compras de optantes do Simples Nacional (${anoRotulo}).`
+                : `Ponderação entre aquisições do regime regular e compras de optantes do Simples Nacional (${anoRotulo}).`}
             </span>
           </div>
         </div>
@@ -122,8 +127,9 @@ function ComposicaoCreditoComprasComponent({
             </div>
 
             <p className="text-[11px] text-slate-500 line-clamp-2">
-              Crédito caso 100% dos fornecedores fossem do regime regular (não-cumulatividade
-              plena).
+              {isServico
+                ? 'Crédito caso 100% dos fornecedores/prestadores fossem do regime regular (não-cumulatividade plena).'
+                : 'Crédito caso 100% dos fornecedores fossem do regime regular (não-cumulatividade plena).'}
             </p>
           </CardContent>
         </Card>
@@ -150,8 +156,9 @@ function ComposicaoCreditoComprasComponent({
             </div>
 
             <p className="text-[11px] text-slate-500 line-clamp-2">
-              Crédito com {porcentagemSimples}% das compras tributadas pelo crédito presumido LC
-              214/2025.
+              {isServico
+                ? `Crédito com ${porcentagemSimples}% dos insumos/serviços tributados pelo crédito presumido LC 214/2025.`
+                : `Crédito com ${porcentagemSimples}% das compras tributadas pelo crédito presumido LC 214/2025.`}
             </p>
           </CardContent>
         </Card>
@@ -195,8 +202,12 @@ function ComposicaoCreditoComprasComponent({
 
             <p className="text-[11px] text-slate-500 line-clamp-2">
               {temDiferenca
-                ? `Redução mensal de crédito decorrente de ${porcentagemSimples}% das compras no Simples Nacional.`
-                : 'Com 0% de compras no Simples Nacional, os cenários cheio e ponderado são 100% coincidentes.'}
+                ? isServico
+                  ? `Redução mensal de crédito decorrente de ${porcentagemSimples}% dos insumos/serviços adquiridos no Simples Nacional.`
+                  : `Redução mensal de crédito decorrente de ${porcentagemSimples}% das compras no Simples Nacional.`
+                : isServico
+                  ? 'Com 0% de fornecedores no Simples Nacional, os cenários cheio e ponderado são 100% coincidentes.'
+                  : 'Com 0% de compras no Simples Nacional, os cenários cheio e ponderado são 100% coincidentes.'}
             </p>
           </CardContent>
         </Card>
@@ -206,9 +217,12 @@ function ComposicaoCreditoComprasComponent({
       <div className="p-2.5 bg-slate-100/80 border border-slate-200/70 rounded-xl text-[11px] text-slate-600 flex items-start gap-2">
         <Info className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
         <span>
-          <strong>Regra LC 214/2025:</strong> As aquisições de fornecedores do Simples Nacional
-          geram crédito presumido equivalente à alíquota média recolhida no DAS (
-          {formatarPorcentagem(aliquotaSimplesMedia)} em {anoRotulo}), em vez da alíquota cheia (
+          <strong>Regra LC 214/2025:</strong>{' '}
+          {isServico
+            ? 'As aquisições de fornecedores e prestadores'
+            : 'As aquisições de fornecedores'}{' '}
+          do Simples Nacional geram crédito presumido equivalente à alíquota média recolhida no DAS
+          ({formatarPorcentagem(aliquotaSimplesMedia)} em {anoRotulo}), em vez da alíquota cheia (
           {formatarPorcentagem(aliquotaCheia)}). O percentual pode ser ajustado no Módulo 1
           (Configurações Gerais).
         </span>

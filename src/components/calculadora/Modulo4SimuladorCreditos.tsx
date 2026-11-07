@@ -60,7 +60,10 @@ export default function Modulo4SimuladorCreditos({
     origemDadosEmpresa,
     restaurarDadosEmpresaNoModulo,
     origensPropagadas,
+    tipoAtividade,
   } = useCalculadoraIbsCbs()
+
+  const isPerfilServico = (config.tipoAtividade || tipoAtividade) === 'servico'
 
   const handleValorChange = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, '')
@@ -116,8 +119,19 @@ export default function Modulo4SimuladorCreditos({
     Math.max(0, config.porcentagemComprasSimplesNacional ?? 0),
   )
 
-  // As categorias de compras diretas/suprimentos (mercadoria_revenda, materia_prima, embalagens)
-  const idsCategoriasCompras = new Set(['mercadoria_revenda', 'materia_prima', 'embalagens'])
+  // As categorias de compras diretas/suprimentos (mercadorias_revenda, mercadoria_revenda, materia_prima, embalagens)
+  // Para empresas de serviços, também abrange insumos diretos da atividade (TI, softwares, terceirizados)
+  const idsCategoriasCompras = isPerfilServico
+    ? new Set([
+        'mercadorias_revenda',
+        'mercadoria_revenda',
+        'materia_prima',
+        'embalagens',
+        'servicos_ti',
+        'consultorias',
+        'telefonia_internet',
+      ])
+    : new Set(['mercadorias_revenda', 'mercadoria_revenda', 'materia_prima', 'embalagens'])
   const despesasCompras = despesasCreditos.filter((d) => idsCategoriasCompras.has(d.id))
   const valorTotalComprasModulo4 = despesasCompras.reduce((acc, d) => acc + (d.valorMensal || 0), 0)
 
@@ -295,6 +309,7 @@ export default function Modulo4SimuladorCreditos({
         creditoPonderado={creditoPonderadoModulo4}
         diferenca={diferencaCreditoModulo4}
         origemModulo="modulo4"
+        isServico={isPerfilServico}
       />
 
       {/* Cards de Resumo e Métricas Conforme Especificação */}
@@ -533,6 +548,19 @@ export default function Modulo4SimuladorCreditos({
             </TableHeader>
             <TableBody className="text-sm divide-y divide-slate-100">
               {despesasCreditos.map((item) => {
+                // Adaptação de rótulo para empresas 100% prestadoras de serviços
+                const nomeExibicao =
+                  isPerfilServico &&
+                  (item.id === 'mercadorias_revenda' || item.id === 'mercadoria_revenda')
+                    ? 'Insumos materiais e peças de reposição (serviços)'
+                    : item.nome
+
+                const descricaoAntigaExibicao =
+                  isPerfilServico &&
+                  (item.id === 'mercadorias_revenda' || item.id === 'mercadoria_revenda')
+                    ? 'Insumos físicos e peças aplicadas na prestação de serviços (sem crédito amplo no sistema anterior)'
+                    : item.descricaoAntigo
+
                 const cAntigo = (item.valorMensal * item.aliquotaAntiga) / 100
                 const aliqNova = isAliquotaZero
                   ? 0
@@ -545,9 +573,9 @@ export default function Modulo4SimuladorCreditos({
                 return (
                   <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
                     <TableCell className="font-medium text-slate-800 py-3">
-                      <div className="font-bold text-slate-900">{item.nome}</div>
+                      <div className="font-bold text-slate-900">{nomeExibicao}</div>
                       <div className="text-[11px] text-slate-500 mt-0.5">
-                        {item.descricaoAntigo}
+                        {descricaoAntigaExibicao}
                       </div>
                       {item.notaEspecial && (
                         <div className="mt-1 text-[11px] font-medium text-amber-800 bg-amber-50/80 border border-amber-200/70 rounded-md p-1.5 leading-snug">

@@ -1212,7 +1212,9 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
                   htmlFor="pctComprasM1"
                   className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
                 >
-                  % de Compras sobre Vendas
+                  {config.tipoAtividade === 'servico'
+                    ? '% de Insumos / Serviços s/ Faturamento'
+                    : '% de Compras sobre Vendas'}
                 </Label>
                 <span className="text-[10px] text-slate-500 font-medium break-words">
                   Propaga aos Módulos 2 e 3
@@ -1234,7 +1236,9 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
                 <span className="absolute right-3.5 top-3 text-slate-400 font-bold text-xs">%</span>
               </div>
               <span className="text-[11px] text-slate-500 block leading-tight">
-                Percentual médio de insumos e compras tributáveis.
+                {config.tipoAtividade === 'servico'
+                  ? 'Percentual médio de insumos operacionais, softwares e serviços tomados de terceiros.'
+                  : 'Percentual médio de insumos e compras tributáveis.'}
               </span>
             </div>
 
@@ -1246,7 +1250,9 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
                     htmlFor="pctComprasSimplesNacionalM1"
                     className="text-xs sm:text-sm font-medium break-words leading-snug text-[#07132B]"
                   >
-                    % das compras vindas de fornecedores do Simples Nacional
+                    {config.tipoAtividade === 'servico'
+                      ? '% dos insumos/serviços de fornecedores do Simples Nacional'
+                      : '% das compras vindas de fornecedores do Simples Nacional'}
                   </Label>
                   <TooltipProvider delayDuration={150}>
                     <Tooltip>

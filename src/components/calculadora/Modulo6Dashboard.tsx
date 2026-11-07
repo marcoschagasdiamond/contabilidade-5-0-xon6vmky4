@@ -1046,7 +1046,11 @@ export default function Modulo6Dashboard({
             {/* Filtro: % Compras s/ Vendas (com BadgeOrigemPropagada quando propagado) */}
             <div>
               <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
-                <Label className="text-xs font-semibold text-slate-600">% Compras s/ Vendas</Label>
+                <Label className="text-xs font-semibold text-slate-600">
+                  {tipoAtividade === 'servico'
+                    ? '% Insumos / Serviços s/ Faturamento'
+                    : '% Compras s/ Vendas'}
+                </Label>
                 {origensPropagadas?.dashboardPercentualCompras && (
                   <BadgeOrigemPropagada texto="vindo das configurações — editável aqui" />
                 )}
@@ -1065,7 +1069,9 @@ export default function Modulo6Dashboard({
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-1.5 leading-snug">
-                Define o abatimento de créditos — afeta KPIs 2 a 4, quadro, gráficos e Split Payment
+                {tipoAtividade === 'servico'
+                  ? 'Define o abatimento de créditos sobre insumos/serviços — afeta KPIs 2 a 4, quadro, gráficos e Split Payment'
+                  : 'Define o abatimento de créditos — afeta KPIs 2 a 4, quadro, gráficos e Split Payment'}
               </p>
             </div>
           </div>
@@ -1185,7 +1191,9 @@ export default function Modulo6Dashboard({
                     <p className="text-[11px] text-slate-500 line-clamp-2">
                       {regimeAtualFiltro === 'Simples Nacional'
                         ? 'CBS no DAS a partir de 2027 e IBS por fora com créditos'
-                        : `Considerando débitos com abatimento de compras (${percentualComprasVendasComparativo}%)`}
+                        : tipoAtividade === 'servico'
+                          ? `Considerando débitos com abatimento de insumos/serviços (${percentualComprasVendasComparativo}%)`
+                          : `Considerando débitos com abatimento de compras (${percentualComprasVendasComparativo}%)`}
                     </p>
                   </CardContent>
                 </Card>
