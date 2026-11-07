@@ -1447,6 +1447,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       percentualComprasVendasComparativo,
       percentualComprasVendas: config.percentualComprasVendas ?? percentualComprasVendasComparativo,
       porcentagemComprasSimplesNacional: config.porcentagemComprasSimplesNacional ?? 0,
+      percentualComprasSemCredito,
+      saldoCredorAcumulado,
+      percentualVendasInterestaduais,
+      regimeEspecialAtual,
+      perfilRetencaoSplit,
+      percentualRetencaoSplit,
       folhaPagamentoMensal,
       margemLucroEstimada,
       despesasComCreditosMensais,
@@ -1521,6 +1527,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     periodoDashboard,
     regimeAtualFiltro,
     anoTransicaoDashboard,
+    percentualComprasSemCredito,
+    saldoCredorAcumulado,
+    percentualVendasInterestaduais,
+    regimeEspecialAtual,
+    perfilRetencaoSplit,
+    percentualRetencaoSplit,
     isAuthenticated,
   ])
 
@@ -1670,6 +1682,49 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     if (p.anoTransicaoDashboard !== undefined) {
       setAnoTransicaoDashboard(p.anoTransicaoDashboard)
     }
+
+    // Parâmetros Fiscais Avançados (Fase 2)
+    const pctComprasSemCredito =
+      p.percentualComprasSemCredito ??
+      p.config?.percentualComprasSemCredito ??
+      p.configuracoesDiagnostico?.percentualComprasSemCredito ??
+      0
+    setPercentualComprasSemCreditoState(pctComprasSemCredito)
+
+    const saldoCredor =
+      p.saldoCredorAcumulado ??
+      p.config?.saldoCredorAcumulado ??
+      p.configuracoesDiagnostico?.saldoCredorAcumulado ??
+      0
+    setSaldoCredorAcumuladoState(saldoCredor)
+
+    const pctVendasInter =
+      p.percentualVendasInterestaduais ??
+      p.config?.percentualVendasInterestaduais ??
+      p.configuracoesDiagnostico?.percentualVendasInterestaduais ??
+      0
+    setPercentualVendasInterestaduaisState(pctVendasInter)
+
+    const regEspecial =
+      p.regimeEspecialAtual ??
+      p.config?.regimeEspecialAtual ??
+      (p.configuracoesDiagnostico?.regimeEspecialAtual as any) ??
+      'nenhum'
+    setRegimeEspecialAtualState(regEspecial)
+
+    const perfilRetSplit =
+      p.perfilRetencaoSplit ??
+      p.config?.perfilRetencaoSplit ??
+      (p.configuracoesDiagnostico?.perfilRetencaoSplit as any) ??
+      'nao'
+    setPerfilRetencaoSplitState(perfilRetSplit)
+
+    const pctRetSplit =
+      p.percentualRetencaoSplit ??
+      p.config?.percentualRetencaoSplit ??
+      p.configuracoesDiagnostico?.percentualRetencaoSplit ??
+      0
+    setPercentualRetencaoSplitState(pctRetSplit)
 
     // Se a simulação tiver configuracoesDiagnostico salvas, sincroniza com DadosEmpresa
     if (p.configuracoesDiagnostico) {

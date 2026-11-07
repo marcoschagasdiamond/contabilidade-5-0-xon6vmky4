@@ -821,11 +821,6 @@ function CalculadoraConteudo() {
         resultados={obterSnapshotResultados()}
         onSalvoComSucesso={() => {
           recarregarSimulacoes()
-          // Ao concluir/salvar a análise, reverte os dados locais modificados nos módulos para os dados do perfil mestre
-          restaurarDadosEmpresaNoModulo(2)
-          restaurarDadosEmpresaNoModulo(3)
-          restaurarDadosEmpresaNoModulo(4)
-          restaurarDadosEmpresaNoModulo(5)
         }}
       />
 
