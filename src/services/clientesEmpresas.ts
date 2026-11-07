@@ -1,6 +1,7 @@
 import pb from '@/lib/pocketbase/client'
 import type { RecordModel } from 'pocketbase'
 import type { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
+import type { Cliente } from '@/types/cliente'
 
 export interface ClienteEmpresaModel {
   id?: string
@@ -443,6 +444,47 @@ export async function getClienteEmpresaPorUsuario(
     console.warn('Registro de empresa não encontrado para o usuário:', err)
     return null
   }
+}
+
+/**
+ * Localiza o registro de clientes_empresas do Cliente Ativo quando a sessão
+ * do usuário logado não tem dados próprios (ex.: master visualizando cliente
+ * cadastrado por outro técnico). A vinculação é feita por empresa_id, quando
+ * existe, e cai para CNPJ e nome da empresa em sequência.
+ */
+export async function getClienteEmpresaPorClienteAtivo(
+  cliente: Pick<Cliente, 'empresa_id' | 'cnpj_cpf' | 'nome'> | null | undefined,
+): Promise<ClienteEmpresaRecord | null> {
+  if (!cliente) return null
+
+  if (cliente.empresa_id) {
+    try {
+      const porId = await getClienteEmpresaPorId(cliente.empresa_id)
+      if (porId) return porId
+    } catch (err) {
+      console.warn('Registro de empresa não encontrado por empresa_id do cliente:', err)
+    }
+  }
+
+  if (cliente.cnpj_cpf) {
+    const porCnpj = await getClienteEmpresaPorCnpj(cliente.cnpj_cpf)
+    if (porCnpj) return porCnpj
+  }
+
+  if (cliente.nome) {
+    const limpo = cliente.nome.replace(/"/g, '\\"')
+    try {
+      const list = await pb
+        .collection('clientes_empresas')
+        .getList<ClienteEmpresaRecord>(1, 1, { filter: `nome_empresa ~ "${limpo}"` })
+      return list.items[0] || null
+    } catch (err) {
+      console.warn('Registro de empresa não encontrado pelo nome do cliente:', err)
+      return null
+    }
+  }
+
+  return null
 }
 
 /**

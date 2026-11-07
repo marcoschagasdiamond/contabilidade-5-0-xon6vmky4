@@ -179,6 +179,55 @@ export async function getDiagnosticosPorCliente(clienteId: string): Promise<Diag
   })
 }
 
+/**
+ * Fallback do Relatório Consolidado: busca diagnósticos da empresa vinculada
+ * quando a busca por cliente_id volta vazia (ex.: registros salvos por outro
+ * usuário sem vínculo de cliente_id — regras globais master/admin migração 0063).
+ * Normaliza CNPJ para só dígitos e faz busca por nome (~) como alternativa.
+ * Nunca lança: devolve [] em caso de erro para não quebrar a página.
+ */
+export async function buscarDiagnosticosPorEmpresa(
+  nomeEmpresa?: string,
+  cnpj?: string,
+): Promise<DiagnosticoRecord[]> {
+  const cnpjDigitos = (cnpj || '').replace(/\D/g, '')
+  const nomeLimpo = (nomeEmpresa || '').trim()
+
+  if (!cnpjDigitos && !nomeLimpo) return []
+
+  const filtros: string[] = []
+  if (cnpjDigitos) {
+    // CNPJ pode estar salvo formatado ou não — cobre os dois casos
+    filtros.push(`cnpj ~ "${cnpjDigitos}"`)
+    try {
+      const formatado = formatarCNPJString(cnpjDigitos)
+      if (formatado !== cnpjDigitos) filtros.push(`cnpj ~ "${formatado}"`)
+    } catch {
+      /* CNPJ incompleto — usa só os dígitos */
+    }
+  }
+  if (nomeLimpo) {
+    const escapado = nomeLimpo.replace(/"/g, '\\"')
+    filtros.push(`empresa ~ "${escapado}"`)
+  }
+
+  try {
+    return await pb.collection('diagnosticos').getFullList<DiagnosticoRecord>({
+      filter: filtros.join(' || '),
+      sort: '-created',
+    })
+  } catch (err) {
+    console.warn('[Diagnósticos] Erro ao buscar diagnósticos por empresa:', err)
+    return []
+  }
+}
+
+/** Formata dígitos de CNPJ como 00.000.000/0000-00 (para o filtro do PocketBase). */
+function formatarCNPJString(digitos: string): string {
+  const d = digitos.slice(0, 14).padStart(14, '0')
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12, 14)}`
+}
+
 export async function vincularDiagnosticoACliente(
   diagnosticoId: string,
   clienteId: string | null,

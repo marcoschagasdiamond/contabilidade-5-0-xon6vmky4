@@ -56,10 +56,6 @@ export default function DiagnosticoRelatorioConsolidado() {
   const navigate = useNavigate()
   const { clienteAtivo, clienteAtivoId } = useClienteAtivo()
   const { dadosEmpresa: dadosEmpresaSessao, temDadosSalvos } = useDadosEmpresa()
-  // Fonte da Etapa 1: sessão do usuário logado; quando ele não tem cadastro próprio
-  // (ex.: master visualizando cliente de outro técnico), usa o cadastro do cliente ativo
-  const dadosEmpresa = temDadosSalvos ? dadosEmpresaSessao : dadosEmpresaFallback
-  const temDadosEmpresaExibir = Boolean(dadosEmpresa)
 
   const [carregando, setCarregando] = useState(true)
   const [todosDiagnosticos, setTodosDiagnosticos] = useState<DiagnosticoRecord[]>([])
@@ -72,6 +68,10 @@ export default function DiagnosticoRelatorioConsolidado() {
   // Dados da Empresa (Etapa 1) carregados do cadastro do cliente ativo quando a
   // sessão do usuário logado não tem registro próprio em clientes_empresas
   const [dadosEmpresaFallback, setDadosEmpresaFallback] = useState<DadosEmpresaPerfil | null>(null)
+  // Fonte da Etapa 1: sessão do usuário logado; quando ele não tem cadastro próprio
+  // (ex.: master visualizando cliente de outro técnico), usa o cadastro do cliente ativo
+  const dadosEmpresa = temDadosSalvos ? dadosEmpresaSessao : dadosEmpresaFallback
+  const temDadosEmpresaExibir = Boolean(dadosEmpresa)
 
   const [abaAtiva, setAbaAtiva] = useState<
     | 'consolidado'
