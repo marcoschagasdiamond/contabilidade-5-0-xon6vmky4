@@ -12,12 +12,14 @@ import {
 } from '@/components/ui/dialog'
 import { SecaoAnotacoesCliente } from '@/components/admin/SecaoAnotacoesCliente'
 import { SecaoTarefasCliente } from '@/components/admin/SecaoTarefasCliente'
+import { SecaoHistoricoCliente } from '@/components/admin/SecaoHistoricoCliente'
 import { ESTAGIOS_FUNIL_CRM, type EstagioFunilCrm } from '@/types/crm'
 import { atualizarEstagioFunilCliente } from '@/services/crm'
 
 interface ModalFichaClienteGlobalProps {
   cliente: ClienteGlobalItem | null
   aoFechar: () => void
+  abaInicial?: 'dados' | 'historico' | 'anotacoes' | 'tarefas'
   onClienteAtualizado?: (
     clienteId: string,
     novoEstagio: EstagioFunilCrm,
@@ -29,10 +31,18 @@ interface ModalFichaClienteGlobalProps {
 export function ModalFichaClienteGlobal({
   cliente,
   aoFechar,
+  abaInicial = 'dados',
   onClienteAtualizado,
   onFeedback,
 }: ModalFichaClienteGlobalProps) {
-  const [abaInterna, setAbaInterna] = useState<'dados' | 'anotacoes' | 'tarefas'>('dados')
+  const [abaInterna, setAbaInterna] = useState<'dados' | 'historico' | 'anotacoes' | 'tarefas'>(
+    abaInicial,
+  )
+
+  // Atualiza se abaInicial mudar externamente
+  React.useEffect(() => {
+    if (abaInicial) setAbaInterna(abaInicial)
+  }, [abaInicial, cliente?.id])
   const [salvandoEstagio, setSalvandoEstagio] = useState(false)
 
   if (!cliente) return null
@@ -72,7 +82,7 @@ export function ModalFichaClienteGlobal({
 
   return (
     <Dialog open={!!cliente} onOpenChange={(open) => !open && aoFechar()}>
-      <DialogContent className="sm:max-w-2xl bg-white rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200">
+      <DialogContent className="sm:max-w-3xl bg-white rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200">
         <DialogHeader className="border-b border-slate-100 pb-4">
           <div className="flex items-center justify-between">
             <span className="text-[10px] uppercase font-bold tracking-wider text-[#D4AF37]">
@@ -125,22 +135,34 @@ export function ModalFichaClienteGlobal({
           </div>
 
           {/* NAVEGAÇÃO DE SUB-ABAS DA FICHA */}
-          <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+          <div className="flex items-center gap-2 pt-3 border-t border-slate-100 overflow-x-auto">
             <button
               type="button"
               onClick={() => setAbaInterna('dados')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 abaInterna === 'dados'
                   ? 'bg-[#07132B] text-[#D4AF37]'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              Dados & Histórico
+              Dados Gerais
+            </button>
+            <button
+              type="button"
+              onClick={() => setAbaInterna('historico')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                abaInterna === 'historico'
+                  ? 'bg-[#07132B] text-[#D4AF37]'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+              Histórico de Alterações
             </button>
             <button
               type="button"
               onClick={() => setAbaInterna('anotacoes')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 abaInterna === 'anotacoes'
                   ? 'bg-[#07132B] text-[#D4AF37]'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -151,7 +173,7 @@ export function ModalFichaClienteGlobal({
             <button
               type="button"
               onClick={() => setAbaInterna('tarefas')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 abaInterna === 'tarefas'
                   ? 'bg-[#07132B] text-[#D4AF37]'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -163,6 +185,12 @@ export function ModalFichaClienteGlobal({
         </DialogHeader>
 
         {/* CONTEÚDO DAS SUB-ABAS */}
+        {abaInterna === 'historico' && (
+          <div className="my-4">
+            <SecaoHistoricoCliente cliente={cliente} />
+          </div>
+        )}
+
         {abaInterna === 'dados' && (
           <div className="space-y-6 my-4 text-xs sm:text-sm">
             {/* BLOCO ORIGEM & ANALISTA */}

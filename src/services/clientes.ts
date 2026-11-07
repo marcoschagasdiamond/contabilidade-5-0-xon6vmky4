@@ -222,7 +222,7 @@ export async function criarCliente(dados: ClienteInput): Promise<Cliente> {
 
   try {
     const rec = await pb.collection('clientes').create<ClienteRecord>(payload)
-    return {
+    const novoCli: Cliente = {
       id: rec.id,
       user_id: rec.user_id,
       nome: rec.nome,
@@ -236,6 +236,22 @@ export async function criarCliente(dados: ClienteInput): Promise<Cliente> {
       created: rec.created,
       updated: rec.updated,
     }
+
+    // Registra evento de criação no histórico do cliente
+    import('@/services/historicoCliente')
+      .then(({ registrarEventoAuditoriaCliente }) => {
+        registrarEventoAuditoriaCliente({
+          clienteId: rec.id,
+          nomeEmpresa: rec.nome,
+          cnpj: rec.cnpj_cpf,
+          origemAjuste: 'criacao_cliente',
+          descricao: `Cliente "${rec.nome}" cadastrado no sistema`,
+          snapshotNovo: payload,
+        }).catch((e) => console.warn('Falha ao registrar criação no histórico:', e))
+      })
+      .catch(() => {})
+
+    return novoCli
   } catch (err) {
     console.warn('Erro ao criar cliente no PocketBase, salvando local:', err)
     const locais = carregarClientesLocais()
@@ -255,8 +271,40 @@ export async function criarCliente(dados: ClienteInput): Promise<Cliente> {
  * Atualiza dados de um cliente
  */
 export async function atualizarCliente(id: string, dados: Partial<ClienteInput>): Promise<Cliente> {
+  let registroAnterior: ClienteRecord | null = null
+  try {
+    registroAnterior = await pb
+      .collection('clientes')
+      .getOne<ClienteRecord>(id)
+      .catch(() => null)
+  } catch {
+    // ignore
+  }
+
   try {
     const rec = await pb.collection('clientes').update<ClienteRecord>(id, dados)
+
+    // Se houve alteração de campos, registra auditoria com diff
+    if (registroAnterior) {
+      import('@/services/historicoCliente')
+        .then(({ calcularDiffGenerico, registrarEventoAuditoriaCliente }) => {
+          const diffs = calcularDiffGenerico(registroAnterior as any, dados as any)
+          if (diffs.length > 0) {
+            registrarEventoAuditoriaCliente({
+              clienteId: rec.id,
+              nomeEmpresa: rec.nome,
+              cnpj: rec.cnpj_cpf,
+              origemAjuste: 'edicao_dados_cliente',
+              descricao: `Dados cadastrais atualizados (${diffs.length} campo(s) alterado(s))`,
+              alteracoes: diffs,
+              snapshotAnterior: registroAnterior as any,
+              snapshotNovo: { ...registroAnterior, ...dados },
+            }).catch((e) => console.warn('Falha ao registrar auditoria de atualização:', e))
+          }
+        })
+        .catch(() => {})
+    }
+
     return {
       id: rec.id,
       user_id: rec.user_id,

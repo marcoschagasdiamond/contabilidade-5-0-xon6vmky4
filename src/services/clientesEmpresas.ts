@@ -392,8 +392,43 @@ export async function salvarClienteEmpresaPorId(
   id: string,
   perfil: Partial<DadosEmpresaPerfil>,
 ): Promise<ClienteEmpresaRecord> {
+  let anterior: ClienteEmpresaRecord | null = null
+  try {
+    anterior = await pb
+      .collection('clientes_empresas')
+      .getOne<ClienteEmpresaRecord>(id)
+      .catch(() => null)
+  } catch {
+    // ignore
+  }
+
   const payload = perfilToRecord(perfil)
-  return await pb.collection('clientes_empresas').update<ClienteEmpresaRecord>(id, payload)
+  const atualizado = await pb
+    .collection('clientes_empresas')
+    .update<ClienteEmpresaRecord>(id, payload)
+
+  if (anterior) {
+    import('@/services/historicoCliente')
+      .then(({ calcularDiffGenerico, registrarEventoAuditoriaCliente }) => {
+        const diffs = calcularDiffGenerico(anterior as any, payload as any)
+        if (diffs.length > 0) {
+          registrarEventoAuditoriaCliente({
+            empresaId: atualizado.id,
+            clienteId: atualizado.id,
+            nomeEmpresa: atualizado.nome_empresa,
+            cnpj: atualizado.cnpj,
+            origemAjuste: 'edicao_cliente_empresa',
+            descricao: `Edição em Dados da Empresa (${diffs.length} campo(s) alterado(s))`,
+            alteracoes: diffs,
+            snapshotAnterior: anterior as any,
+            snapshotNovo: atualizado as any,
+          }).catch((e) => console.warn('Erro ao registrar histórico de cliente_empresa:', e))
+        }
+      })
+      .catch(() => {})
+  }
+
+  return atualizado
 }
 
 export async function getClienteEmpresaPorUsuario(
