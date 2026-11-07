@@ -766,16 +766,23 @@ export function calcularResultadosSimulacao(
           : config.lucroRealPis + config.lucroRealCofins + config.lucroRealIcms
   const impostoAtual = (fatAnual * aliqAtualEstimada) / 100
 
+  const fatorReducaoTransicao = Math.max(0, 1 - reducaoIbsCbsPct / 100)
+
   const resultadoTransicao = anosTransicao.map((ano) => {
     const dadosFase = CRONOGRAMA_FASES_TRANSICAO[ano]
     const fase = dadosFase.fase
-    const aliqCbsAno = dadosFase.aliquotaCbs
-    const aliqIbsAno = dadosFase.aliquotaIbs
+    const aliqCbsBase = dadosFase.aliquotaCbs
+    const aliqIbsBase = dadosFase.aliquotaIbs
 
+    let aliqCbsAno = aliqCbsBase
+    let aliqIbsAno = aliqIbsBase
     let aliqEfetivaAno = aliqCbsAno + aliqIbsAno
+
     if (ano === 'atual' || ano === 2026) {
       aliqEfetivaAno = aliqAtualEstimada
     } else if (ano === 2027 || ano === 2028) {
+      aliqCbsAno = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
+      aliqIbsAno = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
       const remanescente =
         setorTransicao === 'servico' || setorTransicao === 'construcao_civil'
           ? config.lucroPresumidoIss
@@ -784,6 +791,8 @@ export function calcularResultadosSimulacao(
             : config.lucroRealIcms
       aliqEfetivaAno = aliqCbsAno + remanescente
     } else if (typeof ano === 'number' && ano >= 2029 && ano <= 2032) {
+      aliqCbsAno = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
+      aliqIbsAno = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
       const fatorIbs = (ano - 2028) * 0.1
       const fatorAntigo = 1 - fatorIbs
       const remanescente =
@@ -792,9 +801,11 @@ export function calcularResultadosSimulacao(
           : setorTransicao === 'locacao_bens'
             ? 0
             : config.lucroRealIcms) * fatorAntigo
-      aliqEfetivaAno = aliqCbsAno + aliqIbsAno + remanescente
+      aliqEfetivaAno = (aliqCbsBase + aliqIbsBase) * fatorReducaoTransicao + remanescente
     } else {
-      aliqEfetivaAno = config.totalIvaDual
+      aliqCbsAno = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
+      aliqIbsAno = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
+      aliqEfetivaAno = config.totalIvaDual * fatorReducaoTransicao
     }
 
     const impostoEstimado = (fatAnual * aliqEfetivaAno) / 100

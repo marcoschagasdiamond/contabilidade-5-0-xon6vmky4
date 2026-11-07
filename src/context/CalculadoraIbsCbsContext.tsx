@@ -2977,6 +2977,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     const anos: AnoTransicaoIbsCbs[] = ['atual', 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
     const fatAnual = Math.max(0, faturamentoAnualProjetado)
 
+    const fatorReducaoTransicao = Math.max(
+      0,
+      1 - (resultadoComparativo.ibsCbs.reducaoAplicadaPercentual || 0) / 100,
+    )
+
     // Carga atual estimada de referência para comparação conforme o ramo
     const aliqAtualEstimada =
       setorTransicao === 'servico' || setorTransicao === 'construcao_civil'
@@ -2991,8 +2996,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     return anos.map((ano) => {
       const dadosFase = CRONOGRAMA_FASES_TRANSICAO[ano]
       const fase = dadosFase.fase
-      const aliqCbs = dadosFase.aliquotaCbs
-      const aliqIbs = dadosFase.aliquotaIbs
+      const aliqCbsBase = dadosFase.aliquotaCbs
+      const aliqIbsBase = dadosFase.aliquotaIbs
+
+      let aliqCbs = aliqCbsBase
+      let aliqIbs = aliqIbsBase
       let statusIcms = ''
       let statusIss = ''
       let statusIpi = ''
@@ -3056,7 +3064,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       if (ano === 'atual' || ano === 2026) {
         aliqEfetivaAno = aliqAtualEstimada // Em 2026 o teste é compensável sem ônus; no atual é a própria carga vigente
       } else if (ano === 2027 || ano === 2028) {
-        // CBS (8,7%) + ICMS/ISS integral remanescente
+        // CBS escalonada com redução do regime especial + ICMS/ISS integral remanescente
+        aliqCbs = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
+        aliqIbs = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
         const remanescente =
           setorTransicao === 'servico' || setorTransicao === 'construcao_civil'
             ? config.lucroPresumidoIss
@@ -3065,6 +3075,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
               : config.lucroRealIcms
         aliqEfetivaAno = aliqCbs + remanescente
       } else if (typeof ano === 'number' && ano >= 2029 && ano <= 2032) {
+        aliqCbs = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
+        aliqIbs = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
         const fatorIbs = (ano - 2028) * 0.1 // 0.1, 0.2, 0.3, 0.4
         const fatorAntigo = 1 - fatorIbs
         const remanescente =
@@ -3073,9 +3085,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
             : setorTransicao === 'locacao_bens'
               ? 0
               : config.lucroRealIcms) * fatorAntigo
-        aliqEfetivaAno = aliqCbs + aliqIbs + remanescente
+        aliqEfetivaAno = (aliqCbsBase + aliqIbsBase) * fatorReducaoTransicao + remanescente
       } else {
-        aliqEfetivaAno = config.totalIvaDual
+        aliqCbs = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
+        aliqIbs = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
+        aliqEfetivaAno = config.totalIvaDual * fatorReducaoTransicao
       }
 
       // Fase 2: Modulação da trajetória conforme o Regime Especial Atual informado
@@ -3140,6 +3154,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     resultadoEstoque,
     regimeEspecialAtual,
     saldoCredorAcumulado,
+    resultadoComparativo.ibsCbs.reducaoAplicadaPercentual,
   ])
 
   // ==========================================
