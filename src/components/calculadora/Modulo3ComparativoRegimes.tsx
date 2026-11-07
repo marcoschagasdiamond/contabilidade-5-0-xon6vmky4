@@ -75,11 +75,13 @@ import {
 } from '@/types/dadosEmpresa'
 import { FarolLimitesSimples } from '@/components/calculadora/FarolLimitesSimples'
 import { BlocoSplitPayment } from '@/components/calculadora/BlocoSplitPayment'
+import { ModalMetodologiaCalculo } from '@/components/calculadora/ModalMetodologiaCalculo'
 
 import {
   PainelProximosPassosCalculadora,
   ModuloCalculadoraId,
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
+import { Calculator } from 'lucide-react'
 import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
 
 export interface Modulo3ComparativoRegimesProps {
@@ -180,6 +182,8 @@ export default function Modulo3ComparativoRegimes({
 
   const { lucroReal, lucroPresumido, simplesNacional, ibsCbs, dadosAdicionais } =
     resultadoComparativo
+
+  const [modalMetodologiaAberto, setModalMetodologiaAberto] = React.useState(false)
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -1501,18 +1505,32 @@ export default function Modulo3ComparativoRegimes({
 
       {/* Tabela Comparativa com as 4 Colunas Conforme Especificação */}
       <Card className="border-slate-200 shadow-lg overflow-hidden">
-        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-heading font-bold text-lg text-[#07132B]">
-              Tabela Comparativa de Alíquotas e Desembolso
-            </h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-heading font-bold text-lg text-[#07132B]">
+                Tabela Comparativa de Alíquotas e Desembolso
+              </h3>
+            </div>
             <p className="text-xs text-slate-500">
               Detalhamento de débitos, créditos apropriados e alíquota efetiva final em cada modelo.
             </p>
           </div>
-          <span className="text-xs font-mono font-bold bg-[#07132B] text-white px-3 py-1 rounded-lg self-start sm:self-auto">
-            Faturamento: {formatarMoeda(faturamentoMensal)}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setModalMetodologiaAberto(true)}
+              className="h-8 text-xs font-semibold border-[#D4AF37]/50 text-[#07132B] bg-white hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] gap-1.5 shadow-2xs transition-all"
+            >
+              <Calculator className="w-3.5 h-3.5 text-[#D4AF37]" />
+              Metodologia de Cálculo
+            </Button>
+            <span className="text-xs font-mono font-bold bg-[#07132B] text-white px-3 py-1.5 rounded-lg">
+              Faturamento: {formatarMoeda(faturamentoMensal)}
+            </span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -1915,6 +1933,22 @@ export default function Modulo3ComparativoRegimes({
           gerandoPdf={gerandoPdf}
         />
       )}
+
+      {/* MODAL METODOLOGIA DE CÁLCULO */}
+      <ModalMetodologiaCalculo
+        open={modalMetodologiaAberto}
+        onOpenChange={setModalMetodologiaAberto}
+        faturamentoMensal={faturamentoMensal}
+        anoTransicao={config.anoTransicao}
+        totalIvaDual={config.totalIvaDual}
+        cbsPadrao={config.cbsPadrao}
+        ibsPadrao={config.ibsPadrao}
+        porcentagemComprasSimplesNacional={config.porcentagemComprasSimplesNacional ?? 0}
+        percentualComprasVendasComparativo={percentualComprasVendasComparativo}
+        despesasComCreditosMensais={despesasComCreditosMensais}
+        percentualComprasSemCredito={percentualComprasSemCredito}
+        resultadoComparativo={resultadoComparativo}
+      />
 
       {/* PAINEL PRÓXIMOS PASSOS (ORIENTAÇÃO DO NOVO USUÁRIO) */}
       {onNavegarModulo && (
