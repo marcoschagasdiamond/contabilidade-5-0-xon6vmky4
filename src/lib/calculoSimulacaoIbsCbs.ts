@@ -730,7 +730,8 @@ export function calcularResultadosSimulacao(
   // ==========================================
   // ETAPA 5: CRÉDITO PRESUMIDO DE ESTOQUE
   // ==========================================
-  const estoque = Math.max(0, valorEstoqueVirada)
+  const isSetorServico = setorTransicao === 'servico'
+  const estoque = isSetorServico ? 0 : Math.max(0, valorEstoqueVirada)
   const aliqCreditoEstoque = config.cbsPadrao
   const creditoTotalEstoque = (estoque * aliqCreditoEstoque) / 100
   const resultadoEstoque = {
@@ -809,7 +810,8 @@ export function calcularResultadosSimulacao(
     }
 
     const impostoEstimado = (fatAnual * aliqEfetivaAno) / 100
-    const creditoEstoqueAno = ano === 2027 ? resultadoEstoque.economiaAno1 : 0
+    const creditoEstoqueAno =
+      ano === 2027 && setorTransicao !== 'servico' ? resultadoEstoque.economiaAno1 : 0
 
     return {
       ano,

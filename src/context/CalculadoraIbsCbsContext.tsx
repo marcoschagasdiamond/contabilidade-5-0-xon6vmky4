@@ -1334,6 +1334,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   }, [])
   // Etapa 5: Valor do estoque na virada (padrão estimado em ~1 a 2 meses de compras da empresa)
   const [valorEstoqueVirada, setValorEstoqueVirada] = useState<number>(() => {
+    const isServico = normalizarTipoAtividade(perfilInicial.tipoAtividade) === 'servico'
+    if (isServico) return 0
     const fat = perfilInicial.faturamentoMensal || 0
     const pct = (perfilInicial.percentualComprasVendas ?? 0) / 100
     // Estimativa inicial: 1,5 meses de compras
@@ -1827,7 +1829,15 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         }))
       } else if (modulo === 5) {
         setFaturamentoAnualProjetado(p.faturamentoMensal ? p.faturamentoMensal * 12 : 0)
-        setSetorTransicao(normalizarTipoAtividade(p.tipoAtividade))
+        const novoSetor = normalizarTipoAtividade(p.tipoAtividade)
+        setSetorTransicao(novoSetor)
+        if (novoSetor === 'servico') {
+          setValorEstoqueVirada(0)
+        } else {
+          const fat = p.faturamentoMensal || 0
+          const pct = (p.percentualComprasVendas ?? 0) / 100
+          setValorEstoqueVirada(Math.round(fat * pct * 1.5))
+        }
         setEditadoLocalmente((prev) => ({
           ...prev,
           modulo5Faturamento: false,
@@ -2951,7 +2961,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const resultadoEstoque = useMemo(() => {
     // Alíquota de crédito presumido de abertura na virada (CBS 8,80% na entrada plena em 2027)
     // LC 214/2025 prevê apropriação de crédito sobre os estoques inventariados no encerramento do regime anterior
-    const estoque = Math.max(0, valorEstoqueVirada)
+    const isServico = setorTransicao === 'servico'
+    const estoque = isServico ? 0 : Math.max(0, valorEstoqueVirada)
     // Alíquota de crédito de abertura: alíquota de CBS vigente em 2027 (8,80% ou taxa configurada)
     const aliqCredito = config.cbsPadrao // 8,80%
     const creditoTotalEstoque = (estoque * aliqCredito) / 100
@@ -2968,7 +2979,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       economiaAno1,
       explicacaoSimples,
     }
-  }, [valorEstoqueVirada, config.cbsPadrao])
+  }, [valorEstoqueVirada, config.cbsPadrao, setorTransicao])
 
   // ==========================================
   // CÁLCULO MÓDULO 5 (Transição 2026 a 2033) COM CRÉDITO DE ESTOQUE
@@ -3123,7 +3134,8 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       const diferencaAno = ano === 'atual' ? 0 : impostoEstimado - impostoAtual
 
       // Etapa 5: Crédito presumido de estoque abatido no primeiro ano de CBS plena (2027)
-      const creditoEstoqueAno = ano === 2027 ? resultadoEstoque.economiaAno1 : 0
+      const creditoEstoqueAno =
+        ano === 2027 && setorTransicao !== 'servico' ? resultadoEstoque.economiaAno1 : 0
       // Fase 2: Saldo credor acumulado também é abatido no primeiro ano de transição plena (2027)
       const saldoCredorAno = ano === 2027 ? Math.max(0, saldoCredorAcumulado || 0) : 0
       const abatimentoAno1 = creditoEstoqueAno + saldoCredorAno
