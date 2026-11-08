@@ -5,15 +5,9 @@ import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { useProgressoTrilha } from '@/hooks/useProgressoTrilha'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatarCNPJ } from '@/lib/cnpj'
-import {
-  ArrowRight,
-  Building2,
-  ShieldCheck,
-  UserPlus,
-  AlertCircle,
-  ExternalLink,
-} from 'lucide-react'
+import { ArrowRight, Building2, ShieldCheck, UserPlus, AlertCircle, HelpCircle } from 'lucide-react'
 
 interface IndicativoClienteAtivoTopoProps {
   onCadastrarNovaEmpresa?: () => void
@@ -156,10 +150,32 @@ export function IndicativoClienteAtivoTopo({
         {/* Bloco de identificação do Cliente Ativo */}
         <div className="space-y-1.5 min-w-0 max-w-2xl">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider bg-[#D4AF37]/15 px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30 inline-flex items-center gap-1.5">
-              <Building2 className="w-3 h-3 text-[#D4AF37]" />
-              Painel do Analista & Master
-            </span>
+            {/* Ícone de ajuda com tooltip: Painel do Analista & Master */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="w-6 h-6 rounded-full bg-[#D4AF37]/15 hover:bg-[#D4AF37]/25 text-[#D4AF37] border border-[#D4AF37]/40 flex items-center justify-center transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  aria-label="Painel do Analista & Master"
+                >
+                  <HelpCircle className="w-3.5 h-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                align="start"
+                className="max-w-xs text-xs p-2.5 bg-[#07132B] text-slate-100 border border-[#D4AF37]/40 shadow-xl rounded-lg"
+              >
+                <div className="flex items-center gap-1.5 font-bold text-[#D4AF37] mb-1">
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>Painel do Analista & Master</span>
+                </div>
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  Visão e controles dedicados para analistas e administradores gerenciarem clientes
+                  e análises independentes.
+                </p>
+              </TooltipContent>
+            </Tooltip>
 
             {clienteAtivo ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#2ECC71]/20 text-[#2ECC71] border border-[#2ECC71]/40 shadow-sm">
@@ -167,10 +183,33 @@ export function IndicativoClienteAtivoTopo({
                 Cliente Ativo
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-700/60 text-slate-300 border border-slate-600">
-                <AlertCircle className="w-3 h-3 text-amber-400" />
-                Nenhum Cliente Ativo Selecionado
-              </span>
+              <div className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-700/60 text-slate-300 border border-slate-600">
+                  <AlertCircle className="w-3 h-3 text-amber-400" />
+                  Nenhum Cliente Ativo Selecionado
+                </span>
+
+                {/* Ícone de ajuda com tooltip: orientação de seleção de cliente */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-5 h-5 rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white border border-slate-500/50 flex items-center justify-center transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                      aria-label="Informações sobre Cliente Ativo"
+                    >
+                      <HelpCircle className="w-3 h-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    align="center"
+                    className="max-w-xs text-xs p-2.5 bg-[#07132B] text-slate-100 border border-[#D4AF37]/40 shadow-xl rounded-lg"
+                  >
+                    Selecione um cliente na carteira ou cadastre uma nova empresa para isolar o
+                    histórico e simulações.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             )}
           </div>
 
@@ -186,7 +225,7 @@ export function IndicativoClienteAtivoTopo({
             )}
           </div>
 
-          {clienteAtivo ? (
+          {clienteAtivo && (
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300 pt-0.5">
               <span className="inline-flex items-center gap-1 text-slate-400">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#2ECC71]" />
@@ -205,11 +244,6 @@ export function IndicativoClienteAtivoTopo({
                 <strong className="text-white">{clienteAtivo.segmento || 'Serviços'}</strong>
               </span>
             </div>
-          ) : (
-            <p className="text-xs text-slate-300">
-              Selecione um cliente na carteira ou cadastre uma nova empresa para isolar o histórico
-              e simulações.
-            </p>
           )}
         </div>
 
@@ -228,19 +262,28 @@ export function IndicativoClienteAtivoTopo({
             </Button>
           )}
 
-          <div className="flex flex-col items-end gap-1">
-            <Button
-              type="button"
-              onClick={() => navigate(infoAnalise.rota)}
-              className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#E5C158] text-[#07132B] font-heading font-extrabold text-xs sm:text-sm h-11 px-5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                onClick={() => navigate(infoAnalise.rota)}
+                className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#E5C158] text-[#07132B] font-heading font-extrabold text-xs sm:text-sm h-11 px-5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Continuar Análise</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              align="center"
+              className="max-w-xs text-xs p-2.5 bg-[#07132B] text-slate-100 border border-[#D4AF37]/40 shadow-xl rounded-lg"
             >
-              <span>Continuar Análise</span>
-              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-            </Button>
-            <span className="text-[11px] text-slate-300 hidden sm:inline text-right max-w-[280px] truncate">
-              {infoAnalise.completo ? 'Calculadora IBS/CBS' : `Próximo: ${infoAnalise.nomeEtapa}`}
-            </span>
-          </div>
+              <p className="font-semibold text-white">
+                {infoAnalise.completo ? 'Calculadora IBS/CBS' : `Próximo: ${infoAnalise.nomeEtapa}`}
+              </p>
+              <p className="text-[11px] text-slate-300 mt-0.5">{infoAnalise.subtitulo}</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </div>
