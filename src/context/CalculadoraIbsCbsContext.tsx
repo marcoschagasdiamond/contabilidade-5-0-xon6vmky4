@@ -73,6 +73,59 @@ import {
   NotificacaoTributaria,
 } from '@/services/radarTributario'
 
+// ============================================================
+// Rascunho persistido da Calculadora IBS/CBS
+// Sobrevive à navegação entre menus (o provider monta dentro da
+// página e o estado em memória morre a cada rota). Guarda SOMENTE
+// os campos de override local que, por design, não entram nos
+// Dados da Empresa: preset/setor, alíquotas derivadas do preset,
+// Regime Aplicado do Módulo 2 e os parâmetros da Fase 2.
+// Nenhum cálculo é alterado: o rascunho apenas repõe o estado
+// que o usuário deixou na última visita.
+// ============================================================
+const CHAVE_RASCUNHO_CALCULADORA = 'contabilidade50_rascunho_calculadora_v1'
+
+interface RascunhoCalculadora {
+  identidade: {
+    usuarioId: string
+    cnpj: string
+    nomeEmpresa: string
+  }
+  presetSetor: PresetSetorIbsCbs
+  regimeOperacao: RegimeDiferenciadoTipo
+  saudeEducacaoAliquota: number
+  transporteAliquota: number
+  cestaBasicaIsencao: number
+  percentualComprasSemCredito: number
+  saldoCredorAcumulado: number
+  percentualVendasInterestaduais: number
+  regimeEspecialAtual: import('@/types/dadosEmpresa').RegimeEspecialAtual
+  perfilRetencaoSplit: import('@/types/dadosEmpresa').PerfilRetencaoSplit
+  percentualRetencaoSplit: number
+  etiquetasOrigem?: import('@/types/calculadoraIbsCbs').OrigemCamposAliquota
+  salvoEm: string
+}
+
+function carregarRascunhoCalculadora(
+  usuarioId: string,
+  perfil: DadosEmpresaPerfil,
+): RascunhoCalculadora | null {
+  try {
+    const raw = localStorage.getItem(CHAVE_RASCUNHO_CALCULADORA)
+    if (!raw) return null
+    const r = JSON.parse(raw) as RascunhoCalculadora
+    if (!r || !r.identidade) return null
+    // Só restaura para o MESMO usuário e a MESMA empresa (Cliente Ativo):
+    // troca de cliente ou de usuário => descarta e volta ao comportamento padrão
+    if (r.identidade.usuarioId !== usuarioId) return null
+    if ((r.identidade.cnpj || '') !== (perfil.cnpj || '')) return null
+    if ((r.identidade.nomeEmpresa || '') !== (perfil.nomeEmpresa || '')) return null
+    return r
+  } catch {
+    return null
+  }
+}
+
 interface CalculadoraContextType {
   // Módulo 1 - Configurações Gerais
   config: ConfiguracoesGerais
@@ -456,7 +509,8 @@ interface CalculadoraContextType {
 const CalculadoraContext = createContext<CalculadoraContextType | undefined>(undefined)
 
 export function CalculadoraProvider({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+  const usuarioIdAtual = user?.id ?? ''
 
   // Se deslogado, inicia rigorosamente com o perfil padrão/neutro (sem dados em cache de sessões anteriores)
   const perfilInicial = useMemo(
@@ -465,6 +519,17 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   )
   const [origemDadosEmpresa, setOrigemDadosEmpresa] = useState<boolean>(() =>
     isAuthenticated ? existeDadosEmpresaSalvos() : false,
+  )
+
+  // Rascunho da última sessão da calculadora (mesmo usuário + mesma empresa).
+  // Lido UMA vez na montagem do provider; restaurado nos estados iniciais abaixo.
+  const rascunhoInicial = useMemo(
+    () =>
+      isAuthenticated && usuarioIdAtual
+        ? carregarRascunhoCalculadora(usuarioIdAtual, perfilInicial)
+        : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isAuthenticated, usuarioIdAtual],
   )
 
   // IBS/CBS (integração antecipada, FATIA 2): leitura INERTE dos valores do novo
@@ -544,6 +609,26 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
     return {
       ...CONFIGURACOES_PADRAO,
+      // Rascunho da última visita (mesmo usuário + mesma empresa): repõe o preset
+      // de setor e os parâmetros da Fase 2 exatamente como o usuário deixou.
+      // Apenas repõe estado — nenhum cálculo ou default é alterado.
+      ...(rascunhoInicial
+        ? {
+            presetSetor: rascunhoInicial.presetSetor,
+            saudeEducacaoAliquota: rascunhoInicial.saudeEducacaoAliquota,
+            transporteAliquota: rascunhoInicial.transporteAliquota,
+            cestaBasicaIsencao: rascunhoInicial.cestaBasicaIsencao,
+            percentualComprasSemCredito: rascunhoInicial.percentualComprasSemCredito,
+            saldoCredorAcumulado: rascunhoInicial.saldoCredorAcumulado,
+            percentualVendasInterestaduais: rascunhoInicial.percentualVendasInterestaduais,
+            regimeEspecialAtual: rascunhoInicial.regimeEspecialAtual,
+            perfilRetencaoSplit: rascunhoInicial.perfilRetencaoSplit,
+            percentualRetencaoSplit: rascunhoInicial.percentualRetencaoSplit,
+            ...(rascunhoInicial.etiquetasOrigem
+              ? { etiquetasOrigem: rascunhoInicial.etiquetasOrigem }
+              : {}),
+          }
+        : {}),
       regimeAtualEmpresa: regInicial,
       faturamentoMensal: perfilInicial.faturamentoMensal || CONFIGURACOES_PADRAO.faturamentoMensal,
       percentualComprasVendas:
@@ -884,6 +969,16 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       console.warn('[CalculadoraContext] Erro ao limpar dados empresa:', err)
     }
     setOrigemDadosEmpresa(false)
+
+    // 9. Remove o rascunho persistido da calculadora (senão o preset/Fase 2
+    //    apagados voltariam ao recarregar a página ou trocar de menu)
+    valoresRascunhoRef.current = null
+    rascunhoPendenteRef.current = false
+    try {
+      localStorage.removeItem(CHAVE_RASCUNHO_CALCULADORA)
+    } catch {
+      // localStorage indisponível: nada a remover
+    }
   }, [])
 
   const limparEtiquetaOrigem = useCallback((campo: keyof OrigemCamposAliquota) => {
@@ -1144,9 +1239,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   const [valorOperacao, setValorOperacaoState] = useState<number>(
     () => config.faturamentoMensal || perfilInicial.faturamentoMensal || 0,
   )
-  const [regimeOperacao, setRegimeOperacaoState] = useState<RegimeDiferenciadoTipo>(() =>
-    config.presetSetor && config.presetSetor !== 'nenhum' ? config.presetSetor : 'padrao',
-  )
+  const [regimeOperacao, setRegimeOperacaoState] = useState<RegimeDiferenciadoTipo>(() => {
+    // Restaura o Regime Aplicado (Módulo 2) como o usuário deixou na última visita
+    if (rascunhoInicial?.regimeOperacao) return rascunhoInicial.regimeOperacao
+    return config.presetSetor && config.presetSetor !== 'nenhum' ? config.presetSetor : 'padrao'
+  })
   const [anoOperacao, setAnoOperacaoState] = useState<AnoTransicaoIbsCbs>(
     () => config.anoTransicao || 2033,
   )
@@ -1171,6 +1268,93 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     setEditadoLocalmente((prev) => ({ ...prev, modulo2PercentualCompras: true }))
     setPercentualComprasVendasSimplesState(p)
   }, [])
+
+  // ============================================================
+  // Persistência automática do rascunho da calculadora
+  // Grava com debounce APÓS mudanças de estado (nunca em render),
+  // somente logado, sob a identidade usuário + empresa ativa.
+  // Escrita direta em chave própria do localStorage — NÃO usa
+  // salvarDadosEmpresa (não dispara eventos da Fonte Mestra nem
+  // sobrescreve os Dados da Empresa), logo não há laços de sync.
+  // Ao desmontar (troca de menu), a última versão pendente é gravada
+  // SINCRONAMENTE a partir de refs — nada se perde no debounce.
+  // ============================================================
+  const rascunhoHidratadoRef = useRef(false)
+  const rascunhoPendenteRef = useRef(false)
+  const valoresRascunhoRef = useRef<RascunhoCalculadora | null>(null)
+  // Espelho da autenticação para a gravação: no logout, o usuário vira null
+  // antes do redirect desmontar a página — o flush não pode regravar o
+  // rascunho depois que limparEstadoLocalSessao já o removeu.
+  const autenticadoRef = useRef(isAuthenticated)
+  useEffect(() => {
+    autenticadoRef.current = isAuthenticated
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!rascunhoHidratadoRef.current) {
+      // Primeira execução = hidratação inicial: nada foi editado ainda
+      rascunhoHidratadoRef.current = true
+      return
+    }
+    if (!isAuthenticated || !usuarioIdAtual) return
+
+    // Mantém os valores mais recentes disponíveis para gravação (debounce e unmount)
+    valoresRascunhoRef.current = {
+      identidade: {
+        usuarioId: usuarioIdAtual,
+        cnpj: perfilInicial.cnpj || '',
+        nomeEmpresa: perfilInicial.nomeEmpresa || '',
+      },
+      presetSetor: config.presetSetor ?? 'padrao',
+      regimeOperacao,
+      saudeEducacaoAliquota: config.saudeEducacaoAliquota,
+      transporteAliquota: config.transporteAliquota,
+      cestaBasicaIsencao: config.cestaBasicaIsencao,
+      percentualComprasSemCredito,
+      saldoCredorAcumulado,
+      percentualVendasInterestaduais,
+      regimeEspecialAtual,
+      perfilRetencaoSplit,
+      percentualRetencaoSplit,
+      etiquetasOrigem: config.etiquetasOrigem,
+      salvoEm: new Date().toISOString(),
+    }
+    rascunhoPendenteRef.current = true
+
+    const gravarRascunho = () => {
+      rascunhoPendenteRef.current = false
+      try {
+        if (valoresRascunhoRef.current && autenticadoRef.current) {
+          localStorage.setItem(
+            CHAVE_RASCUNHO_CALCULADORA,
+            JSON.stringify(valoresRascunhoRef.current),
+          )
+        }
+      } catch {
+        // localStorage indisponível/cheio: a calculadora segue funcionando sem rascunho
+      }
+    }
+    const timer = window.setTimeout(gravarRascunho, 600)
+    return () => {
+      // Cancela o debounce; se havia rascunho pendente (troca de menu antes
+      // do tempo do debounce), grava SINCRONAMENTE a partir da ref.
+      window.clearTimeout(timer)
+      gravarRascunho()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    config,
+    regimeOperacao,
+    percentualComprasSemCredito,
+    saldoCredorAcumulado,
+    percentualVendasInterestaduais,
+    regimeEspecialAtual,
+    perfilRetencaoSplit,
+    percentualRetencaoSplit,
+    isAuthenticated,
+    usuarioIdAtual,
+    perfilInicial,
+  ])
 
   // Módulo 3: Comparativo por Regime (inicializado a partir dos Dados da Empresa / Módulo 1)
   const [faturamentoMensal, setFaturamentoMensalState] = useState<number>(
