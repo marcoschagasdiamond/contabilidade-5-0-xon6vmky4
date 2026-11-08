@@ -191,8 +191,8 @@ export default function Index() {
       {/* 1. SEÇÃO HERO */}
       <section
         id="inicio"
-        className={`relative min-h-screen ${
-          exibirChecklist ? 'pt-12 pb-20 md:py-28' : 'pt-28 pb-20 md:py-36'
+        className={`relative ${
+          exibirChecklist ? 'pt-10 pb-16 md:py-20' : 'pt-24 pb-16 md:py-24'
         } flex items-center bg-gradient-to-r from-[#0A1A13] via-[#0D2A1C] to-[#145A32] text-white`}
       >
         {/* Subtle grid pattern overlay */}
