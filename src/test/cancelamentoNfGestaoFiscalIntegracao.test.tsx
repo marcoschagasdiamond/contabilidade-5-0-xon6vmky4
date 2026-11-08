@@ -55,6 +55,43 @@ describe('Cancelamento de NF no IBS/CBS integrado à Gestão Fiscal e Radar', ()
     const linkTese = screen.getByRole('link', { name: /Ver tese EST-04 no Recuperador →/i })
     expect(linkTese.getAttribute('href')).toContain('/recuperador-creditos')
     expect(linkTese.getAttribute('href')).toContain('tese_cancelamento_nf_devolucoes_estornos')
+
+    // (1.1) Card 1: Janela de opção do Simples Nacional (Prazo • 30/10)
+    const cardSimples = screen.getByTestId('card-radar-janela-simples')
+    expect(cardSimples).toBeDefined()
+    expect(screen.getByText(/Prazo • 30\/10/i)).toBeDefined()
+    expect(screen.getByText(/Simples Nacional • Híbrido/i)).toBeDefined()
+    expect(screen.getByText(/Janela de opção da regra híbrida do Simples Nacional/i)).toBeDefined()
+    const linkTransicao = screen.getByRole('link', { name: /Analisar minha transição →/i })
+    expect(linkTransicao.getAttribute('href')).toBe('/diagnostico-transicao')
+
+    // (1.2) Card 2: Fase de teste 2026 do IBS/CBS (IBS/CBS • 2026)
+    const cardFaseTeste = screen.getByTestId('card-radar-fase-teste-2026')
+    expect(cardFaseTeste).toBeDefined()
+    expect(screen.getByText('IBS/CBS • 2026')).toBeDefined()
+    expect(screen.getByText(/Fase de teste 2026 do IBS\/CBS com alíquota zero/i)).toBeDefined()
+    const linkCalculadoraTeste = screen.getByRole('link', { name: /Testar na Calculadora →/i })
+    expect(linkCalculadoraTeste.getAttribute('href')).toBe('/calculadora-ibs-cbs')
+
+    // (1.3) Card 3: Imposto Seletivo a partir de 2027 (IS • 2027)
+    const cardIs = screen.getByTestId('card-radar-imposto-seletivo')
+    expect(cardIs).toBeDefined()
+    expect(screen.getByText('IS • 2027')).toBeDefined()
+    expect(
+      screen.getByText(/Imposto Seletivo \("imposto do pecado"\) a partir de 2027/i),
+    ).toBeDefined()
+    const linkIs = screen.getByRole('link', { name: /Ver Imposto Seletivo →/i })
+    expect(linkIs.getAttribute('href')).toBe('/reforma-tributaria')
+
+    // (1.4) Card 4: Crédito parcial de fornecedores do Simples em 2027 (Créditos • 2027)
+    const cardCreditoSimples = screen.getByTestId('card-radar-credito-parcial-simples')
+    expect(cardCreditoSimples).toBeDefined()
+    expect(screen.getByText('Créditos • 2027')).toBeDefined()
+    expect(
+      screen.getByText(/Crédito parcial de fornecedores do Simples Nacional em 2027/i),
+    ).toBeDefined()
+    const linkCreditoSimples = screen.getByRole('link', { name: /Calcular meu crédito →/i })
+    expect(linkCreditoSimples.getAttribute('href')).toBe('/calculadora-ibs-cbs')
   })
 
   it('(2) Em Gestão Fiscal & Tributária, exibe seção "Serviço incluso: Cancelamento de NF no IBS/CBS" com os 4 pontos', () => {
