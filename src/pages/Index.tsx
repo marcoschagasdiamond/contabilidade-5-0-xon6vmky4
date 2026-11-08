@@ -19,12 +19,14 @@ import {
   Briefcase,
 } from 'lucide-react'
 import SecaoDuplaAcaoFinal from '@/components/common/SecaoDuplaAcaoFinal'
+import { useAuth } from '@/context/AuthContext'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import { WizardPrimeirosPassos } from '@/components/onboarding/WizardPrimeirosPassos'
 import { ChecklistComeceAqui } from '@/components/onboarding/ChecklistComeceAqui'
 
 export default function Index() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
 
   const {
     exibirWizard,
@@ -144,6 +146,15 @@ export default function Index() {
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' })
     }
+  }
+
+  const handleCtaBannerSimulador = () => {
+    if (isAuthenticated) {
+      navigate('/dados-empresa')
+      return
+    }
+    // Não logado: direciona ao fluxo de cadastro/login com retorno automático para /dados-empresa
+    navigate('/cadastro?redirect=' + encodeURIComponent('/dados-empresa'))
   }
 
   return (
@@ -630,7 +641,7 @@ export default function Index() {
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#2ECC71]/20 border border-[#2ECC71]/30 text-xs font-bold text-[#2ECC71] uppercase tracking-wider mb-3">
                 <Sparkles className="w-3.5 h-3.5" />
-                Simulador Gratuito 2025
+                Simulador Gratuito
               </div>
               <h2 className="font-heading font-extrabold text-2xl sm:text-3xl lg:text-4xl text-white tracking-tight leading-tight">
                 Descubra o melhor regime tributário para sua empresa
@@ -644,10 +655,11 @@ export default function Index() {
             <div className="shrink-0 w-full sm:w-auto">
               <button
                 type="button"
-                onClick={() => scrollToSection('contato')}
-                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.5)] transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap cursor-pointer text-center"
+                onClick={handleCtaBannerSimulador}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.5)] transition-all duration-200 hover:-translate-y-0.5 whitespace-nowrap cursor-pointer text-center"
               >
-                <span>Falar com um Especialista</span>
+                <span>Simular em 4 Etapas Grátis</span>
+                <ArrowRight className="w-5 h-5 stroke-[2.5]" />
               </button>
             </div>
           </div>
