@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Sparkles,
   ArrowRight,
+  Scale,
 } from 'lucide-react'
 
 export interface ServicoItem {
@@ -44,6 +45,14 @@ const servicos: ServicoItem[] = [
       'Auditoria dos últimos 5 anos para identificar e restituir tributos recolhidos a maior na via administrativa.',
     destaque: 'Foco em caixa',
     link: '/servicos/negociacao-creditos-precatorios',
+  },
+  {
+    icone: Scale,
+    titulo: 'Recuperação de Empresas',
+    descricao:
+      'Assessoria em dívidas e aquisição por investidores da rede. O ativo fiscal reduz o passivo na negociação.',
+    destaque: 'Novo',
+    link: '/servicos/recuperacao-empresas-dividas',
   },
   {
     icone: Building2,

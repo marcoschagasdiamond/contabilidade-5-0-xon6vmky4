@@ -261,6 +261,25 @@ export default function Servicos() {
       reverse: true,
     },
     {
+      id: 'recuperacao-empresas-dividas',
+      category: 'Reestruturação Corporativa & Gestão de Passivos',
+      title: 'Recuperação de Empresas & Gestão de Dívidas',
+      subtitle:
+        'Assessoria completa em negociação de dívidas ou aquisição direta por investidores da rede.',
+      description:
+        'Duas frentes para empresas asfixiadas por dívidas tributárias, bancárias e trabalhistas: (1) Assessoria de Recuperação com transação tributária, repactuação com credores e uso do ativo fiscal (créditos tributários identificados pelo Recuperador reduzem a dívida na negociação); e (2) Aquisição com Investidores da Rede, onde fundos e investidores parceiros adquirem a operação e assumem a reestruturação.',
+      features: [
+        'Duas frentes estruturadas: Assessoria sob gestão atual OU Aquisição por investidores',
+        'Aquisição com investidores: a rede assume o controle ou minoritário e reestrutura o passivo',
+        'Ativo fiscal estratégico: créditos de PIS/Cofins, ICMS e teses abatem o valor na negociação',
+        'Transação tributária individual na PGFN/SEFAZ com até 70% de desconto e 145 parcelas',
+        'Acordo de Confidencialidade (NDA) rigoroso e proteção patrimonial dos sócios',
+      ],
+      image:
+        'https://img.usecurling.com/p/700/500?q=business%20recovery%20corporate%20handshake%20investors&color=blue',
+      reverse: false,
+    },
+    {
       id: 'cancelamento-nf-ibs-cbs',
       category: 'Reforma Tributária & Conformidade Fiscal',
       title: 'Cancelamento de NF no IBS/CBS',
@@ -518,6 +537,16 @@ export default function Servicos() {
                         to="/servicos/negociacao-creditos-precatorios"
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] border border-[#D4AF37] transition-all duration-200 hover:-translate-y-0.5 shadow-sm font-bold"
                       >
+                        <span>Ver Página Completa & Pilares 5.0</span>
+                      </Link>
+                    )}
+
+                    {service.id === 'recuperacao-empresas-dividas' && (
+                      <Link
+                        to="/servicos/recuperacao-empresas-dividas"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] border border-[#D4AF37] transition-all duration-200 hover:-translate-y-0.5 shadow-sm font-bold"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#07132B]" />
                         <span>Ver Página Completa & Pilares 5.0</span>
                       </Link>
                     )}

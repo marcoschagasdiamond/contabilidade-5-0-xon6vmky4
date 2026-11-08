@@ -57,6 +57,9 @@ export function extrairScoreLead(lead: Partial<LeadRecord>): number {
     score = 60
   } else if (tipo === 'agendamento' || tipo.includes('agendamento')) {
     score = 70
+  } else if (tipo === 'recuperacao-empresas' || tipo.includes('recuperacao-empresas')) {
+    // Solicitação de alta complexidade/urgência empresarial
+    score = 75
   }
 
   if (lead.cnpj && lead.cnpj.replace(/\D/g, '').length >= 14) {
@@ -83,6 +86,8 @@ export function extrairFonteLead(lead: Partial<LeadRecord>): string {
   const tipo = lead.tipo_solicitacao || ''
   if (tipo.includes('whatsapp-home')) return 'WhatsApp (Home)'
   if (tipo.includes('whatsapp')) return 'WhatsApp'
+  if (tipo === 'recuperacao-empresas' || tipo.includes('recuperacao-empresas'))
+    return 'Recuperação de Empresas'
   if (tipo === 'proposta') return 'Formulário da Home (Proposta)'
   if (tipo === 'agendamento') return 'Agendamento'
   if (tipo.includes('contato')) return 'Fale Conosco (Contato)'

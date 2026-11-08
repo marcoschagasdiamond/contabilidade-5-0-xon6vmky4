@@ -25,6 +25,7 @@ import BackOffice50 from './pages/BackOffice50'
 import GestaoRecebiveis from './pages/GestaoRecebiveis'
 import Diagnostico360Servico from './pages/Diagnostico360Servico'
 import NegociacaoCreditosPrecatorios from './pages/NegociacaoCreditosPrecatorios'
+import RecuperacaoEmpresasDividas from './pages/RecuperacaoEmpresasDividas'
 import CancelamentoNfIbsCbs from './pages/CancelamentoNfIbsCbs'
 import MercadoCreditos from './pages/MercadoCreditos'
 import Blog from './pages/Blog'
@@ -250,6 +251,18 @@ const App = () => (
                 <Route
                   path="/negociacao-creditos-precatorios"
                   element={<Navigate to="/servicos/negociacao-creditos-precatorios" replace />}
+                />
+                <Route
+                  path="/servicos/recuperacao-empresas-dividas"
+                  element={<RecuperacaoEmpresasDividas />}
+                />
+                <Route
+                  path="/recuperacao-empresas-dividas"
+                  element={<Navigate to="/servicos/recuperacao-empresas-dividas" replace />}
+                />
+                <Route
+                  path="/recuperacao-empresas"
+                  element={<Navigate to="/servicos/recuperacao-empresas-dividas" replace />}
                 />
                 <Route
                   path="/servicos/cancelamento-nf-ibs-cbs"

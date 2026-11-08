@@ -942,6 +942,15 @@ export default function Layout() {
                 </li>
                 <li>
                   <Link
+                    to="/servicos/recuperacao-empresas-dividas"
+                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-[#2ECC71]" />
+                    Recuperação de Empresas & Dívidas
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     to="/servicos/cancelamento-nf-ibs-cbs"
                     className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
                   >

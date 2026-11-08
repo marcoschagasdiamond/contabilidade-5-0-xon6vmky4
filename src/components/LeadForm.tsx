@@ -25,9 +25,19 @@ interface FormErrors {
 export default function LeadForm({
   className = '',
   onVoltar,
+  tipoSolicitacao = 'proposta',
+  titulo,
+  subtitulo,
+  sucessoTitulo,
+  sucessoMensagem,
 }: {
   className?: string
   onVoltar?: () => void
+  tipoSolicitacao?: string
+  titulo?: string
+  subtitulo?: string
+  sucessoTitulo?: string
+  sucessoMensagem?: string
 }) {
   const [formData, setFormData] = useState({
     nome: '',
@@ -166,7 +176,7 @@ export default function LeadForm({
         segmento: formData.segmento,
         funcionarios: formData.funcionarios,
         mensagem: formData.mensagem.trim() || undefined,
-        tipo_solicitacao: 'proposta',
+        tipo_solicitacao: tipoSolicitacao,
       })
 
       // Limpar formulário
@@ -200,10 +210,10 @@ export default function LeadForm({
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h3 className="font-heading font-bold text-2xl text-slate-900 tracking-tight">
-              Receba uma Proposta Personalizada
+              {titulo || 'Receba uma Proposta Personalizada'}
             </h3>
             <p className="text-sm text-slate-500 mt-1">
-              Preencha seus dados e fale com um especialista
+              {subtitulo || 'Preencha seus dados e fale com um especialista'}
             </p>
           </div>
           {onVoltar && (
@@ -503,11 +513,11 @@ export default function LeadForm({
           </div>
           <DialogHeader>
             <DialogTitle className="font-heading font-bold text-2xl text-slate-900 text-center">
-              Solicitação recebida!
+              {sucessoTitulo || 'Solicitação recebida!'}
             </DialogTitle>
             <DialogDescription className="text-slate-600 text-sm mt-2 text-center">
-              Nossa equipe entrará em contato em até 24 horas úteis com uma proposta personalizada
-              para sua empresa.
+              {sucessoMensagem ||
+                'Nossa equipe entrará em contato em até 24 horas úteis com uma proposta personalizada para sua empresa.'}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-6 flex justify-center">

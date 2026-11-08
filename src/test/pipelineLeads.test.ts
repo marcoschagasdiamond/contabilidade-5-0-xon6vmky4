@@ -47,6 +47,23 @@ describe('Pipeline de Leads - Utilitários e Lógica de Negócio', () => {
     expect(fonte).toContain('Formulário da Home (Proposta)')
   })
 
+  it('reconhece lead de recuperacao-empresas com pontuacao alta no scoring', () => {
+    const lead: Partial<LeadRecord> = {
+      id: 'l_rec_emp',
+      nome: 'Empresário em Dificuldade',
+      tipo_solicitacao: 'recuperacao-empresas',
+      cnpj: '11.222.333/0001-44',
+      telefone: '(41) 97777-6666',
+      mensagem: 'Frente: Aquisição com Investidores. Dívidas tributárias e bancárias.',
+    }
+
+    const score = extrairScoreLead(lead)
+    const fonte = extrairFonteLead(lead)
+
+    expect(score).toBeGreaterThanOrEqual(65)
+    expect(fonte).toBe('Recuperação de Empresas & Dívidas')
+  })
+
   it('respeita score numérico direto quando presente no registro', () => {
     const lead: Partial<LeadRecord> = {
       id: 'l3',
