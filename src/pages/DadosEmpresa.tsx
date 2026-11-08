@@ -37,6 +37,8 @@ import {
   validarValorMonetarioInline,
 } from '@/lib/validacaoDadosFiscais'
 import { IndicadorValidadeFiscal } from '@/components/dadosEmpresa/IndicadorValidadeFiscal'
+import { IndicativoClienteAtivoTopo } from '@/components/dadosEmpresa/IndicativoClienteAtivoTopo'
+import { ModalCliente } from '@/components/clientes/ModalCliente'
 import { PainelAvisosCoerencia } from '@/components/dadosEmpresa/PainelAvisosCoerencia'
 import { SecaoImportacaoDocumentosFiscais } from '@/components/dadosEmpresa/SecaoImportacaoDocumentosFiscais'
 import { SecaoVinculosSocietarios } from '@/components/dadosEmpresa/SecaoVinculosSocietarios'
@@ -134,7 +136,15 @@ const formatPhoneBR = (value: string) => {
 export default function DadosEmpresa() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth()
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    user,
+    isMaster,
+    isAdmin,
+    nivelAcesso,
+    isEmpresario,
+  } = useAuth()
   const {
     dadosEmpresa,
     temDadosSalvos,
@@ -177,6 +187,16 @@ export default function DadosEmpresa() {
   const [salvoComSucesso, setSalvoComSucesso] = useState(false)
   const [mensagemErro, setMensagemErro] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [modalNovoClienteAberto, setModalNovoClienteAberto] = useState(false)
+
+  // Regra de perfil: analista/master/admin podem cadastrar novas empresas diretamente
+  const isAnalistaOuMaster =
+    !isEmpresario &&
+    (isMaster ||
+      isAdmin ||
+      nivelAcesso === 'analista' ||
+      nivelAcesso === 'master' ||
+      nivelAcesso === 'admin')
 
   // Validação em tempo real e coerência automática
   const resultadoValidacao = React.useMemo(() => {
@@ -195,6 +215,13 @@ export default function DadosEmpresa() {
     if (houveTrocaDeCliente) {
       lastEmpresaIdRef.current = empresaVinculadaId
       hasEditedRef.current = false
+      setErrors({})
+      setMensagemErro(null)
+      try {
+        localStorage.removeItem(CHAVE_RASCUNHO)
+      } catch {
+        /* ignore */
+      }
       setFormData(dadosEmpresa)
       return
     }
@@ -1314,6 +1341,11 @@ export default function DadosEmpresa() {
           <IndicadorValidadeFiscal
             resultado={resultadoValidacao}
             onRolarParaCampo={rolarParaCampo}
+          />
+
+          {/* INDICATIVO DO CLIENTE ATIVO (ANALISTA / MASTER / ADMIN) */}
+          <IndicativoClienteAtivoTopo
+            onCadastrarNovaEmpresa={() => setModalNovoClienteAberto(true)}
           />
 
           {/* BANNER EXPLICATIVO / HUB DE MÓDULOS ALIMENTADOS */}
@@ -3457,6 +3489,17 @@ export default function DadosEmpresa() {
                   </span>
                 </div>
               )}
+              {isAnalistaOuMaster && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setModalNovoClienteAberto(true)}
+                  className="w-full sm:w-auto h-12 px-6 rounded-xl font-heading font-semibold text-sm border-slate-300 text-slate-800 hover:bg-slate-100 flex items-center justify-center gap-2"
+                >
+                  <UserPlus className="w-4 h-4 text-[#D4AF37]" />
+                  <span>Cadastrar Outra Empresa</span>
+                </Button>
+              )}
               <Button
                 type="submit"
                 disabled={isSalvando}
@@ -3525,6 +3568,17 @@ export default function DadosEmpresa() {
           </div>
         </div>
       </div>
+
+      {/* MODAL DE CADASTRO DE NOVO CLIENTE / OUTRA EMPRESA (ANALISTA / MASTER / ADMIN) */}
+      <ModalCliente
+        open={modalNovoClienteAberto}
+        onOpenChange={setModalNovoClienteAberto}
+        clienteParaEditar={null}
+        onSalvoComSucesso={() => {
+          // O ModalCliente dispara o toast com ToastAction 'Tornar Cliente Ativo'
+          // Nenhuma duplicação de toast é necessária aqui.
+        }}
+      />
 
       {/* Modal de Confirmação para Troca de Segmento via CNAE Principal */}
       <Dialog
