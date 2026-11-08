@@ -898,6 +898,110 @@ export default function Legislacao() {
                   </span>
                 </div>
 
+                {/* CARD FIXO PERMANENTE NO TOPO DO RADAR: CANCELAMENTO DE NF NO IBS/CBS */}
+                <div
+                  data-testid="card-radar-cancelamento-nf"
+                  className="rounded-xl bg-gradient-to-br from-[#0A1A13]/90 via-[#0E2E1E]/90 to-[#07132B] border-2 border-[#D4AF37] p-5 sm:p-6 shadow-xl relative overflow-hidden group hover:border-[#F1C40F] transition-all"
+                >
+                  <div
+                    className="absolute -right-12 -bottom-12 w-48 h-48 bg-[#D4AF37]/10 rounded-full blur-2xl pointer-events-none"
+                    aria-hidden="true"
+                  />
+
+                  <div className="relative z-10 space-y-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-[#D4AF37] text-[#07132B] shadow-sm">
+                          Alerta Permanente
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-white/10 text-emerald-300 border border-emerald-400/30">
+                          IBS/CBS • 2027
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/30">
+                          Incluso na Gestão Fiscal & Tributária
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-mono text-[#D4AF37] font-semibold">
+                        Atenção Imediata
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <h4 className="font-heading font-extrabold text-base sm:text-lg text-white leading-snug flex items-center gap-2">
+                        <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                        Cancelamento de NF no IBS/CBS: cuidado com o estorno
+                      </h4>
+                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
+                        A partir de janeiro (2027), ao cancelar uma nota fiscal no novo sistema o
+                        débito do IBS/CBS permanece devido — o cancelamento não apaga o imposto; o
+                        estorno correto é por NF-e de devolução, com crédito estornado na origem.
+                      </p>
+                    </div>
+
+                    {/* Pontos explicativos do alerta */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-2">
+                      <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs">
+                        <span className="font-bold text-[#D4AF37] block mb-0.5">
+                          O que muda em janeiro (2027)
+                        </span>
+                        <span className="text-slate-300 text-[11px] leading-snug">
+                          Fato gerador na entrega/fornecimento (art. 10 LC 214/2025). Cancelar a NF
+                          não desfaz o débito no CG-IBS.
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs">
+                        <span className="font-bold text-emerald-300 block mb-0.5">
+                          Estorno correto por NF-e de devolução
+                        </span>
+                        <span className="text-slate-300 text-[11px] leading-snug">
+                          Ajuste exige nota de devolução amarrada, com anulação recíproca de crédito
+                          e débito na escrita assistida.
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs">
+                        <span className="font-bold text-rose-300 block mb-0.5">
+                          Risco de imposto e dupla tributação
+                        </span>
+                        <span className="text-slate-300 text-[11px] leading-snug">
+                          Cobrança indevida mantida, trava de caixa no split payment e sanção de 66%
+                          por crédito não estornado (art. 301).
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs">
+                        <span className="font-bold text-amber-300 block mb-0.5">
+                          O que o serviço faz
+                        </span>
+                        <span className="text-slate-300 text-[11px] leading-snug">
+                          Audita NFs canceladas indevidamente, orienta emissão de estorno e recupera
+                          recolhimentos em duplicidade.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2 text-slate-300 text-[11px] font-mono">
+                        <span className="text-[#D4AF37]">Fundamento:</span>
+                        <span>LC 214/2025 art. 10 e art. 45 §13 • LC 227/2026 • art. 301</span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <Link
+                          to="/servicos/cancelamento-nf-ibs-cbs"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-heading font-bold text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] transition-all shadow-sm"
+                        >
+                          Conhecer o serviço →
+                        </Link>
+                        <Link
+                          to="/recuperador-creditos?modulo=outros_tributos&tese=tese_cancelamento_nf_devolucoes_estornos"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg font-mono text-xs font-semibold text-emerald-300 hover:text-white bg-white/5 hover:bg-white/10 border border-emerald-400/30 transition-all"
+                        >
+                          Ver tese EST-04 no Recuperador →
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {carregandoNotificacoes ? (
                   <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center text-xs text-slate-400 font-mono">
                     Carregando avisos do Radar...

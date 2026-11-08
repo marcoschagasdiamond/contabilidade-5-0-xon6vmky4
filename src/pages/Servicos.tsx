@@ -282,17 +282,42 @@ export default function Servicos() {
     {
       id: 'cancelamento-nf-ibs-cbs',
       category: 'Reforma Tributária & Conformidade Fiscal',
+      badgeIncluso: 'Incluso na Gestão Fiscal & Tributária',
       title: 'Cancelamento de NF no IBS/CBS',
       subtitle:
         'Notas canceladas, estornos e devoluções com segurança no sistema atual e na apuração assistida do CG-IBS.',
       description:
-        'Consultoria especializada no tratamento do imposto quando a nota fiscal é cancelada, no sistema atual e no IBS/CBS (LC 214/2025 e apuração assistida do CG-IBS). Fato gerador na entrega (art. 10), vinculação débito-crédito, ajustes de competência e blindagem contra a sanção de 66% do art. 301 — com atenção especial ao split payment e à transição ICMS/ISS até 2033.',
+        'Consultoria especializada integrada à Gestão Fiscal & Tributária para o tratamento do imposto quando a nota fiscal é cancelada. Cobre: (1) O que muda em janeiro (2027) com o fato gerador no fornecimento/entrega (art. 10 da LC 214/2025); (2) O estorno correto que deve ser feito por NF-e de devolução amarrada na apuração assistida; (3) O risco crítico de pagar imposto sobre NF cancelada e cair em dupla tributação com trava no Split Payment e multa de 66% (art. 301); e (4) O que o serviço faz — auditoria de cancelamentos indevidos, orientação do estorno correto e recuperação de tributos pagos a mais via tese EST-04.',
+      deliveryFormatsTitle: 'Pilares operacionais do serviço incluso:',
+      deliveryFormats: [
+        {
+          title: 'O que muda em janeiro (2027)',
+          description:
+            'O fato gerador do IBS e da CBS é o fornecimento/entrega da mercadoria ou serviço (art. 10 da LC 214/2025), e não a emissão. O cancelamento isolado no emissor não apaga o débito na apuração assistida do CG-IBS.',
+        },
+        {
+          title: 'Estorno correto por NF-e de devolução',
+          description:
+            'A anulação do imposto exige a emissão tempestiva de NF-e de devolução referenciando a nota original (art. 45, §13 incluído pela LC 227/2026), estornando o crédito na origem e recompondo a conta gráfica.',
+        },
+        {
+          title: 'Risco de pagar imposto sobre NF cancelada & dupla tributação',
+          description:
+            'Emitir nova NF sem devolução gera recolhimento duplo, retenção automática via Split Payment e penalidade grave de 66% sobre créditos não estornados (art. 301 da LC 214/2025).',
+        },
+        {
+          title: 'O que o serviço faz na sua empresa',
+          description:
+            'Varredura dos últimos 60 meses de cancelamentos indevidos, parametrização de estorno de devolução na escrita fiscal e recuperação de valores duplicados integrada ao Recuperador de Créditos (tese EST-04).',
+        },
+      ],
       features: [
+        'Incluso sem custo adicional nos contratos de Gestão Fiscal e Tributária Estratégica 5.0',
         'Fato gerador no fornecimento/entrega, não na emissão (art. 10 da LC 214/2025)',
-        'Vinculação cronológica débito-crédito na apuração assistida do CG-IBS',
-        'Ajustes de competência, notas de crédito e estornos (gEstornoCred e gPagAntecipado)',
-        'Estornos corretos no sistema atual: NF-e de estorno, CFOP inversa, PIS/Cofins, ICMS e IPI',
-        'Blindagem contra a sanção de 66% do art. 301 da LC 214/2025',
+        'Estorno correto obrigatório por NF-e de devolução (art. 45, § 13 da LC 227/2026)',
+        'Proteção contra dupla tributação e retenções indevidas no Split Payment',
+        'Blindagem contra a sanção punitiva de 66% do art. 301 da LC 214/2025',
+        'Integração direta com o Recuperador de Créditos para estornos não creditados (EST-04)',
       ],
       image:
         'https://img.usecurling.com/p/700/500?q=invoice%20cancellation%20tax%20compliance%20paperwork&color=blue',
@@ -355,9 +380,21 @@ export default function Servicos() {
 
                 {/* Texto */}
                 <div className={service.reverse ? 'lg:col-start-1' : ''}>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-[#145A32] bg-emerald-50 border border-emerald-200 mb-3">
-                    {IconComp && <IconComp className="w-3.5 h-3.5" />}
-                    <span>{service.category || 'Especialidade Contábil'}</span>
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-[#145A32] bg-emerald-50 border border-emerald-200">
+                      {IconComp && <IconComp className="w-3.5 h-3.5" />}
+                      <span>{service.category || 'Especialidade Contábil'}</span>
+                    </div>
+
+                    {(service as any).badgeIncluso && (
+                      <span
+                        data-testid="badge-incluso-gestao-fiscal"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-[#07132B] bg-[#D4AF37] border border-[#D4AF37]/50 shadow-sm"
+                      >
+                        <Sparkles className="w-3 h-3 text-[#07132B]" />
+                        {(service as any).badgeIncluso}
+                      </span>
+                    )}
                   </div>
 
                   <h2 className="font-heading font-bold text-2xl sm:text-3xl text-slate-900 tracking-tight mb-2">
