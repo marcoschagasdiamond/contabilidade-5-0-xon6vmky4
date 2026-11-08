@@ -215,6 +215,36 @@ export default function Crm() {
     }
   }
 
+  const handleAtualizarFaturamentoLead = async (leadId: string, novoValor: number) => {
+    // 1. Atualização otimista imediata no estado local para recálculo instantâneo de totais e do card
+    setLeadsPipeline((prev) =>
+      prev.map((lead) => {
+        if (lead.id !== leadId) return lead
+        return {
+          ...lead,
+          valorPotencial: novoValor,
+        }
+      }),
+    )
+
+    try {
+      const { atualizarFaturamentoLead } = await import('@/services/pipelineLeads')
+      await atualizarFaturamentoLead(leadId, novoValor)
+      toast({
+        title: 'Valor potencial atualizado',
+        description: 'O faturamento estimado foi gravado no lead com sucesso.',
+      })
+    } catch (err: any) {
+      await carregarLeads()
+      toast({
+        title: 'Erro ao atualizar faturamento',
+        description: err?.message || 'Não foi possível gravar o novo valor.',
+        variant: 'destructive',
+      })
+      throw err
+    }
+  }
+
   // Mapa de empresas para lookup rápido
   const empresasMap = useMemo(() => {
     const map = new Map<string, ClienteEmpresaRecord>()
@@ -499,8 +529,9 @@ export default function Crm() {
               loading={carregandoLeads}
               onMudarEstagio={handleMudarEstagioLead}
               onAdicionarInteracao={handleAdicionarInteracaoLead}
+              onAtualizarFaturamento={handleAtualizarFaturamentoLead}
               onRecarregar={carregarLeads}
-            />
+            />{' '}
           </div>
         ) : abaPrincipal === 'metricas_dashboard' ? (
           <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">

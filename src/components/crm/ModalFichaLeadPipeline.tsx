@@ -11,6 +11,8 @@ import {
 import { TimelineLead } from './TimelineLead'
 import { Button } from '@/components/ui/button'
 
+import { EdicaoValorPotencialInline } from './EdicaoValorPotencialInline'
+
 interface ModalFichaLeadPipelineProps {
   lead: LeadProcessado | null
   open: boolean
@@ -25,6 +27,7 @@ interface ModalFichaLeadPipelineProps {
       dataProximoPasso?: string
     },
   ) => Promise<void>
+  onAtualizarFaturamento?: (leadId: string, novoValor: number) => Promise<void>
 }
 
 export function ModalFichaLeadPipeline({
@@ -33,6 +36,7 @@ export function ModalFichaLeadPipeline({
   onOpenChange,
   onMudarEstagio,
   onAdicionarInteracao,
+  onAtualizarFaturamento,
 }: ModalFichaLeadPipelineProps) {
   const [mudandoEstagio, setMudandoEstagio] = useState(false)
 
@@ -69,14 +73,26 @@ export function ModalFichaLeadPipeline({
               <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
                 Score: {lead.score} pts
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
-                Potencial:{' '}
-                {new Intl.NumberFormat('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                  maximumFractionDigits: 0,
-                }).format(lead.valorPotencial)}
-              </span>
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+                <span>Potencial:</span>
+                {onAtualizarFaturamento ? (
+                  <EdicaoValorPotencialInline
+                    leadId={lead.id}
+                    valorAtual={lead.valorPotencial || 0}
+                    onSalvar={onAtualizarFaturamento}
+                  />
+                ) : (
+                  <span>
+                    {lead.valorPotencial > 0
+                      ? new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                          maximumFractionDigits: 0,
+                        }).format(lead.valorPotencial)
+                      : '—'}
+                  </span>
+                )}
+              </div>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200">
                 Origem: {lead.fonte}
               </span>

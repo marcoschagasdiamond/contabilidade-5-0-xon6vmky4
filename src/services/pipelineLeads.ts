@@ -157,3 +157,17 @@ export async function atualizarScoreLead(leadId: string, novoScore: number): Pro
     score: clamped,
   })
 }
+
+/**
+ * Atualiza o valor de faturamento potencial do lead (faturamento e faturamento_estimado).
+ */
+export async function atualizarFaturamentoLead(
+  leadId: string,
+  novoFaturamento: number,
+): Promise<LeadRecord> {
+  const valor = Math.max(0, Math.round(Number(novoFaturamento) || 0))
+  return await pb.collection('leads').update<LeadRecord>(leadId, {
+    faturamento_estimado: valor,
+    faturamento: valor,
+  })
+}

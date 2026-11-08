@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-08T20:44:40.749Z",
+  "generatedAt": "2026-11-08T20:54:25.593Z",
   "collections": [
     {
       "name": "users",
@@ -302,6 +302,18 @@
         {
           "name": "fonte",
           "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "faturamento_estimado",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "faturamento",
+          "type": "number",
           "required": false,
           "system": false
         }

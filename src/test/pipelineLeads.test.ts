@@ -267,4 +267,18 @@ describe('Pipeline de Leads - Utilitários e Lógica de Negócio', () => {
     expect(metricas.tempoMedioPrimeiroContatoHoras).toBe(1.5)
     expect(metricas.tempoMedioPrimeiroContatoFormatado).toBe('1,5h')
   })
+
+  it('permite parse de valores digitados no input inline de faturamento', async () => {
+    const { parseValorDigitado } = await import('@/components/crm/EdicaoValorPotencialInline')
+    expect(parseValorDigitado('500000')).toBe(500_000)
+    expect(parseValorDigitado('500.000')).toBe(500_000)
+    expect(parseValorDigitado('500.000,00')).toBe(500_000)
+    expect(parseValorDigitado('R$ 1.500.000')).toBe(1_500_000)
+    expect(parseValorDigitado('1,5 mi')).toBe(1_500_000)
+    expect(parseValorDigitado('350 mil')).toBe(350_000)
+    expect(parseValorDigitado('350k')).toBe(350_000)
+    expect(parseValorDigitado('2m')).toBe(2_000_000)
+    expect(parseValorDigitado('')).toBe(0)
+    expect(parseValorDigitado('abc')).toBe(0)
+  })
 })

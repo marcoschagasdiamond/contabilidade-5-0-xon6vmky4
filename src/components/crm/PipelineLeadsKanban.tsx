@@ -4,6 +4,7 @@ import { ESTAGIOS_PIPELINE_LEAD } from '@/types/pipelineLead'
 import { formatarValorCompacto } from '@/lib/pipelineLeadUtils'
 import { AlertaLeadsQuentes } from './AlertaLeadsQuentes'
 import { ModalFichaLeadPipeline } from './ModalFichaLeadPipeline'
+import { EdicaoValorPotencialInline } from './EdicaoValorPotencialInline'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -12,6 +13,7 @@ interface PipelineLeadsKanbanProps {
   loading: boolean
   onMudarEstagio: (leadId: string, novoEstagio: EstagioPipelineLead) => Promise<void>
   onAdicionarInteracao: (leadId: string, dados: any) => Promise<void>
+  onAtualizarFaturamento?: (leadId: string, novoValor: number) => Promise<void>
   onRecarregar: () => void
 }
 
@@ -20,6 +22,7 @@ export function PipelineLeadsKanban({
   loading,
   onMudarEstagio,
   onAdicionarInteracao,
+  onAtualizarFaturamento,
   onRecarregar,
 }: PipelineLeadsKanbanProps) {
   const [busca, setBusca] = useState('')
@@ -281,14 +284,27 @@ export function PipelineLeadsKanban({
                           {lead.empresa || 'Empresa não informada'}
                         </p>
 
-                        {/* FATURAMENTO ESTIMADO DO LEAD */}
-                        <div className="mt-2 flex items-center justify-between text-[11px]">
+                        {/* FATURAMENTO ESTIMADO DO LEAD (COM EDIÇÃO INLINE DIRETA NO CARD) */}
+                        <div
+                          className="mt-2 flex items-center justify-between text-[11px]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                             Potencial:
                           </span>
-                          <span className="font-extrabold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
-                            {formatarValorCompacto(lead.valorPotencial)}
-                          </span>
+                          {onAtualizarFaturamento ? (
+                            <EdicaoValorPotencialInline
+                              leadId={lead.id}
+                              valorAtual={lead.valorPotencial || 0}
+                              onSalvar={onAtualizarFaturamento}
+                            />
+                          ) : (
+                            <span className="font-extrabold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
+                              {lead.valorPotencial > 0
+                                ? formatarValorCompacto(lead.valorPotencial)
+                                : '—'}
+                            </span>
+                          )}
                         </div>
 
                         <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
@@ -352,6 +368,7 @@ export function PipelineLeadsKanban({
         onOpenChange={setModalAberto}
         onMudarEstagio={onMudarEstagio}
         onAdicionarInteracao={onAdicionarInteracao}
+        onAtualizarFaturamento={onAtualizarFaturamento}
       />
     </div>
   )

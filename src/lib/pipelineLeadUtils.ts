@@ -257,7 +257,7 @@ export function extrairValorPotencialLead(lead: Partial<LeadRecord>): number {
     }
   }
 
-  // 4. Estimativa prudente por faixa de colaboradores
+  // 4. Estimativa prudente por faixa de colaboradores (apenas quando o lead tem faixa válida informada)
   const porte = (lead.funcionarios || '').toString().trim()
   if (porte === 'Mais de 200' || porte.includes('>200')) return 12_000_000
   if (porte === '51–200' || porte === '51-200') return 4_800_000
@@ -265,7 +265,7 @@ export function extrairValorPotencialLead(lead: Partial<LeadRecord>): number {
   if (porte === '6–20' || porte === '6-20') return 720_000
   if (porte === '1–5' || porte === '1-5') return 240_000
 
-  return 120_000
+  return 0
 }
 
 /**
@@ -276,8 +276,8 @@ export function extrairValorPotencialLead(lead: Partial<LeadRecord>): number {
  * R$ 80.000 -> R$ 80 mil
  * R$ 0 -> R$ 0
  */
-export function formatarValorCompacto(valor: number): string {
-  if (isNaN(valor) || valor <= 0) return 'R$ 0'
+export function formatarValorCompacto(valor: number, placeholder: string = 'R$ 0'): string {
+  if (isNaN(valor) || valor <= 0) return placeholder
 
   if (valor >= 1_000_000_000) {
     const bi = valor / 1_000_000_000
@@ -475,7 +475,7 @@ export function processarLeadParaPipeline(lead: LeadRecord): LeadProcessado {
     empresa: lead.empresa || 'Empresa não informada',
     cnpj: lead.cnpj,
     segmento: lead.segmento || 'Não Informado',
-    funcionarios: lead.funcionarios || '1–5',
+    funcionarios: lead.funcionarios || '',
     mensagem: lead.mensagem,
     tipo_solicitacao: lead.tipo_solicitacao,
     created: lead.created,
