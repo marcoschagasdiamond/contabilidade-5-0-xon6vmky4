@@ -1,1 +1,2 @@
-// Trigger QA
+// Trigger QA run
+export const triggerQa = true

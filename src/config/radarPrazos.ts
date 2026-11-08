@@ -63,7 +63,7 @@ export interface EstadoPrazoCard {
 }
 
 /**
- * Tabela mestra de prazos dos 5 cards fixos do Radar de Alertas da Legislação.
+ * Tabela mestra de prazos dos 5 cards fixos do Radar de Alertas da Legislação (/legislacao).
  */
 export const CONFIG_CARDS_RADAR_FIXOS: Record<string, CardRadarPrazoConfig> = {
   // Card 0: Topo absoluto — Cancelamento de NF no IBS/CBS (Alerta permanente)
