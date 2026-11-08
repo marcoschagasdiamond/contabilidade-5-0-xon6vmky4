@@ -47,7 +47,36 @@ export default function Servicos() {
     }
   }
 
-  const serviceDetails = [
+  interface DeliveryFormatItem {
+    title: string
+    description: string
+    icon?: React.ComponentType<{ className?: string }>
+  }
+
+  interface ServiceDetailItem {
+    id: string
+    icon: React.ComponentType<{ className?: string }>
+    category: string
+    title: string
+    subtitle: string
+    description: string
+    features: string[]
+    image: string
+    reverse: boolean
+    badgeIncluso?: string
+    deliveryFormatsTitle?: string
+    deliveryFormats?: DeliveryFormatItem[]
+  }
+
+  const categories = [
+    'Diagnóstico & Estratégia',
+    'Wealth & Governance',
+    'Operação & BPO',
+    'Finanças & Estruturação de Fluxo',
+    'Tributário, Créditos & Recuperação',
+  ]
+
+  const serviceDetails: ServiceDetailItem[] = [
     {
       id: 'diagnostico-360',
       icon: Compass,
@@ -668,6 +697,8 @@ export default function Servicos() {
         id="servicos-acoes-finais"
         titulo="Precisa de um pacote sob medida para sua operação?"
         subtitulo="Nossos consultores montam uma proposta que integra exatamente as soluções que o seu negócio precisa hoje, ou conduzem um alinhamento individual com um especialista."
+        servicoPreselecionado={servicoContratar}
+        modoInicial={modoAcao}
       />
     </div>
   )
