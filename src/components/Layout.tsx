@@ -20,6 +20,15 @@ import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { ModalMigrarParaAnalista } from '@/components/ModalMigrarParaAnalista'
 import { BotaoEChatSuporte } from '@/components/suporte/BotaoEChatSuporte'
 import {
+  buildWhatsAppLink,
+  TELEFONE_EMPRESA_FORMATADO,
+  TELEFONE_EMPRESA_LINK,
+  EMAIL_EMPRESA_CONTATO,
+  EMAIL_EMPRESA_LINK,
+  ENDERECO_EMPRESA,
+  HORARIO_ATENDIMENTO_EMPRESA,
+} from '@/config/empresa'
+import {
   listarNotificacoesTributarias,
   marcarNotificacaoComoLida,
   NotificacaoTributaria,
@@ -895,10 +904,10 @@ export default function Layout() {
                   <Facebook className="w-4 h-4" />
                 </a>
                 <a
-                  href="https://wa.me/551140028922"
+                  href={buildWhatsAppLink()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="WhatsApp"
+                  aria-label="Falar com especialista no WhatsApp"
                   className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-slate-300 hover:text-white hover:bg-[#25D366] hover:border-[#25D366] hover:scale-110 transition-all duration-200"
                 >
                   <MessageCircle className="w-4 h-4" />
@@ -1056,26 +1065,23 @@ export default function Layout() {
               <ul className="space-y-4 text-sm text-slate-300">
                 <li className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-[#2ECC71] shrink-0 mt-0.5" />
-                  <span>Av. Paulista, 1000 — São Paulo/SP</span>
+                  <span>{ENDERECO_EMPRESA}</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-[#2ECC71] shrink-0" />
-                  <a href="tel:+551140028922" className="hover:text-white transition-colors">
-                    +55 (11) 4002-8922
+                  <a href={TELEFONE_EMPRESA_LINK} className="hover:text-white transition-colors">
+                    {TELEFONE_EMPRESA_FORMATADO}
                   </a>
                 </li>
                 <li className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-[#2ECC71] shrink-0" />
-                  <a
-                    href="mailto:contato@contabilidade5.com.br"
-                    className="hover:text-white transition-colors"
-                  >
-                    contato@contabilidade5.com.br
+                  <a href={EMAIL_EMPRESA_LINK} className="hover:text-white transition-colors">
+                    {EMAIL_EMPRESA_CONTATO}
                   </a>
                 </li>
               </ul>
               <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
-                <span>Horário: Seg a Sex, 8h às 18h</span>
+                <span>Horário: {HORARIO_ATENDIMENTO_EMPRESA}</span>
                 <div className="flex items-center gap-3">
                   {!isEmpresario && (
                     <>

@@ -1,11 +1,13 @@
 import pb from '@/lib/pocketbase/client'
 import type { RecordModel } from 'pocketbase'
 
+import { WHATSAPP_EMPRESA_NUMERO, EMAIL_EMPRESA_CONTATO } from '@/config/empresa'
+
 export const LIMITE_SIMULACOES_GRATUITO = 3
 export const LIMITE_DIAGNOSTICOS_GRATUITO = 1
 
-export const WHATSAPP_UPGRADE_NUMERO = '551140028922'
-export const EMAIL_CONTATO = 'contato@contabilidade5.com.br'
+export const WHATSAPP_UPGRADE_NUMERO = WHATSAPP_EMPRESA_NUMERO
+export const EMAIL_CONTATO = EMAIL_EMPRESA_CONTATO
 
 export interface UsuarioFreemium {
   id: string

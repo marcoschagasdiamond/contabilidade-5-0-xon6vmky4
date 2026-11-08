@@ -23,6 +23,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import { WizardPrimeirosPassos } from '@/components/onboarding/WizardPrimeirosPassos'
 import { ChecklistComeceAqui } from '@/components/onboarding/ChecklistComeceAqui'
+import { BotaoWhatsAppFlutuante } from '@/components/home/BotaoWhatsAppFlutuante'
 
 export default function Index() {
   const navigate = useNavigate()
@@ -716,6 +717,9 @@ export default function Index() {
         titulo="Pronto para modernizar a sua contabilidade?"
         subtitulo="Escolha entre receber uma proposta estruturada para o seu segmento ou agendar uma reunião estratégica com o nosso time técnico."
       />
+
+      {/* CTA FLUTUANTE DE WHATSAPP (EXCLUSIVO DA ROTA /) */}
+      <BotaoWhatsAppFlutuante />
     </div>
   )
 }
