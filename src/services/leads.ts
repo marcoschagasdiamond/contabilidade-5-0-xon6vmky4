@@ -9,6 +9,11 @@ export interface Lead {
   empresa: string
   cnpj?: string
   tipo_solicitacao?: 'proposta' | 'agendamento' | string
+  estagio_pipeline?: 'novo' | 'contato_feito' | 'reuniao' | 'cliente' | string
+  score?: number
+  fonte?: string
+  interacoes_json?: any
+  ultima_interacao?: string
   segmento:
     | 'Comércio'
     | 'Serviços'
