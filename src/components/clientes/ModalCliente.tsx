@@ -13,6 +13,8 @@ import { Label } from '@/components/ui/label'
 import type { Cliente, ClienteInput } from '@/types/cliente'
 import { criarCliente, atualizarCliente } from '@/services/clientes'
 import { useToast } from '@/hooks/use-toast'
+import { ToastAction } from '@/components/ui/toast'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 
 interface ModalClienteProps {
   open: boolean
@@ -78,6 +80,7 @@ export function ModalCliente({
   onSalvoComSucesso,
 }: ModalClienteProps) {
   const { toast } = useToast()
+  const { selecionarClienteAtivo, adicionarCliente } = useClienteAtivo()
   const [salvando, setSalvando] = useState(false)
 
   const [nome, setNome] = useState('')
@@ -153,9 +156,23 @@ export function ModalCliente({
         })
       } else {
         salvo = await criarCliente(payload)
+        const novoCliente = salvo
         toast({
           title: 'Cliente cadastrado',
-          description: `"${salvo.nome}" adicionado à sua carteira com sucesso.`,
+          description: `"${novoCliente.nome}" adicionado à sua carteira com sucesso.`,
+          duration: 8000,
+          action: (
+            <ToastAction
+              altText="Tornar Cliente Ativo"
+              onClick={() => {
+                adicionarCliente(novoCliente)
+                selecionarClienteAtivo(novoCliente)
+              }}
+              className="bg-[#07132B] hover:bg-[#0B1E3F] text-[#D4AF37] font-bold border-[#D4AF37]/50 text-xs shrink-0"
+            >
+              Tornar Cliente Ativo
+            </ToastAction>
+          ),
         })
       }
 
