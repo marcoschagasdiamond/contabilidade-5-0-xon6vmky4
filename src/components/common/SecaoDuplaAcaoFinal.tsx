@@ -9,6 +9,8 @@ interface SecaoDuplaAcaoFinalProps {
   className?: string
   titulo?: string
   subtitulo?: string
+  servicoPreselecionado?: string
+  modoInicial?: ModalidadeAcaoFinal
 }
 
 /**
@@ -24,8 +26,17 @@ export default function SecaoDuplaAcaoFinal({
   className = '',
   titulo = 'Pronto para dar o próximo passo com a Contabilidade 5.0?',
   subtitulo = 'Escolha como prefere iniciar o atendimento com a liderança técnica da Diamond Group.',
+  servicoPreselecionado = '',
+  modoInicial = 'nenhuma',
 }: SecaoDuplaAcaoFinalProps) {
-  const [opcaoSelecionada, setOpcaoSelecionada] = useState<ModalidadeAcaoFinal>('nenhuma')
+  const [opcaoSelecionada, setOpcaoSelecionada] = useState<ModalidadeAcaoFinal>(modoInicial)
+
+  // Atualiza se modoInicial mudar (ex: ao clicar em Contratar Serviço)
+  React.useEffect(() => {
+    if (modoInicial !== 'nenhuma') {
+      setOpcaoSelecionada(modoInicial)
+    }
+  }, [modoInicial])
 
   const handleVoltar = () => {
     setOpcaoSelecionada('nenhuma')
@@ -122,9 +133,17 @@ export default function SecaoDuplaAcaoFinal({
         {opcaoSelecionada === 'proposta' && (
           <div className="animate-fade-in space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-              <span className="text-xs font-bold text-[#07132B] uppercase tracking-wider">
-                Solicitação de Proposta Personalizada
-              </span>
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-[#07132B] uppercase tracking-wider block">
+                  Solicitação de Proposta Personalizada
+                </span>
+                {servicoPreselecionado && (
+                  <span className="text-xs text-slate-600">
+                    Serviço de interesse:{' '}
+                    <strong className="text-[#145A32]">{servicoPreselecionado}</strong>
+                  </span>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={handleVoltar}
@@ -133,7 +152,7 @@ export default function SecaoDuplaAcaoFinal({
                 Voltar
               </button>
             </div>
-            <LeadForm onVoltar={handleVoltar} />
+            <LeadForm onVoltar={handleVoltar} servicoPreselecionado={servicoPreselecionado} />
           </div>
         )}
 

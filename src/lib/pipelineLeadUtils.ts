@@ -83,6 +83,12 @@ export function extrairFonteLead(lead: Partial<LeadRecord>): string {
     return lead.fonte.trim()
   }
 
+  const msg = lead.mensagem || ''
+  if (msg.includes('Origem:')) {
+    const match = msg.match(/\[Origem:\s*([^\]]+)\]/)
+    if (match && match[1]) return match[1].trim()
+  }
+
   const tipo = lead.tipo_solicitacao || ''
   if (tipo.includes('whatsapp-home')) return 'WhatsApp (Home)'
   if (tipo.includes('whatsapp')) return 'WhatsApp'
@@ -92,12 +98,7 @@ export function extrairFonteLead(lead: Partial<LeadRecord>): string {
   if (tipo === 'agendamento') return 'Agendamento'
   if (tipo.includes('contato')) return 'Fale Conosco (Contato)'
 
-  const msg = lead.mensagem || ''
   if (msg.includes('whatsapp-home')) return 'WhatsApp (Home)'
-  if (msg.includes('Origem:')) {
-    const match = msg.match(/\[Origem:\s*([^\]]+)\]/)
-    if (match && match[1]) return match[1].trim()
-  }
 
   return 'Formulário do Site'
 }

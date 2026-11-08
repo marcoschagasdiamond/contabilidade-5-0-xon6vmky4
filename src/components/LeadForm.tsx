@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { CheckCircle2, Loader2, Send, AlertCircle } from 'lucide-react'
 import { createLead } from '@/services/leads'
 import { formatarCNPJ, limparCNPJ, validarCNPJ } from '@/lib/cnpj'
@@ -11,6 +11,24 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+
+export const OPCOES_SERVICOS_CONTATO = [
+  'Diagnóstico 360°',
+  'Contabilidade Digital',
+  'Gestão Fiscal & Tributária',
+  'Departamento Pessoal',
+  'Consultoria Financeira Estratégica',
+  'Planejamento Sucessório e Estruturação Patrimonial',
+  'Assessoria Tributária Especializada',
+  'Treinamento e Capacitação',
+  'BPO Contábil 5.0',
+  'Estruturação de Recebimentos & Gestão de Fluxo',
+  'Back Office 5.0',
+  'Negociação de Créditos Tributários, Direitos Creditórios e Precatórios',
+  'Recuperação de Empresas & Gestão de Dívidas',
+  'Cancelamento de NF no IBS/CBS',
+  'Outro / Solução Integrada',
+]
 
 interface FormErrors {
   nome?: string
@@ -26,6 +44,7 @@ export default function LeadForm({
   className = '',
   onVoltar,
   tipoSolicitacao = 'proposta',
+  servicoPreselecionado = '',
   titulo,
   subtitulo,
   sucessoTitulo,
@@ -34,11 +53,27 @@ export default function LeadForm({
   className?: string
   onVoltar?: () => void
   tipoSolicitacao?: string
+  servicoPreselecionado?: string
   titulo?: string
   subtitulo?: string
   sucessoTitulo?: string
   sucessoMensagem?: string
 }) {
+  const [searchParams] = useSearchParams()
+  const servicoUrl = searchParams.get('servico') || searchParams.get('service') || ''
+
+  const [servicoInteresse, setServicoInteresse] = useState<string>(() => {
+    return servicoPreselecionado || servicoUrl || ''
+  })
+
+  useEffect(() => {
+    if (servicoPreselecionado) {
+      setServicoInteresse(servicoPreselecionado)
+    } else if (servicoUrl) {
+      setServicoInteresse(servicoUrl)
+    }
+  }, [servicoPreselecionado, servicoUrl])
+
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -167,6 +202,18 @@ export default function LeadForm({
     setIsSubmitting(true)
 
     try {
+      const fonteFinal = servicoInteresse
+        ? `Serviço: ${servicoInteresse}`
+        : tipoSolicitacao === 'proposta'
+          ? 'Formulário da Home (Proposta)'
+          : tipoSolicitacao === 'agendamento'
+            ? 'Agendamento'
+            : 'Formulário do Site'
+
+      const mensagemComOrigem = servicoInteresse
+        ? `${formData.mensagem.trim() ? `${formData.mensagem.trim()}\n\n` : ''}[Origem: Serviço - ${servicoInteresse}]`
+        : formData.mensagem.trim() || undefined
+
       await createLead({
         nome: formData.nome.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -175,8 +222,9 @@ export default function LeadForm({
         cnpj: formData.cnpj.trim(),
         segmento: formData.segmento,
         funcionarios: formData.funcionarios,
-        mensagem: formData.mensagem.trim() || undefined,
+        mensagem: mensagemComOrigem,
         tipo_solicitacao: tipoSolicitacao,
+        fonte: fonteFinal,
       })
 
       // Limpar formulário
@@ -365,6 +413,40 @@ export default function LeadForm({
             {errors.cnpj && (
               <p className="mt-1 text-xs text-[#E74C3C] font-medium">{errors.cnpj}</p>
             )}
+          </div>
+
+          {/* Serviço de Interesse */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label
+                htmlFor="servico_interesse"
+                className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+              >
+                Serviço de Interesse
+              </label>
+              {servicoInteresse && (
+                <span className="text-[11px] font-bold text-[#145A32] bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-300/50">
+                  Pré-selecionado
+                </span>
+              )}
+            </div>
+            <select
+              id="servico_interesse"
+              name="servico_interesse"
+              value={servicoInteresse}
+              onChange={(e) => setServicoInteresse(e.target.value)}
+              className="w-full px-3 py-3 rounded-xl border border-slate-200 hover:border-slate-300 text-sm text-slate-900 bg-slate-50/50 transition-colors input-focus-ring"
+            >
+              <option value="">Selecione o serviço desejado (opcional)...</option>
+              {OPCOES_SERVICOS_CONTATO.map((opcao) => (
+                <option key={opcao} value={opcao}>
+                  {opcao}
+                </option>
+              ))}
+              {servicoInteresse && !OPCOES_SERVICOS_CONTATO.includes(servicoInteresse) && (
+                <option value={servicoInteresse}>{servicoInteresse}</option>
+              )}
+            </select>
           </div>
 
           {/* Duas colunas para selects */}
