@@ -62,7 +62,10 @@ describe('Cancelamento de NF no IBS/CBS integrado à Gestão Fiscal e Radar', ()
     expect(screen.getByText(/Prazo • 30\/10/i)).toBeDefined()
     expect(screen.getByText(/Simples Nacional • Híbrido/i)).toBeDefined()
     expect(screen.getByText(/Janela de opção da regra híbrida do Simples Nacional/i)).toBeDefined()
-    const linkTransicao = screen.getByRole('link', { name: /Analisar minha transição →/i })
+    // O CTA pode ter o texto original ou 'Prazo encerrado — ver próximo passo' dependendo da data atual, mantendo o destino /diagnostico-transicao
+    const linkTransicao = screen.getByRole('link', {
+      name: /Analisar minha transição →|Prazo encerrado — ver próximo passo/i,
+    })
     expect(linkTransicao.getAttribute('href')).toBe('/diagnostico-transicao')
 
     // (1.2) Card 2: Fase de teste 2026 do IBS/CBS (IBS/CBS • 2026)

@@ -24,6 +24,8 @@ import { useToast } from '@/hooks/use-toast'
 import { CardExplicacaoLegislacao } from '@/components/legislacao/CardExplicacaoLegislacao'
 import SecaoDuplaAcaoFinal from '@/components/common/SecaoDuplaAcaoFinal'
 import { derivarChaveNorma } from '@/services/explicadorLegislacao'
+import { CONFIG_CARDS_RADAR_FIXOS, calcularEstadoPrazoCard } from '@/config/radarPrazos'
+import { TarjaPrazoCard } from '@/components/legislacao/TarjaPrazoCard'
 
 export default function Legislacao() {
   const { toast } = useToast()
@@ -39,6 +41,15 @@ export default function Legislacao() {
   const [carregandoParametros, setCarregandoParametros] = useState(true)
   const [notificacoesRadar, setNotificacoesRadar] = useState<NotificacaoTributaria[]>([])
   const [carregandoNotificacoes, setCarregandoNotificacoes] = useState(true)
+
+  // Estados dinâmicos de prazo/prorrogação para os 5 cards fixos do Radar
+  const estadoCancelamentoNf = calcularEstadoPrazoCard(CONFIG_CARDS_RADAR_FIXOS.cancelamentoNf)
+  const estadoJanelaSimples = calcularEstadoPrazoCard(CONFIG_CARDS_RADAR_FIXOS.janelaSimples)
+  const estadoFaseTeste2026 = calcularEstadoPrazoCard(CONFIG_CARDS_RADAR_FIXOS.faseTeste2026)
+  const estadoImpostoSeletivo = calcularEstadoPrazoCard(CONFIG_CARDS_RADAR_FIXOS.impostoSeletivo)
+  const estadoCreditoParcialSimples = calcularEstadoPrazoCard(
+    CONFIG_CARDS_RADAR_FIXOS.creditoParcialSimples,
+  )
 
   const carregarParametros = async () => {
     try {
@@ -901,80 +912,83 @@ export default function Legislacao() {
                 {/* CARD FIXO PERMANENTE NO TOPO DO RADAR: CANCELAMENTO DE NF NO IBS/CBS */}
                 <div
                   data-testid="card-radar-cancelamento-nf"
-                  className="rounded-xl bg-gradient-to-br from-[#0A1A13]/90 via-[#0E2E1E]/90 to-[#07132B] border-2 border-[#D4AF37] p-5 sm:p-6 shadow-xl relative overflow-hidden group hover:border-[#F1C40F] transition-all"
+                  className="rounded-xl bg-gradient-to-br from-[#0A1A13]/90 via-[#0E2E1E]/90 to-[#07132B] border-2 border-[#D4AF37] shadow-xl relative overflow-hidden group hover:border-[#F1C40F] transition-all flex flex-col"
                 >
+                  <TarjaPrazoCard estado={estadoCancelamentoNf} />
                   <div
                     className="absolute -right-12 -bottom-12 w-48 h-48 bg-[#D4AF37]/10 rounded-full blur-2xl pointer-events-none"
                     aria-hidden="true"
                   />
 
-                  <div className="relative z-10 space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-[#D4AF37] text-[#07132B] shadow-sm">
-                          Alerta Permanente
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-white/10 text-emerald-300 border border-emerald-400/30">
-                          IBS/CBS • 2027
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/30">
-                          Incluso na Gestão Fiscal & Tributária
+                  <div className="relative z-10 p-5 sm:p-6 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-[#D4AF37] text-[#07132B] shadow-sm">
+                            Alerta Permanente
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-white/10 text-emerald-300 border border-emerald-400/30">
+                            IBS/CBS • 2027
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/30">
+                            Incluso na Gestão Fiscal & Tributária
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono text-[#D4AF37] font-semibold">
+                          Atenção Imediata
                         </span>
                       </div>
-                      <span className="text-[11px] font-mono text-[#D4AF37] font-semibold">
-                        Atenção Imediata
-                      </span>
-                    </div>
 
-                    <div className="space-y-1.5">
-                      <h4 className="font-heading font-extrabold text-base sm:text-lg text-white leading-snug flex items-center gap-2">
-                        <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                        Cancelamento de NF no IBS/CBS: cuidado com o estorno
-                      </h4>
-                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
-                        A partir de janeiro (2027), ao cancelar uma nota fiscal no novo sistema o
-                        débito do IBS/CBS permanece devido — o cancelamento não apaga o imposto; o
-                        estorno correto é por NF-e de devolução, com crédito estornado na origem.
-                      </p>
-                    </div>
+                      <div className="space-y-1.5">
+                        <h4 className="font-heading font-extrabold text-base sm:text-lg text-white leading-snug flex items-center gap-2">
+                          <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                          Cancelamento de NF no IBS/CBS: cuidado com o estorno
+                        </h4>
+                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
+                          A partir de janeiro (2027), ao cancelar uma nota fiscal no novo sistema o
+                          débito do IBS/CBS permanece devido — o cancelamento não apaga o imposto; o
+                          estorno correto é por NF-e de devolução, com crédito estornado na origem.
+                        </p>
+                      </div>
 
-                    {/* Pontos explicativos do alerta */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-2">
-                      <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs">
-                        <span className="font-bold text-[#D4AF37] block mb-0.5">
-                          O que muda em janeiro (2027)
-                        </span>
-                        <span className="text-slate-300 text-[11px] leading-snug">
-                          Fato gerador na entrega/fornecimento (art. 10 LC 214/2025). Cancelar a NF
-                          não desfaz o débito no CG-IBS.
-                        </span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs">
-                        <span className="font-bold text-emerald-300 block mb-0.5">
-                          Estorno correto por NF-e de devolução
-                        </span>
-                        <span className="text-slate-300 text-[11px] leading-snug">
-                          Ajuste exige nota de devolução amarrada, com anulação recíproca de crédito
-                          e débito na escrita assistida.
-                        </span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs">
-                        <span className="font-bold text-rose-300 block mb-0.5">
-                          Risco de imposto e dupla tributação
-                        </span>
-                        <span className="text-slate-300 text-[11px] leading-snug">
-                          Cobrança indevida mantida, trava de caixa no split payment e sanção de 66%
-                          por crédito não estornado (art. 301).
-                        </span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs">
-                        <span className="font-bold text-amber-300 block mb-0.5">
-                          O que o serviço faz
-                        </span>
-                        <span className="text-slate-300 text-[11px] leading-snug">
-                          Audita NFs canceladas indevidamente, orienta emissão de estorno e recupera
-                          recolhimentos em duplicidade.
-                        </span>
+                      {/* Pontos explicativos do alerta */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-2">
+                        <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs">
+                          <span className="font-bold text-[#D4AF37] block mb-0.5">
+                            O que muda em janeiro (2027)
+                          </span>
+                          <span className="text-slate-300 text-[11px] leading-snug">
+                            Fato gerador na entrega/fornecimento (art. 10 LC 214/2025). Cancelar a
+                            NF não desfaz o débito no CG-IBS.
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs">
+                          <span className="font-bold text-emerald-300 block mb-0.5">
+                            Estorno correto por NF-e de devolução
+                          </span>
+                          <span className="text-slate-300 text-[11px] leading-snug">
+                            Ajuste exige nota de devolução amarrada, com anulação recíproca de
+                            crédito e débito na escrita assistida.
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-white/[0.04] border border-rose-300/20 text-xs">
+                          <span className="font-bold text-rose-300 block mb-0.5">
+                            Risco de imposto e dupla tributação
+                          </span>
+                          <span className="text-slate-300 text-[11px] leading-snug">
+                            Cobrança indevida mantida, trava de caixa no split payment e sanção de
+                            66% por crédito não estornado (art. 301).
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-xs">
+                          <span className="font-bold text-amber-300 block mb-0.5">
+                            O que o serviço faz
+                          </span>
+                          <span className="text-slate-300 text-[11px] leading-snug">
+                            Audita NFs canceladas indevidamente, orienta emissão de estorno e
+                            recupera recolhimentos em duplicidade.
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -986,10 +1000,10 @@ export default function Legislacao() {
 
                       <div className="flex flex-wrap items-center gap-2.5">
                         <Link
-                          to="/servicos/cancelamento-nf-ibs-cbs"
+                          to={estadoCancelamentoNf.ctaHref}
                           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-heading font-bold text-xs text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] transition-all shadow-sm"
                         >
-                          Conhecer o serviço →
+                          {estadoCancelamentoNf.ctaTexto}
                         </Link>
                         <Link
                           to="/recuperador-creditos?modulo=outros_tributos&tese=tese_cancelamento_nf_devolucoes_estornos"
@@ -1006,34 +1020,37 @@ export default function Legislacao() {
                 {/* (1) Janela de opção do Simples Nacional — badge "Prazo • 30/10" */}
                 <div
                   data-testid="card-radar-janela-simples"
-                  className="rounded-xl bg-gradient-to-br from-[#1c1204]/90 via-[#2a1b07]/80 to-[#07132B] border border-amber-500/50 hover:border-amber-400 p-5 sm:p-6 shadow-lg relative overflow-hidden transition-all"
+                  className="rounded-xl bg-gradient-to-br from-[#1c1204]/90 via-[#2a1b07]/80 to-[#07132B] border border-amber-500/50 hover:border-amber-400 shadow-lg relative overflow-hidden transition-all flex flex-col"
                 >
-                  <div className="relative z-10 space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-rose-500 text-white shadow-sm flex items-center gap-1">
-                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                          Prazo • 30/10
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-400/15 text-amber-300 border border-amber-400/30">
-                          Simples Nacional • Híbrido
+                  <TarjaPrazoCard estado={estadoJanelaSimples} />
+                  <div className="relative z-10 p-5 sm:p-6 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-rose-500 text-white shadow-sm flex items-center gap-1">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                            Prazo • 30/10
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-400/15 text-amber-300 border border-amber-400/30">
+                            Simples Nacional • Híbrido
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono text-rose-400 font-semibold">
+                          Urgência Máxima
                         </span>
                       </div>
-                      <span className="text-[11px] font-mono text-rose-400 font-semibold">
-                        Urgência Máxima
-                      </span>
-                    </div>
 
-                    <div className="space-y-1.5">
-                      <h4 className="font-heading font-bold text-base sm:text-lg text-white leading-snug">
-                        Janela de opção da regra híbrida do Simples Nacional
-                      </h4>
-                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
-                        A janela de opção pela regra híbrida de transição do Simples Nacional
-                        encerra em 30/10; quem não decidir agora pode perder a janela para efeito no
-                        1º semestre de 2027; a decisão (optar ou não pelo híbrido) afeta créditos e
-                        preços por anos.
-                      </p>
+                      <div className="space-y-1.5">
+                        <h4 className="font-heading font-bold text-base sm:text-lg text-white leading-snug">
+                          Janela de opção da regra híbrida do Simples Nacional
+                        </h4>
+                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
+                          A janela de opção pela regra híbrida de transição do Simples Nacional
+                          encerra em 30/10; quem não decidir agora pode perder a janela para efeito
+                          no 1º semestre de 2027; a decisão (optar ou não pelo híbrido) afeta
+                          créditos e preços por anos.
+                        </p>
+                      </div>
                     </div>
 
                     <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -1042,10 +1059,10 @@ export default function Legislacao() {
                         <span>Efeito 1º sem/2027 • Prazo fatal 30/10/2026</span>
                       </div>
                       <Link
-                        to="/diagnostico-transicao"
+                        to={estadoJanelaSimples.ctaHref}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-heading font-bold text-xs text-[#07132B] bg-amber-400 hover:bg-amber-300 transition-all shadow-sm"
                       >
-                        Analisar minha transição →
+                        {estadoJanelaSimples.ctaTexto}
                       </Link>
                     </div>
                   </div>
@@ -1054,32 +1071,35 @@ export default function Legislacao() {
                 {/* (2) Fase de teste 2026 do IBS/CBS — tag "IBS/CBS • 2026" */}
                 <div
                   data-testid="card-radar-fase-teste-2026"
-                  className="rounded-xl bg-gradient-to-br from-[#071a2e]/90 via-[#0a2542]/80 to-[#07132B] border border-cyan-500/40 hover:border-cyan-400 p-5 sm:p-6 shadow-lg relative overflow-hidden transition-all"
+                  className="rounded-xl bg-gradient-to-br from-[#071a2e]/90 via-[#0a2542]/80 to-[#07132B] border border-cyan-500/40 hover:border-cyan-400 shadow-lg relative overflow-hidden transition-all flex flex-col"
                 >
-                  <div className="relative z-10 space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-cyan-400 text-[#07132B] shadow-sm">
-                          Alerta Estratégico
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-white/10 text-cyan-300 border border-cyan-400/30">
-                          IBS/CBS • 2026
+                  <TarjaPrazoCard estado={estadoFaseTeste2026} />
+                  <div className="relative z-10 p-5 sm:p-6 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-cyan-400 text-[#07132B] shadow-sm">
+                            Alerta Estratégico
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-white/10 text-cyan-300 border border-cyan-400/30">
+                            IBS/CBS • 2026
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono text-cyan-300 font-semibold">
+                          Homologação sem Risco
                         </span>
                       </div>
-                      <span className="text-[11px] font-mono text-cyan-300 font-semibold">
-                        Homologação sem Risco
-                      </span>
-                    </div>
 
-                    <div className="space-y-1.5">
-                      <h4 className="font-heading font-bold text-base sm:text-lg text-white leading-snug">
-                        Fase de teste 2026 do IBS/CBS com alíquota zero
-                      </h4>
-                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
-                        Em 2026 o IBS/CBS entra em fase de teste com alíquota zero; é o ano para
-                        ajustar emissores, cadastro de clientes e apuração sem risco, porque em
-                        janeiro de 2027 o imposto passa a ser real.
-                      </p>
+                      <div className="space-y-1.5">
+                        <h4 className="font-heading font-bold text-base sm:text-lg text-white leading-snug">
+                          Fase de teste 2026 do IBS/CBS com alíquota zero
+                        </h4>
+                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
+                          Em 2026 o IBS/CBS entra em fase de teste com alíquota zero; é o ano para
+                          ajustar emissores, cadastro de clientes e apuração sem risco, porque em
+                          janeiro de 2027 o imposto passa a ser real.
+                        </p>
+                      </div>
                     </div>
 
                     <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -1088,10 +1108,10 @@ export default function Legislacao() {
                         <span>Alíquota teste 0% • Vigência real janeiro/2027</span>
                       </div>
                       <Link
-                        to="/calculadora-ibs-cbs"
+                        to={estadoFaseTeste2026.ctaHref}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-heading font-bold text-xs text-[#07132B] bg-cyan-400 hover:bg-cyan-300 transition-all shadow-sm"
                       >
-                        Testar na Calculadora →
+                        {estadoFaseTeste2026.ctaTexto}
                       </Link>
                     </div>
                   </div>
@@ -1100,32 +1120,35 @@ export default function Legislacao() {
                 {/* (3) Imposto Seletivo a partir de 2027 — tag "IS • 2027" */}
                 <div
                   data-testid="card-radar-imposto-seletivo"
-                  className="rounded-xl bg-gradient-to-br from-[#1f0b18]/90 via-[#2e1024]/80 to-[#07132B] border border-fuchsia-500/40 hover:border-fuchsia-400 p-5 sm:p-6 shadow-lg relative overflow-hidden transition-all"
+                  className="rounded-xl bg-gradient-to-br from-[#1f0b18]/90 via-[#2e1024]/80 to-[#07132B] border border-fuchsia-500/40 hover:border-fuchsia-400 shadow-lg relative overflow-hidden transition-all flex flex-col"
                 >
-                  <div className="relative z-10 space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-fuchsia-500 text-white shadow-sm">
-                          Setores Específicos
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-white/10 text-fuchsia-300 border border-fuchsia-400/30">
-                          IS • 2027
+                  <TarjaPrazoCard estado={estadoImpostoSeletivo} />
+                  <div className="relative z-10 p-5 sm:p-6 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-fuchsia-500 text-white shadow-sm">
+                            Setores Específicos
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-white/10 text-fuchsia-300 border border-fuchsia-400/30">
+                            IS • 2027
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono text-fuchsia-300 font-semibold">
+                          Revisão de Precificação
                         </span>
                       </div>
-                      <span className="text-[11px] font-mono text-fuchsia-300 font-semibold">
-                        Revisão de Precificação
-                      </span>
-                    </div>
 
-                    <div className="space-y-1.5">
-                      <h4 className="font-heading font-bold text-base sm:text-lg text-white leading-snug">
-                        Imposto Seletivo ("imposto do pecado") a partir de 2027
-                      </h4>
-                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
-                        O Imposto Seletivo ("imposto do pecado") incide desde 2027 sobre bebidas,
-                        cigarros, veículos e bens de luxo; empresas desses setores precisam revisar
-                        precificação e enquadramento.
-                      </p>
+                      <div className="space-y-1.5">
+                        <h4 className="font-heading font-bold text-base sm:text-lg text-white leading-snug">
+                          Imposto Seletivo ("imposto do pecado") a partir de 2027
+                        </h4>
+                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
+                          O Imposto Seletivo ("imposto do pecado") incide desde 2027 sobre bebidas,
+                          cigarros, veículos e bens de luxo; empresas desses setores precisam
+                          revisar precificação e enquadramento.
+                        </p>
+                      </div>
                     </div>
 
                     <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -1134,10 +1157,10 @@ export default function Legislacao() {
                         <span>Bebidas, cigarros, veículos, minerais e bens de luxo</span>
                       </div>
                       <Link
-                        to="/reforma-tributaria"
+                        to={estadoImpostoSeletivo.ctaHref}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-heading font-bold text-xs text-white bg-fuchsia-600 hover:bg-fuchsia-500 transition-all shadow-sm"
                       >
-                        Ver Imposto Seletivo →
+                        {estadoImpostoSeletivo.ctaTexto}
                       </Link>
                     </div>
                   </div>
@@ -1146,32 +1169,35 @@ export default function Legislacao() {
                 {/* (4) Crédito parcial de fornecedores do Simples em 2027 — tag "Créditos • 2027" */}
                 <div
                   data-testid="card-radar-credito-parcial-simples"
-                  className="rounded-xl bg-gradient-to-br from-[#0c1f17]/90 via-[#133024]/80 to-[#07132B] border border-emerald-500/40 hover:border-emerald-400 p-5 sm:p-6 shadow-lg relative overflow-hidden transition-all"
+                  className="rounded-xl bg-gradient-to-br from-[#0c1f17]/90 via-[#133024]/80 to-[#07132B] border border-emerald-500/40 hover:border-emerald-400 shadow-lg relative overflow-hidden transition-all flex flex-col"
                 >
-                  <div className="relative z-10 space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-emerald-400 text-[#07132B] shadow-sm">
-                          Cadeia de Compras
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-white/10 text-emerald-300 border border-emerald-400/30">
-                          Créditos • 2027
+                  <TarjaPrazoCard estado={estadoCreditoParcialSimples} />
+                  <div className="relative z-10 p-5 sm:p-6 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-emerald-400 text-[#07132B] shadow-sm">
+                            Cadeia de Compras
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-white/10 text-emerald-300 border border-emerald-400/30">
+                            Créditos • 2027
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono text-emerald-300 font-semibold">
+                          Impacto na Margem
                         </span>
                       </div>
-                      <span className="text-[11px] font-mono text-emerald-300 font-semibold">
-                        Impacto na Margem
-                      </span>
-                    </div>
 
-                    <div className="space-y-1.5">
-                      <h4 className="font-heading font-bold text-base sm:text-lg text-white leading-snug">
-                        Crédito parcial de fornecedores do Simples Nacional em 2027
-                      </h4>
-                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
-                        A partir de 2027, notas de fornecedores do Simples Nacional geram crédito de
-                        IBS/CBS apenas parcial (50%); mapear quem é Simples na cadeia de
-                        fornecedores passou a valer margem.
-                      </p>
+                      <div className="space-y-1.5">
+                        <h4 className="font-heading font-bold text-base sm:text-lg text-white leading-snug">
+                          Crédito parcial de fornecedores do Simples Nacional em 2027
+                        </h4>
+                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
+                          A partir de 2027, notas de fornecedores do Simples Nacional geram crédito
+                          de IBS/CBS apenas parcial (50%); mapear quem é Simples na cadeia de
+                          fornecedores passou a valer margem.
+                        </p>
+                      </div>
                     </div>
 
                     <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -1180,10 +1206,10 @@ export default function Legislacao() {
                         <span>Apropriação parcial (50%) • Ponderação de compras B2B</span>
                       </div>
                       <Link
-                        to="/calculadora-ibs-cbs"
+                        to={estadoCreditoParcialSimples.ctaHref}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-heading font-bold text-xs text-[#07132B] bg-emerald-400 hover:bg-emerald-300 transition-all shadow-sm"
                       >
-                        Calcular meu crédito →
+                        {estadoCreditoParcialSimples.ctaTexto}
                       </Link>
                     </div>
                   </div>
