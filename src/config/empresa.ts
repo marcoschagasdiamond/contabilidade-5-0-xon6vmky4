@@ -3,9 +3,9 @@
  * Ponto único de verdade para canais de contato, telefone, e-mail e links do WhatsApp.
  */
 
-export const WHATSAPP_EMPRESA_NUMERO = '551140028922'
-export const TELEFONE_EMPRESA_FORMATADO = '+55 (11) 4002-8922'
-export const TELEFONE_EMPRESA_LINK = 'tel:+551140028922'
+export const WHATSAPP_EMPRESA_NUMERO = '5541974006290'
+export const TELEFONE_EMPRESA_FORMATADO = '+55 (41) 97400-6290'
+export const TELEFONE_EMPRESA_LINK = 'tel:+5541974006290'
 export const EMAIL_EMPRESA_CONTATO = 'contato@contabilidade5.com.br'
 export const EMAIL_EMPRESA_LINK = 'mailto:contato@contabilidade5.com.br'
 

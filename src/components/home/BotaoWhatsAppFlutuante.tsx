@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { buildWhatsAppLink, WHATSAPP_MENSAGEM_PADRAO_HOME } from '@/config/empresa'
+import { useAuth } from '@/context/AuthContext'
+import { registrarLeadCliqueWhatsApp } from '@/services/leadWhatsApp'
 
 interface BotaoWhatsAppFlutuanteProps {
   mensagem?: string
@@ -40,13 +42,23 @@ export function BotaoWhatsAppFlutuante({
   mensagem = WHATSAPP_MENSAGEM_PADRAO_HOME,
   className = '',
 }: BotaoWhatsAppFlutuanteProps) {
+  const { isAuthenticated } = useAuth()
   const [isHovered, setIsHovered] = useState(false)
   const href = buildWhatsAppLink(mensagem)
+
+  const handleClick = () => {
+    // Fire-and-forget: não aguarda nem bloqueia o redirecionamento
+    registrarLeadCliqueWhatsApp({
+      origem: 'whatsapp-home',
+      mensagem,
+      isAuthenticated,
+    }).catch(() => {})
+  }
 
   return (
     <div
       data-testid="whatsapp-floating-container"
-      className={`fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 flex items-center gap-3 animate-fade-in pointer-events-auto ${className}`}
+      className={`fixed bottom-24 right-5 sm:bottom-28 sm:right-6 z-40 flex items-center gap-3 animate-fade-in pointer-events-auto ${className}`}
     >
       {/* Balão / Tooltip lateral visível no hover ou foco em desktop/tablet */}
       <div
@@ -65,6 +77,7 @@ export function BotaoWhatsAppFlutuante({
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Falar com um especialista no WhatsApp"
+        onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onFocus={() => setIsHovered(true)}

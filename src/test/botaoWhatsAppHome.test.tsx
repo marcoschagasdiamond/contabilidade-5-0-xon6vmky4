@@ -24,12 +24,14 @@ import * as onboardingHook from '@/hooks/useOnboarding'
 describe('WhatsApp — Configuração e Botão Flutuante', () => {
   it('buildWhatsAppLink gera URL válida para wa.me com número e mensagem pré-preenchida', () => {
     const url = buildWhatsAppLink()
+    expect(url).toBe(
+      `https://wa.me/5541974006290?text=${encodeURIComponent(WHATSAPP_MENSAGEM_PADRAO_HOME)}`,
+    )
     expect(url).toContain(`https://wa.me/${WHATSAPP_EMPRESA_NUMERO}`)
-    expect(url).toContain(encodeURIComponent(WHATSAPP_MENSAGEM_PADRAO_HOME))
 
     const urlCustom = buildWhatsAppLink('Mensagem de teste customizada')
     expect(urlCustom).toBe(
-      `https://wa.me/${WHATSAPP_EMPRESA_NUMERO}?text=${encodeURIComponent('Mensagem de teste customizada')}`,
+      `https://wa.me/5541974006290?text=${encodeURIComponent('Mensagem de teste customizada')}`,
     )
   })
 

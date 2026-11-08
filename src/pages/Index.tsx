@@ -24,6 +24,7 @@ import { useOnboarding } from '@/hooks/useOnboarding'
 import { WizardPrimeirosPassos } from '@/components/onboarding/WizardPrimeirosPassos'
 import { ChecklistComeceAqui } from '@/components/onboarding/ChecklistComeceAqui'
 import { BotaoWhatsAppFlutuante } from '@/components/home/BotaoWhatsAppFlutuante'
+import WidgetSimulacaoExpressa from '@/components/home/WidgetSimulacaoExpressa'
 
 export default function Index() {
   const navigate = useNavigate()
@@ -207,94 +208,102 @@ export default function Index() {
         <div className="absolute bottom-10 right-0 w-96 h-96 bg-[#145A32]/40 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 w-full">
-          <div className="max-w-3xl flex flex-col items-start">
-            {/* Badge com efeito de brilho */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#2ECC71]/40 bg-[#145A32]/50 text-xs sm:text-sm font-medium text-emerald-300 mb-6 backdrop-blur-md shadow-sm relative overflow-hidden group">
-              <span className="w-2 h-2 rounded-full bg-[#2ECC71] animate-ping" />
-              <Sparkles className="w-3.5 h-3.5 text-[#2ECC71]" />
-              <span className="relative z-10">Contabilidade 5.0 para o seu negócio digital</span>
-              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+            {/* Coluna Esquerda: Texto Hero + Botões + Links + Barra de Confiança */}
+            <div className="lg:col-span-7 flex flex-col items-start">
+              {/* Badge com efeito de brilho */}
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#2ECC71]/40 bg-[#145A32]/50 text-xs sm:text-sm font-medium text-emerald-300 mb-6 backdrop-blur-md shadow-sm relative overflow-hidden group">
+                <span className="w-2 h-2 rounded-full bg-[#2ECC71] animate-ping" />
+                <Sparkles className="w-3.5 h-3.5 text-[#2ECC71]" />
+                <span className="relative z-10">Contabilidade 5.0 para o seu negócio digital</span>
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              </div>
+
+              {/* H1 */}
+              <h1 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-[46px] leading-[1.15] text-white tracking-tight mb-6">
+                Contabilidade que{' '}
+                <span className="text-[#2ECC71] underline decoration-[#2ECC71]/30 underline-offset-4">
+                  impulsiona
+                </span>{' '}
+                a era{' '}
+                <span className="text-[#2ECC71] underline decoration-[#2ECC71]/30 underline-offset-4">
+                  digital
+                </span>{' '}
+                do seu negócio
+              </h1>
+
+              {/* Subtítulo */}
+              <p className="text-base sm:text-lg text-slate-300 font-normal leading-relaxed mb-8 max-w-2xl">
+                Soluções completas em gestão contábil, fiscal e trabalhista com tecnologia avançada,
+                automação e atendimento humano de verdade.
+              </p>
+
+              {/* Botões de Ação */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-6">
+                <button
+                  type="button"
+                  onClick={() => scrollToSection('servicos')}
+                  className="px-7 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.5)] transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center text-center cursor-pointer"
+                >
+                  Conhecer Serviços
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => scrollToSection('contato')}
+                  className="px-7 py-4 rounded-xl font-heading font-medium text-base text-white border border-white/30 hover:border-white hover:bg-white hover:text-[#145A32] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
+                >
+                  Falar com um Especialista
+                </button>
+              </div>
+
+              {/* Chamada sutil para a série do blog e calculadora */}
+              <div className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+                <span className="text-[#D4AF37] font-semibold flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  Reforma 2026:
+                </span>
+                <Link
+                  to="/blog/apresentamos-a-calculadora-ibs-cbs-simule-o-impacto"
+                  className="hover:text-white underline underline-offset-2 decoration-[#D4AF37]/50"
+                >
+                  Conheça a Calculadora IBS/CBS no Blog
+                </Link>
+                <span>•</span>
+                <Link
+                  to="/blog"
+                  className="text-emerald-300 hover:text-white underline underline-offset-2"
+                >
+                  Ver série completa (5 partes) →
+                </Link>
+              </div>
+
+              {/* Barra de Confiança */}
+              <div className="pt-6 border-t border-white/10 w-full flex flex-wrap items-center gap-x-6 gap-y-3 text-xs sm:text-sm text-slate-300">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
+                  </div>
+                  <span>Proteção de dados LGPD</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
+                  </div>
+                  <span>Certificação Digital</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
+                  </div>
+                  <span>Atendimento em até 24h</span>
+                </div>
+              </div>
             </div>
 
-            {/* H1 */}
-            <h1 className="font-heading font-extrabold text-3xl sm:text-4xl lg:text-[48px] leading-[1.15] text-white tracking-tight mb-6">
-              Contabilidade que{' '}
-              <span className="text-[#2ECC71] underline decoration-[#2ECC71]/30 underline-offset-4">
-                impulsiona
-              </span>{' '}
-              a era{' '}
-              <span className="text-[#2ECC71] underline decoration-[#2ECC71]/30 underline-offset-4">
-                digital
-              </span>{' '}
-              do seu negócio
-            </h1>
-
-            {/* Subtítulo */}
-            <p className="text-base sm:text-lg text-slate-300 font-normal leading-relaxed mb-8 max-w-2xl">
-              Soluções completas em gestão contábil, fiscal e trabalhista com tecnologia avançada,
-              automação e atendimento humano de verdade.
-            </p>
-
-            {/* Botões de Ação */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-6">
-              <button
-                type="button"
-                onClick={() => scrollToSection('servicos')}
-                className="px-7 py-4 rounded-xl font-heading font-bold text-base text-[#07132B] bg-[#D4AF37] hover:bg-[#c49f2e] shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_10px_30px_rgba(212,175,55,0.5)] transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center text-center cursor-pointer"
-              >
-                Conhecer Serviços
-              </button>
-
-              <button
-                type="button"
-                onClick={() => scrollToSection('contato')}
-                className="px-7 py-4 rounded-xl font-heading font-medium text-base text-white border border-white/30 hover:border-white hover:bg-white hover:text-[#145A32] transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
-              >
-                Falar com um Especialista
-              </button>
-            </div>
-
-            {/* Chamada sutil para a série do blog e calculadora */}
-            <div className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-300">
-              <span className="text-[#D4AF37] font-semibold flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-                Reforma 2026:
-              </span>
-              <Link
-                to="/blog/apresentamos-a-calculadora-ibs-cbs-simule-o-impacto"
-                className="hover:text-white underline underline-offset-2 decoration-[#D4AF37]/50"
-              >
-                Conheça a Calculadora IBS/CBS no Blog
-              </Link>
-              <span>•</span>
-              <Link
-                to="/blog"
-                className="text-emerald-300 hover:text-white underline underline-offset-2"
-              >
-                Ver série completa (5 partes) →
-              </Link>
-            </div>
-
-            {/* Barra de Confiança */}
-            <div className="pt-6 border-t border-white/10 w-full flex flex-wrap items-center gap-x-6 gap-y-3 text-xs sm:text-sm text-slate-300">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
-                </div>
-                <span>Proteção de dados LGPD</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
-                </div>
-                <span>Certificação Digital</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-[#2ECC71]/20 flex items-center justify-center">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#2ECC71]" />
-                </div>
-                <span>Atendimento em até 24h</span>
-              </div>
+            {/* Coluna Direita: Widget Simulação Expressa */}
+            <div className="lg:col-span-5 w-full">
+              <WidgetSimulacaoExpressa />
             </div>
           </div>
         </div>

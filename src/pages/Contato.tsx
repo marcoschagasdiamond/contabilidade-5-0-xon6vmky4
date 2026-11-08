@@ -67,10 +67,10 @@ export default function Contato() {
                       <h3 className="font-semibold text-slate-900 text-sm">Telefone & WhatsApp</h3>
                       <p className="text-sm text-slate-600 mt-0.5">
                         <a
-                          href="tel:+551140028922"
+                          href="tel:+5541974006290"
                           className="hover:text-[#145A32] font-medium transition-colors"
                         >
-                          +55 (11) 4002-8922
+                          +55 (41) 97400-6290
                         </a>
                       </p>
                       <p className="text-xs text-slate-500">Atendimento imediato via WhatsApp</p>
