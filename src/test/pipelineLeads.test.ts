@@ -3,10 +3,16 @@ import {
   extrairScoreLead,
   extrairFonteLead,
   extrairEstagioPipelineLead,
+  extrairValorPotencialLead,
+  formatarValorCompacto,
+  calcularDiasParado,
+  calcularTempoPrimeiroContatoHoras,
+  consolidarMetricasPipeline,
   calcularLeadQuenteEsquecido,
   processarLeadParaPipeline,
 } from '@/lib/pipelineLeadUtils'
 import type { LeadRecord } from '@/services/leads'
+import type { LeadProcessado } from '@/types/pipelineLead'
 
 describe('Pipeline de Leads - Utilitários e Lógica de Negócio', () => {
   it('extrai score e fonte de lead vindo de whatsapp-home', () => {
@@ -128,5 +134,137 @@ describe('Pipeline de Leads - Utilitários e Lógica de Negócio', () => {
     expect(processado.estagio_pipeline).toBe('novo')
     expect(processado.interacoes.length).toBe(2) // origem + interacao registrada
     expect(processado.score).toBeGreaterThanOrEqual(60)
+    expect(processado.valorPotencial).toBeGreaterThan(0)
+    expect(typeof processado.diasParado).toBe('number')
+  })
+
+  it('extrai valor potencial a partir de campos e formatos variados de texto', () => {
+    // 1. Campo numérico direto
+    expect(extrairValorPotencialLead({ faturamento_estimado: 500_000 } as any)).toBe(500_000)
+    expect(extrairValorPotencialLead({ faturamento: 1_200_000 } as any)).toBe(1_200_000)
+
+    // 2. Texto com milhões
+    expect(
+      extrairValorPotencialLead({
+        mensagem: 'Nossa empresa fatura cerca de R$ 2,5 mi por ano.',
+      }),
+    ).toBe(2_500_000)
+
+    // 3. Texto com mil
+    expect(
+      extrairValorPotencialLead({
+        mensagem: 'Previsão de faturamento mensal de R$ 350 mil.',
+      }),
+    ).toBe(350_000)
+
+    // 4. Estimativa por funcionários
+    expect(extrairValorPotencialLead({ funcionarios: '1–5' })).toBe(240_000)
+    expect(extrairValorPotencialLead({ funcionarios: '51–200' })).toBe(4_800_000)
+  })
+
+  it('formata valor compacto em R$ corretamente', () => {
+    expect(formatarValorCompacto(0)).toBe('R$ 0')
+    expect(formatarValorCompacto(80_000)).toBe('R$ 80 mil')
+    expect(formatarValorCompacto(1_500_000)).toBe('R$ 1,5 mi')
+    expect(formatarValorCompacto(2_000_000_000)).toBe('R$ 2 bi')
+  })
+
+  it('calcula tempo até o primeiro contato em horas a partir de interações reais', () => {
+    const criacao = '2026-11-01T10:00:00.000Z'
+    const interacoes = [
+      {
+        id: 'origem_123',
+        data: criacao,
+        tipo: 'sistema' as const,
+        descricao: 'Origem',
+      },
+      {
+        id: 'int_real_1',
+        data: '2026-11-01T14:30:00.000Z', // 4,5h depois
+        tipo: 'whatsapp' as const,
+        descricao: 'Primeiro contato por WhatsApp',
+      },
+    ]
+
+    const horas = calcularTempoPrimeiroContatoHoras(criacao, interacoes)
+    expect(horas).toBe(4.5)
+  })
+
+  it('consolida métricas completas do CRM (volume, conversão, tempo de resposta, quentes esfriando)', () => {
+    const agora = new Date()
+    const tresDiasAtras = new Date(agora.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString()
+    const cincoDiasAtras = new Date(agora.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString()
+
+    const mockLeads: LeadProcessado[] = [
+      {
+        id: 'lead_1',
+        nome: 'Lead Novo 1',
+        empresa: 'Empresa A',
+        email: 'a@a.com',
+        telefone: '(11) 99999-0001',
+        segmento: 'Serviços',
+        funcionarios: '1–5',
+        estagio_pipeline: 'novo',
+        score: 75,
+        fonte: 'WhatsApp',
+        interacoes: [],
+        isQuenteEsquecido: true,
+        diasSemInteracao: 3,
+        diasParado: 3,
+        valorPotencial: 300_000,
+        created: tresDiasAtras,
+      },
+      {
+        id: 'lead_2',
+        nome: 'Lead Contato 2',
+        empresa: 'Empresa B',
+        email: 'b@b.com',
+        telefone: '(11) 99999-0002',
+        segmento: 'Comércio',
+        funcionarios: '6–20',
+        estagio_pipeline: 'contato_feito',
+        score: 45,
+        fonte: 'Home',
+        interacoes: [],
+        isQuenteEsquecido: false,
+        diasSemInteracao: 1,
+        diasParado: 1,
+        valorPotencial: 720_000,
+        created: cincoDiasAtras,
+        primeiroContatoEmHoras: 2.0,
+      },
+      {
+        id: 'lead_3',
+        nome: 'Cliente Convertido',
+        empresa: 'Empresa C',
+        email: 'c@c.com',
+        telefone: '(11) 99999-0003',
+        segmento: 'Tecnologia',
+        funcionarios: '21–50',
+        estagio_pipeline: 'cliente',
+        score: 90,
+        fonte: 'Indicação',
+        interacoes: [],
+        isQuenteEsquecido: false,
+        diasSemInteracao: 0,
+        diasParado: 0,
+        valorPotencial: 1_800_000,
+        created: cincoDiasAtras,
+        primeiroContatoEmHoras: 1.0,
+      },
+    ]
+
+    const metricas = consolidarMetricasPipeline(mockLeads)
+
+    expect(metricas.totalLeads).toBe(3)
+    expect(metricas.totalNovos).toBe(1)
+    expect(metricas.totalConvertidos).toBe(1)
+    expect(metricas.taxaConversaoNovoParaCliente).toBeCloseTo(33.3, 1)
+    expect(metricas.leadsQuentesEsfriando).toBe(1)
+    expect(metricas.valorPotencialTotal).toBe(2_820_000)
+    expect(metricas.valorPotencialPorEstagio.novo).toBe(300_000)
+    expect(metricas.valorPotencialPorEstagio.cliente).toBe(1_800_000)
+    expect(metricas.tempoMedioPrimeiroContatoHoras).toBe(1.5)
+    expect(metricas.tempoMedioPrimeiroContatoFormatado).toBe('1,5h')
   })
 })

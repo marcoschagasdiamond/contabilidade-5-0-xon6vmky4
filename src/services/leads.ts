@@ -12,6 +12,8 @@ export interface Lead {
   estagio_pipeline?: 'novo' | 'contato_feito' | 'reuniao' | 'cliente' | string
   score?: number
   fonte?: string
+  faturamento_estimado?: number
+  faturamento?: number
   interacoes_json?: any
   ultima_interacao?: string
   segmento:

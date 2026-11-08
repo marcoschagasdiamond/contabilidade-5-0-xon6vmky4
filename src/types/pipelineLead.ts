@@ -78,4 +78,21 @@ export interface LeadProcessado {
   ultima_interacao?: string
   isQuenteEsquecido: boolean
   diasSemInteracao: number
+  diasParado: number
+  valorPotencial: number
+  primeiroContatoEmHoras?: number
+}
+
+export interface MetricasPipelineCrm {
+  totalLeads: number
+  leads7Dias: number
+  leads30Dias: number
+  taxaConversaoNovoParaCliente: number
+  totalConvertidos: number
+  totalNovos: number
+  tempoMedioPrimeiroContatoHoras: number
+  tempoMedioPrimeiroContatoFormatado: string
+  leadsQuentesEsfriando: number
+  valorPotencialTotal: number
+  valorPotencialPorEstagio: Record<EstagioPipelineLead, number>
 }

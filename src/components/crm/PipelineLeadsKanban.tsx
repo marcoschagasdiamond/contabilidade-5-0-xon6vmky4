@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import type { EstagioPipelineLead, LeadProcessado } from '@/types/pipelineLead'
 import { ESTAGIOS_PIPELINE_LEAD } from '@/types/pipelineLead'
+import { formatarValorCompacto } from '@/lib/pipelineLeadUtils'
 import { AlertaLeadsQuentes } from './AlertaLeadsQuentes'
 import { ModalFichaLeadPipeline } from './ModalFichaLeadPipeline'
 import { Button } from '@/components/ui/button'
@@ -27,32 +28,59 @@ export function PipelineLeadsKanban({
   const [leadSelecionado, setLeadSelecionado] = useState<LeadProcessado | null>(null)
   const [modalAberto, setModalAberto] = useState(false)
 
-  // Filtragem
-  const leadsFiltrados = leads.filter((lead) => {
-    if (filtroQuente && !lead.isQuenteEsquecido) return false
-    if (filtroFonte !== 'todas' && !lead.fonte.toLowerCase().includes(filtroFonte.toLowerCase())) {
-      return false
-    }
-    if (busca.trim()) {
-      const q = busca.toLowerCase()
-      const matchNome = lead.nome.toLowerCase().includes(q)
-      const matchEmpresa = lead.empresa.toLowerCase().includes(q)
-      const matchEmail = lead.email.toLowerCase().includes(q)
-      const matchTel = lead.telefone.includes(q)
-      const matchCnpj = lead.cnpj ? lead.cnpj.includes(q) : false
-      if (!matchNome && !matchEmpresa && !matchEmail && !matchTel && !matchCnpj) return false
-    }
-    return true
-  })
+  // Filtragem e agrupamento com ordenação estrita por SCORE (maior para o menor)
+  const colunas = useMemo(() => {
+    const filtrados = leads.filter((lead) => {
+      if (filtroQuente && !lead.isQuenteEsquecido) return false
+      if (
+        filtroFonte !== 'todas' &&
+        !lead.fonte.toLowerCase().includes(filtroFonte.toLowerCase())
+      ) {
+        return false
+      }
+      if (busca.trim()) {
+        const q = busca.toLowerCase()
+        const matchNome = lead.nome.toLowerCase().includes(q)
+        const matchEmpresa = lead.empresa.toLowerCase().includes(q)
+        const matchEmail = lead.email.toLowerCase().includes(q)
+        const matchTel = lead.telefone.includes(q)
+        const matchCnpj = lead.cnpj ? lead.cnpj.includes(q) : false
+        if (!matchNome && !matchEmpresa && !matchEmail && !matchTel && !matchCnpj) return false
+      }
+      return true
+    })
 
-  // Agrupamento por coluna
-  const colunas = ESTAGIOS_PIPELINE_LEAD.map((estagio) => {
-    const leadsColuna = leadsFiltrados.filter((l) => l.estagio_pipeline === estagio.id)
-    return {
-      ...estagio,
-      leads: leadsColuna,
-    }
-  })
+    return ESTAGIOS_PIPELINE_LEAD.map((estagio) => {
+      const leadsDaColuna = filtrados
+        .filter((l) => l.estagio_pipeline === estagio.id)
+        // Ordenação por score do maior para o menor (se empatar, desempata pela data mais recente)
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score
+          const tA = a.created ? new Date(a.created).getTime() : 0
+          const tB = b.created ? new Date(b.created).getTime() : 0
+          return tB - tA
+        })
+
+      const valorPotencialEstagio = leadsDaColuna.reduce(
+        (acc, item) => acc + (item.valorPotencial || 0),
+        0,
+      )
+
+      return {
+        ...estagio,
+        leads: leadsDaColuna,
+        valorPotencial: valorPotencialEstagio,
+      }
+    })
+  }, [leads, filtroQuente, filtroFonte, busca])
+
+  const totalLeadsFiltrados = useMemo(() => {
+    return colunas.reduce((acc, c) => acc + c.leads.length, 0)
+  }, [colunas])
+
+  const valorPotencialGlobalVisivel = useMemo(() => {
+    return colunas.reduce((acc, c) => acc + c.valorPotencial, 0)
+  }, [colunas])
 
   const abrirFicha = (lead: LeadProcessado) => {
     setLeadSelecionado(lead)
@@ -122,7 +150,13 @@ export function PipelineLeadsKanban({
           <span className="text-xs font-bold text-slate-500">
             Total:{' '}
             <strong className="text-slate-800">
-              {leadsFiltrados.length} / {leads.length}
+              {totalLeadsFiltrados} / {leads.length}
+            </strong>
+          </span>
+          <span className="hidden sm:inline-block text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+            Pipeline:{' '}
+            <strong className="text-[#07132B]">
+              {formatarValorCompacto(valorPotencialGlobalVisivel)}
             </strong>
           </span>
           <Button
@@ -145,24 +179,35 @@ export function PipelineLeadsKanban({
               key={col.id}
               className="bg-slate-50/80 rounded-3xl p-3 border border-slate-200/80 flex flex-col min-h-[500px]"
             >
-              {/* CABEÇALHO DA COLUNA */}
+              {/* CABEÇALHO DA COLUNA COM VALOR POTENCIAL */}
               <div
-                className={`p-3 rounded-2xl border ${col.corHeaderBg} mb-3 flex items-center justify-between shadow-2xs`}
+                className={`p-3 rounded-2xl border ${col.corHeaderBg} mb-3 flex flex-col gap-2 shadow-2xs`}
               >
-                <div>
-                  <h3 className="font-heading font-extrabold text-xs sm:text-sm tracking-tight">
-                    {col.rotulo}
-                  </h3>
-                  <p className="text-[10px] opacity-80 leading-tight">{col.subtitulo}</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-heading font-extrabold text-xs sm:text-sm tracking-tight">
+                      {col.rotulo}
+                    </h3>
+                    <p className="text-[10px] opacity-80 leading-tight">{col.subtitulo}</p>
+                  </div>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-black border ${col.corBadge}`}
+                  >
+                    {col.leads.length}
+                  </span>
                 </div>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-black border ${col.corBadge}`}
-                >
-                  {col.leads.length}
-                </span>
+
+                <div className="pt-2 border-t border-current/15 flex items-center justify-between text-[11px]">
+                  <span className="font-bold opacity-75 uppercase tracking-wider text-[10px]">
+                    Valor Potencial:
+                  </span>
+                  <span className="font-black font-heading text-xs sm:text-sm">
+                    {formatarValorCompacto(col.valorPotencial)}
+                  </span>
+                </div>
               </div>
 
-              {/* LISTA DE CARDS DE LEADS NA COLUNA */}
+              {/* LISTA DE CARDS DE LEADS NA COLUNA (ORDENADOS POR SCORE) */}
               <div className="space-y-2.5 flex-1 overflow-y-auto max-h-[700px] pr-0.5">
                 {col.leads.length === 0 ? (
                   <div className="text-center py-10 px-3 border border-dashed border-slate-200 rounded-2xl text-[11px] text-slate-400">
@@ -171,18 +216,23 @@ export function PipelineLeadsKanban({
                 ) : (
                   col.leads.map((lead) => {
                     const temAlerta = lead.isQuenteEsquecido
+                    const diasParado = lead.diasParado ?? lead.diasSemInteracao ?? 0
+                    const isParadoMuitoTempo =
+                      diasParado >= 3 && lead.estagio_pipeline !== 'cliente'
 
                     return (
                       <div
                         key={lead.id}
-                        className={`bg-white rounded-2xl p-3.5 border transition-all shadow-2xs hover:shadow-md cursor-pointer ${
+                        className={`bg-white rounded-2xl p-3.5 border transition-all shadow-2xs hover:shadow-md cursor-pointer relative ${
                           temAlerta
                             ? 'border-rose-400 ring-2 ring-rose-300/40 bg-rose-50/20'
-                            : 'border-slate-200/80 hover:border-[#D4AF37]/60'
+                            : isParadoMuitoTempo
+                              ? 'border-amber-300 ring-1 ring-amber-200/60 bg-amber-50/15'
+                              : 'border-slate-200/80 hover:border-[#D4AF37]/60'
                         }`}
                         onClick={() => abrirFicha(lead)}
                       >
-                        {/* TAGS TOPO */}
+                        {/* TAGS TOPO: SCORE E ORIGEM */}
                         <div className="flex items-center justify-between gap-1 mb-2">
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${
@@ -201,11 +251,26 @@ export function PipelineLeadsKanban({
                           </span>
                         </div>
 
-                        {temAlerta && (
+                        {/* ALERTAS: QUENTE ESQUECIDO OU TEMPO PARADO */}
+                        {temAlerta ? (
                           <div className="mb-2 px-2 py-0.5 bg-rose-100 border border-rose-300 rounded-md text-[10px] font-extrabold text-rose-800 flex items-center justify-between">
                             <span>🔥 Lead Quente Esquecido</span>
-                            <span>{lead.diasSemInteracao}d</span>
+                            <span>{lead.diasSemInteracao}d sem contato</span>
                           </div>
+                        ) : isParadoMuitoTempo ? (
+                          <div className="mb-2 px-2 py-0.5 bg-amber-100/90 border border-amber-300 rounded-md text-[10px] font-bold text-amber-900 flex items-center justify-between">
+                            <span>⏳ Parado há {diasParado} dias</span>
+                            <span className="text-[9px] uppercase tracking-wider font-extrabold text-amber-700">
+                              Atenção
+                            </span>
+                          </div>
+                        ) : (
+                          diasParado > 0 && (
+                            <div className="mb-2 text-[10px] text-slate-400 font-medium flex items-center justify-between">
+                              <span>Atividade recente:</span>
+                              <span>{diasParado === 1 ? 'Ontem' : `${diasParado}d atrás`}</span>
+                            </div>
+                          )
                         )}
 
                         {/* INFO DO LEAD */}
@@ -215,6 +280,16 @@ export function PipelineLeadsKanban({
                         <p className="text-[11px] text-slate-500 font-semibold line-clamp-1 mt-0.5">
                           {lead.empresa || 'Empresa não informada'}
                         </p>
+
+                        {/* FATURAMENTO ESTIMADO DO LEAD */}
+                        <div className="mt-2 flex items-center justify-between text-[11px]">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Potencial:
+                          </span>
+                          <span className="font-extrabold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
+                            {formatarValorCompacto(lead.valorPotencial)}
+                          </span>
+                        </div>
 
                         <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
                           <span>

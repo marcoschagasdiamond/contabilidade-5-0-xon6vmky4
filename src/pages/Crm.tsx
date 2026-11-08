@@ -14,6 +14,8 @@ import {
 } from '@/services/pipelineLeads'
 import type { LeadProcessado, EstagioPipelineLead, TipoInteracaoLead } from '@/types/pipelineLead'
 import { PipelineLeadsKanban } from '@/components/crm/PipelineLeadsKanban'
+import { DashboardMetricasCrm } from '@/components/crm/DashboardMetricasCrm'
+import { consolidarMetricasPipeline } from '@/lib/pipelineLeadUtils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -41,9 +43,9 @@ export default function Crm() {
     }
   }, [nivelAcesso, user, navigate, toast])
 
-  const [abaPrincipal, setAbaPrincipal] = useState<'pipeline_leads' | 'carteira_clientes'>(
-    'pipeline_leads',
-  )
+  const [abaPrincipal, setAbaPrincipal] = useState<
+    'pipeline_leads' | 'metricas_dashboard' | 'carteira_clientes'
+  >('pipeline_leads')
   const [leadsPipeline, setLeadsPipeline] = useState<LeadProcessado[]>([])
   const [carregandoLeads, setCarregandoLeads] = useState(true)
 
@@ -257,6 +259,11 @@ export default function Crm() {
     return { total, ativos, onboarding, prospects, mrrTotal }
   }, [fichas])
 
+  // Métricas analíticas do pipeline de leads
+  const metricasPipeline = useMemo(() => {
+    return consolidarMetricasPipeline(leadsPipeline)
+  }, [leadsPipeline])
+
   const handleExcluir = async (fId: string, nomeCli: string, e: React.MouseEvent) => {
     e.stopPropagation()
     e.preventDefault()
@@ -337,8 +344,8 @@ export default function Crm() {
             </div>
           </div>
 
-          {/* SELETOR DE ABAS PRINCIPAIS: PIPELINE DE LEADS vs CARTEIRA COMERCIAL */}
-          <div className="flex items-center gap-2 mt-6 pt-6 border-t border-slate-100">
+          {/* SELETOR DE ABAS PRINCIPAIS: PIPELINE DE LEADS vs DASHBOARD DE MÉTRICAS vs CARTEIRA COMERCIAL */}
+          <div className="flex flex-wrap items-center gap-2 mt-6 pt-6 border-t border-slate-100">
             <button
               type="button"
               onClick={() => setAbaPrincipal('pipeline_leads')}
@@ -349,6 +356,20 @@ export default function Crm() {
               }`}
             >
               Pipeline de Leads ({leadsPipeline.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setAbaPrincipal('metricas_dashboard')}
+              className={`text-xs sm:text-sm font-extrabold px-4 py-2.5 rounded-2xl transition-all border flex items-center gap-1.5 ${
+                abaPrincipal === 'metricas_dashboard'
+                  ? 'bg-[#07132B] text-[#D4AF37] border-[#07132B] shadow-sm'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+              }`}
+            >
+              <span>Dashboard de Métricas</span>
+              {metricasPipeline.leadsQuentesEsfriando > 0 && (
+                <span className="w-2 h-2 rounded-full bg-rose-500 inline-block animate-pulse" />
+              )}
             </button>
             <button
               type="button"
@@ -363,7 +384,7 @@ export default function Crm() {
             </button>
           </div>
 
-          {/* CARDS DE RESUMO (KPIs) - PADRÃO DIAMOND SEM ÍCONES */}
+          {/* CARDS DE RESUMO (KPIs) - PADRÃO DIAMOND */}
           {abaPrincipal === 'pipeline_leads' ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6 pt-6 border-t border-slate-100">
               <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
@@ -414,6 +435,14 @@ export default function Crm() {
                 </div>
               </div>
             </div>
+          ) : abaPrincipal === 'metricas_dashboard' ? (
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <p className="text-xs text-slate-500">
+                Métricas analíticas consolidadas em tempo real: volume de captação (7 e 30 dias),
+                taxa de conversão para clientes, tempo médio até a primeira resposta e alertas de
+                leads esfriando.
+              </p>
+            </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6 pt-6 border-t border-slate-100">
               <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
@@ -458,13 +487,122 @@ export default function Crm() {
 
         {/* CONTEÚDO DA ABA SELECIONADA */}
         {abaPrincipal === 'pipeline_leads' ? (
-          <PipelineLeadsKanban
-            leads={leadsPipeline}
-            loading={carregandoLeads}
-            onMudarEstagio={handleMudarEstagioLead}
-            onAdicionarInteracao={handleAdicionarInteracaoLead}
-            onRecarregar={carregarLeads}
-          />
+          <div className="space-y-6">
+            <DashboardMetricasCrm
+              metricas={metricasPipeline}
+              onFiltrarQuentes={() => {
+                // Já fica direto no pipeline
+              }}
+            />
+            <PipelineLeadsKanban
+              leads={leadsPipeline}
+              loading={carregandoLeads}
+              onMudarEstagio={handleMudarEstagioLead}
+              onAdicionarInteracao={handleAdicionarInteracaoLead}
+              onRecarregar={carregarLeads}
+            />
+          </div>
+        ) : abaPrincipal === 'metricas_dashboard' ? (
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#D4AF37] bg-[#07132B] px-3 py-1 rounded-full">
+                Análise de Performance Comercial
+              </span>
+              <h2 className="font-heading font-extrabold text-xl sm:text-2xl text-[#07132B] mt-2">
+                Dashboard de Indicadores do Funil
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
+                Monitore a velocidade e eficiência da sua equipe comercial na conversão de novos
+                leads em clientes ativos.
+              </p>
+            </div>
+
+            <DashboardMetricasCrm
+              metricas={metricasPipeline}
+              onFiltrarQuentes={() => setAbaPrincipal('pipeline_leads')}
+            />
+
+            {/* TABELA DE EFICIÊNCIA POR ESTÁGIO */}
+            <div className="pt-4 border-t border-slate-100">
+              <h3 className="font-heading font-extrabold text-sm sm:text-base text-[#07132B] mb-3">
+                Distribuição e Valor Potencial por Estágio
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200">
+                  <span className="text-xs font-bold text-blue-900 block">1. Novo</span>
+                  <p className="text-xl font-black text-blue-950 mt-1">
+                    {leadsPipeline.filter((l) => l.estagio_pipeline === 'novo').length} leads
+                  </p>
+                  <p className="text-xs text-blue-800 mt-1">
+                    Valor:{' '}
+                    <strong>
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                        maximumFractionDigits: 0,
+                      }).format(metricasPipeline.valorPotencialPorEstagio.novo)}
+                    </strong>
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+                  <span className="text-xs font-bold text-amber-900 block">2. Contato Feito</span>
+                  <p className="text-xl font-black text-amber-950 mt-1">
+                    {leadsPipeline.filter((l) => l.estagio_pipeline === 'contato_feito').length}{' '}
+                    leads
+                  </p>
+                  <p className="text-xs text-amber-800 mt-1">
+                    Valor:{' '}
+                    <strong>
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                        maximumFractionDigits: 0,
+                      }).format(metricasPipeline.valorPotencialPorEstagio.contato_feito)}
+                    </strong>
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200">
+                  <span className="text-xs font-bold text-purple-900 block">
+                    3. Reunião Agendada
+                  </span>
+                  <p className="text-xl font-black text-purple-950 mt-1">
+                    {leadsPipeline.filter((l) => l.estagio_pipeline === 'reuniao').length} leads
+                  </p>
+                  <p className="text-xs text-purple-800 mt-1">
+                    Valor:{' '}
+                    <strong>
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                        maximumFractionDigits: 0,
+                      }).format(metricasPipeline.valorPotencialPorEstagio.reuniao)}
+                    </strong>
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+                  <span className="text-xs font-bold text-emerald-900 block">
+                    4. Cliente Convertido
+                  </span>
+                  <p className="text-xl font-black text-emerald-950 mt-1">
+                    {leadsPipeline.filter((l) => l.estagio_pipeline === 'cliente').length} leads
+                  </p>
+                  <p className="text-xs text-emerald-800 mt-1">
+                    Valor:{' '}
+                    <strong>
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                        maximumFractionDigits: 0,
+                      }).format(metricasPipeline.valorPotencialPorEstagio.cliente)}
+                    </strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
           <>
             <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
