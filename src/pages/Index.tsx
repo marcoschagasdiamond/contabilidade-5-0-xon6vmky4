@@ -8,6 +8,7 @@ import WidgetSimulacaoExpressa from '@/components/home/WidgetSimulacaoExpressa'
 const SecaoServicosHome = lazy(() => import('@/components/home/SecaoServicosHome'))
 const SecaoDiferenciaisHome = lazy(() => import('@/components/home/SecaoDiferenciaisHome'))
 const SecaoDepoimentosHome = lazy(() => import('@/components/home/SecaoDepoimentosHome'))
+const SecaoFunilJornadaHome = lazy(() => import('@/components/home/SecaoFunilJornadaHome'))
 const SecaoBannerDiagnosticoHome = lazy(
   () => import('@/components/home/SecaoBannerDiagnosticoHome'),
 )
@@ -135,6 +136,11 @@ export default function Index() {
 
       <Suspense fallback={<div className="min-h-[400px] bg-slate-900" />}>
         <SecaoDepoimentosHome />
+      </Suspense>
+
+      {/* FUNIL NARRATIVO DE 6 ETAPAS — JORNADA DE CONVERSÃO COM CTA POR ETAPA */}
+      <Suspense fallback={<div className="min-h-[500px] bg-[#0A1A13]" />}>
+        <SecaoFunilJornadaHome cadastroHref={bannerDiagnosticoHref} />
       </Suspense>
 
       <Suspense fallback={<div className="min-h-[220px] bg-[#0A1A13]" />}>
