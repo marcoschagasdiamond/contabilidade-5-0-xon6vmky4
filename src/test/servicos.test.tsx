@@ -27,6 +27,9 @@ describe('Página de Serviços (/servicos)', () => {
     expect(
       screen.getByRole('heading', { name: 'Tributário, Créditos & Recuperação' }),
     ).toBeDefined()
+
+    // Cancelamento de NF não deve constar como card avulso nem no índice de mini-cards
+    expect(screen.queryByText('Cancelamento de NF no IBS/CBS')).toBeNull()
   })
 
   it('permite clicar em Contratar este Serviço e acionar a seleção do formulário', () => {

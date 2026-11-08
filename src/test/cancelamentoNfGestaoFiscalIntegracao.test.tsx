@@ -123,23 +123,22 @@ describe('Cancelamento de NF no IBS/CBS integrado à Gestão Fiscal e Radar', ()
     expect(linkPaginaDedicada.getAttribute('href')).toBe('/servicos/cancelamento-nf-ibs-cbs')
   })
 
-  it('(3) Em /servicos, o card de Cancelamento de NF exibe badge "Incluso na Gestão Fiscal & Tributária" e mantém link', () => {
+  it('(3) Em /servicos, o card avulso de Cancelamento de NF não aparece na lista nem no índice de mini-cards', () => {
     render(
       <MemoryRouter>
         <Servicos />
       </MemoryRouter>,
     )
 
-    // Badge presente no card
-    const badge = screen.getByTestId('badge-incluso-gestao-fiscal')
-    expect(badge).toBeDefined()
-    expect(badge.textContent).toContain('Incluso na Gestão Fiscal & Tributária')
+    // O serviço não é mais card autônomo na lista nem no índice
+    expect(screen.queryByText('Cancelamento de NF no IBS/CBS')).toBeNull()
+    expect(screen.queryByTestId('badge-incluso-gestao-fiscal')).toBeNull()
 
-    // Link para a página dedicada do cancelamento
-    const links = screen.getAllByRole('link', { name: /Ver Página Completa & Pilares 5.0/i })
+    // O link direto para /servicos/cancelamento-nf-ibs-cbs não existe em /servicos (está em /servicos/gestao-fiscal-tributaria)
+    const links = screen.getAllByRole('link')
     const linkCancelamento = links.find(
       (l) => l.getAttribute('href') === '/servicos/cancelamento-nf-ibs-cbs',
     )
-    expect(linkCancelamento).toBeDefined()
+    expect(linkCancelamento).toBeUndefined()
   })
 })
