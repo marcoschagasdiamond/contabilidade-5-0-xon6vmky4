@@ -48,6 +48,7 @@ import { BadgeProvenienciaQsa } from '@/components/dadosEmpresa/BadgeProvenienci
 import { CampoBuscaCnae } from '@/components/dadosEmpresa/CampoBuscaCnae'
 import { SecaoCnaesSecundarios } from '@/components/dadosEmpresa/SecaoCnaesSecundarios'
 import { PainelTributosAtividade } from '@/components/dadosEmpresa/PainelTributosAtividade'
+import { BlocoAvisosRegime } from '@/components/dadosEmpresa/BlocoAvisosRegime'
 import {
   Dialog,
   DialogContent,
@@ -2261,6 +2262,19 @@ export default function DadosEmpresa() {
                   </div>
                 </div>
               </div>
+
+              {/* AVISOS CONTEXTUAIS SENSÍVEIS AO REGIME TRIBUTÁRIO ATUAL (apenas orientação visual — não altera campos nem cálculos) */}
+              <BlocoAvisosRegime
+                regimeAtual={formData.regimeAtual}
+                cidade={formData.cidade}
+                segmento={formData.segmento}
+                faturamentoMensal={formData.faturamentoMensal}
+                folhaPagamentoMensal={formData.folhaPagamentoMensal}
+                perfilInsumosAliquotaCheia={formData.perfilInsumosAliquotaCheia}
+                perfilInsumosMonofasicos={formData.perfilInsumosMonofasicos}
+                perfilInsumosAliquotaReduzida={formData.perfilInsumosAliquotaReduzida}
+                porcentagemComprasSimplesNacional={formData.porcentagemComprasSimplesNacional}
+              />
 
               {/* SUB-BLOCO F: PARÂMETROS FISCAIS & INSUMOS (FASE 1 - FONTE MESTRA) */}
               <div className="pt-6 border-t-2 border-slate-200/80 space-y-6">
