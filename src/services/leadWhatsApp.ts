@@ -15,8 +15,11 @@ import pb from '@/lib/pocketbase/client'
 import { createLead, type LeadRecord } from '@/services/leads'
 import {
   OPCOES_VEDACAO_ANONIMA,
+  OPCOES_VEDACAO_MEI_ANONIMA,
   temVedacaoAnonima,
+  temVedacaoMeiAnonima,
   type IdVedacaoAnonima,
+  type IdVedacaoMeiAnonima,
 } from '@/lib/simulacaoExpressaVedacoes'
 
 const SESSION_LEAD_KEY = 'c50_whatsapp_lead_id'
@@ -120,13 +123,19 @@ export const ORIGEM_LEAD_SIMULACAO_EXPRESSA = 'Simulação Expressa (home)'
 export const ORIGEM_LEAD_SIMULACAO_EXPRESSA_VEDACAO =
   'Simulação Expressa — vedação ao Simples (home)'
 
+/** Origem do lead da Simulação Expressa quando a vedação MEI está marcada. */
+export const ORIGEM_LEAD_SIMULACAO_EXPRESSA_VEDACAO_MEI =
+  'Simulação Expressa — vedação ao MEI (home)'
+
 /**
  * Score do lead da Simulação Expressa anônima.
  * Caso com vedação marcada é caso complexo (procura-se orientação especializada):
  * base 30 + 20 por situação marcada (1 situação → 50, 2 → 70).
  * Sem vedação: base 30.
  */
-export function calcularScoreLeadSimulacaoExpressa(selecionadas: IdVedacaoAnonima[]): number {
+export function calcularScoreLeadSimulacaoExpressa(
+  selecionadas: (IdVedacaoAnonima | IdVedacaoMeiAnonima)[],
+): number {
   const base = 30
   const bonusVedacao = Math.min(2, selecionadas.length) * 20
   return Math.min(100, base + bonusVedacao)
@@ -135,6 +144,8 @@ export function calcularScoreLeadSimulacaoExpressa(selecionadas: IdVedacaoAnonim
 export interface RegistrarLeadSimulacaoExpressaOptions {
   /** Ids das situações de vedação marcadas no widget anônimo. */
   selecionadas?: IdVedacaoAnonima[]
+  /** Ids das situações de vedação de MEI marcadas no widget anônimo. */
+  selecionadasMei?: IdVedacaoMeiAnonima[]
   /** Faixa de faturamento e regime informados (contexto no payload). */
   faturamento?: string
   regime?: string
@@ -155,14 +166,22 @@ export async function registrarLeadSimulacaoExpressa(
 
   try {
     const selecionadas = options.selecionadas || []
+    const selecionadasMei = options.selecionadasMei || []
     const comVedacao = temVedacaoAnonima(selecionadas)
-    const score = calcularScoreLeadSimulacaoExpressa(selecionadas)
-    const origem = comVedacao
-      ? ORIGEM_LEAD_SIMULACAO_EXPRESSA_VEDACAO
-      : ORIGEM_LEAD_SIMULACAO_EXPRESSA
+    const comVedacaoMei = temVedacaoMeiAnonima(selecionadasMei)
+    const score = calcularScoreLeadSimulacaoExpressa([...selecionadas, ...selecionadasMei])
+    const origem = comVedacaoMei
+      ? ORIGEM_LEAD_SIMULACAO_EXPRESSA_VEDACAO_MEI
+      : comVedacao
+        ? ORIGEM_LEAD_SIMULACAO_EXPRESSA_VEDACAO
+        : ORIGEM_LEAD_SIMULACAO_EXPRESSA
 
     const rotulosMarcadas = selecionadas
       .map((id) => OPCOES_VEDACAO_ANONIMA.find((o) => o.id === id)?.rotulo || id)
+      .filter(Boolean)
+
+    const rotulosMeiMarcadas = selecionadasMei
+      .map((id) => OPCOES_VEDACAO_MEI_ANONIMA.find((o) => o.id === id)?.rotulo || id)
       .filter(Boolean)
 
     const payloadMensagem = [
@@ -173,6 +192,9 @@ export async function registrarLeadSimulacaoExpressa(
       options.regime ? `Regime tributário atual: ${options.regime}` : null,
       comVedacao
         ? `Possível vedação ao Simples Nacional (art. 17, LC 123/2006) — situações marcadas: ${rotulosMarcadas.join('; ')}.`
+        : null,
+      comVedacaoMei
+        ? `Possível vedação ao MEI (Resolução CGSN 140/2018, art. 3º) — situações marcadas: ${rotulosMeiMarcadas.join('; ')}.`
         : null,
       `Data/Hora: ${new Date().toLocaleString('pt-BR')}`,
     ]

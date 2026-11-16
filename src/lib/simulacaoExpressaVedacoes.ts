@@ -15,9 +15,10 @@ import { ROTULO_INDISPONIVEL_VEDACAO } from './vedacoesSimples'
 import {
   ROTULO_INDISPONIVEL_VEDACOES_PRESUMIDO,
   ROTULO_INDISPONIVEL_VEDACOES_MEI,
+  LIMITE_RECEITA_ANUAL_MEI,
 } from './vedacoesRegimes'
 
-export type RegimeChave = 'simples' | 'presumido' | 'real'
+export type RegimeChave = 'simples' | 'presumido' | 'real' | 'mei'
 
 /** Estado de um regime na Simulação Expressa, dada a matriz de vedações aplicada. */
 export type StatusRegimeSimulacao = 'disponivel' | 'vedado' | 'possivel_vedacao'
@@ -60,10 +61,23 @@ export const OPCOES_VEDACAO_ANONIMA = [
   },
 ] as const
 
+/** Situação extra da pergunta 4 sobre o MEI (nível anônimo). */
+export const OPCOES_VEDACAO_MEI_ANONIMA = [
+  {
+    id: 'mei_atividade_nao_permitida',
+    rotulo: 'Atividade não permitida para MEI',
+    dica: 'Ex.: indústria, distribuidora, transporte intermunicipal de passageiros',
+  },
+] as const
+
 export type IdVedacaoAnonima = (typeof OPCOES_VEDACAO_ANONIMA)[number]['id']
+export type IdVedacaoMeiAnonima = (typeof OPCOES_VEDACAO_MEI_ANONIMA)[number]['id']
 
 /** Rótulo do regime "Possível vedação — confirmar com contador" (nível anônimo). */
 export const ROTULO_POSSIVEL_VEDACAO_SIMPLES = 'Possível vedação — confirmar com contador'
+
+/** Limite anual de receita bruta do MEI (Res. CGSN 140/2018), reexportado para o widget. */
+export const LIMITE_MEI_SIMULACAO = LIMITE_RECEITA_ANUAL_MEI
 
 /**
  * Matriz de vedações para o nível LOGADO, a partir do perfil da fonte mestra.
@@ -109,6 +123,11 @@ export function temVedacaoAnonima(selecionadas: IdVedacaoAnonima[]): boolean {
   return selecionadas.length > 0
 }
 
+/** Há alguma vedação de MEI marcada nas respostas anônimas do widget? */
+export function temVedacaoMeiAnonima(selecionadas: IdVedacaoMeiAnonima[]): boolean {
+  return selecionadas.length > 0
+}
+
 /**
  * Status de um regime na simulação, combinando matriz logada + resposta anônima.
  * - Logado com vedação registrada: regime sai da simulação ("Indisponível — vedação legal").
@@ -119,6 +138,7 @@ export function statusRegimeNaSimulacao(
   regime: RegimeChave,
   matriz: MatrizVedacoesSimulacao,
   vedacaoAnonima: boolean,
+  vedacaoMeiAnonima = false,
 ): { status: StatusRegimeSimulacao; rotulo: string } {
   if (regime === 'simples') {
     if (matriz.vedadosSimples) return { status: 'vedado', rotulo: ROTULO_INDISPONIVEL_VEDACAO }
@@ -131,7 +151,13 @@ export function statusRegimeNaSimulacao(
       return { status: 'vedado', rotulo: ROTULO_INDISPONIVEL_VEDACOES_PRESUMIDO }
     return { status: 'disponivel', rotulo: '' }
   }
-  if (matriz.vedadosMei) return { status: 'vedado', rotulo: ROTULO_INDISPONIVEL_VEDACOES_MEI }
+  if (regime === 'real') return { status: 'disponivel', rotulo: '' }
+  if (regime === 'mei') {
+    if (matriz.vedadosMei) return { status: 'vedado', rotulo: ROTULO_INDISPONIVEL_VEDACOES_MEI }
+    if (vedacaoMeiAnonima)
+      return { status: 'possivel_vedacao', rotulo: ROTULO_POSSIVEL_VEDACAO_SIMPLES }
+    return { status: 'disponivel', rotulo: '' }
+  }
   return { status: 'disponivel', rotulo: '' }
 }
 
@@ -199,4 +225,11 @@ export function alertaVedacaoTexto(
     return 'Situação marcada sugere vedação provável ao Simples Nacional (art. 17, LC 123/2006) — confirme com um contador.'
   }
   return null
+}
+
+/** Mensagem de alerta exibida no card do MEI (nível anônimo). */
+export function alertaVedacaoMeiTexto(vedacaoMeiAnonima: boolean): string | null {
+  return vedacaoMeiAnonima
+    ? 'Atividade marcada sugere vedação provável ao MEI (Resolução CGSN 140/2018, art. 3º) — confirme com um contador.'
+    : null
 }

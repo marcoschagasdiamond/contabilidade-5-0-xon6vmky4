@@ -8,6 +8,7 @@ import {
   Calculator,
   Info,
   AlertTriangle,
+  Store,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
@@ -20,13 +21,19 @@ import {
 import {
   MATRIZ_VAZIA_SIMULACAO,
   OPCOES_VEDACAO_ANONIMA,
+  OPCOES_VEDACAO_MEI_ANONIMA,
+  LIMITE_MEI_SIMULACAO,
   matrizVedacoesDoPerfil,
   temVedacaoAnonima,
+  temVedacaoMeiAnonima,
   statusRegimeNaSimulacao,
   regimeRecomendadoSimulacao,
   alertaVedacaoTexto,
+  alertaVedacaoMeiTexto,
   type IdVedacaoAnonima,
+  type IdVedacaoMeiAnonima,
   type MatrizVedacoesSimulacao,
+  type StatusRegimeSimulacao,
 } from '@/lib/simulacaoExpressaVedacoes'
 import { registrarLeadSimulacaoExpressa } from '@/services/leadWhatsApp'
 import type { ClienteEmpresaRecord } from '@/services/clientesEmpresas'
@@ -91,6 +98,20 @@ export function formatarValorK(val: number): string {
   return `R$ ${milhares} mil`
 }
 
+/** Tipos de atividade do MEI e o valor mensal da guia DAS fixa de 2026 (R$/mês). */
+export type TipoAtividadeMei = 'comercio' | 'servicos' | 'comercio_e_servicos'
+
+export const VALOR_DAS_MEI_MENSAL: Record<TipoAtividadeMei, number> = {
+  comercio: 82.05,
+  servicos: 86.05,
+  comercio_e_servicos: 87.05,
+}
+
+/** Formata o valor mensal da guia DAS-MEI (2026) com 2 decimais no padrão pt-BR. */
+export function formatarValorMeiDas(tipo: TipoAtividadeMei): string {
+  return `R$ ${VALOR_DAS_MEI_MENSAL[tipo].toFixed(2).replace('.', ',')}`
+}
+
 /** Rótulo legível das faixas/regimes para o payload do lead. */
 const ROTULOS_FATURAMENTO: Record<FaixaFaturamento, string> = {
   ate_4_8m: 'Até R$ 4,8 mi',
@@ -114,6 +135,7 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
 
   // Nível ANÔNIMO: situações de possível vedação marcadas na pergunta 4
   const [vedacoesAnonimas, setVedacoesAnonimas] = useState<IdVedacaoAnonima[]>([])
+  const [vedacoesMeiAnonimas, setVedacoesMeiAnonimas] = useState<IdVedacaoMeiAnonima[]>([])
   // Nível LOGADO: matriz de vedações carregada da fonte mestra
   const [matrizLogada, setMatrizLogada] = useState<MatrizVedacoesSimulacao>(MATRIZ_INICIAL)
 
@@ -145,6 +167,7 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
   }, [isAuthenticated, user?.id, clienteAtivo])
 
   const vedacaoAnonima = temVedacaoAnonima(vedacoesAnonimas)
+  const vedacaoMeiAnonima = temVedacaoMeiAnonima(vedacoesMeiAnonimas)
 
   const estimativa = useMemo(() => {
     return calcularEstimativaExpressa(faturamento, regime, despesas)
@@ -164,8 +187,31 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
   )
   const exibeVedacao = statusSimples.status !== 'disponivel'
 
+  // Card do MEI no resultado: parte da matriz logada (nível 1) e, no anônimo,
+  // da checagem automática pelo faturamento + checkbox da Pergunta 4.
+  const faturamentoMeiExcede = faturamento !== 'ate_4_8m'
+  const statusMei = useMemo(() => {
+    const base = statusRegimeNaSimulacao('mei', matrizLogada, vedacaoAnonima, vedacaoMeiAnonima)
+    // Checagem automática pelo faturamento informado (Pergunta 1):
+    // acima do limite anual do MEI, o regime sai da simulação por limite excedido.
+    if (faturamentoMeiExcede && base.status === 'disponivel') {
+      return {
+        status: 'vedado' as StatusRegimeSimulacao,
+        rotulo: `Indisponível — limite excedido (${formatarValorK(LIMITE_MEI_SIMULACAO)})`,
+      }
+    }
+    return base
+  }, [matrizLogada, vedacaoAnonima, vedacaoMeiAnonima, faturamentoMeiExcede])
+  const alertaMei = useMemo(() => alertaVedacaoMeiTexto(vedacaoMeiAnonima), [vedacaoMeiAnonima])
+
   const toggleVedacaoAnonima = (id: IdVedacaoAnonima) => {
     setVedacoesAnonimas((prev) =>
+      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id],
+    )
+  }
+
+  const toggleVedacaoMeiAnonima = (id: IdVedacaoMeiAnonima) => {
+    setVedacoesMeiAnonimas((prev) =>
       prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id],
     )
   }
@@ -175,6 +221,7 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
     if (!isAuthenticated) {
       registrarLeadSimulacaoExpressa({
         selecionadas: vedacoesAnonimas,
+        selecionadasMei: vedacoesMeiAnonimas,
         faturamento: ROTULOS_FATURAMENTO[faturamento],
         regime: ROTULOS_REGIME[regime],
         isAuthenticated: false,
@@ -379,9 +426,95 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
                 </label>
               )
             })}
+            {OPCOES_VEDACAO_MEI_ANONIMA.map((op) => {
+              const marcada = vedacoesMeiAnonimas.includes(op.id)
+              return (
+                <label
+                  key={op.id}
+                  className={`flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${
+                    marcada
+                      ? 'bg-amber-50 border-amber-300 text-amber-900'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    data-testid={`vedacao-mei-anonima-${op.id}`}
+                    checked={marcada}
+                    onChange={() => toggleVedacaoMeiAnonima(op.id)}
+                    className="mt-0.5 h-3.5 w-3.5 accent-amber-600 cursor-pointer"
+                  />
+                  <span className="leading-snug font-medium">
+                    {op.rotulo}
+                    <span className="block text-[10px] font-normal text-slate-500 mt-0.5">
+                      {op.dica}
+                    </span>
+                  </span>
+                </label>
+              )
+            })}
           </div>
         </div>
       )}
+
+      {/* Card do MEI (checagem automática pelo faturamento + checkbox da Pergunta 4) */}
+      <div
+        data-testid="widget-card-mei"
+        className={`p-3 sm:p-3.5 rounded-xl border mb-3.5 ${
+          statusMei.status !== 'disponivel'
+            ? 'bg-amber-50/70 border-amber-300'
+            : 'bg-white border-slate-200'
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-[#07132B]">
+            <Store className="w-4 h-4 text-blue-600 shrink-0" />
+            <span>MEI (Microempreendedor Individual)</span>
+          </div>
+          {statusMei.status === 'vedado' && (
+            <span
+              data-testid="mei-vedado-badge"
+              className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300"
+            >
+              {statusMei.rotulo}
+            </span>
+          )}
+          {statusMei.status === 'possivel_vedacao' && (
+            <span
+              data-testid="mei-possivel-vedacao-badge"
+              className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300"
+            >
+              {statusMei.rotulo}
+            </span>
+          )}
+          {statusMei.status === 'disponivel' && (
+            <span
+              data-testid="mei-disponivel-badge"
+              className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-300"
+            >
+              Disponível
+            </span>
+          )}
+        </div>
+
+        {statusMei.status === 'vedado' ? (
+          <p className="text-[11px] text-rose-800 leading-snug">
+            {matrizLogada.vedadosMei
+              ? alertaVedacao
+              : `Receita bruta anual informada acima de ${formatarValorK(LIMITE_MEI_SIMULACAO)} — a empresa não se qualifica como MEI (Resolução CGSN 140/2018, art. 3º).`}
+          </p>
+        ) : (
+          <p className="text-[11px] text-slate-600 leading-snug">
+            <span className="font-semibold text-slate-700">
+              Guia DAS fixa: {formatarValorMeiDas('servicos')}/mês
+            </span>{' '}
+            (serviços; R$ 82,05 comércio, R$ 86,05 serviços — INSS 5% do salário mínimo + ICMS/ISS).
+            {statusMei.status === 'possivel_vedacao' && alertaMei && (
+              <span className="block mt-1 font-semibold text-amber-800">{alertaMei}</span>
+            )}
+          </p>
+        )}
+      </div>
 
       {/* Card do Resultado na hora */}
       <div
