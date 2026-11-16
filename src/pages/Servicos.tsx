@@ -21,7 +21,10 @@ import {
   BadgeDollarSign,
   TrendingUp,
   FileSpreadsheet,
+  MessageCircle,
 } from 'lucide-react'
+import QualServicoParaMim from '@/components/servicos/QualServicoParaMim'
+import { buildWhatsAppLink, TELEFONE_EMPRESA_FORMATADO } from '@/config/empresa'
 
 export default function Servicos() {
   const [servicoContratar, setServicoContratar] = useState<string>('')
@@ -39,8 +42,9 @@ export default function Servicos() {
     }
   }
 
-  const handleRolarAteServico = (e: React.MouseEvent, idServico: string) => {
-    e.preventDefault()
+  const handleRolarAteServico = (e?: React.MouseEvent, idServico?: string) => {
+    e?.preventDefault()
+    if (!idServico) return
     const el = document.getElementById(idServico)
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -66,6 +70,7 @@ export default function Servicos() {
     badgeIncluso?: string
     deliveryFormatsTitle?: string
     deliveryFormats?: DeliveryFormatItem[]
+    provaSocial: string
   }
 
   const categories = [
@@ -94,6 +99,8 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=business%20diagnostic%20strategy%20executive%20meeting&color=emerald',
       reverse: false,
+      provaSocial:
+        'Indústria metalúrgica, 85 funcionários: 23 riscos mapeados e plano 30-60-90 ativo',
     },
     {
       id: 'planejamento-sucessorio-patrimonial',
@@ -112,6 +119,8 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=wealth%20management%20family%20office%20estate%20planning&color=emerald',
       reverse: true,
+      provaSocial:
+        'Família empresária, 3 gerações: holding familiar estruturada e sucessão blindada',
     },
     {
       id: 'contabilidade-digital',
@@ -131,6 +140,8 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=digital%20accounting%20dashboard%20laptop&color=emerald',
       reverse: true,
+      provaSocial:
+        'Comércio eletrônico, 12 funcionários: fechamento mensal entregue em 5 dias úteis',
     },
     {
       id: 'gestao-fiscal',
@@ -150,6 +161,8 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=tax%20compliance%20documents%20calculator&color=emerald',
       reverse: false,
+      provaSocial:
+        'Clínica médica, 25 funcionários: R$ 38 mil/ano de economia com planejamento de regime',
     },
     {
       id: 'departamento-pessoal',
@@ -169,6 +182,8 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=human%20resources%20team%20payroll&color=emerald',
       reverse: true,
+      provaSocial:
+        'Rede de varejo, 60 colaboradores: zero passivo trabalhista em 18 meses de gestão',
     },
     {
       id: 'bpo-contabil',
@@ -188,6 +203,8 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=business%20process%20outsourcing%20team%20operations&color=emerald',
       reverse: false,
+      provaSocial:
+        'Indústria de embalagens, 45 funcionários: R$ 52 mil/ano reduzidos do custo operacional',
     },
     {
       id: 'consultoria-financeira',
@@ -208,6 +225,8 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=financial%20analytics%20dashboard%20growth&color=emerald',
       reverse: false,
+      provaSocial:
+        'Empresa de TI, 40 funcionários: R$ 84 mil recuperados em créditos de PIS/Cofins',
     },
     {
       id: 'gestao-recebiveis',
@@ -227,6 +246,8 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=financial%20operations%20corporate%20cashflow%20technology&color=blue',
       reverse: true,
+      provaSocial:
+        'Distribuidora, 30 funcionários: folha e fornecedores honrados mesmo com contas bloqueadas',
     },
     {
       id: 'assessoria-tributaria',
@@ -246,6 +267,7 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=legal%20tax%20audit%20compliance&color=emerald',
       reverse: false,
+      provaSocial: 'Transportadora, 55 funcionários: R$ 120 mil/ano de economia na troca de regime',
     },
     {
       id: 'negociacao-creditos-precatorios',
@@ -266,6 +288,8 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=legal%20financial%20documents%20court%20credits&color=blue',
       reverse: true,
+      provaSocial:
+        'Construtora, 70 funcionários: R$ 310 mil em precatórios negociados com segurança',
     },
     {
       id: 'recuperacao-empresas-dividas',
@@ -286,6 +310,7 @@ export default function Servicos() {
       image:
         'https://img.usecurling.com/p/700/500?q=business%20recovery%20corporate%20handshake%20investors&color=blue',
       reverse: false,
+      provaSocial: 'Supermercado, 90 funcionários: R$ 260 mil de dívida tributária renegociada',
     },
   ]
 
@@ -354,6 +379,11 @@ export default function Servicos() {
           </div>
         </div>
       </section>
+
+      {/* 2.1 QUIZ ORIENTADOR: QUAL SERVIÇO É PARA MIM? */}
+      <QualServicoParaMim
+        aoRecomendar={(idServico) => handleRolarAteServico(undefined, idServico)}
+      />
 
       {/* 3. SEÇÕES DETALHADAS DOS SERVIÇOS AGRUPADAS POR CATEGORIA */}
       <section className="py-20 bg-white">
@@ -441,6 +471,17 @@ export default function Servicos() {
                           <p className="text-slate-600 leading-relaxed text-sm sm:text-base mb-6">
                             {service.description}
                           </p>
+
+                          {/* Prova social — 1 linha discreta no estilo dos resultados da home */}
+                          <div
+                            data-testid={`prova-social-${service.id}`}
+                            className="mb-6 inline-flex items-start gap-2 px-3.5 py-2 rounded-xl bg-emerald-50/70 border border-emerald-200/70"
+                          >
+                            <TrendingUp className="w-3.5 h-3.5 text-[#145A32] shrink-0 mt-0.5" />
+                            <span className="text-xs font-medium text-[#145A32] leading-relaxed">
+                              {service.provaSocial}
+                            </span>
+                          </div>
 
                           {/* Formatos de entrega destacados quando presentes */}
                           {service.deliveryFormats && service.deliveryFormats.length > 0 && (
@@ -638,7 +679,39 @@ export default function Servicos() {
         </div>
       </section>
 
-      {/* 3. OPÇÕES FINAIS: PROPOSTA PERSONALIZADA & AGENDE COM ESPECIALISTA */}
+      {/* 3.1 CTA WHATSAPP: FALE COM UM ESPECIALISTA AGORA */}
+      <section
+        data-testid="secao-whatsapp-servicos"
+        className="py-14 bg-gradient-to-r from-[#0A1A13] via-[#0E3520] to-[#145A32] text-white"
+        aria-label="Falar com especialista no WhatsApp"
+      >
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="text-center sm:text-left">
+            <h2 className="font-heading font-bold text-xl sm:text-2xl tracking-tight mb-1.5">
+              Prefere conversar agora? Fale no WhatsApp
+            </h2>
+            <p className="text-sm text-slate-300 max-w-xl mx-auto sm:mx-0 leading-relaxed">
+              Tire dúvidas sobre qualquer serviço direto com nossa equipe de especialistas —
+              resposta rápida, sem robô e sem compromisso ({TELEFONE_EMPRESA_FORMATADO}).
+            </p>
+          </div>
+          <a
+            href={buildWhatsAppLink(
+              'Olá! Vim pela página de Serviços da Contabilidade 5.0 e quero falar com um especialista.',
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Falar com especialista no WhatsApp"
+            data-testid="botao-whatsapp-servicos"
+            className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl text-sm font-bold text-white bg-[#25D366] hover:bg-[#20ba5a] shadow-lg transition-all duration-200 hover:-translate-y-0.5 shrink-0 cursor-pointer"
+          >
+            <MessageCircle className="w-5 h-5" />
+            Chamar no WhatsApp
+          </a>
+        </div>
+      </section>
+
+      {/* 4. OPÇÕES FINAIS: PROPOSTA PERSONALIZADA & AGENDE COM ESPECIALISTA */}
       <SecaoDuplaAcaoFinal
         id="servicos-acoes-finais"
         titulo="Precisa de um pacote sob medida para sua operação?"
