@@ -1,7 +1,35 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Sparkles, TrendingUp, CheckCircle, Calculator, Info } from 'lucide-react'
+import {
+  ArrowRight,
+  Sparkles,
+  TrendingUp,
+  CheckCircle,
+  Calculator,
+  Info,
+  AlertTriangle,
+} from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
+import {
+  getClienteEmpresaPorUsuario,
+  getClienteEmpresaPorClienteAtivo,
+  recordToPerfil,
+} from '@/services/clientesEmpresas'
+
+import {
+  MATRIZ_VAZIA_SIMULACAO,
+  OPCOES_VEDACAO_ANONIMA,
+  matrizVedacoesDoPerfil,
+  temVedacaoAnonima,
+  statusRegimeNaSimulacao,
+  regimeRecomendadoSimulacao,
+  alertaVedacaoTexto,
+  type IdVedacaoAnonima,
+  type MatrizVedacoesSimulacao,
+} from '@/lib/simulacaoExpressaVedacoes'
+import { registrarLeadSimulacaoExpressa } from '@/services/leadWhatsApp'
+import type { ClienteEmpresaRecord } from '@/services/clientesEmpresas'
 
 export type FaixaFaturamento = 'ate_4_8m' | '4_8m_50m' | 'acima_50m'
 export type RegimeAtual = 'simples' | 'presumido' | 'real'
@@ -63,19 +91,95 @@ export function formatarValorK(val: number): string {
   return `R$ ${milhares} mil`
 }
 
+/** Rótulo legível das faixas/regimes para o payload do lead. */
+const ROTULOS_FATURAMENTO: Record<FaixaFaturamento, string> = {
+  ate_4_8m: 'Até R$ 4,8 mi',
+  '4_8m_50m': 'R$ 4,8 mi a 50 mi',
+  acima_50m: 'Acima de R$ 50 mi',
+}
+const ROTULOS_REGIME: Record<RegimeAtual, string> = {
+  simples: 'Simples Nacional',
+  presumido: 'Lucro Presumido',
+  real: 'Lucro Real',
+}
+
 export default function WidgetSimulacaoExpressa({ className = '' }: { className?: string }) {
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+  const { clienteAtivo } = useClienteAtivo()
 
   const [faturamento, setFaturamento] = useState<FaixaFaturamento>('ate_4_8m')
   const [regime, setRegime] = useState<RegimeAtual>('simples')
   const [despesas, setDespesas] = useState<NivelDespesasCredito>('media')
 
+  // Nível ANÔNIMO: situações de possível vedação marcadas na pergunta 4
+  const [vedacoesAnonimas, setVedacoesAnonimas] = useState<IdVedacaoAnonima[]>([])
+  // Nível LOGADO: matriz de vedações carregada da fonte mestra
+  const [matrizLogada, setMatrizLogada] = useState<MatrizVedacoesSimulacao>(MATRIZ_INICIAL)
+
+  // Carrega as vedações salvas na fonte mestra quando logado (nível 1 da lib)
+  useEffect(() => {
+    let ativo = true
+    if (!isAuthenticated) {
+      setMatrizLogada(MATRIZ_INICIAL)
+      return
+    }
+    ;(async () => {
+      try {
+        let rec: ClienteEmpresaRecord | null = null
+        if (clienteAtivo) {
+          rec = await getClienteEmpresaPorClienteAtivo(clienteAtivo)
+        }
+        if (!rec && user?.id) {
+          rec = await getClienteEmpresaPorUsuario(user.id)
+        }
+        if (ativo) setMatrizLogada(matrizVedacoesDoPerfil(rec ? recordToPerfil(rec) : null))
+      } catch (err) {
+        console.warn('[Simulação Expressa] Erro ao carregar vedações da fonte mestra:', err)
+        if (ativo) setMatrizLogada(MATRIZ_INICIAL)
+      }
+    })()
+    return () => {
+      ativo = false
+    }
+  }, [isAuthenticated, user?.id, clienteAtivo])
+
+  const vedacaoAnonima = temVedacaoAnonima(vedacoesAnonimas)
+
   const estimativa = useMemo(() => {
     return calcularEstimativaExpressa(faturamento, regime, despesas)
   }, [faturamento, regime, despesas])
 
+  const statusSimples = useMemo(
+    () => statusRegimeNaSimulacao('simples', matrizLogada, vedacaoAnonima),
+    [matrizLogada, vedacaoAnonima],
+  )
+  const recomendacao = useMemo(
+    () => regimeRecomendadoSimulacao(regime, matrizLogada, vedacaoAnonima),
+    [regime, matrizLogada, vedacaoAnonima],
+  )
+  const alertaVedacao = useMemo(
+    () => alertaVedacaoTexto(matrizLogada, vedacaoAnonima),
+    [matrizLogada, vedacaoAnonima],
+  )
+  const exibeVedacao = statusSimples.status !== 'disponivel'
+
+  const toggleVedacaoAnonima = (id: IdVedacaoAnonima) => {
+    setVedacoesAnonimas((prev) =>
+      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id],
+    )
+  }
+
   const handleCta = () => {
+    // Fire-and-forget: lead da simulação anônima (com score/origem de vedação quando marcada)
+    if (!isAuthenticated) {
+      registrarLeadSimulacaoExpressa({
+        selecionadas: vedacoesAnonimas,
+        faturamento: ROTULOS_FATURAMENTO[faturamento],
+        regime: ROTULOS_REGIME[regime],
+        isAuthenticated: false,
+      }).catch(() => {})
+    }
     if (isAuthenticated) {
       navigate('/dados-empresa')
     } else {
@@ -103,7 +207,11 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
                 IBS / CBS
               </span>
             </div>
-            <p className="text-xs text-slate-500">3 respostas • resultado imediato</p>
+            <p className="text-xs text-slate-500">
+              {isAuthenticated
+                ? 'Baseado nos seus Dados da Empresa'
+                : '3 respostas • resultado imediato'}
+            </p>
           </div>
         </div>
         <div className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
@@ -197,7 +305,7 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
       </div>
 
       {/* Pergunta 3: % Despesas com Crédito */}
-      <div className="space-y-1.5 mb-4">
+      <div className="space-y-1.5 mb-3.5">
         <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
           <span>3. Despesas com compras, insumos e serviços</span>
           <span className="text-[11px] font-normal text-slate-500">com direito a crédito</span>
@@ -239,8 +347,70 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
         </div>
       </div>
 
+      {/* Pergunta 4 (anônimo): situações de possível vedação ao Simples */}
+      {!isAuthenticated && (
+        <div className="space-y-1.5 mb-4" data-testid="widget-pergunta-vedacao">
+          <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+            <span>4. Alguma destas situações se aplica?</span>
+            <span className="text-[11px] font-normal text-slate-500">
+              afeta a opção pelo Simples
+            </span>
+          </label>
+          <div className="space-y-1.5">
+            {OPCOES_VEDACAO_ANONIMA.map((op) => {
+              const marcada = vedacoesAnonimas.includes(op.id)
+              return (
+                <label
+                  key={op.id}
+                  className={`flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer text-xs transition-all ${
+                    marcada
+                      ? 'bg-amber-50 border-amber-300 text-amber-900'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    data-testid={`vedacao-anonima-${op.id}`}
+                    checked={marcada}
+                    onChange={() => toggleVedacaoAnonima(op.id)}
+                    className="mt-0.5 h-3.5 w-3.5 accent-amber-600 cursor-pointer"
+                  />
+                  <span className="leading-snug font-medium">{op.rotulo}</span>
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Card do Resultado na hora */}
-      <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-emerald-50 via-slate-50 to-amber-50/40 border border-emerald-200/80 mb-3.5">
+      <div
+        className={`p-3.5 sm:p-4 rounded-xl border mb-3.5 ${
+          exibeVedacao
+            ? 'bg-gradient-to-br from-amber-50 via-amber-50/60 to-white border-amber-300'
+            : 'bg-gradient-to-br from-emerald-50 via-slate-50 to-amber-50/40 border-emerald-200/80'
+        }`}
+      >
+        {/* Faixa de possível/confirmada vedação (âmbar) — nunca vermelho no anônimo */}
+        {exibeVedacao && (
+          <div
+            data-testid="widget-vedacao-badge"
+            className="flex items-start gap-2 mb-2.5 p-2 rounded-lg bg-amber-100/70 border border-amber-300"
+          >
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="text-[11px] leading-snug">
+              <span
+                className={`font-bold block ${
+                  statusSimples.status === 'vedado' ? 'text-rose-700' : 'text-amber-800'
+                }`}
+              >
+                {statusSimples.rotulo}
+              </span>
+              <span className="text-amber-800/80">{alertaVedacao}</span>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800 mb-1">
           <TrendingUp className="w-4 h-4 text-emerald-600" />
           <span>Economia potencial estimada com IBS/CBS:</span>
@@ -252,7 +422,9 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
           {formatarValorK(estimativa.minimo)} a {formatarValorK(estimativa.maximo)}
           <span className="text-xs font-semibold text-slate-600 ml-1.5">/ ano</span>
         </div>
-        <p className="text-[11px] text-slate-600 mt-1 leading-snug">{estimativa.descricao}</p>
+        <p className="text-[11px] text-slate-600 mt-1 leading-snug">
+          {recomendacao.motivo ? recomendacao.motivo : estimativa.descricao}
+        </p>
       </div>
 
       {/* CTA para o relatório completo */}
@@ -276,3 +448,5 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
     </div>
   )
 }
+
+const MATRIZ_INICIAL = MATRIZ_VAZIA_SIMULACAO

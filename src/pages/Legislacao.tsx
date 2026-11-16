@@ -1215,6 +1215,55 @@ export default function Legislacao() {
                   </div>
                 </div>
 
+                {/* (5) Vedação silenciosa ao Simples — card fixo, CTA para /dados-empresa */}
+                <div
+                  data-testid="card-radar-vedacao-simples"
+                  className="rounded-xl bg-gradient-to-br from-[#231a08]/90 via-[#33270e]/80 to-[#07132B] border border-amber-500/40 hover:border-amber-400 shadow-lg relative overflow-hidden transition-all flex flex-col"
+                >
+                  <div className="relative z-10 p-5 sm:p-6 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-extrabold uppercase tracking-wider bg-amber-400 text-[#07132B] shadow-sm">
+                            Simples Nacional
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-white/10 text-amber-300 border border-amber-400/30">
+                            Art. 17 • LC 123/2006
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono text-amber-300 font-semibold">
+                          Vedação Silenciosa
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <h4 className="font-heading font-bold text-base sm:text-lg text-white leading-snug">
+                          Sua empresa pode estar vedada ao Simples sem você saber
+                        </h4>
+                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
+                          Débito com o INSS ou Fazendas Públicas sem exigibilidade suspensa, ou
+                          sócio titular/participante de outra empresa, vedam a opção pelo Simples
+                          Nacional (art. 17, LC 123/2006). Muitas empresas descobrem a vedação só ao
+                          receberem o ofício de exclusão — confirme antes que isso aconteça.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2 text-slate-300 text-[11px] font-mono">
+                        <span className="text-amber-400">Exclusão de ofício:</span>
+                        <span>Vedado por débito ou por sócio em outra empresa</span>
+                      </div>
+                      <Link
+                        to="/dados-empresa"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-heading font-bold text-xs text-[#07132B] bg-amber-400 hover:bg-amber-300 transition-all shadow-sm"
+                      >
+                        Verificar na Dados da Empresa →
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+
                 {carregandoNotificacoes ? (
                   <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center text-xs text-slate-400 font-mono">
                     Carregando avisos do Radar...

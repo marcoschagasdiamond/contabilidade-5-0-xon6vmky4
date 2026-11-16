@@ -3,7 +3,14 @@ import {
   calcularEstimativaExpressa,
   formatarValorK,
 } from '@/components/home/WidgetSimulacaoExpressa'
-import { calcularScoreLeadWhatsApp, registrarLeadCliqueWhatsApp } from '@/services/leadWhatsApp'
+import {
+  calcularScoreLeadWhatsApp,
+  calcularScoreLeadSimulacaoExpressa,
+  ORIGEM_LEAD_SIMULACAO_EXPRESSA_VEDACAO,
+  registrarLeadCliqueWhatsApp,
+  registrarLeadSimulacaoExpressa,
+} from '@/services/leadWhatsApp'
+import { matrizVedacoesDoPerfil, temVedacaoAnonima } from '@/lib/simulacaoExpressaVedacoes'
 import pb from '@/lib/pocketbase/client'
 import * as leadsService from '@/services/leads'
 
@@ -80,5 +87,77 @@ describe('Lead Scoring WhatsApp', () => {
     expect(spyCreate).toHaveBeenCalledTimes(1) // mantem 1
     expect(spyUpdate).toHaveBeenCalledTimes(1)
     expect(sessionStorage.getItem('c50_whatsapp_lead_clicks')).toBe('2')
+  })
+})
+
+describe('Simulação Expressa - Vedações ao Simples', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    sessionStorage.clear()
+  })
+
+  it('detecta vedação anônima só quando há situação marcada', () => {
+    expect(temVedacaoAnonima([])).toBe(false)
+    expect(temVedacaoAnonima(['debito_inss_fazenda'])).toBe(true)
+    expect(temVedacaoAnonima(['socio_outra_empresa'])).toBe(true)
+  })
+
+  it('score do lead cresce com situações de vedação marcadas (caso complexo)', () => {
+    expect(calcularScoreLeadSimulacaoExpressa([])).toBe(30)
+    expect(calcularScoreLeadSimulacaoExpressa(['debito_inss_fazenda'])).toBe(50)
+    expect(calcularScoreLeadSimulacaoExpressa(['debito_inss_fazenda', 'socio_outra_empresa'])).toBe(
+      70,
+    )
+  })
+
+  it('lead da simulação com vedação usa origem indicando vedação e score maior', async () => {
+    const spyCreate = vi
+      .spyOn(leadsService, 'createLead')
+      .mockResolvedValue({ id: 'lead_sim_ved' } as any)
+
+    await registrarLeadSimulacaoExpressa({
+      isAuthenticated: false,
+      selecionadas: ['debito_inss_fazenda'],
+      faturamento: 'Até R$ 4,8 mi',
+      regime: 'Simples Nacional',
+    })
+
+    expect(spyCreate).toHaveBeenCalledTimes(1)
+    const payload = spyCreate.mock.calls[0][0]
+    expect(payload.fonte).toBe(ORIGEM_LEAD_SIMULACAO_EXPRESSA_VEDACAO)
+    expect(payload.score).toBe(50)
+    expect(payload.mensagem).toContain('vedação ao Simples')
+    expect(payload.mensagem).toContain('Débito com INSS ou Fazendas Públicas')
+    expect(sessionStorage.getItem('c50_simulacao_expressa_lead_id')).toBe('lead_sim_ved')
+  })
+
+  it('lead da simulação sem vedação mantém score base e origem padrão', async () => {
+    const spyCreate = vi
+      .spyOn(leadsService, 'createLead')
+      .mockResolvedValue({ id: 'lead_sim_ok' } as any)
+
+    await registrarLeadSimulacaoExpressa({ isAuthenticated: false })
+
+    expect(spyCreate).toHaveBeenCalledTimes(1)
+    const payload = spyCreate.mock.calls[0][0]
+    expect(payload.fonte).toBe('Simulação Expressa (home)')
+    expect(payload.score).toBe(30)
+  })
+
+  it('monta matriz de vedações do perfil da fonte mestra (nível logado)', () => {
+    const vazia = matrizVedacoesDoPerfil(null)
+    expect(vazia.origemCadastro).toBe(false)
+
+    const comVedacao = matrizVedacoesDoPerfil({
+      vedacoesSimplesArt17: ['inc1_debitos_fazenda'],
+      vedacaoSimplesArt17Outra: '',
+      vedacoesPresumido: [],
+      vedacaoPresumidoOutra: '',
+      vedacoesMei: [],
+      vedacaoMeiOutra: '',
+    })
+    expect(comVedacao.origemCadastro).toBe(true)
+    expect(comVedacao.vedadosSimples).toBe(true)
+    expect(comVedacao.vedadosPresumido).toBe(false)
   })
 })
