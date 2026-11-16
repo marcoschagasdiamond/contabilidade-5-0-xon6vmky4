@@ -11,9 +11,11 @@ import {
   Boxes,
   ShoppingCart,
   Receipt,
+  ShieldAlert,
 } from 'lucide-react'
 import { obterAliquotaISS } from '@/lib/regimes'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
+import { BASE_LEGAL_VEDACOES_SIMPLES } from '@/lib/vedacoesSimples'
 
 interface BlocoAvisosRegimeProps {
   regimeAtual?: string
@@ -25,6 +27,9 @@ interface BlocoAvisosRegimeProps {
   perfilInsumosMonofasicos?: number
   perfilInsumosAliquotaReduzida?: number
   porcentagemComprasSimplesNacional?: number
+  /** Ids das vedações do art. 17 marcados em /dados-empresa (para o alerta do inc. V). */
+  vedacoesSimplesArt17?: string[]
+  vedacaoSimplesArt17Outra?: string
 }
 
 // Presunção do segmento no Lucro Presumido (IRPJ / CSLL) — apenas orientação visual
@@ -81,6 +86,8 @@ export function BlocoAvisosRegime({
   perfilInsumosMonofasicos = 0,
   perfilInsumosAliquotaReduzida = 0,
   porcentagemComprasSimplesNacional = 0,
+  vedacoesSimplesArt17 = [],
+  vedacaoSimplesArt17Outra = '',
 }: BlocoAvisosRegimeProps) {
   if (!regimeAtual || regimeAtual === 'Nova empresa / Ainda não optante') return null
 
@@ -94,6 +101,8 @@ export function BlocoAvisosRegime({
     const proximoTeto = rbt12 >= TETO_SIMPLES * 0.9
     const estourouTeto = rbt12 > TETO_SIMPLES
     const folhaNecessaria = faturamentoMensal * 0.28
+    // Alerta de exclusão de ofício: optante do Simples com vedação do inc. V marcada
+    const vedaInc5Ativa = vedacoesSimplesArt17.includes('inc5_debitos_inss_fazenda')
 
     return (
       <div className="space-y-3">
@@ -191,6 +200,34 @@ export function BlocoAvisosRegime({
               {formatarMoeda(TETO_SIMPLES)}), a empresa não pode permanecer no Simples —{' '}
               <strong>exclusão obrigatória</strong> (o excesso tributa pelo Lucro Presumido).
             </p>
+          </div>
+        )}
+
+        {/* ALERTA VERMELHO: RISCO DE EXCLUSÃO DE OFÍCIO — OPTANTE + VEDAÇÃO INC. V (DÉBITO INSS/FAZENDA) */}
+        {vedaInc5Ativa && (
+          <div className="rounded-xl border-2 border-red-400 bg-red-50 p-4 flex items-start gap-3">
+            <ShieldAlert className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-red-900 leading-relaxed">
+              <strong className="font-extrabold uppercase tracking-wide block">
+                Risco de exclusão de ofício do Simples Nacional (art. 17, V)
+              </strong>
+              <span className="block mt-1">
+                A empresa está <strong>optante</strong> do Simples Nacional e há{' '}
+                <strong>débito com o INSS ou com as Fazendas Públicas</strong> (certidão positiva
+                sem exigibilidade suspensa, sem parcelamento ou decisão judicial) registrado em
+                Dados da Empresa. Nesse cenário, a Receita Federal pode promover a{' '}
+                <strong>exclusão de ofício</strong> da empresa do regime.
+              </span>
+              {vedacaoSimplesArt17Outra.trim() && (
+                <span className="block mt-1 font-semibold">
+                  Registro livre associado: “{vedacaoSimplesArt17Outra.trim()}”
+                </span>
+              )}
+              <span className="block mt-1.5 text-[11px] text-red-700">
+                {BASE_LEGAL_VEDACOES_SIMPLES} Regularize ou suspenda a exigibilidade do débito
+                (parcelamento ou decisão judicial) — a avaliação final é do especialista.
+              </span>
+            </div>
           </div>
         )}
       </div>

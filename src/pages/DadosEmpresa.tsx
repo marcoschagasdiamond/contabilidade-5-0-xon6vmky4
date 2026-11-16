@@ -206,27 +206,6 @@ export default function DadosEmpresa() {
     return executarValidacaoFiscal(formData)
   }, [formData])
 
-  // Vedações legais ao Simples Nacional (art. 17 LC 123/2006) — apenas orientativo
-  const handleToggleVedacao = React.useCallback(
-    (id: IdVedacaoSimples, marcado: boolean) => {
-      atualizarCampo((prev) => {
-        const lista = prev.vedacoesSimplesArt17 || []
-        return {
-          ...prev,
-          vedacoesSimplesArt17: marcado ? [...lista, id] : lista.filter((v) => v !== id),
-        }
-      })
-    },
-    [atualizarCampo],
-  )
-
-  const handleChangeVedacaoOutra = React.useCallback(
-    (texto: string) => {
-      atualizarCampo((prev) => ({ ...prev, vedacaoSimplesArt17Outra: texto }))
-    },
-    [atualizarCampo],
-  )
-
   // Rastreia se o usuário já editou campos localmente
   const hasEditedRef = React.useRef(false)
   // Rastreia o ID da empresa vinculado para detectar troca de cliente ativo
@@ -262,6 +241,27 @@ export default function DadosEmpresa() {
       setFormData(atualizador)
     },
     [],
+  )
+
+  // Vedações legais ao Simples Nacional (art. 17 LC 123/2006) — apenas orientativo
+  const handleToggleVedacao = React.useCallback(
+    (id: IdVedacaoSimples, marcado: boolean) => {
+      atualizarCampo((prev) => {
+        const lista = prev.vedacoesSimplesArt17 || []
+        return {
+          ...prev,
+          vedacoesSimplesArt17: marcado ? [...lista, id] : lista.filter((v) => v !== id),
+        }
+      })
+    },
+    [atualizarCampo],
+  )
+
+  const handleChangeVedacaoOutra = React.useCallback(
+    (texto: string) => {
+      atualizarCampo((prev) => ({ ...prev, vedacaoSimplesArt17Outra: texto }))
+    },
+    [atualizarCampo],
   )
 
   // Modal de confirmação para troca de segmento via CNAE Principal
@@ -2297,6 +2297,8 @@ export default function DadosEmpresa() {
                 perfilInsumosMonofasicos={formData.perfilInsumosMonofasicos}
                 perfilInsumosAliquotaReduzida={formData.perfilInsumosAliquotaReduzida}
                 porcentagemComprasSimplesNacional={formData.porcentagemComprasSimplesNacional}
+                vedacoesSimplesArt17={formData.vedacoesSimplesArt17}
+                vedacaoSimplesArt17Outra={formData.vedacaoSimplesArt17Outra}
               />
 
               {/* SUB-BLOCO F: PARÂMETROS FISCAIS & INSUMOS (FASE 1 - FONTE MESTRA) */}

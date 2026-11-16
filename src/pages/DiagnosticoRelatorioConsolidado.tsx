@@ -25,6 +25,7 @@ import { SecaoDadosGerenciaisImportados } from '@/components/diagnosticos/SecaoD
 import { SecaoVinculosSocietariosConsolidado } from '@/components/diagnosticos/SecaoVinculosSocietariosConsolidado'
 import { BadgeProvenienciaCampo } from '@/components/diagnosticos/BadgeProvenienciaCampo'
 import { ModalTrocarEmpresaDiagnostico } from '@/components/diagnosticos/ModalTrocarEmpresaDiagnostico'
+import { QuadroVedacoesSimplesRegimes } from '@/components/diagnosticos/QuadroVedacoesSimplesRegimes'
 import {
   exportarPdfEtapaConfiguracoes,
   exportarPdfEtapaAutoavaliacao,
@@ -41,6 +42,7 @@ import {
 } from '@/lib/regimes'
 import { useToast } from '@/hooks/use-toast'
 import type { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
+import { VEDACOES_SIMPLES_ART17, BASE_LEGAL_VEDACOES_SIMPLES } from '@/lib/vedacoesSimples'
 import {
   listarHistoricoRelatoriosPorCliente,
   registrarVersaoRelatorio,
@@ -1877,6 +1879,12 @@ export default function DiagnosticoRelatorioConsolidado() {
                     </div>
                   </div>
 
+                  {/* VEDAÇÕES LEGAIS AO SIMPLES (art. 17 LC 123/2006) — reflete o que está marcado em Dados da Empresa */}
+                  <QuadroVedacoesSimplesRegimes
+                    vedacoesSimplesArt17={dadosEmpresa?.vedacoesSimplesArt17}
+                    vedacaoSimplesArt17Outra={dadosEmpresa?.vedacaoSimplesArt17Outra}
+                  />
+
                   {/* NOTA ORIENTATIVA NO PAINEL DE COMPARAÇÃO DE REGIME */}
                   <AvisoOrientativo variante="curta" tema="claro" />
                 </div>
@@ -2319,6 +2327,12 @@ export default function DiagnosticoRelatorioConsolidado() {
                     </strong>
                   </div>
                 </div>
+
+                {/* VEDAÇÕES LEGAIS AO SIMPLES (art. 17 LC 123/2006) — reflete o que está marcado em Dados da Empresa */}
+                <QuadroVedacoesSimplesRegimes
+                  vedacoesSimplesArt17={dadosEmpresa?.vedacoesSimplesArt17}
+                  vedacaoSimplesArt17Outra={dadosEmpresa?.vedacaoSimplesArt17Outra}
+                />
 
                 {/* NOTA ORIENTATIVA NO RELATÓRIO INDIVIDUAL DA ETAPA 04 */}
                 <AvisoOrientativo variante="curta" tema="claro" />
