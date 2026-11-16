@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-16T15:12:01.773Z",
+  "generatedAt": "2026-11-16T16:57:11.075Z",
   "collections": [
     {
       "name": "users",
@@ -1020,6 +1020,18 @@
         {
           "name": "credito_ibs_cbs_apurado",
           "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vedacoes_simples_art17",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vedacao_simples_outra",
+          "type": "text",
           "required": false,
           "system": false
         }
