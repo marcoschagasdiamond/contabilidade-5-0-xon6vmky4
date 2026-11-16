@@ -62,6 +62,10 @@ export interface ClienteEmpresaModel {
   cnaes_secundarios?: any
   vedacoes_simples_art17?: any
   vedacao_simples_outra?: string
+  vedacoes_presumido?: any
+  vedacao_presumido_outra?: string
+  vedacoes_mei?: any
+  vedacao_mei_outra?: string
   created?: string
   updated?: string
 }
@@ -184,6 +188,17 @@ export function perfilToRecord(
 
   if (perfil.vedacaoSimplesArt17Outra !== undefined)
     (result as any).vedacao_simples_outra = perfil.vedacaoSimplesArt17Outra
+
+  if (perfil.vedacoesPresumido !== undefined)
+    (result as any).vedacoes_presumido = perfil.vedacoesPresumido
+
+  if (perfil.vedacaoPresumidoOutra !== undefined)
+    (result as any).vedacao_presumido_outra = perfil.vedacaoPresumidoOutra
+
+  if (perfil.vedacoesMei !== undefined) (result as any).vedacoes_mei = perfil.vedacoesMei
+
+  if (perfil.vedacaoMeiOutra !== undefined)
+    (result as any).vedacao_mei_outra = perfil.vedacaoMeiOutra
 
   return result
 }
@@ -378,6 +393,32 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
           })()
         : [],
     vedacaoSimplesArt17Outra: (rec as any).vedacao_simples_outra || '',
+    vedacoesPresumido: Array.isArray((rec as any).vedacoes_presumido)
+      ? (rec as any).vedacoes_presumido
+      : typeof (rec as any).vedacoes_presumido === 'string'
+        ? (() => {
+            try {
+              const parsed = JSON.parse((rec as any).vedacoes_presumido)
+              return Array.isArray(parsed) ? parsed : []
+            } catch {
+              return []
+            }
+          })()
+        : [],
+    vedacaoPresumidoOutra: (rec as any).vedacao_presumido_outra || '',
+    vedacoesMei: Array.isArray((rec as any).vedacoes_mei)
+      ? (rec as any).vedacoes_mei
+      : typeof (rec as any).vedacoes_mei === 'string'
+        ? (() => {
+            try {
+              const parsed = JSON.parse((rec as any).vedacoes_mei)
+              return Array.isArray(parsed) ? parsed : []
+            } catch {
+              return []
+            }
+          })()
+        : [],
+    vedacaoMeiOutra: (rec as any).vedacao_mei_outra || '',
     atualizadoEm: rec.updated || rec.created,
   }
 }

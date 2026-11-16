@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-16T20:21:42.982Z",
+  "generatedAt": "2026-11-16T20:36:33.582Z",
   "collections": [
     {
       "name": "users",
@@ -1031,6 +1031,30 @@
         },
         {
           "name": "vedacao_simples_outra",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vedacoes_presumido",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vedacao_presumido_outra",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vedacoes_mei",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vedacao_mei_outra",
           "type": "text",
           "required": false,
           "system": false

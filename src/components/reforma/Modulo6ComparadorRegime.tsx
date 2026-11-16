@@ -19,8 +19,10 @@ import {
 } from 'lucide-react'
 import { PERGUNTAS_COMPARADOR, CENARIOS_COMUNS_COMPARADOR } from '@/data/reformaTributariaData'
 import { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
-import { temVedacaoSimples, construirMotivoVedacao } from '@/lib/vedacoesSimples'
 import {
+  VEDACOES_SIMPLES_ART17,
+  temVedacaoSimples,
+  construirMotivoVedacao,
   VEDACOES_PRESUMIDO,
   VEDACOES_MEI,
   ROTULO_INDISPONIVEL_VEDACOES_PRESUMIDO,
@@ -286,11 +288,8 @@ export function Modulo6ComparadorRegime({
     const vedacoesMarcadas = dadosEmpresa?.vedacoesSimplesArt17 || []
     const vedacaoOutraTexto = (dadosEmpresa?.vedacaoSimplesArt17Outra || '').trim()
     const vedadoSimples = temVedacaoSimples(dadosEmpresa)
-    const incisosVedacao = vedacoesMarcadas
-      .map((id) => VEDACOES_SIMPLES_ART17.find((v) => v.id === id)?.rotuloCurto || id)
-      .join(', ')
     const motivoVedacaoSimples = vedadoSimples
-      ? construirMotivoVedacao(incisosVedacao, vedacaoOutraTexto)
+      ? construirMotivoVedacao(vedacoesMarcadas, vedacaoOutraTexto)
       : ''
 
     const elegivelSimples = faturamentoAnual <= TETO_SIMPLES && !vedadoSimples

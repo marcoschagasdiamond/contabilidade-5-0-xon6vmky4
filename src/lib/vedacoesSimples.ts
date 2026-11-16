@@ -88,12 +88,13 @@ export const BASE_LEGAL_VEDACOES_SIMPLES =
 /** Rótulo exibido para o regime indisponível nas comparações de regimes. */
 export const ROTULO_INDISPONIVEL_VEDACAO = 'Indisponível — vedação legal (art. 17, LC 123/2006)'
 
-/** Constrói o motivo de inelegibilidade por vedação, citando os incisos marcados. */
-export function construirMotivoVedacao(idsMarcados: string[]): string {
-  const incisos = idsMarcados
-    .map((id) => VEDACOES_SIMPLES_ART17.find((v) => v.id === id)?.inciso)
+/** Constrói o motivo de inelegibilidade por vedação, citando os incisos marcados e, se houver, o texto livre "Outra". */
+export function construirMotivoVedacao(idsMarcados: string[], outraTexto?: string): string {
+  const partes = idsMarcados
+    .map((id) => VEDACOES_SIMPLES_ART17.find((v) => v.id === id)?.rotuloCurto || id)
     .filter(Boolean)
-    .join(', ')
+  if (outraTexto?.trim()) partes.push(`Outra: ${outraTexto.trim()}`)
+  const incisos = partes.join(', ')
   return `${ROTULO_INDISPONIVEL_VEDACAO}${incisos ? ` — ${incisos}` : ''}`
 }
 

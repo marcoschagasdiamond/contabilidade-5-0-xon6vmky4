@@ -5,6 +5,7 @@
 // ============================================================================
 
 import {
+  VEDACOES_SIMPLES_ART17,
   BASE_LEGAL_VEDACOES_SIMPLES,
   ROTULO_INDISPONIVEL_VEDACAO,
   construirMotivoVedacao,
@@ -13,6 +14,7 @@ import {
 } from './vedacoesSimples'
 
 export {
+  VEDACOES_SIMPLES_ART17,
   BASE_LEGAL_VEDACOES_SIMPLES,
   ROTULO_INDISPONIVEL_VEDACAO,
   construirMotivoVedacao,
@@ -70,17 +72,23 @@ export const BASE_LEGAL_VEDACOES_PRESUMIDO =
   'Base legal: Lei 9.718/98 (art. 14), com as restrições da LC 214/2025 (art. 348) para empresas importadoras no novo sistema de IBS/CBS.'
 
 /** Rótulo exibido para o Lucro Presumido indisponível nas comparações de regimes. */
-export const ROTULO_INDISPONIVEL_VEDACAO_PRESUMIDO = 'Indisponível — vedação legal (Lei 9.718/98)'
+export const ROTULO_INDISPONIVEL_VEDACOES_PRESUMIDO = 'Indisponível — vedação legal (Lei 9.718/98)'
+/** Alias no singular mantido para compatibilidade com consumidores antigos. */
+export const ROTULO_INDISPONIVEL_VEDACAO_PRESUMIDO = ROTULO_INDISPONIVEL_VEDACOES_PRESUMIDO
 
 /** Limite anual de receita bruta do Lucro Presumido. */
 export const LIMITE_RECEITA_ANUAL_PRESUMIDO = 78000000
 
-/** Constrói o motivo de indisponibilidade do Presumido, citando os itens marcados. */
-export function construirMotivoVedacaoPresumido(idsMarcados: string[]): string {
-  const itens = idsMarcados
+/** Constrói o motivo de indisponibilidade do Presumido, citando os itens marcados e, se houver, o texto livre "Outra". */
+export function construirMotivoVedacaoPresumido(
+  idsMarcados: string[],
+  outraTexto?: string,
+): string {
+  const partes = idsMarcados
     .map((id) => VEDACOES_PRESUMIDO.find((v) => v.id === id)?.rotuloCurto || id)
     .filter(Boolean)
-    .join(', ')
+  if (outraTexto?.trim()) partes.push(`Outra: ${outraTexto.trim()}`)
+  const itens = partes.join(', ')
   return `${ROTULO_INDISPONIVEL_VEDACAO_PRESUMIDO}${itens ? ` — ${itens}` : ''}`
 }
 
@@ -164,18 +172,21 @@ export const BASE_LEGAL_VEDACOES_MEI =
   'Base legal: Resolução CGSN 140/2018 (art. 3º) — condições para ser Microempreendedor Individual.'
 
 /** Rótulo exibido para o MEI indisponível nas comparações de regimes. */
-export const ROTULO_INDISPONIVEL_VEDACAO_MEI =
+export const ROTULO_INDISPONIVEL_VEDACOES_MEI =
   'Indisponível — vedação legal (Resolução CGSN 140/2018)'
+/** Alias no singular mantido para compatibilidade com consumidores antigos. */
+export const ROTULO_INDISPONIVEL_VEDACAO_MEI = ROTULO_INDISPONIVEL_VEDACOES_MEI
 
 /** Limite anual de receita bruta do MEI. */
 export const LIMITE_RECEITA_ANUAL_MEI = 81000
 
-/** Constrói o motivo de indisponibilidade do MEI, citando os itens marcados. */
-export function construirMotivoVedacaoMei(idsMarcados: string[]): string {
-  const itens = idsMarcados
+/** Constrói o motivo de indisponibilidade do MEI, citando os itens marcados e, se houver, o texto livre "Outra". */
+export function construirMotivoVedacaoMei(idsMarcados: string[], outraTexto?: string): string {
+  const partes = idsMarcados
     .map((id) => VEDACOES_MEI.find((v) => v.id === id)?.rotuloCurto || id)
     .filter(Boolean)
-    .join(', ')
+  if (outraTexto?.trim()) partes.push(`Outra: ${outraTexto.trim()}`)
+  const itens = partes.join(', ')
   return `${ROTULO_INDISPONIVEL_VEDACAO_MEI}${itens ? ` — ${itens}` : ''}`
 }
 
