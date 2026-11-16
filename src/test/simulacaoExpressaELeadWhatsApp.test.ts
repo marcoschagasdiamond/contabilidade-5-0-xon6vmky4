@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   calcularEstimativaExpressa,
   formatarValorK,
+  calcularFaixaLucroRealExpressa,
 } from '@/components/home/WidgetSimulacaoExpressa'
 import {
   calcularScoreLeadWhatsApp,
@@ -34,6 +35,21 @@ describe('WidgetSimulacaoExpressa - Lógica de Cálculo', () => {
     expect(formatarValorK(180_000)).toBe('R$ 180 mil')
     expect(formatarValorK(1_200_000)).toBe('R$ 1,2 mi')
     expect(formatarValorK(2_000_000)).toBe('R$ 2 mi')
+  })
+})
+
+describe('WidgetSimulacaoExpressa - Faixa Lucro Real mensal (conservadora)', () => {
+  it('devolve faixa mensal positiva, com mínimo ≤ máximo, e cresce com as compras', () => {
+    const baixa = calcularFaixaLucroRealExpressa('ate_4_8m', 'baixa')
+    const alta = calcularFaixaLucroRealExpressa('ate_4_8m', 'alta')
+    expect(baixa.minimo).toBeGreaterThanOrEqual(0)
+    expect(baixa.maximo).toBeGreaterThanOrEqual(baixa.minimo)
+    expect(alta.maximo).toBeGreaterThan(baixa.maximo)
+  })
+
+  it('nunca inventa número único: mínimo e máximo são distintos (faixa real)', () => {
+    const faixa = calcularFaixaLucroRealExpressa('4_8m_50m', 'media')
+    expect(faixa.maximo).toBeGreaterThan(faixa.minimo)
   })
 })
 

@@ -9,6 +9,7 @@ import {
   Info,
   AlertTriangle,
   Store,
+  Building2,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
@@ -97,6 +98,48 @@ export function formatarValorK(val: number): string {
   const milhares = Math.round(val / 1000)
   return `R$ ${milhares} mil`
 }
+
+/**
+ * Estimativa CONSERVADORA do Lucro Real (R$/MÊS), como FAIXA — nunca número único.
+ * Usa apenas o que o widget já pergunta: % de compras/insumos com direito a
+ * crédito (Pergunta 3) e o faturamento (Pergunta 1). NÃO inventa crédito de
+ * folha (a folha não é perguntada no widget): o piso assume só créditos de
+ * compras — daí o caráter conservador e o disclaimer exibido no card.
+ */
+export function calcularFaixaLucroRealExpressa(
+  faturamento: FaixaFaturamento,
+  despesas: NivelDespesasCredito,
+): { minimo: number; maximo: number } {
+  // Faturamento anual de referência (mesma premissa de calcularEstimativaExpressa)
+  const fatRef =
+    faturamento === 'ate_4_8m' ? 2_400_000 : faturamento === '4_8m_50m' ? 18_000_000 : 80_000_000
+
+  // % de compras/insumos com direito a crédito implícito na Pergunta 3
+  const percCompras = despesas === 'baixa' ? 0.15 : despesas === 'media' ? 0.375 : 0.65
+
+  // Alíquota de referência IBS/CBS sobre compras (LC 214/2025, ~26,5%)
+  const ALIQUOTA_IBS_CBS = 0.265
+
+  // Crédito mensal potencial sobre compras: cenário mínimo (só 60% dos créditos
+  // aproveitados no primeiro ciclo) e máximo (aproveitamento pleno)
+  const creditoAnualMax = fatRef * percCompras * ALIQUOTA_IBS_CBS
+  const creditoAnualMin = creditoAnualMax * 0.6
+
+  // Impacto mensal do regime atual (carga tributária que os créditos podem reduzir)
+  // — aproximado por faixa, coerente com os fatores usados no resultado anual
+  const cargaMensalRef =
+    faturamento === 'ate_4_8m' ? 16_000 : faturamento === '4_8m_50m' ? 90_000 : 320_000
+
+  const minimo = Math.max(0, Math.round((creditoAnualMin * 0.35) / 12 / 100) * 100)
+  const maximo = Math.max(minimo, Math.round(creditoAnualMax / 12 / 100) * 100)
+
+  // Nunca acima da carga mensal de referência do regime atual (estimativa conservadora)
+  return { minimo: Math.min(minimo, cargaMensalRef), maximo: Math.min(maximo, cargaMensalRef) }
+}
+
+/** Disclaimer fixo do card do Lucro Real (faixa conservadora). */
+export const DISCLAIMER_LUCRO_REAL_FAIXA =
+  'Estimativa conservadora — depende dos créditos apurados na apuração real.'
 
 /** Tipos de atividade do MEI e o valor mensal da guia DAS fixa de 2026 (R$/mês). */
 export type TipoAtividadeMei = 'comercio' | 'servicos' | 'comercio_e_servicos'
@@ -203,6 +246,24 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
     return base
   }, [matrizLogada, vedacaoAnonima, vedacaoMeiAnonima, faturamentoMeiExcede])
   const alertaMei = useMemo(() => alertaVedacaoMeiTexto(vedacaoMeiAnonima), [vedacaoMeiAnonima])
+
+  // MEI vedado pela MATRIZ (nível logado): o card some do resultado — o motivo
+  // aparece apenas no texto explicativo (alertaVedacao) acima. Vedado por
+  // LIMITE de faturamento (anônimo): card permanece, com o rótulo atual.
+  const escondeCardMei = matrizLogada.vedadosMei && statusMei.status === 'vedado'
+  const motivoMeiResumo = escondeCardMei
+    ? `MEI indisponível para esta empresa por vedação legal registrada (Resolução CGSN 140/2018, art. 3º${
+        matrizLogada.perfil.vedacoesMei?.length || matrizLogada.perfil.vedacaoMeiOutra
+          ? ' — situações registradas em Dados da Empresa'
+          : ''
+      }).`
+    : null
+
+  // Faixa mensal CONSERVADORA do Lucro Real (card novo, sempre exibido)
+  const faixaRealMensal = useMemo(
+    () => calcularFaixaLucroRealExpressa(faturamento, despesas),
+    [faturamento, despesas],
+  )
 
   const toggleVedacaoAnonima = (id: IdVedacaoAnonima) => {
     setVedacoesAnonimas((prev) =>
@@ -457,63 +518,101 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
         </div>
       )}
 
-      {/* Card do MEI (checagem automática pelo faturamento + checkbox da Pergunta 4) */}
+      {/* Card do MEI — OCULTO quando vedado pela matriz logada (motivo fica no resumo) */}
+      {escondeCardMei ? (
+        <div data-testid="widget-mei-vedado-resumo" className="mb-3.5">
+          <p className="text-[11px] text-slate-500 leading-snug">{motivoMeiResumo}</p>
+        </div>
+      ) : (
+        <div
+          data-testid="widget-card-mei"
+          className={`p-3 sm:p-3.5 rounded-xl border mb-3.5 ${
+            statusMei.status !== 'disponivel'
+              ? 'bg-amber-50/70 border-amber-300'
+              : 'bg-white border-slate-200'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#07132B]">
+              <Store className="w-4 h-4 text-blue-600 shrink-0" />
+              <span>MEI (Microempreendedor Individual)</span>
+            </div>
+            {statusMei.status === 'vedado' && (
+              <span
+                data-testid="mei-vedado-badge"
+                className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300"
+              >
+                {statusMei.rotulo}
+              </span>
+            )}
+            {statusMei.status === 'possivel_vedacao' && (
+              <span
+                data-testid="mei-possivel-vedacao-badge"
+                className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300"
+              >
+                {statusMei.rotulo}
+              </span>
+            )}
+            {statusMei.status === 'disponivel' && (
+              <span
+                data-testid="mei-disponivel-badge"
+                className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-300"
+              >
+                Disponível
+              </span>
+            )}
+          </div>
+
+          {statusMei.status === 'vedado' ? (
+            <p className="text-[11px] text-rose-800 leading-snug">
+              {matrizLogada.vedadosMei
+                ? alertaVedacao
+                : `Receita bruta anual informada acima de ${formatarValorK(LIMITE_MEI_SIMULACAO)} — a empresa não se qualifica como MEI (Resolução CGSN 140/2018, art. 3º).`}
+            </p>
+          ) : (
+            <p className="text-[11px] text-slate-600 leading-snug">
+              <span className="font-semibold text-slate-700">
+                Guia DAS fixa: {formatarValorMeiDas('servicos')}/mês
+              </span>{' '}
+              (serviços; R$ 82,05 comércio, R$ 86,05 serviços — INSS 5% do salário mínimo +
+              ICMS/ISS).
+              {statusMei.status === 'possivel_vedacao' && alertaMei && (
+                <span className="block mt-1 font-semibold text-amber-800">{alertaMei}</span>
+              )}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Card do Lucro Real: faixa mensal conservadora a partir das respostas do widget */}
       <div
-        data-testid="widget-card-mei"
-        className={`p-3 sm:p-3.5 rounded-xl border mb-3.5 ${
-          statusMei.status !== 'disponivel'
-            ? 'bg-amber-50/70 border-amber-300'
-            : 'bg-white border-slate-200'
-        }`}
+        data-testid="widget-card-lucro-real"
+        className="p-3 sm:p-3.5 rounded-xl border mb-3.5 bg-gradient-to-br from-sky-50/70 to-white border-sky-200"
       >
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#07132B]">
-            <Store className="w-4 h-4 text-blue-600 shrink-0" />
-            <span>MEI (Microempreendedor Individual)</span>
+            <Building2 className="w-4 h-4 text-sky-700 shrink-0" />
+            <span>Lucro Real (comparativo mensal)</span>
           </div>
-          {statusMei.status === 'vedado' && (
-            <span
-              data-testid="mei-vedado-badge"
-              className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300"
-            >
-              {statusMei.rotulo}
-            </span>
-          )}
-          {statusMei.status === 'possivel_vedacao' && (
-            <span
-              data-testid="mei-possivel-vedacao-badge"
-              className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300"
-            >
-              {statusMei.rotulo}
-            </span>
-          )}
-          {statusMei.status === 'disponivel' && (
-            <span
-              data-testid="mei-disponivel-badge"
-              className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-300"
-            >
-              Disponível
-            </span>
-          )}
+          <span
+            data-testid="lucro-real-faixa-badge"
+            className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 border border-sky-300"
+          >
+            Faixa estimada
+          </span>
         </div>
-
-        {statusMei.status === 'vedado' ? (
-          <p className="text-[11px] text-rose-800 leading-snug">
-            {matrizLogada.vedadosMei
-              ? alertaVedacao
-              : `Receita bruta anual informada acima de ${formatarValorK(LIMITE_MEI_SIMULACAO)} — a empresa não se qualifica como MEI (Resolução CGSN 140/2018, art. 3º).`}
-          </p>
-        ) : (
-          <p className="text-[11px] text-slate-600 leading-snug">
-            <span className="font-semibold text-slate-700">
-              Guia DAS fixa: {formatarValorMeiDas('servicos')}/mês
-            </span>{' '}
-            (serviços; R$ 82,05 comércio, R$ 86,05 serviços — INSS 5% do salário mínimo + ICMS/ISS).
-            {statusMei.status === 'possivel_vedacao' && alertaMei && (
-              <span className="block mt-1 font-semibold text-amber-800">{alertaMei}</span>
-            )}
-          </p>
-        )}
+        <div
+          data-testid="lucro-real-faixa-mensal"
+          className="text-base font-heading font-extrabold text-sky-900 tracking-tight"
+        >
+          entre {formatarValorK(faixaRealMensal.minimo)} e {formatarValorK(faixaRealMensal.maximo)}
+          <span className="text-xs font-semibold text-slate-600 ml-1.5">/ mês</span>
+        </div>
+        <p className="text-[11px] text-slate-600 mt-1 leading-snug">
+          Créditos potenciais sobre compras, insumos e serviços (percentual da Pergunta 3) que o
+          Lucro Real permite aproveitar integralmente, aproximados mês a mês.{' '}
+          <span className="font-semibold text-slate-700">{DISCLAIMER_LUCRO_REAL_FAIXA}</span>
+        </p>
       </div>
 
       {/* Card do Resultado na hora */}
