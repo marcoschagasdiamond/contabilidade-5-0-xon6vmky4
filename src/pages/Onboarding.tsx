@@ -27,8 +27,7 @@ import {
 import { salvarProgressoOnboarding } from '@/services/onboarding'
 import { VEDACOES_SIMPLES_ART17, VEDACOES_PRESUMIDO, VEDACOES_MEI } from '@/lib/vedacoesRegimes'
 import type { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
-
-const CHAVE_PREFILL = 'contabilidade50_onboarding_prefill_simulacao'
+import { CHAVE_PREFILL_ONBOARDING as CHAVE_PREFILL } from '@/components/home/WidgetSimulacaoExpressa'
 
 const PASSOS = ['Boas-vindas', 'Dados da Empresa', 'Regime & Vedações', 'Concluído']
 
@@ -85,6 +84,16 @@ const catalogoSimples = VEDACOES_SIMPLES_ART17 as unknown as ReadonlyArray<{
   rotuloCurto?: string
   descricao?: string
 }>
+
+/**
+ * Mapeia os ids anônimos da Simulação Expressa (pergunta 4) para os campos da
+ * matriz de vedações — ids anônimos não coincidem com os ids da matriz.
+ */
+const MAPA_VEDACAO_ANONIMA_PARA_MATRIZ: Record<string, { grupo: 'simples' | 'mei'; id: string }> = {
+  debito_inss_fazenda: { grupo: 'simples', id: 'inc5_debitos_inss_fazenda' },
+  socio_outra_empresa: { grupo: 'mei', id: 'mei_socio' },
+  mei_atividade_nao_permitida: { grupo: 'mei', id: 'mei_atividade_nao_permitida' },
+}
 
 const catalogoPresumido = VEDACOES_PRESUMIDO as ReadonlyArray<{
   id: string
@@ -181,15 +190,17 @@ export default function Onboarding() {
           if (fat) setForm((prev) => ({ ...prev, faturamentoMensal: fat }))
           const regime = prefill.regime ? REGIME_POR_CHAVE[prefill.regime] : undefined
           if (regime) setRegimeAtual(regime)
-          // Só ids presentes na matriz são transportados como vedações registradas
-          const idsSimples = (prefill.vedacoesAnonimas || []).filter((id) =>
-            catalogoSimples.some((v) => v.id === id),
-          )
+          // Mapeia ids anônimos da simulação para os ids da matriz (só os válidos entram)
+          const mapeadas = [
+            ...(prefill.vedacoesAnonimas || []),
+            ...(prefill.vedacoesMeiAnonimas || []),
+          ]
+            .map((id) => MAPA_VEDACAO_ANONIMA_PARA_MATRIZ[id])
+            .filter(Boolean)
+          const idsSimples = mapeadas.filter((m) => m.grupo === 'simples').map((m) => m.id)
+          const idsMei = mapeadas.filter((m) => m.grupo === 'mei').map((m) => m.id)
           if (idsSimples.length)
             setVedSimples((prev) => Array.from(new Set([...prev, ...idsSimples])))
-          const idsMei = (prefill.vedacoesMeiAnonimas || []).filter((id) =>
-            catalogoMei.some((v) => v.id === id),
-          )
           if (idsMei.length) setVedMei((prev) => Array.from(new Set([...prev, ...idsMei])))
         }
       } catch (err) {

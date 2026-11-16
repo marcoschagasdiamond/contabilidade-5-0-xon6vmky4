@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { TrendingUp, ArrowRight, ShieldCheck, CheckCircle2, Lock } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import WidgetSimulacaoExpressa from '@/components/home/WidgetSimulacaoExpressa'
+const BannerOnboardingHome = lazy(() => import('@/components/home/BannerOnboardingHome'))
 
 // Code splitting de componentes abaixo da dobra para otimizar First Contentful Paint / TBT da Home
 const SecaoServicosHome = lazy(() => import('@/components/home/SecaoServicosHome'))
@@ -28,6 +29,11 @@ export default function Index() {
 
   return (
     <div className="w-full">
+      {/* BANNER DISCRETO DE ONBOARDING (só logado sem empresa e sem onboarding concluído/dispensado) */}
+      <Suspense fallback={null}>
+        <BannerOnboardingHome />
+      </Suspense>
+
       {/* HERO SECTION — CARREGAMENTO IMEDIATO */}
       <section className="relative bg-[#0A1A13] text-white pt-24 pb-16 md:py-24 overflow-hidden border-b border-white/10">
         {/* Background glow effects */}

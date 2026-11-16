@@ -60,6 +60,7 @@ import RecuperadorCreditos from './pages/RecuperadorCreditos'
 import DashboardSimulacoes from './pages/DashboardSimulacoes'
 import MeusRelatorios from './pages/MeusRelatorios'
 import DadosEmpresa from './pages/DadosEmpresa'
+import Onboarding from './pages/Onboarding'
 import Planos from './pages/Planos'
 import Agendamento from './pages/Agendamento'
 import Manual from './pages/Manual'
@@ -299,6 +300,14 @@ const App = () => (
                   element={
                     <RotaAutenticada>
                       <DadosEmpresa />
+                    </RotaAutenticada>
+                  }
+                />
+                <Route
+                  path="/onboarding"
+                  element={
+                    <RotaAutenticada>
+                      <Onboarding />
                     </RotaAutenticada>
                   }
                 />

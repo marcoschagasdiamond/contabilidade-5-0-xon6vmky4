@@ -39,6 +39,9 @@ import {
 import { registrarLeadSimulacaoExpressa } from '@/services/leadWhatsApp'
 import type { ClienteEmpresaRecord } from '@/services/clientesEmpresas'
 
+/** Chave do rascunho que o wizard /onboarding consome para pré-preencher passos 2/3. */
+export const CHAVE_PREFILL_ONBOARDING = 'contabilidade50_onboarding_prefill_simulacao'
+
 export type FaixaFaturamento = 'ate_4_8m' | '4_8m_50m' | 'acima_50m'
 export type RegimeAtual = 'simples' | 'presumido' | 'real'
 export type NivelDespesasCredito = 'baixa' | 'media' | 'alta'
@@ -277,6 +280,27 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
     )
   }
 
+  // Rascunho para o wizard /onboarding pré-preencher os passos 2 e 3.
+  // Gravado só no nível anônimo (o logado já tem a fonte mestra).
+  const gravarRascunhoOnboarding = () => {
+    try {
+      localStorage.setItem(
+        CHAVE_PREFILL_ONBOARDING,
+        JSON.stringify({
+          origem: 'simulacao_expressa',
+          faturamento,
+          regime,
+          despesas,
+          vedacoesAnonimas,
+          vedacoesMeiAnonimas,
+          geradoEm: new Date().toISOString(),
+        }),
+      )
+    } catch {
+      // localStorage indisponível — segue sem rascunho
+    }
+  }
+
   const handleCta = () => {
     // Fire-and-forget: lead da simulação anônima (com score/origem de vedação quando marcada)
     if (!isAuthenticated) {
@@ -287,11 +311,28 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
         regime: ROTULOS_REGIME[regime],
         isAuthenticated: false,
       }).catch(() => {})
+      gravarRascunhoOnboarding()
     }
     if (isAuthenticated) {
       navigate('/dados-empresa')
     } else {
-      navigate('/cadastro?redirect=%2Fdados-empresa')
+      navigate('/cadastro?redirect=%2Fonboarding')
+    }
+  }
+
+  // CTA secundário (anônimo): grava o rascunho e manda para o cadastro, que
+  // volta ao wizard /onboarding pós-criação da conta (redirect=/onboarding).
+  const handleCtaSalvarAnalise = () => {
+    if (!isAuthenticated) {
+      registrarLeadSimulacaoExpressa({
+        selecionadas: vedacoesAnonimas,
+        selecionadasMei: vedacoesMeiAnonimas,
+        faturamento: ROTULOS_FATURAMENTO[faturamento],
+        regime: ROTULOS_REGIME[regime],
+        isAuthenticated: false,
+      }).catch(() => {})
+      gravarRascunhoOnboarding()
+      navigate('/cadastro?redirect=%2Fonboarding')
     }
   }
 
@@ -669,6 +710,20 @@ export default function WidgetSimulacaoExpressa({ className = '' }: { className?
         <span>Quero o relatório completo</span>
         <ArrowRight className="w-4 h-4" />
       </button>
+
+      {/* CTA secundário (anônimo): salvar a análise criando conta → cadastro → wizard */}
+      {!isAuthenticated && (
+        <button
+          type="button"
+          onClick={handleCtaSalvarAnalise}
+          data-testid="cta-salvar-analise-criar-conta"
+          className="mt-2 w-full py-3 px-4 rounded-xl font-heading font-semibold text-sm text-[#145A32] bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 transition-all flex items-center justify-center gap-2 cursor-pointer btn-press"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>Salvar minha análise — criar conta</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      )}
 
       {/* Disclaimer */}
       <div className="mt-2.5 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">

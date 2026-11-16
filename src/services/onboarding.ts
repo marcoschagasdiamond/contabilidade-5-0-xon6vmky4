@@ -42,7 +42,12 @@ export async function salvarProgressoOnboarding(
       dados.passo_calculadora_concluido ?? existente?.passo_calculadora_concluido ?? false
     const todosOk = empresaOk && diagOk && calcOk
 
-    const concluidoEm = todosOk ? existente?.concluido_em || new Date().toISOString() : null
+    const wizardOk = dados.wizard_dispensado ?? existente?.wizard_dispensado ?? false
+    // Conclusão do wizard: quando o wizard é finalizado (dispensado) OU todos os
+    // passos clássicos ficam concluídos — o wizard de 4 passos marca apenas
+    // wizard_dispensado + passo_empresa_concluido, e isso já é conclusão.
+    const concluidoEm =
+      todosOk || wizardOk ? existente?.concluido_em || new Date().toISOString() : null
 
     const payload: Record<string, any> = {
       ...dados,
