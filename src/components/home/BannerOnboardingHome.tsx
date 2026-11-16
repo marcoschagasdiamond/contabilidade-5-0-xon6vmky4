@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Sparkles, X } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import {
   getClienteEmpresaPorUsuario,
@@ -20,6 +21,7 @@ import {
  */
 export default function BannerOnboardingHome() {
   const { user, isAuthenticated } = useAuth()
+  const { clienteAtivo } = useClienteAtivo()
   const { progresso, carregando, dispensarWizard } = useOnboarding()
   const [temEmpresa, setTemEmpresa] = useState<boolean | null>(null)
 
@@ -32,7 +34,9 @@ export default function BannerOnboardingHome() {
     // Fonte mestra: mesmo padrão do widget (cliente ativo → fallback usuário)
     ;(async () => {
       try {
-        const porCliente = await getClienteEmpresaPorClienteAtivo()
+        const porCliente = clienteAtivo
+          ? await getClienteEmpresaPorClienteAtivo(clienteAtivo)
+          : null
         const registro = porCliente || (await getClienteEmpresaPorUsuario(user.id))
         if (vivo) setTemEmpresa(Boolean(registro))
       } catch {
@@ -42,7 +46,7 @@ export default function BannerOnboardingHome() {
     return () => {
       vivo = false
     }
-  }, [isAuthenticated, user?.id])
+  }, [isAuthenticated, user?.id, clienteAtivo])
 
   const onboardingEncerrado = Boolean(progresso?.concluido_em || progresso?.wizard_dispensado)
   const deveExibir = isAuthenticated && !carregando && temEmpresa === false && !onboardingEncerrado

@@ -39,6 +39,9 @@ export interface UseOnboardingReturn {
   passos: PassoOnboardingInfo[]
   // Detecção de usuário pré-existente
   usuarioExistente: boolean
+  // Registro bruto de progresso (onboarding_progresso) — permite checar
+  // concluido_em / wizard_dispensado sem duplicar consultas (ex.: banner da home)
+  progresso: OnboardingRecord | null
 }
 
 export function useOnboarding(): UseOnboardingReturn {
@@ -287,5 +290,6 @@ export function useOnboarding(): UseOnboardingReturn {
     recarregar: carregarDados,
     passos,
     usuarioExistente,
+    progresso: registro,
   }
 }
