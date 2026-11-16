@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { PERGUNTAS_COMPARADOR, CENARIOS_COMUNS_COMPARADOR } from '@/data/reformaTributariaData'
 import { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
+import { VEDACOES_SIMPLES_ART17 } from '@/lib/vedacoesSimples'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -271,7 +272,20 @@ export function Modulo6ComparadorRegime({
     const SUBLIMITE_SIMPLES = 3600000
     const FATOR_R_MINIMO = 0.28
 
-    const elegivelSimples = faturamentoAnual <= TETO_SIMPLES
+    // Vedações legais ao Simples Nacional (art. 17, LC 123/2006) — apenas indicação
+    const vedacoesMarcadas = dadosEmpresa?.vedacoesSimplesArt17 || []
+    const vedacaoOutraTexto = (dadosEmpresa?.vedacaoSimplesArt17Outra || '').trim()
+    const vedadoSimples = vedacoesMarcadas.length > 0 || vedacaoOutraTexto.length > 0
+    const incisosVedacao = vedacoesMarcadas
+      .map((id) => VEDACOES_SIMPLES_ART17.find((v) => v.id === id)?.rotuloCurto || id)
+      .join(', ')
+    const motivoVedacaoSimples = vedadoSimples
+      ? `Indisponível — vedação legal (art. 17, LC 123/2006)${
+          incisosVedacao ? ` · Inciso(s): ${incisosVedacao}` : ''
+        }${vedacaoOutraTexto ? ` · Outra: ${vedacaoOutraTexto}` : ''}`
+      : ''
+
+    const elegivelSimples = faturamentoAnual <= TETO_SIMPLES && !vedadoSimples
     const estouraSublimite =
       faturamentoAnual > SUBLIMITE_SIMPLES && faturamentoAnual <= TETO_SIMPLES
     const fatorR = faturamentoAnual > 0 ? folhaAnual / faturamentoAnual : 0
@@ -325,9 +339,11 @@ export function Modulo6ComparadorRegime({
         elegivel: elegivelSimples,
         cargaAnual: cargaSimplesAnual,
         aliquotaEfetiva: elegivelSimples ? (cargaSimplesAnual / faturamentoAnual) * 100 : 0,
-        motivoElegibilidade: elegivelSimples
-          ? 'Faturamento dentro do teto de R$ 4,8 milhões/ano'
-          : 'Ultrapassa o teto anual de R$ 4,8 milhões',
+        motivoElegibilidade: vedadoSimples
+          ? motivoVedacaoSimples
+          : elegivelSimples
+            ? 'Faturamento dentro do teto de R$ 4,8 milhões/ano'
+            : 'Ultrapassa o teto anual de R$ 4,8 milhões',
         vantagens: ['Guia única (DAS)', 'Dispensa de contribuição patronal na maioria dos anexos'],
         desvantagens: ['Não gera créditos plenos de IBS/CBS a compradores no novo sistema'],
       },
@@ -389,7 +405,7 @@ export function Modulo6ComparadorRegime({
       SUBLIMITE_SIMPLES,
       FATOR_R_MINIMO,
     }
-  }, [faturamentoAnual, folhaAnual, despesasAnuais, segmentoEmpresa, anoBase])
+  }, [faturamentoAnual, folhaAnual, despesasAnuais, segmentoEmpresa, anoBase, dadosEmpresa])
 
   // =========================================================
   // ANÁLISE DE CONVERGÊNCIA / DIVERGÊNCIA (HIPÓTESE QUALITATIVA VS NÚMEROS)
@@ -1066,9 +1082,29 @@ export function Modulo6ComparadorRegime({
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-slate-500 mt-0.5 block">
+                      <span
+                        className={
+                          regime.id === 'simples' && !regime.elegivel
+                            ? 'text-xs font-bold text-rose-700 mt-0.5 block'
+                            : 'text-xs text-slate-500 mt-0.5 block'
+                        }
+                      >
                         {regime.motivoElegibilidade}
                       </span>
+                      {/* Banner de indisponibilidade por vedação legal (art. 17 LC 123/2006) */}
+                      {regime.id === 'simples' && !regime.elegivel && (
+                        <div className="mt-3 rounded-xl border border-rose-300 bg-rose-50 p-3 text-[11px] leading-relaxed text-rose-800">
+                          <span className="font-extrabold uppercase tracking-wide block">
+                            Indisponível — vedação legal (art. 17, LC 123/2006)
+                          </span>
+                          <span className="mt-1 block">
+                            Conforme registrado em Dados da Empresa, a empresa possui impedimento
+                            legal à opção pelo Simples Nacional. A análise de regimes concentra-se
+                            na comparação entre <strong>Lucro Presumido</strong> e{' '}
+                            <strong>Lucro Real</strong>.
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="text-right">

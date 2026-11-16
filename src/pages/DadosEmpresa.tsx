@@ -49,6 +49,8 @@ import { CampoBuscaCnae } from '@/components/dadosEmpresa/CampoBuscaCnae'
 import { SecaoCnaesSecundarios } from '@/components/dadosEmpresa/SecaoCnaesSecundarios'
 import { PainelTributosAtividade } from '@/components/dadosEmpresa/PainelTributosAtividade'
 import { BlocoAvisosRegime } from '@/components/dadosEmpresa/BlocoAvisosRegime'
+import { BlocoVedacoesSimples } from '@/components/dadosEmpresa/BlocoVedacoesSimples'
+import type { IdVedacaoSimples } from '@/lib/vedacoesSimples'
 import {
   Dialog,
   DialogContent,
@@ -203,6 +205,27 @@ export default function DadosEmpresa() {
   const resultadoValidacao = React.useMemo(() => {
     return executarValidacaoFiscal(formData)
   }, [formData])
+
+  // Vedações legais ao Simples Nacional (art. 17 LC 123/2006) — apenas orientativo
+  const handleToggleVedacao = React.useCallback(
+    (id: IdVedacaoSimples, marcado: boolean) => {
+      atualizarCampo((prev) => {
+        const lista = prev.vedacoesSimplesArt17 || []
+        return {
+          ...prev,
+          vedacoesSimplesArt17: marcado ? [...lista, id] : lista.filter((v) => v !== id),
+        }
+      })
+    },
+    [atualizarCampo],
+  )
+
+  const handleChangeVedacaoOutra = React.useCallback(
+    (texto: string) => {
+      atualizarCampo((prev) => ({ ...prev, vedacaoSimplesArt17Outra: texto }))
+    },
+    [atualizarCampo],
+  )
 
   // Rastreia se o usuário já editou campos localmente
   const hasEditedRef = React.useRef(false)
@@ -3463,6 +3486,15 @@ export default function DadosEmpresa() {
                   vinculosSocietarios: novosVinculos,
                 }))
               }}
+            />
+
+            {/* VEDAÇÕES LEGAIS AO SIMPLES NACIONAL (art. 17 LC 123/2006) — apenas orientativo */}
+            <BlocoVedacoesSimples
+              regimeAtual={formData.regimeAtual}
+              vedacoesMarcadas={formData.vedacoesSimplesArt17 || []}
+              vedacaoOutra={formData.vedacaoSimplesArt17Outra || ''}
+              onToggleVedacao={handleToggleVedacao}
+              onChangeOutra={handleChangeVedacaoOutra}
             />
           </div>
 

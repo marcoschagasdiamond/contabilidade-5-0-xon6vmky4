@@ -60,6 +60,8 @@ export interface ClienteEmpresaModel {
   documento_fiscal_importado?: any
   vinculos_societarios?: any
   cnaes_secundarios?: any
+  vedacoes_simples_art17?: any
+  vedacao_simples_outra?: string
   created?: string
   updated?: string
 }
@@ -176,6 +178,12 @@ export function perfilToRecord(
 
   if (perfil.cnaesSecundarios !== undefined)
     (result as any).cnaes_secundarios = perfil.cnaesSecundarios
+
+  if (perfil.vedacoesSimplesArt17 !== undefined)
+    (result as any).vedacoes_simples_art17 = perfil.vedacoesSimplesArt17
+
+  if (perfil.vedacaoSimplesArt17Outra !== undefined)
+    (result as any).vedacao_simples_outra = perfil.vedacaoSimplesArt17Outra
 
   return result
 }
@@ -357,6 +365,19 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
             }
           })()
         : [],
+    vedacoesSimplesArt17: Array.isArray((rec as any).vedacoes_simples_art17)
+      ? (rec as any).vedacoes_simples_art17
+      : typeof (rec as any).vedacoes_simples_art17 === 'string'
+        ? (() => {
+            try {
+              const parsed = JSON.parse((rec as any).vedacoes_simples_art17)
+              return Array.isArray(parsed) ? parsed : []
+            } catch {
+              return []
+            }
+          })()
+        : [],
+    vedacaoSimplesArt17Outra: (rec as any).vedacao_simples_outra || '',
     atualizadoEm: rec.updated || rec.created,
   }
 }

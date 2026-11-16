@@ -157,6 +157,10 @@ export interface DadosEmpresaPerfil {
 
   // Atividades Econômicas Secundárias (CNAEs Secundários) com Metadados de Proveniência
   cnaesSecundarios?: ItemCnaeSecundarioSalvo[]
+
+  // Vedações legais ao Simples Nacional (art. 17 da LC 123/2006, c/ LC 214/2025)
+  vedacoesSimplesArt17?: string[] // ids de vedacoesSimples.ts ('inc1_factoring', 'inc5_debitos_inss_fazenda'…)
+  vedacaoSimplesArt17Outra?: string // texto livre "Outra (descrever)"
 }
 
 export interface ItemCnaeSecundarioSalvo {
@@ -569,6 +573,10 @@ export const DADOS_EMPRESA_PADRAO: DadosEmpresaPerfil = {
 
   // Vínculos Societários
   vinculosSocietarios: [],
+
+  // Vedações legais ao Simples Nacional (art. 17 da LC 123/2006)
+  vedacoesSimplesArt17: [],
+  vedacaoSimplesArt17Outra: '',
 }
 
 const STORAGE_KEY = 'contabilidade5_dados_empresa'
