@@ -161,6 +161,14 @@ export interface DadosEmpresaPerfil {
   // Vedações legais ao Simples Nacional (art. 17 da LC 123/2006, c/ LC 214/2025)
   vedacoesSimplesArt17?: string[] // ids de vedacoesSimples.ts ('inc1_factoring', 'inc5_debitos_inss_fazenda'…)
   vedacaoSimplesArt17Outra?: string // texto livre "Outra (descrever)"
+
+  // Vedações legais ao Lucro Presumido (Lei 9.718/98, c/ LC 214/2025)
+  vedacoesPresumido?: string[] // ids de vedacoesRegimes.ts ('presumido_receita_acima_78m'…)
+  vedacaoPresumidoOutra?: string // texto livre "Outra (descrever)"
+
+  // Vedações legais ao MEI (Resolução CGSN 140/2018, art. 3º)
+  vedacoesMei?: string[] // ids de vedacoesRegimes.ts ('mei_atividade_nao_permitida'…)
+  vedacaoMeiOutra?: string // texto livre "Outra (descrever)"
 }
 
 export interface ItemCnaeSecundarioSalvo {
@@ -577,6 +585,14 @@ export const DADOS_EMPRESA_PADRAO: DadosEmpresaPerfil = {
   // Vedações legais ao Simples Nacional (art. 17 da LC 123/2006)
   vedacoesSimplesArt17: [],
   vedacaoSimplesArt17Outra: '',
+
+  // Vedações legais ao Lucro Presumido (Lei 9.718/98)
+  vedacoesPresumido: [],
+  vedacaoPresumidoOutra: '',
+
+  // Vedações legais ao MEI (Resolução CGSN 140/2018)
+  vedacoesMei: [],
+  vedacaoMeiOutra: '',
 }
 
 const STORAGE_KEY = 'contabilidade5_dados_empresa'

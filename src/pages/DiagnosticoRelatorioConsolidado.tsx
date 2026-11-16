@@ -1879,10 +1879,14 @@ export default function DiagnosticoRelatorioConsolidado() {
                     </div>
                   </div>
 
-                  {/* VEDAÇÕES LEGAIS AO SIMPLES (art. 17 LC 123/2006) — reflete o que está marcado em Dados da Empresa */}
+                  {/* VEDAÇÕES LEGAIS POR REGIME (Simples, Presumido e MEI) — reflete o que está marcado em Dados da Empresa */}
                   <QuadroVedacoesSimplesRegimes
                     vedacoesSimplesArt17={dadosEmpresa?.vedacoesSimplesArt17}
                     vedacaoSimplesArt17Outra={dadosEmpresa?.vedacaoSimplesArt17Outra}
+                    vedacoesPresumido={dadosEmpresa?.vedacoesPresumido}
+                    vedacaoPresumidoOutra={dadosEmpresa?.vedacaoPresumidoOutra}
+                    vedacoesMei={dadosEmpresa?.vedacoesMei}
+                    vedacaoMeiOutra={dadosEmpresa?.vedacaoMeiOutra}
                   />
 
                   {/* NOTA ORIENTATIVA NO PAINEL DE COMPARAÇÃO DE REGIME */}
@@ -2328,10 +2332,14 @@ export default function DiagnosticoRelatorioConsolidado() {
                   </div>
                 </div>
 
-                {/* VEDAÇÕES LEGAIS AO SIMPLES (art. 17 LC 123/2006) — reflete o que está marcado em Dados da Empresa */}
+                {/* VEDAÇÕES LEGAIS POR REGIME (Simples, Presumido e MEI) — reflete o que está marcado em Dados da Empresa */}
                 <QuadroVedacoesSimplesRegimes
                   vedacoesSimplesArt17={dadosEmpresa?.vedacoesSimplesArt17}
                   vedacaoSimplesArt17Outra={dadosEmpresa?.vedacaoSimplesArt17Outra}
+                  vedacoesPresumido={dadosEmpresa?.vedacoesPresumido}
+                  vedacaoPresumidoOutra={dadosEmpresa?.vedacaoPresumidoOutra}
+                  vedacoesMei={dadosEmpresa?.vedacoesMei}
+                  vedacaoMeiOutra={dadosEmpresa?.vedacaoMeiOutra}
                 />
 
                 {/* NOTA ORIENTATIVA NO RELATÓRIO INDIVIDUAL DA ETAPA 04 */}

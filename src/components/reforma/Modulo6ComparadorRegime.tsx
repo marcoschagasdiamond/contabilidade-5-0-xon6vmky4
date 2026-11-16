@@ -19,7 +19,17 @@ import {
 } from 'lucide-react'
 import { PERGUNTAS_COMPARADOR, CENARIOS_COMUNS_COMPARADOR } from '@/data/reformaTributariaData'
 import { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
-import { VEDACOES_SIMPLES_ART17 } from '@/lib/vedacoesSimples'
+import { temVedacaoSimples, construirMotivoVedacao } from '@/lib/vedacoesSimples'
+import {
+  VEDACOES_PRESUMIDO,
+  VEDACOES_MEI,
+  ROTULO_INDISPONIVEL_VEDACOES_PRESUMIDO,
+  ROTULO_INDISPONIVEL_VEDACOES_MEI,
+  construirMotivoVedacaoPresumido,
+  construirMotivoVedacaoMei,
+  temVedacaoPresumido,
+  temVedacaoMei,
+} from '@/lib/vedacoesRegimes'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -275,14 +285,12 @@ export function Modulo6ComparadorRegime({
     // Vedações legais ao Simples Nacional (art. 17, LC 123/2006) — apenas indicação
     const vedacoesMarcadas = dadosEmpresa?.vedacoesSimplesArt17 || []
     const vedacaoOutraTexto = (dadosEmpresa?.vedacaoSimplesArt17Outra || '').trim()
-    const vedadoSimples = vedacoesMarcadas.length > 0 || vedacaoOutraTexto.length > 0
+    const vedadoSimples = temVedacaoSimples(dadosEmpresa)
     const incisosVedacao = vedacoesMarcadas
       .map((id) => VEDACOES_SIMPLES_ART17.find((v) => v.id === id)?.rotuloCurto || id)
       .join(', ')
     const motivoVedacaoSimples = vedadoSimples
-      ? `Indisponível — vedação legal (art. 17, LC 123/2006)${
-          incisosVedacao ? ` · Inciso(s): ${incisosVedacao}` : ''
-        }${vedacaoOutraTexto ? ` · Outra: ${vedacaoOutraTexto}` : ''}`
+      ? construirMotivoVedacao(incisosVedacao, vedacaoOutraTexto)
       : ''
 
     const elegivelSimples = faturamentoAnual <= TETO_SIMPLES && !vedadoSimples
@@ -300,6 +308,28 @@ export function Modulo6ComparadorRegime({
       aliqSimples = 0.105
     }
     const cargaSimplesAnual = elegivelSimples ? faturamentoAnual * aliqSimples : Infinity
+
+    // Vedações legais ao Lucro Presumido (Lei 9.718/98, c/ LC 214/2025) — apenas indicação
+    const vedacoesPresumidoMarcadas = dadosEmpresa?.vedacoesPresumido || []
+    const vedacaoPresumidoOutraTexto = (dadosEmpresa?.vedacaoPresumidoOutra || '').trim()
+    const vedadoPresumido = temVedacaoPresumido(dadosEmpresa)
+    const incisosVedacaoPresumido = vedacoesPresumidoMarcadas
+      .map((id) => VEDACOES_PRESUMIDO.find((v) => v.id === id)?.rotuloCurto || id)
+      .join(', ')
+    const motivoVedacaoPresumido = vedadoPresumido
+      ? construirMotivoVedacaoPresumido(vedacoesPresumidoMarcadas, vedacaoPresumidoOutraTexto)
+      : ''
+
+    // Vedações legais ao MEI (Resolução CGSN 140/2018, art. 3º) — apenas indicação
+    const vedacoesMeiMarcadas = dadosEmpresa?.vedacoesMei || []
+    const vedacaoMeiOutraTexto = (dadosEmpresa?.vedacaoMeiOutra || '').trim()
+    const vedadoMei = temVedacaoMei(dadosEmpresa)
+    const incisosVedacaoMei = vedacoesMeiMarcadas
+      .map((id) => VEDACOES_MEI.find((v) => v.id === id)?.rotuloCurto || id)
+      .join(', ')
+    const motivoVedacaoMei = vedadoMei
+      ? construirMotivoVedacaoMei(vedacoesMeiMarcadas, vedacaoMeiOutraTexto)
+      : ''
 
     // 2. Lucro Presumido
     const presuncao =
@@ -350,10 +380,17 @@ export function Modulo6ComparadorRegime({
       {
         id: 'presumido',
         nome: 'Lucro Presumido',
-        elegivel: faturamentoAnual <= 78000000,
-        cargaAnual: cargaPresumidoAnual,
-        aliquotaEfetiva: (cargaPresumidoAnual / faturamentoAnual) * 100,
-        motivoElegibilidade: 'Faturamento dentro do teto de R$ 78 milhões/ano',
+        elegivel: faturamentoAnual <= 78000000 && !vedadoPresumido,
+        cargaAnual: vedadoPresumido || faturamentoAnual > 78000000 ? Infinity : cargaPresumidoAnual,
+        aliquotaEfetiva:
+          vedadoPresumido || faturamentoAnual > 78000000
+            ? 0
+            : (cargaPresumidoAnual / faturamentoAnual) * 100,
+        motivoElegibilidade: vedadoPresumido
+          ? motivoVedacaoPresumido
+          : faturamentoAnual <= 78000000
+            ? 'Faturamento dentro do teto de R$ 78 milhões/ano'
+            : 'Ultrapassa o teto anual de R$ 78 milhões (Lei 9.718/98)',
         vantagens: ['Cálculo simplificado de IRPJ/CSLL', 'Previsibilidade contábil'],
         desvantagens: ['INSS patronal pleno de 20% + terceiros sobre a folha'],
       },
@@ -371,6 +408,20 @@ export function Modulo6ComparadorRegime({
         desvantagens: ['Maior exigência de compliance contábil e obrigações acessórias'],
       },
       {
+        id: 'mei',
+        nome: 'MEI',
+        elegivel: !vedadoMei && faturamentoAnual <= 81000,
+        cargaAnual: vedadoMei || faturamentoAnual > 81000 ? Infinity : 0,
+        aliquotaEfetiva: 0,
+        motivoElegibilidade: vedadoMei
+          ? motivoVedacaoMei
+          : faturamentoAnual <= 81000
+            ? 'Faturamento dentro do limite de R$ 81 mil/ano (Resolução CGSN 140/2018)'
+            : 'Ultrapassa o limite anual de R$ 81 mil (Resolução CGSN 140/2018)',
+        vantagens: ['Carga tributária fixa mensal (DAS-MEI)', 'Formalização simplificada'],
+        desvantagens: ['Limite de R$ 81 mil/ano', 'Apenas titular único, sem sócio'],
+      },
+      {
         id: 'novo_dual',
         nome: `Novo Sistema Dual (Ano ${anoBase})`,
         elegivel: true,
@@ -383,7 +434,7 @@ export function Modulo6ComparadorRegime({
     ]
 
     const ordenados = [...lista]
-      .filter((r) => r.elegivel && r.cargaAnual !== Infinity)
+      .filter((r) => r.elegivel && r.cargaAnual !== Infinity && Number.isFinite(r.cargaAnual))
       .sort((a, b) => a.cargaAnual - b.cargaAnual)
 
     const melhorRegime = ordenados[0]
@@ -1091,20 +1142,27 @@ export function Modulo6ComparadorRegime({
                       >
                         {regime.motivoElegibilidade}
                       </span>
-                      {/* Banner de indisponibilidade por vedação legal (art. 17 LC 123/2006) */}
-                      {regime.id === 'simples' && !regime.elegivel && (
-                        <div className="mt-3 rounded-xl border border-rose-300 bg-rose-50 p-3 text-[11px] leading-relaxed text-rose-800">
-                          <span className="font-extrabold uppercase tracking-wide block">
-                            Indisponível — vedação legal (art. 17, LC 123/2006)
-                          </span>
-                          <span className="mt-1 block">
-                            Conforme registrado em Dados da Empresa, a empresa possui impedimento
-                            legal à opção pelo Simples Nacional. A análise de regimes concentra-se
-                            na comparação entre <strong>Lucro Presumido</strong> e{' '}
-                            <strong>Lucro Real</strong>.
-                          </span>
-                        </div>
-                      )}
+                      {/* Banner de indisponibilidade por vedação legal (matriz Simples/Presumido/MEI) */}
+                      {!regime.elegivel &&
+                        (regime.id === 'simples' ||
+                          regime.id === 'presumido' ||
+                          regime.id === 'mei') && (
+                          <div className="mt-3 rounded-xl border border-rose-300 bg-rose-50 p-3 text-[11px] leading-relaxed text-rose-800">
+                            <span className="font-extrabold uppercase tracking-wide block">
+                              {regime.id === 'simples'
+                                ? 'Indisponível — vedação legal (art. 17, LC 123/2006)'
+                                : regime.id === 'presumido'
+                                  ? ROTULO_INDISPONIVEL_VEDACOES_PRESUMIDO
+                                  : ROTULO_INDISPONIVEL_VEDACOES_MEI}
+                            </span>
+                            <span className="mt-1 block">{regime.motivoElegibilidade}</span>
+                            <span className="mt-1 block">
+                              Conforme registrado em Dados da Empresa, a empresa possui impedimento
+                              legal a este regime. A análise de regimes concentra-se nos regimes{' '}
+                              <strong>disponíveis</strong> restantes.
+                            </span>
+                          </div>
+                        )}
                     </div>
 
                     <div className="text-right">

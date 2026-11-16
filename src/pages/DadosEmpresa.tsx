@@ -50,6 +50,8 @@ import { SecaoCnaesSecundarios } from '@/components/dadosEmpresa/SecaoCnaesSecun
 import { PainelTributosAtividade } from '@/components/dadosEmpresa/PainelTributosAtividade'
 import { BlocoAvisosRegime } from '@/components/dadosEmpresa/BlocoAvisosRegime'
 import { BlocoVedacoesSimples } from '@/components/dadosEmpresa/BlocoVedacoesSimples'
+import { BlocoVedacoesRegimes } from '@/components/dadosEmpresa/BlocoVedacoesRegimes'
+import type { IdVedacaoPresumido, IdVedacaoMei } from '@/lib/vedacoesRegimes'
 import type { IdVedacaoSimples } from '@/lib/vedacoesSimples'
 import {
   Dialog,
@@ -260,6 +262,47 @@ export default function DadosEmpresa() {
   const handleChangeVedacaoOutra = React.useCallback(
     (texto: string) => {
       atualizarCampo((prev) => ({ ...prev, vedacaoSimplesArt17Outra: texto }))
+    },
+    [atualizarCampo],
+  )
+
+  // Vedações legais ao Lucro Presumido (Lei 9.718/98) e ao MEI (Res. CGSN 140/2018) — orientativo
+  const handleToggleVedacaoPresumido = React.useCallback(
+    (id: IdVedacaoPresumido, marcado: boolean) => {
+      atualizarCampo((prev) => {
+        const lista = prev.vedacoesPresumido || []
+        return {
+          ...prev,
+          vedacoesPresumido: marcado ? [...lista, id] : lista.filter((v) => v !== id),
+        }
+      })
+    },
+    [atualizarCampo],
+  )
+
+  const handleChangeVedacaoPresumidoOutra = React.useCallback(
+    (texto: string) => {
+      atualizarCampo((prev) => ({ ...prev, vedacaoPresumidoOutra: texto }))
+    },
+    [atualizarCampo],
+  )
+
+  const handleToggleVedacaoMei = React.useCallback(
+    (id: IdVedacaoMei, marcado: boolean) => {
+      atualizarCampo((prev) => {
+        const lista = prev.vedacoesMei || []
+        return {
+          ...prev,
+          vedacoesMei: marcado ? [...lista, id] : lista.filter((v) => v !== id),
+        }
+      })
+    },
+    [atualizarCampo],
+  )
+
+  const handleChangeVedacaoMeiOutra = React.useCallback(
+    (texto: string) => {
+      atualizarCampo((prev) => ({ ...prev, vedacaoMeiOutra: texto }))
     },
     [atualizarCampo],
   )
@@ -3497,6 +3540,19 @@ export default function DadosEmpresa() {
               vedacaoOutra={formData.vedacaoSimplesArt17Outra || ''}
               onToggleVedacao={handleToggleVedacao}
               onChangeOutra={handleChangeVedacaoOutra}
+            />
+
+            {/* VEDAÇÕES LEGAIS POR REGIME: LUCRO PRESUMIDO (Lei 9.718/98) E MEI (Res. CGSN 140/2018) */}
+            <BlocoVedacoesRegimes
+              regimeAtual={formData.regimeAtual}
+              vedacoesPresumidoMarcadas={formData.vedacoesPresumido || []}
+              vedacaoPresumidoOutra={formData.vedacaoPresumidoOutra || ''}
+              vedacoesMeiMarcadas={formData.vedacoesMei || []}
+              vedacaoMeiOutra={formData.vedacaoMeiOutra || ''}
+              onToggleVedacaoPresumido={handleToggleVedacaoPresumido}
+              onChangeVedacaoPresumidoOutra={handleChangeVedacaoPresumidoOutra}
+              onToggleVedacaoMei={handleToggleVedacaoMei}
+              onChangeVedacaoMeiOutra={handleChangeVedacaoMeiOutra}
             />
           </div>
 
