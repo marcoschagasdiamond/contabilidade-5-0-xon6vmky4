@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T11:53:22.149Z",
+  "generatedAt": "2026-11-17T12:24:41.452Z",
   "collections": [
     {
       "name": "users",
@@ -1056,6 +1056,12 @@
         {
           "name": "vedacao_mei_outra",
           "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "porcentagem_compras_simples_nacional",
+          "type": "number",
           "required": false,
           "system": false
         }

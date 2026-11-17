@@ -20,6 +20,7 @@ export interface ClienteEmpresaModel {
   atividade_mista?: boolean
   faturamento_mensal?: number
   percentual_compras_vendas?: number
+  porcentagem_compras_simples_nacional?: number
   tipo_atividade?: string
   subatividade_servico?: string
   subatividade_industria?: string
@@ -97,6 +98,8 @@ export function perfilToRecord(
   if (perfil.faturamentoMensal !== undefined) result.faturamento_mensal = perfil.faturamentoMensal
   if (perfil.percentualComprasVendas !== undefined)
     result.percentual_compras_vendas = perfil.percentualComprasVendas
+  if (perfil.porcentagemComprasSimplesNacional !== undefined)
+    result.porcentagem_compras_simples_nacional = perfil.porcentagemComprasSimplesNacional
   if (perfil.tipoAtividade !== undefined) result.tipo_atividade = perfil.tipoAtividade
   if (perfil.subatividadeServico !== undefined)
     result.subatividade_servico = perfil.subatividadeServico
@@ -222,6 +225,7 @@ export function recordToPerfil(rec: ClienteEmpresaRecord): DadosEmpresaPerfil {
     atividadeMista: !!rec.atividade_mista,
     faturamentoMensal: rec.faturamento_mensal ?? 200000,
     percentualComprasVendas: rec.percentual_compras_vendas ?? 40,
+    porcentagemComprasSimplesNacional: rec.porcentagem_compras_simples_nacional ?? 0,
     tipoAtividade: (rec.tipo_atividade as any) || 'servico',
     subatividadeServico: (rec.subatividade_servico as any) || 'servico_comum',
     subatividadeIndustria: (rec.subatividade_industria as any) || 'industria_comum',
