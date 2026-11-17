@@ -10,6 +10,8 @@ import { CardComparadorCotacoes } from '@/components/diagnosticos/CardComparador
 import { TooltipExplicacaoCredito } from '@/components/diagnosticos/TooltipExplicacaoCredito'
 import { type ResultadoComparadorCotacoes } from '@/lib/calculoComparadorCotacoes'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { useAuth } from '@/context/AuthContext'
@@ -220,7 +222,46 @@ export default function DiagnosticoFornecedores() {
     carregarDados()
   }, [carregarDados])
 
-  // Callback memoizado para receber alterações do comparador sem loop
+  // ===== SUGESTÃO % COMPRAS SIMPLES NACIONAL (editável, nunca salva sozinha) =====
+  // Peso das compras dos fornecedores optantes do Simples sobre o volume total:
+  // % = soma(volume_compras dos simples_nacional) ÷ soma(volume_compras total), arredondado.
+  const sugestaoPctComprasSimples = useMemo(() => {
+    const comRegime = fornecedores.filter((f) => !!f.regime)
+    if (comRegime.length === 0) return null
+    const total = comRegime.reduce((acc, f) => acc + (Number(f.volume_compras) || 0), 0)
+    if (total <= 0) return null
+    const simples = comRegime
+      .filter((f) => f.regime === 'simples_nacional')
+      .reduce((acc, f) => acc + (Number(f.volume_compras) || 0), 0)
+    return Math.round((simples / total) * 100)
+  }, [fornecedores])
+
+  const [sugestaoAplicada, setSugestaoAplicada] = useState<number | null>(null)
+  const [valorSugestaoEditavel, setValorSugestaoEditavel] = useState<string>('')
+
+  // Limpa a sugestão local quando a carteira muda (a base do cálculo mudou)
+  useEffect(() => {
+    setSugestaoAplicada(null)
+    setValorSugestaoEditavel('')
+  }, [fornecedores])
+
+  const handleAplicarSugestaoFornecedores = useCallback(() => {
+    if (sugestaoPctComprasSimples === null) {
+      toast({
+        title: 'Sem base para sugerir',
+        description:
+          'Cadastre fornecedores com o regime tributário e o volume de compras informados para gerar a sugestão.',
+      })
+      return
+    }
+    setSugestaoAplicada(sugestaoPctComprasSimples)
+    setValorSugestaoEditavel(String(sugestaoPctComprasSimples))
+    toast({
+      title: 'Sugestão preenchida',
+      description: `${sugestaoPctComprasSimples}% das compras vêm de fornecedores do Simples Nacional. Revise e salve em Dados da Empresa se estiver correto (não salvamos por você).`,
+    })
+  }, [sugestaoPctComprasSimples, toast])
+
   const handleComparacaoAlterada = useCallback((res: ResultadoComparadorCotacoes) => {
     setResultadoComparador((prev) => {
       if (!prev) return res
@@ -435,6 +476,97 @@ export default function DiagnosticoFornecedores() {
               {gerandoPdf ? 'Gerando Parecer...' : 'Gerar parecer de fornecedores'}
             </Button>
           </div>
+        </div>
+
+        {/* SUGESTÃO: % COMPRAS DE FORNECEDORES DO SIMPLES (parâmetro porcentagem_compras_simples_nacional) */}
+        <div className="bg-white rounded-2xl border border-[#D4AF37]/40 p-5 shadow-sm space-y-3">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                Parâmetro LC 214/2025 • % das Compras vindas de Fornecedores do Simples Nacional
+              </span>
+              <p className="text-xs text-slate-600 max-w-3xl leading-relaxed">
+                Preenche o parâmetro com o peso das compras dos fornecedores optantes do Simples
+                sobre o volume total cadastrado nesta etapa. É apenas uma{' '}
+                <strong>sugestão editável</strong> — nada é salvo automaticamente: revise e grave em{' '}
+                <strong>Dados da Empresa → Parâmetros Fiscais &amp; Insumos</strong>.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {sugestaoPctComprasSimples !== null && (
+                <span className="text-[11px] font-mono text-slate-500 bg-slate-100 border border-slate-200 px-2 py-1 rounded">
+                  Base: {fornecedores.length} fornecedores
+                </span>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAplicarSugestaoFornecedores}
+                className="text-xs font-bold border-[#07132B] text-[#07132B] hover:bg-slate-100"
+              >
+                Sugerir a partir dos fornecedores cadastrados
+              </Button>
+            </div>
+          </div>
+
+          {sugestaoPctComprasSimples === null ? (
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-800">
+              Nenhum fornecedor com regime e volume de compras informados. Cadastre ou importe a
+              carteira para habilitar a sugestão.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Peso calculado da carteira
+                </span>
+                <p className="text-xl font-heading font-black text-[#07132B] font-mono">
+                  {sugestaoPctComprasSimples}%
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  Compras com Simples ÷ volume total da carteira
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-2">
+                <Label
+                  htmlFor="sugestaoPctComprasSimples"
+                  className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block"
+                >
+                  Sugestão editável (%)
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="sugestaoPctComprasSimples"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={valorSugestaoEditavel}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      if (raw === '') {
+                        setValorSugestaoEditavel('')
+                        return
+                      }
+                      const num = Math.min(100, Math.max(0, Number(raw) || 0))
+                      setValorSugestaoEditavel(String(num))
+                    }}
+                    placeholder="Clique em sugerir para preencher"
+                    className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 pr-10 shadow-xs"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 font-mono">
+                    %
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  {sugestaoAplicada !== null
+                    ? `Sugerido: ${sugestaoAplicada}%. Edite livremente e salve em Dados da Empresa.`
+                    : 'Nenhuma sugestão aplicada nesta sessão.'}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* PAINEL DE CONTROLE DE HERANÇA E OVERRIDE LOCAL */}
