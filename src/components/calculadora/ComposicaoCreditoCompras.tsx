@@ -66,7 +66,7 @@ function ComposicaoCreditoComprasComponent({
                   : 'Composição do Crédito de Compras • LC 214/2025'}
               </span>
               <span className="text-[10px] font-bold text-amber-900 bg-amber-100/90 border border-amber-300/80 px-2 py-0.5 rounded-full">
-                Simples Nacional: {porcentagemSimples}%
+                % compras do Simples Nacional configurado: {porcentagemSimples}%
               </span>
             </div>
             <span className="text-[11px] text-slate-500 block">
