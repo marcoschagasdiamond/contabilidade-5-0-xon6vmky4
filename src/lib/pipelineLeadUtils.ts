@@ -450,6 +450,42 @@ export function consolidarMetricasPipeline(leads: LeadProcessado[]): MetricasPip
 }
 
 /**
+ * Prefixo do título gravado pela integração diagnósticos → CRM (diagnosticoCrm.ts)
+ */
+export const PREFIXO_TITULO_DIAGNOSTICO_CRM = 'Diagnóstico concluído:'
+
+/**
+ * Encontra o ÚLTIMO evento de DIAGNÓSTICO na timeline do lead.
+ * Eventos de diagnóstico são do tipo 'sistema' com título
+ * "Diagnóstico concluído: <nome>" — gravados por registrarDiagnosticoNoCrm.
+ * Ignora demais interações (ligações, notas, mudanças de estágio etc.).
+ * A lista chega ordenada da mais recente para a mais antiga (extrairInteracoesLead).
+ */
+export function extrairUltimoEventoDiagnostico(interacoes: InteracaoLead[]): InteracaoLead | null {
+  if (!Array.isArray(interacoes)) return null
+  return (
+    interacoes.find(
+      (i) => i.tipo === 'sistema' && (i.titulo || '').startsWith(PREFIXO_TITULO_DIAGNOSTICO_CRM),
+    ) || null
+  )
+}
+
+/**
+ * Formata o último evento de diagnóstico em UMA linha compacta para o card do Kanban.
+ * Ex.: "Diagnóstico 360° · 12/05 — regime Lucro Real · economia R$ 12.000/ano"
+ */
+export function formatarUltimoEventoDiagnosticoCurto(ev: InteracaoLead): string {
+  const nome = (ev.titulo || '').replace(PREFIXO_TITULO_DIAGNOSTICO_CRM, '').trim()
+  const data = new Date(ev.data)
+  const dataCurta = isNaN(data.getTime())
+    ? ''
+    : ` · ${data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`
+  const resumo = (ev.descricao || '').trim()
+  const linha = `${nome}${dataCurta}${resumo ? ` — ${resumo}` : ''}`
+  return linha.length > 90 ? `${linha.slice(0, 87)}…` : linha
+}
+
+/**
  * Converte um LeadRecord em LeadProcessado enriquecido para a interface do pipeline
  */
 export function processarLeadParaPipeline(lead: LeadRecord): LeadProcessado {

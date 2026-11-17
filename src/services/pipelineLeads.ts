@@ -159,6 +159,54 @@ export async function atualizarScoreLead(leadId: string, novoScore: number): Pro
 }
 
 /**
+ * Normaliza CNPJ para busca: somente dígitos.
+ */
+function normalizarCnpjBusca(cnpj?: string | null): string {
+  // Mantém apenas dígitos e escapa para uso seguro dentro de filtro do PocketBase
+  return (cnpj || '').replace(/\D/g, '').replace(/[\\'"]/g, '')
+}
+
+/**
+ * Busca o lead cujo campo `cnpj` corresponde ao CNPJ informado (comparação por dígitos).
+ * Usado pela integração diagnósticos → CRM para localizar o lead vinculado à empresa.
+ * Nunca cria lead: devolve o primeiro encontrado (sort -created) ou null.
+ */
+export async function buscarLeadPorCnpj(cnpj?: string | null): Promise<LeadRecord | null> {
+  const digitos = normalizarCnpjBusca(cnpj)
+  if (digitos.length !== 14) return null
+
+  try {
+    const records = await pb
+      .collection('leads')
+      .getList<LeadRecord>(1, 1, { filter: `cnpj ~ "${digitos}"`, sort: '-created' })
+    return records.items[0] || null
+  } catch (err) {
+    console.warn('[Pipeline Leads] Erro ao buscar lead por CNPJ:', err)
+    return null
+  }
+}
+
+/**
+ * Fallback de busca por nome da empresa (campo `empresa`, busca aproximada).
+ * Nunca cria lead: devolve o primeiro encontrado ou null.
+ */
+export async function buscarLeadPorNomeEmpresa(nomeEmpresa?: string): Promise<LeadRecord | null> {
+  const nome = (nomeEmpresa || '').trim()
+  if (nome.length < 3) return null
+
+  try {
+    const nomeEscapado = nome.replace(/"/g, '')
+    const records = await pb
+      .collection('leads')
+      .getList<LeadRecord>(1, 1, { filter: `empresa ~ "${nomeEscapado}"`, sort: '-created' })
+    return records.items[0] || null
+  } catch (err) {
+    console.warn('[Pipeline Leads] Erro ao buscar lead por nome da empresa:', err)
+    return null
+  }
+}
+
+/**
  * Atualiza o valor de faturamento potencial do lead (faturamento e faturamento_estimado).
  */
 export async function atualizarFaturamentoLead(

@@ -1,7 +1,11 @@
 import React, { useState, useMemo } from 'react'
 import type { EstagioPipelineLead, LeadProcessado } from '@/types/pipelineLead'
 import { ESTAGIOS_PIPELINE_LEAD } from '@/types/pipelineLead'
-import { formatarValorCompacto } from '@/lib/pipelineLeadUtils'
+import {
+  extrairUltimoEventoDiagnostico,
+  formatarUltimoEventoDiagnosticoCurto,
+  formatarValorCompacto,
+} from '@/lib/pipelineLeadUtils'
 import { AlertaLeadsQuentes } from './AlertaLeadsQuentes'
 import { ModalFichaLeadPipeline } from './ModalFichaLeadPipeline'
 import { EdicaoValorPotencialInline } from './EdicaoValorPotencialInline'
@@ -222,6 +226,7 @@ export function PipelineLeadsKanban({
                     const diasParado = lead.diasParado ?? lead.diasSemInteracao ?? 0
                     const isParadoMuitoTempo =
                       diasParado >= 3 && lead.estagio_pipeline !== 'cliente'
+                    const ultimoEventoDiag = extrairUltimoEventoDiagnostico(lead.interacoes)
 
                     return (
                       <div
@@ -306,6 +311,18 @@ export function PipelineLeadsKanban({
                             </span>
                           )}
                         </div>
+
+                        {/* ÚLTIMO EVENTO DE DIAGNÓSTICO (1 linha compacta) */}
+                        {ultimoEventoDiag && (
+                          <div
+                            className="mt-2 px-2 py-1 rounded-md bg-[#07132B]/5 border border-[#D4AF37]/30 text-[10px] leading-snug text-slate-600"
+                            title={ultimoEventoDiag.descricao}
+                          >
+                            <span className="font-extrabold text-[#07132B]">
+                              📊 {formatarUltimoEventoDiagnosticoCurto(ultimoEventoDiag)}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
                           <span>

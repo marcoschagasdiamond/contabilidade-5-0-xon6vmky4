@@ -1,8 +1,11 @@
-import pb from '@/lib/pocketbase/client'
-import type { RecordModel } from 'pocketbase'
-import type { LeadRecord } from './pipelineLeads'
+import type { LeadRecord } from './leads'
 import { extrairScoreLead } from '@/lib/pipelineLeadUtils'
-import { buscarLeadPorCnpj, registrarEventoNoLead, adicionarOuSubirScore } from './crm'
+import {
+  adicionarInteracaoLead,
+  buscarLeadPorCnpj,
+  buscarLeadPorNomeEmpresa,
+  atualizarScoreLead,
+} from './pipelineLeads'
 
 const CRM_SCORE_BONUS_DIAGNOSTICO = 10
 
@@ -42,7 +45,7 @@ export async function buscarLeadVinculadoAoDiagnostico(
 ): Promise<LeadRecord | null> {
   const cnpj = normalizarCnpj(ev.cnpj)
   if (cnpj.length === 14) {
-    const lead = await buscarLeadPorCnpj(cnpj)
+    const lead = await buscarLeadPorCnpj(ev.cnpj)
     if (lead) return lead
   }
   if (ev.nomeEmpresa && ev.nomeEmpresa.trim().length >= 3) {
@@ -73,8 +76,9 @@ export async function registrarDiagnosticoNoCrm(
     const titulo = `Diagnóstico concluído: ${ev.nomeDiagnostico}`
     const descricao = ev.resumo || 'Concluído'
 
-    // 1) Evento no histórico do lead (interacoes_json)
-    await registrarEventoNoLead(lead.id, {
+    // 1) Evento no histórico do lead (interacoes_json) — formato parseado por extrairInteracoesLead
+    await adicionarInteracaoLead({
+      leadId: lead.id,
       tipo: 'sistema',
       titulo,
       descricao,
@@ -82,12 +86,12 @@ export async function registrarDiagnosticoNoCrm(
       autorNome: 'Sistema — Diagnósticos',
     })
 
-    // 2) Score: sobe por engajamento, sem reduzir e sem passar de 100
+    // 2) Score: sobe por engajamento, sem reduzir e sem passar do teto 100
     const scoreAtual = extrairScoreLead(lead)
     const candidato = Math.min(100, scoreAtual + CRM_SCORE_BONUS_DIAGNOSTICO)
     const scoreNovo = Math.max(candidato, scoreAtual) // nunca reduz
     if (scoreNovo !== scoreAtual) {
-      await adicionarOuSubirScore(lead.id, scoreNovo)
+      await atualizarScoreLead(lead.id, scoreNovo)
     }
 
     return {
