@@ -175,7 +175,7 @@ export const blogPosts: BlogPost[] = [
     slug: 'simples-nacional-na-reforma-teto-sublimite-e-hibrido',
     title: 'Simples Nacional na Reforma: teto, sublimite e o Simples Híbrido',
     summary:
-      'Descubra o que muda para micro e pequenas empresas: o teto de R$ 4,8 milhões, o sublimite de R$ 3,6 milhões para o IBS, a escolha anual do Simples Híbrido e como a transferência de créditos impactará suas vendas B2B.',
+      'Descubra o que muda para micro e pequenas empresas: o teto de R$ 4,8 milhões, o sublimite de R$ 3,6 milhões para o IBS, a escolha semestral do Simples Híbrido (janelas março/setembro) e como a transferência de créditos impactará suas vendas B2B.',
     category: 'Reforma Tributária',
     series: 'Série Reforma Tributária 2026',
     seriesOrder: 4,

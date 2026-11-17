@@ -5,7 +5,7 @@
  * - Emenda Constitucional nº 132/2023: Institui a Reforma Tributária do Consumo (IBS, CBS e IS)
  * - ADCT arts. 125 a 130: Cronograma de transição de 2026 a 2033 e regras de transição federativa
  * - Lei Complementar nº 214/2025: Lei Geral do IBS e da CBS
- *   - Art. 41, §3º: Opção anual pelo regime regular para optantes do Simples (Simples híbrido)
+ *   - Art. 41, §3º: Opção semestral (março/setembro) pelo regime regular para optantes do Simples (Simples híbrido)
  *   - Art. 130: Regimes diferenciados e reduções setoriais de alíquota (60% e 30%)
  *   - Art. 347: CBS com redução transitória de 0,1 p.p. em 2027 e 2028
  *   - Art. 348, §1º e III, 'c': Alíquotas de teste em 2026 e dispensa para optantes do Simples Nacional
