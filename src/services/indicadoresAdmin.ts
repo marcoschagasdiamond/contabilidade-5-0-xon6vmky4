@@ -60,13 +60,7 @@ function tendenciaSemana(atual: number, anterior: number): { delta: number; rotu
 
 /** Campos que caracterizam um perfil de empresa "completo" em clientes_empresas */
 function perfilCompleto(rec: Record<string, any>): boolean {
-  const obrigatorios = [
-    'razao_social',
-    'cnpj',
-    'regime_tributario',
-    'faturamento_mensal',
-    'cnae_principal',
-  ]
+  const obrigatorios = ['nome_empresa', 'cnpj', 'regime_atual', 'faturamento_mensal']
   const preenchidos = obrigatorios.filter((c) => {
     const v = rec?.[c]
     if (v === null || v === undefined) return false
@@ -118,11 +112,9 @@ export async function carregarIndicadoresAdmin(): Promise<IndicadoresAdmin> {
   // ---- 2) Cadastros (clientes_empresas) ----
   let cadastros: Record<string, any>[] = []
   try {
-    cadastros = await pb
-      .collection('clientes_empresas')
-      .getFullList({
-        fields: 'id,created,razao_social,cnpj,regime_tributario,faturamento_mensal,cnae_principal',
-      })
+    cadastros = await pb.collection('clientes_empresas').getFullList({
+      fields: 'id,created,nome_empresa,cnpj,regime_atual,faturamento_mensal',
+    })
   } catch (err) {
     console.warn('[IndicadoresAdmin] Falha ao carregar cadastros (clientes_empresas):', err)
   }

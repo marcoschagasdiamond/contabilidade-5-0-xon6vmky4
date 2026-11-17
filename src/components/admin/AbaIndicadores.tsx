@@ -145,10 +145,8 @@ export default function AbaIndicadores() {
         score: l.scoreCalc,
         estagio_pipeline: l.estagio_pipeline,
         ultima_interacao: l.ultima_interacao,
-        temDiagnostico: (l.interacoes_json ?? []).some(
-          (i: any) =>
-            (i?.tipo === 'sistema' || true) &&
-            String(i?.titulo || '').startsWith(PREFIXO_TITULO_DIAGNOSTICO_CRM),
+        temDiagnostico: (l.interacoes_json ?? []).some((i: any) =>
+          String(i?.titulo || '').startsWith(PREFIXO_TITULO_DIAGNOSTICO_CRM),
         ),
       }))
   }, [data])
