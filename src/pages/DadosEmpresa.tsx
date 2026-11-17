@@ -51,6 +51,8 @@ import { PainelTributosAtividade } from '@/components/dadosEmpresa/PainelTributo
 import { BlocoAvisosRegime } from '@/components/dadosEmpresa/BlocoAvisosRegime'
 import { BlocoVedacoesSimples } from '@/components/dadosEmpresa/BlocoVedacoesSimples'
 import { BlocoVedacoesRegimes } from '@/components/dadosEmpresa/BlocoVedacoesRegimes'
+import { IndicadorCompletudePerfil } from '@/components/dadosEmpresa/IndicadorCompletudePerfil'
+import { validarCNPJ } from '@/lib/cnpj'
 import type { IdVedacaoPresumido, IdVedacaoMei } from '@/lib/vedacoesRegimes'
 import type { IdVedacaoSimples } from '@/lib/vedacoesSimples'
 import {
@@ -193,6 +195,22 @@ export default function DadosEmpresa() {
   const [mensagemErro, setMensagemErro] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [modalNovoClienteAberto, setModalNovoClienteAberto] = useState(false)
+
+  // Abas do formulário: Identificação | Fiscal | Vedações | Parâmetros
+  const ABAS_FORMULARIO = [
+    { id: 'identificacao', rotulo: 'Identificação' },
+    { id: 'fiscal', rotulo: 'Fiscal' },
+    { id: 'vedacoes', rotulo: 'Vedações' },
+    { id: 'parametros', rotulo: 'Parâmetros' },
+  ] as const
+  type AbaId = (typeof ABAS_FORMULARIO)[number]['id']
+  const [abaAtiva, setAbaAtiva] = useState<AbaId>('identificacao')
+
+  // Flag visual: mostra o CNPJ em vermelho antes de salvar quando os dígitos verificadores falham
+  const cnpjPreenchido = (formData.cnpj || '').replace(/\D/g, '').length > 0
+  const cnpjInvalidoVisual = cnpjPreenchido && !validarCNPJ(formData.cnpj || '')
+  const cnpjInvalidoErro =
+    cnpjInvalidoVisual && !errors.cnpj ? 'CNPJ inválido — verifique os dígitos verificadores.' : ''
 
   // Regra de perfil: analista/master/admin podem cadastrar novas empresas diretamente
   const isAnalistaOuMaster =
@@ -1404,6 +1422,13 @@ export default function DadosEmpresa() {
       {/* CONTEÚDO PRINCIPAL */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <form onSubmit={handleSubmit} className="space-y-8 scroll-mt-28">
+          {/* INDICADOR DE COMPLETUDE DO PERFIL */}
+          <IndicadorCompletudePerfil
+            formData={formData}
+            abaAtiva={abaAtiva}
+            onIrParaAba={(aba) => setAbaAtiva(aba as AbaId)}
+          />
+
           {/* INDICADOR VISUAL DE VALIDADE FISCAL (RESUMO NO TOPO) */}
           <IndicadorValidadeFiscal
             resultado={resultadoValidacao}
@@ -1493,9 +1518,28 @@ export default function DadosEmpresa() {
             </div>
           </div>
 
+          {/* BARRA DE ABAS DO FORMULÁRIO */}
+          <div className="sticky top-[64px] z-30 bg-slate-50/95 backdrop-blur-sm border border-slate-200 rounded-2xl p-1.5 flex flex-wrap gap-1 shadow-xs">
+            {ABAS_FORMULARIO.map((aba) => (
+              <button
+                key={aba.id}
+                type="button"
+                onClick={() => setAbaAtiva(aba.id)}
+                className={`flex-1 min-w-[140px] px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  abaAtiva === aba.id
+                    ? 'bg-[#07132B] text-white shadow-md'
+                    : 'text-slate-600 hover:bg-white hover:text-[#07132B]'
+                }`}
+              >
+                {aba.rotulo}
+              </button>
+            ))}
+          </div>
+
           {/* ========================================================================= */}
-          {/* SEÇÃO OPCIONAL: IMPORTAÇÃO DE DOCUMENTOS FISCAIS (EFD SPED)              */}
+          {/* ABA FISCAL: IMPORTAÇÃO DE DOCUMENTOS FISCAIS (EFD SPED)                  */}
           {/* ========================================================================= */}
+          {abaAtiva === 'fiscal' && (
           <SecaoImportacaoDocumentosFiscais
             perfilAtual={formData}
             onConfirmarImportacao={handleConfirmarImportacaoDocumento as any}
