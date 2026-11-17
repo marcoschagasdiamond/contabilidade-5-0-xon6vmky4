@@ -1914,7 +1914,15 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
     // Se a simulação tiver configuracoesDiagnostico salvas, sincroniza com DadosEmpresa
     if (p.configuracoesDiagnostico) {
-      salvarDadosEmpresa({
+      // CORREÇÃO (bug de zeramento ao salvar): mescla com a fonte mestra existente.
+      // Antes, gravavam-se apenas os campos do snapshot e a fonte mestra perdia
+      // porcentagemComprasSimplesNacional (e demais campos não salvos na simulação).
+      // Com o campo perdido, a ponderação de crédito voltava a usar a alíquota CHEIA
+      // nas compras (como se 100% dos insumos gerassem crédito integral), igualando
+      // créditos ao débito e zerando o imposto a recolher — na sessão e ao recarregar.
+      const fonteMestraAtual = carregarDadosEmpresa()
+      const sincronizacaoEmpresa = {
+        ...fonteMestraAtual,
         nomeEmpresa: p.empresa,
         cnpj: p.cnpj,
         nomeContato: p.nomeContato,
@@ -1927,7 +1935,15 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         cidade: p.configuracoesDiagnostico.cidade,
         funcionarios: p.configuracoesDiagnostico.funcionarios,
         emissaoNf: p.configuracoesDiagnostico.emissaoNf,
-      })
+        // Preserva o valor ATUAL da fonte mestra (% compras Simples Nacional):
+        // o snapshot da simulação só é usado como fallback quando a fonte mestra
+        // ainda não conhece o campo. Nunca gravar undefined/0 por cima do valor real.
+        porcentagemComprasSimplesNacional:
+          fonteMestraAtual.porcentagemComprasSimplesNacional ??
+          p.configuracoesDiagnostico.porcentagemComprasSimplesNacional ??
+          0,
+      }
+      salvarDadosEmpresa(sincronizacaoEmpresa)
     }
   }, [])
 
