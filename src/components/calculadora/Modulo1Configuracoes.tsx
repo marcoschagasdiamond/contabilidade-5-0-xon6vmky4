@@ -1301,6 +1301,12 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
               <span className="text-[11px] text-slate-500 block leading-tight">
                 Parcela de insumos com crédito presumido da LC 214/2025.
               </span>
+              {(config.porcentagemComprasSimplesNacional ?? 0) === 0 && (
+                <span className="text-[11px] text-amber-700 block leading-tight">
+                  assumindo todos os fornecedores no regime regular — ajuste se você compra de
+                  optantes do Simples
+                </span>
+              )}
             </div>
           </div>
 
