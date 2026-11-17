@@ -2773,6 +2773,62 @@ export default function DadosEmpresa() {
                     </div>
                   </div>
                 </div>
+
+                {/* 6. % COMPRAS DE FORNECEDORES DO SIMPLES NACIONAL (LC 214/2025) */}
+                <div className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label
+                      htmlFor="porcentagemComprasSimplesNacional"
+                      className="text-sm font-bold text-[#07132B] flex items-center gap-1.5"
+                    >
+                      <ShoppingCart className="w-4 h-4 text-[#D4AF37]" />
+                      6. Compras de Fornecedores do Simples Nacional (%)
+                    </Label>
+                    <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                      0 a 100%
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Parcela estimada das aquisições vindas de fornecedores optantes do Simples
+                    Nacional (LC 214/2025). Pondera o crédito de compras na Calculadora IBS/CBS
+                    (Módulos 2 e 4) — a compra de optante gera crédito reduzido.
+                  </p>
+                  <div className="space-y-1.5 pt-1">
+                    <div className="relative">
+                      <Input
+                        id="porcentagemComprasSimplesNacional"
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={formData.porcentagemComprasSimplesNacional ?? 0}
+                        onChange={(e) => {
+                          const val = Math.min(100, Math.max(0, Number(e.target.value) || 0))
+                          setFormData((prev) => ({
+                            ...prev,
+                            porcentagemComprasSimplesNacional: val,
+                          }))
+                        }}
+                        className="text-base font-bold font-mono text-[#07132B] bg-white border-slate-300 h-11 pr-10 shadow-xs"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 font-mono">
+                        %
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 block">
+                      {Number(formData.porcentagemComprasSimplesNacional || 0) === 0 ? (
+                        <span className="text-emerald-600 font-semibold">
+                          Nenhuma compra de optantes do Simples informada (padrão)
+                        </span>
+                      ) : (
+                        <span>
+                          <strong>{formData.porcentagemComprasSimplesNacional}%</strong> das compras
+                          vêm de fornecedores do Simples Nacional
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
