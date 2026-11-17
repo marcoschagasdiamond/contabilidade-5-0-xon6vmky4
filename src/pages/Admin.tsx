@@ -54,6 +54,7 @@ import { AbaUsuariosPermissoes } from '@/components/admin/AbaUsuariosPermissoes'
 import { AbaMercadoCreditosAdmin } from '@/components/admin/AbaMercadoCreditosAdmin'
 import { AbaReunioesAdmin } from '@/components/admin/AbaReunioesAdmin'
 import { AbaRadarTributarioAdmin } from '@/components/admin/AbaRadarTributarioAdmin'
+import AbaIndicadores from '@/components/admin/AbaIndicadores'
 import { ModalFichaClienteGlobal } from '@/components/admin/ModalFichaClienteGlobal'
 import { listarTodosAnunciosAdmin, listarPedidosAdmin } from '@/services/creditos'
 import type { AnuncioCredito, PedidoInformacaoCredito } from '@/types/creditos'
@@ -73,6 +74,7 @@ type TabTipo =
   | 'mercado_creditos'
   | 'reunioes'
   | 'radar_tributario'
+  | 'indicadores'
   | 'clientes'
   | 'leads'
   | 'diagnosticos'
@@ -863,6 +865,28 @@ export default function Admin() {
             </span>
           </button>
 
+          {/* ABA INDICADORES (DASHBOARD DE INDICADORES — SÓ LEITURA) */}
+          <button
+            onClick={() => setActiveTab('indicadores')}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-heading font-bold flex items-center gap-2 transition-all ${
+              activeTab === 'indicadores'
+                ? 'bg-[#07132B] text-[#D4AF37] shadow-sm ring-2 ring-[#D4AF37]/60'
+                : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>Indicadores</span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'indicadores'
+                  ? 'bg-[#D4AF37] text-[#07132B]'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              Funil
+            </span>
+          </button>
+
           <div className="h-6 w-px bg-slate-300 mx-1 hidden sm:block" />
 
           {/* ABAS ORIGINAIS PRESERVADAS */}
@@ -948,6 +972,11 @@ export default function Admin() {
             </button>
           </div>
         )}
+
+        {/* ========================================================= */}
+        {/* CONTEÚDO DA ABA INDICADORES (DASHBOARD) */}
+        {/* ========================================================= */}
+        {activeTab === 'indicadores' && <AbaIndicadores />}
 
         {/* ========================================================= */}
         {/* CONTEÚDO DAS NOVAS ABAS DE CONTROLE MASTER */}
