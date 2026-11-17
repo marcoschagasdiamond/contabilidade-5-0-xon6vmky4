@@ -8,6 +8,18 @@ import type {
 
 const LOCAL_STORAGE_KEY = 'contabilidade50_simulacoes_recuperador_v1'
 
+/** Resumo em 1 linha para o CRM a partir de uma simulação do Recuperador */
+export function resumoCrmRecuperador(sim: SimulacaoRecuperador): string {
+  const total = sim.total_recuperavel_integral || 0
+  const conservador = sim.total_recuperavel_conservador || 0
+  const fmt = (v: number) => 'R$ ' + v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
+  if (total > 0 && conservador > 0 && conservador !== total) {
+    return `recuperação entre ${fmt(conservador)} e ${fmt(total)}`
+  }
+  if (total > 0) return `crédito recuperável ~${fmt(total)}`
+  return 'análise de recuperação concluída'
+}
+
 interface PbSimulacaoRecuperadorRecord extends RecordModel {
   user_id?: string
   cliente_id?: string
@@ -183,6 +195,18 @@ export async function salvarSimulacaoRecuperador(dados: {
       } catch (histErr) {
         console.warn('Aviso ao registrar histórico do recuperador:', histErr)
       }
+
+      // Integração CRM: registra o evento no lead vinculado por CNPJ (nunca cria lead)
+      import('@/services/diagnosticoCrm')
+        .then(({ registrarDiagnosticoNoCrm }) =>
+          registrarDiagnosticoNoCrm({
+            cnpj: simulacaoCriada.cnpj,
+            nomeEmpresa: simulacaoCriada.empresa || undefined,
+            nomeDiagnostico: `Recuperador de Créditos — ${simulacaoCriada.nome}`,
+            resumo: resumoCrmRecuperador(simulacaoCriada),
+          }),
+        )
+        .catch((e) => console.warn('[CRM] Aviso ao registrar recuperador no lead:', e))
 
       return simulacaoCriada
     } catch (err) {

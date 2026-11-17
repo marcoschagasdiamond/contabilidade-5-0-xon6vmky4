@@ -110,6 +110,23 @@ export function derivarResumoSnapshot(dados: DadosRelatorioConsolidado): ResumoS
   }
 }
 
+/** Resumo em 1 linha para o CRM a partir do resumo do snapshot do relatório */
+export function resumoCrmSnapshotConsolidado(resumo?: ResumoSnapshotVersao): string {
+  if (!resumo) return 'Snapshot registrado'
+  const partes: string[] = []
+  if (resumo.regimeRecomendado && resumo.regimeRecomendado !== 'Não determinado')
+    partes.push(`regime ${resumo.regimeRecomendado}`)
+  if (resumo.farolAutoavaliacao) partes.push(`perfil ${resumo.farolAutoavaliacao}`)
+  if (typeof resumo.economiaAnual === 'number' && resumo.economiaAnual > 0)
+    partes.push(
+      `economia R$ ${resumo.economiaAnual.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}/ano`,
+    )
+  const criticos = resumo.totalCriticos ?? 0
+  if (criticos > 0) partes.push(`${criticos} ponto(s) crítico(s)`)
+  const etapas = `${resumo.etapasConcluidas}/${resumo.totalEtapas} etapas`
+  return [etapas, ...partes].join(' · ')
+}
+
 export async function registrarSnapshotSeClienteAtivo(
   clienteId?: string | null,
   clienteNome?: string | null,
@@ -194,6 +211,20 @@ export async function registrarVersaoRelatorio(input: {
     const record = await pb
       .collection('historico_relatorios_diagnostico')
       .create<HistoricoRelatorioRecord>(payload)
+
+    // Integração CRM: registra o evento no lead vinculado por CNPJ (nunca cria lead)
+    import('@/services/diagnosticoCrm')
+      .then(({ registrarDiagnosticoNoCrm }) =>
+        registrarDiagnosticoNoCrm({
+          cnpj: payload.dados_json?.dadosEmpresa?.cnpj,
+          nomeEmpresa:
+            payload.empresa_nome || payload.dados_json?.dadosEmpresa?.nomeEmpresa || undefined,
+          nomeDiagnostico: `Relatório Consolidado (${payload.versao_rotulo || payload.motivo_evento || 'snapshot'})`,
+          resumo: resumoCrmSnapshotConsolidado(resumo_json),
+        }),
+      )
+      .catch((e) => console.warn('[CRM] Aviso ao registrar relatório consolidado no lead:', e))
+
     return record
   } catch (err) {
     console.warn('Falha ao persistir no PocketBase, salvando em fallback local:', err)

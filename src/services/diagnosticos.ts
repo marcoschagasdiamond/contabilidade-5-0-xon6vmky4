@@ -134,6 +134,16 @@ export async function createDiagnostico(
 
   const record = await pb.collection('diagnosticos').create<DiagnosticoRecord>(payload)
 
+  // Integração CRM: registra o evento no lead vinculado por CNPJ (nunca cria lead)
+  import('@/services/diagnosticoCrm')
+    .then(({ registrarDiagnosticoNoCrm, eventoDiagnosticoDeRegistro }) =>
+      registrarDiagnosticoNoCrm({
+        cnpj: record.cnpj,
+        ...eventoDiagnosticoDeRegistro(record),
+      }),
+    )
+    .catch((e) => console.warn('[CRM] Aviso ao registrar diagnóstico no lead:', e))
+
   // Se o usuário estiver autenticado, atualiza progresso de onboarding
   const userId = (data as any).user_id || pb.authStore.record?.id
   if (userId) {
