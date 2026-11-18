@@ -7,6 +7,7 @@ import type {
 } from '@/types/recuperadorCreditos'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { obterRelacaoComCancelamento } from '@/lib/relacionamentoEst04'
+import { obterCClasTribPorNcmNbs } from '@/data/cClassTribCatalogo'
 
 interface Props {
   tesesDefinicoes: TeseRecuperacaoDefinicao[]
@@ -105,6 +106,19 @@ export default function BlocoFolhaPrevidenciarioRecuperador({
                             {selecao.ncmReferencia ? `(${selecao.ncmReferencia})` : ''}
                           </span>
                         )}
+                        {(() => {
+                          const entradaCClassTrib = selecao.ncmReferencia
+                            ? obterCClasTribPorNcmNbs(selecao.ncmReferencia)
+                            : undefined
+                          return entradaCClassTrib ? (
+                            <span
+                              className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-[#D4AF37]/15 text-[#07132B] border border-[#D4AF37]/60 shadow-xs"
+                              title={`Sugerido via cClassTrib ${entradaCClassTrib.codigo} — ${entradaCClassTrib.descricao}. Fundamentação legal: ${entradaCClassTrib.fundamentacaoLegal}. Seleção manual livre.`}
+                            >
+                              Sugerido via cClassTrib {entradaCClassTrib.codigo}
+                            </span>
+                          ) : null
+                        })()}
                         {relacaoEst04 && (
                           <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-slate-100 text-[#07132B] border border-[#D4AF37]/60 shadow-xs">
                             Relacionada à EST-04

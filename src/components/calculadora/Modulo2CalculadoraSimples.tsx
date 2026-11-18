@@ -39,6 +39,7 @@ import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulaca
 import { ComposicaoCreditoCompras } from '@/components/calculadora/ComposicaoCreditoCompras'
 import { obterAliquotasCreditoPorAno } from '@/lib/calculoFornecedores'
 import { type AnoBaseSimulacao } from '@/lib/reformaTributaria'
+import { obterCClasTribPorRegime } from '@/data/cClassTribCatalogo'
 
 export interface Modulo2CalculadoraSimplesProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
@@ -105,6 +106,7 @@ export default function Modulo2CalculadoraSimples({
   )
 
   const infoRegimeAtual = obterInfoRegimeOperacao(regimeOperacao)
+  const entradaCClasTribRegime = obterCClasTribPorRegime(regimeOperacao)
 
   const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, '')
@@ -371,6 +373,15 @@ export default function Modulo2CalculadoraSimples({
             >
               {resultadoSimples.etiquetaLegalExibida || infoRegimeAtual.etiquetaOrigem}
             </span>
+            {entradaCClasTribRegime && (
+              <span
+                className="font-medium text-[#07132B] bg-[#D4AF37]/15 border border-[#D4AF37]/50 px-1.5 py-0.5 rounded w-fit max-w-full truncate"
+                title={`Classificação tributária oficial sugerida: cClassTrib ${entradaCClasTribRegime.codigo} — ${entradaCClasTribRegime.descricao}. Fundamentação legal: ${entradaCClasTribRegime.fundamentacaoLegal}`}
+              >
+                cClassTrib {entradaCClasTribRegime.codigo} —{' '}
+                {entradaCClasTribRegime.fundamentacaoLegal}
+              </span>
+            )}
           </div>
         </div>
 

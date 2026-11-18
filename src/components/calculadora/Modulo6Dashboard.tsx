@@ -144,6 +144,7 @@ export default function Modulo6Dashboard({
     parametroCbsAtivo,
     parametrosRadar,
     limparDashboard,
+    regimeOperacao,
   } = useCalculadoraIbsCbs()
 
   const { clienteAtivo } = useClienteAtivo()
@@ -888,6 +889,7 @@ export default function Modulo6Dashboard({
           regimeSimulado={regimeAtualFiltro}
           ramoSimulado={tipoAtividade}
           faturamentoMensalSimulado={faturamentoMensal}
+          regimeOperacaoSimulado={regimeOperacao}
         />
       )}
 

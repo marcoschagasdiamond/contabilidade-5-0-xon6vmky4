@@ -7,12 +7,15 @@ import {
   type RespostaLegislacaoContextual,
   type ItemLegislacao,
 } from '@/services/radarTributario'
+import { obterCClasTribPorRegime } from '@/data/cClassTribCatalogo'
 
 interface QuadroLegislacaoContextualCalculadoraProps {
   segmentoSimulado?: string
   regimeSimulado?: string
   ramoSimulado?: string
   faturamentoMensalSimulado?: number
+  /** RegimeOperacao (preset LC 214/2025) da simulação — habilita a citação cClassTrib do catálogo curado */
+  regimeOperacaoSimulado?: string
 }
 
 export function QuadroLegislacaoContextualCalculadora({
@@ -20,6 +23,7 @@ export function QuadroLegislacaoContextualCalculadora({
   regimeSimulado,
   ramoSimulado,
   faturamentoMensalSimulado,
+  regimeOperacaoSimulado,
 }: QuadroLegislacaoContextualCalculadoraProps) {
   const { dadosEmpresa, temDadosSalvos } = useDadosEmpresa()
   const [carregando, setCarregando] = useState<boolean>(true)
@@ -124,6 +128,7 @@ export function QuadroLegislacaoContextualCalculadora({
   const mudancas = resposta?.mudancasQueImpactam || []
   const recuperacao = resposta?.direitoRecuperacaoCredito || []
   const itensAtivos = abaAtiva === 'mudancas' ? mudancas : recuperacao
+  const entradaCClasTribQuadro = obterCClasTribPorRegime(regimeOperacaoSimulado)
 
   return (
     <Card className="rounded-xl border-2 border-[#D4AF37]/60 bg-[#07132B] text-white shadow-2xl overflow-hidden relative">
@@ -150,6 +155,15 @@ export function QuadroLegislacaoContextualCalculadora({
               Normas e decisões judiciais filtradas especificamente para o segmento e regime da sua
               empresa.
             </p>
+            {entradaCClasTribQuadro && (
+              <span
+                className="text-[11px] font-mono font-bold text-[#D4AF37] bg-black/30 border border-[#D4AF37]/50 px-1.5 py-0.5 rounded w-fit max-w-full truncate"
+                title={`Classificação tributária oficial do catálogo: cClassTrib ${entradaCClasTribQuadro.codigo} — ${entradaCClasTribQuadro.descricao}. Fundamentação legal: ${entradaCClasTribQuadro.fundamentacaoLegal}`}
+              >
+                cClassTrib {entradaCClasTribQuadro.codigo} —{' '}
+                {entradaCClasTribQuadro.fundamentacaoLegal}
+              </span>
+            )}
           </div>
 
           {/* Abas Alternadoras */}
