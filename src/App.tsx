@@ -40,6 +40,7 @@ import RedefinirSenha from './pages/RedefinirSenha'
 import MinhaConta from './pages/MinhaConta'
 import DadosEscritorio from './pages/DadosEscritorio'
 import Admin from './pages/Admin'
+import ValidacaoRtc from './pages/ValidacaoRtc'
 import Clientes from './pages/Clientes'
 import DetalheCliente from './pages/DetalheCliente'
 import Carteira from './pages/Carteira'
@@ -516,6 +517,8 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
+                {/* Conferência Oficial RTC (exclusiva master) */}
+                <Route path="/validacao-rtc" element={<ValidacaoRtc />} />
                 {/* Rota Protegida Admin */}
                 <Route
                   path="/admin"

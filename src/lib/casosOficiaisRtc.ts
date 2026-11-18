@@ -1,7 +1,5 @@
-import {
-  calcularResultadosSimulacao,
-  type ParametrosSimulacaoCalculadora,
-} from '@/lib/calculoSimulacaoIbsCbs'
+import { calcularResultadosSimulacao } from '@/lib/calculoSimulacaoIbsCbs'
+import type { ParametrosSimulacaoCalculadora } from '@/types/simulacaoCalculadora'
 import {
   CONFIGURACOES_PADRAO,
   type AnoTransicaoIbsCbs,

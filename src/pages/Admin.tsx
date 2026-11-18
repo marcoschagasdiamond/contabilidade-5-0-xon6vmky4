@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   MapPin,
   Calendar,
+  ShieldCheck,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { getLeads, deleteLead, type LeadRecord } from '@/services/leads'
@@ -864,6 +865,17 @@ export default function Admin() {
               E-mails
             </span>
           </button>
+
+          {/* CONFERÊNCIA OFICIAL RTC (LINK DISCRETO — SÓ MASTER) */}
+          {isMaster && (
+            <a
+              href="/validacao-rtc"
+              className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-heading font-semibold flex items-center gap-2 transition-all bg-white border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Conferência oficial RTC</span>
+            </a>
+          )}
 
           {/* ABA INDICADORES (DASHBOARD DE INDICADORES — SÓ LEITURA) */}
           <button
