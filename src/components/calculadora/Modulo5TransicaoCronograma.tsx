@@ -25,6 +25,7 @@ import {
   RotateCcw,
   Building2,
   Sparkles,
+  Percent,
 } from 'lucide-react'
 import {
   LineChart,
@@ -67,6 +68,7 @@ export default function Modulo5TransicaoCronograma({
     setValorEstoqueVirada,
     resultadoTransicao,
     resultadoEstoque,
+    resultadoComparativo,
     config,
     origemDadosEmpresa,
     restaurarDadosEmpresaNoModulo,
@@ -123,6 +125,19 @@ export default function Modulo5TransicaoCronograma({
 
   // Perfil 100% prestador de serviços (mesma convenção adotada nos Módulos 1, 2, 3, 4 e 6)
   const isPerfilServico = setorTransicao === 'servico'
+
+  // Legenda informativa da redução setorial aplicada na curva do gráfico (só texto — não altera cálculo)
+  const reducaoIbsCbsPct = resultadoComparativo?.ibsCbs?.reducaoAplicadaPercentual ?? 0
+  const subatividadeAtivaNome =
+    resultadoComparativo?.dadosAdicionais?.subatividadeAtivaNome || 'subatividade não definida'
+  const fatorReducaoCurva = Math.max(0, 1 - reducaoIbsCbsPct / 100)
+  const fatorReducaoCurvaLabel = fatorReducaoCurva.toLocaleString('pt-BR', {
+    maximumFractionDigits: 2,
+  })
+  const legendaReducaoCurva =
+    reducaoIbsCbsPct > 0
+      ? `Redução de ${reducaoIbsCbsPct}% aplicada na curva (subatividade: ${subatividadeAtivaNome} — fator ${fatorReducaoCurvaLabel}; anos 2027–2033; atual/2026 mostram o sistema atual)`
+      : 'Sem redução setorial aplicada'
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -615,6 +630,16 @@ export default function Modulo5TransicaoCronograma({
                 </span>
               )}
             </p>
+            <div
+              className={`inline-flex items-start gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold border max-w-full ${
+                reducaoIbsCbsPct > 0
+                  ? 'text-amber-800 bg-amber-50 border-amber-300'
+                  : 'text-slate-600 bg-slate-100 border-slate-200'
+              }`}
+            >
+              <Percent className="w-3 h-3 shrink-0 mt-0.5" />
+              <span className="leading-snug">{legendaReducaoCurva}</span>
+            </div>
           </div>
           <span className="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">
             Meta Plena 2033: {formatarPorcentagem(config.totalIvaDual)}
