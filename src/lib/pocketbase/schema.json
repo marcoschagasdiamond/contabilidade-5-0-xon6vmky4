@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T00:10:59.213Z",
+  "generatedAt": "2026-11-18T00:27:23.902Z",
   "collections": [
     {
       "name": "users",
@@ -3598,6 +3598,102 @@
         "CREATE INDEX idx_hist_cot_fornecedor ON historico_cotacoes_fornecedores (fornecedor_id)",
         "CREATE INDEX idx_hist_cot_vencedora ON historico_cotacoes_fornecedores (eh_vencedora)",
         "CREATE INDEX idx_hist_cot_created ON historico_cotacoes_fornecedores (created DESC)"
+      ]
+    },
+    {
+      "name": "notas_fiscais",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || user_id = @request.auth.id || user_id = '' || user_id = null)",
+        "view": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || user_id = @request.auth.id || user_id = '' || user_id = null)",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || user_id = @request.auth.id)",
+        "delete": "@request.auth.id != '' && (@request.auth.nivel_acesso = 'master' || @request.auth.nivel_acesso = 'admin' || @request.auth.role = 'admin' || @request.auth.email = 'marcoschagasdiamond@icloud.com' || user_id = @request.auth.id)"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "cliente_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "numero",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "data_emissao",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cnpj_emitente",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "nome_emitente",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_total",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_produtos",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "regime_fornecedor",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["lucro_real", "lucro_presumido", "simples_nacional", "misto"]
+        },
+        {
+          "name": "origem",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["csv", "xml_nfe", "manual"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_notas_user ON notas_fiscais (user_id)",
+        "CREATE INDEX idx_notas_cliente ON notas_fiscais (cliente_id)",
+        "CREATE INDEX idx_notas_data ON notas_fiscais (data_emissao)",
+        "CREATE INDEX idx_notas_created ON notas_fiscais (created DESC)"
       ]
     }
   ]

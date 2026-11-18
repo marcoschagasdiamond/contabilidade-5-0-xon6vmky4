@@ -50,6 +50,7 @@ import { SecaoCnaesSecundarios } from '@/components/dadosEmpresa/SecaoCnaesSecun
 import { PainelTributosAtividade } from '@/components/dadosEmpresa/PainelTributosAtividade'
 import { BlocoAvisosRegime } from '@/components/dadosEmpresa/BlocoAvisosRegime'
 import { ModalRelatorioFornecedores } from '@/components/ModalRelatorioFornecedores'
+import { AbaNotasFiscais } from '@/components/AbaNotasFiscais'
 import {
   montarRelatorioFornecedores,
   marcarRiscoVedacaoSimples,
@@ -251,10 +252,11 @@ export default function DadosEmpresa() {
     })
   }, [fornecedoresRelatorio, formData])
 
-  // Abas do formulário: Identificação | Fiscal | Vedações | Parâmetros
+  // Abas do formulário: Identificação | Fiscal | Notas Fiscais | Vedações | Parâmetros
   const ABAS_FORMULARIO = [
     { id: 'identificacao', rotulo: 'Identificação' },
     { id: 'fiscal', rotulo: 'Fiscal' },
+    { id: 'notas', rotulo: 'Notas Fiscais' },
     { id: 'vedacoes', rotulo: 'Vedações' },
     { id: 'parametros', rotulo: 'Parâmetros' },
   ] as const
@@ -1599,6 +1601,20 @@ export default function DadosEmpresa() {
               perfilAtual={formData}
               onConfirmarImportacao={handleConfirmarImportacaoDocumento as any}
               disabled={isSalvando}
+            />
+          )}
+
+          {/* ========================================================================= */}
+          {/* ABA NOTAS FISCAIS: IMPORTAÇÃO CSV / XML NFe — FONTE REAL DE COMPRAS     */}
+          {/* ========================================================================= */}
+          {abaAtiva === 'notas' && (
+            <AbaNotasFiscais
+              nomeEmpresa={
+                formData.nomeEmpresa ||
+                formData.dadosCnpjConsulta?.razaoSocial ||
+                formData.nomeContato ||
+                'Empresa'
+              }
             />
           )}
 
