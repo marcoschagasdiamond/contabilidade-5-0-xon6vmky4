@@ -6,6 +6,8 @@
  * regime (Simples Nacional vs. Regime Regular) já agregada na tela.
  */
 
+import { jsPDF } from 'jspdf'
+
 export interface ItemRelatorioFornecedorChave {
   nome: string
   cnpj?: string
