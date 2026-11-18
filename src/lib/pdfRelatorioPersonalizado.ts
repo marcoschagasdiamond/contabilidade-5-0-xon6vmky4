@@ -10,6 +10,7 @@ import { desenharAvisoLegalCompletoPDF } from '@/components/common/AvisoOrientat
 import { renderizarRodapeEscritorioPdf } from '@/lib/pdfIdentidadeEscritorio'
 import { desenharLogoContabilidade50 } from '@/lib/pdfSimulacaoCalculadora'
 import { analisarVinculosSocietarios } from '@/lib/vinculosSocietarios'
+import { desenharBadgeConferenciaRtcPdf } from '@/lib/badgeConferenciaRtc'
 
 export interface GerarRelatorioPersonalizadoOptions {
   configuracao: ConfiguracaoRelatorioPersonalizado
@@ -1202,6 +1203,14 @@ export function construirRelatorioPersonalizadoDoc(options: GerarRelatorioPerson
     doc.addPage()
     currentY = 20
   }
+
+  // BADGE DE CONFERÊNCIA RTC (Calculadora oficial da Receita — ver /validacao-rtc)
+  if (currentY > 225) {
+    doc.addPage()
+    currentY = 20
+  }
+  const hBadgeRtc = desenharBadgeConferenciaRtcPdf(doc, margin, currentY, contentWidth)
+  currentY += hBadgeRtc + 5
 
   desenharAvisoLegalCompletoPDF(doc, margin, currentY, contentWidth)
   aplicarRodape(doc)

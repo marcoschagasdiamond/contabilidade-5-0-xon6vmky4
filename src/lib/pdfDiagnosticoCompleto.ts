@@ -7,6 +7,7 @@ import type { DiagnosticoRecord } from '@/services/diagnosticos'
 import { formatarCNPJ } from '@/lib/cnpj'
 import { desenharAvisoLegalCompletoPDF } from '@/components/common/AvisoOrientativo'
 import { renderizarRodapeEscritorioPdf } from '@/lib/pdfIdentidadeEscritorio'
+import { desenharBadgeConferenciaRtcPdf } from '@/lib/badgeConferenciaRtc'
 
 export interface GerarDiagnosticoCompletoOptions {
   empresa: string
@@ -532,11 +533,13 @@ export function gerarDiagnosticoCompletoPDF(options: GerarDiagnosticoCompletoOpt
     y += 24
   }
 
-  // Bloco 2.3: Aviso Orientativo Legal Obrigatório
-  if (y > 225) {
+  // Bloco 2.3: Badge de Conferência RTC + Aviso Orientativo Legal Obrigatório
+  if (y > 215) {
     doc.addPage()
     y = 20
   }
+  const hBadgeRtc = desenharBadgeConferenciaRtcPdf(doc, margin, y, contentWidth)
+  y += hBadgeRtc + 5
   desenharAvisoLegalCompletoPDF(doc, margin, y, contentWidth)
 
   aplicarRodape(doc)

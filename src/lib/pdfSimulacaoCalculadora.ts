@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf'
+import { desenharBadgeConferenciaRtcPdf } from '@/lib/badgeConferenciaRtc'
 import type {
   ParametrosSimulacaoCalculadora,
   ResultadosSimulacaoCalculadora,
@@ -1312,6 +1313,11 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.text(linhasObs, margin + 5, currentY + 10)
 
   currentY += 28
+
+  // BADGE DE CONFERÊNCIA RTC (Calculadora oficial da Receita — ver /validacao-rtc)
+  verificarQuebraPagina(18)
+  const hBadgeRtc = desenharBadgeConferenciaRtcPdf(doc, margin, currentY, contentWidth)
+  currentY += hBadgeRtc + 4
 
   // AVISO LEGAL COMPLETO NA PÁGINA FINAL (COM LINK PARA DIAGNÓSTICO 360°)
   verificarQuebraPagina(22)

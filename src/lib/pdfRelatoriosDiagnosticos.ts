@@ -5,6 +5,7 @@ import { formatarCNPJ } from '@/lib/cnpj'
 import { desenharAvisoLegalCompletoPDF } from '@/components/common/AvisoOrientativo'
 import { renderizarRodapeEscritorioPdf } from '@/lib/pdfIdentidadeEscritorio'
 import { analisarVinculosSocietarios } from '@/lib/vinculosSocietarios'
+import { desenharBadgeConferenciaRtcPdf } from '@/lib/badgeConferenciaRtc'
 
 export interface DadosRelatorioConsolidado {
   clienteNome?: string
@@ -1145,6 +1146,14 @@ export function exportarPdfRelatorioConsolidado(dados: DadosRelatorioConsolidado
     )
     y += 18
   }
+
+  // BADGE DE CONFERÊNCIA RTC (Calculadora oficial da Receita — ver /validacao-rtc)
+  if (y > 225) {
+    doc.addPage()
+    y = 20
+  }
+  const hBadgeRtc = desenharBadgeConferenciaRtcPdf(doc, margin, y, contentWidth)
+  y += hBadgeRtc + 5
 
   // AVISO LEGAL COMPLETO NA PÁGINA FINAL DO RELATÓRIO CONSOLIDADO PDF
   if (y > 230) {
