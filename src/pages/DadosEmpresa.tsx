@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
@@ -49,6 +49,18 @@ import { CampoBuscaCnae } from '@/components/dadosEmpresa/CampoBuscaCnae'
 import { SecaoCnaesSecundarios } from '@/components/dadosEmpresa/SecaoCnaesSecundarios'
 import { PainelTributosAtividade } from '@/components/dadosEmpresa/PainelTributosAtividade'
 import { BlocoAvisosRegime } from '@/components/dadosEmpresa/BlocoAvisosRegime'
+import { ModalRelatorioFornecedores } from '@/components/ModalRelatorioFornecedores'
+import {
+  montarRelatorioFornecedores,
+  marcarRiscoVedacaoSimples,
+  type RelatorioFornecedoresDados,
+} from '@/lib/relatorioFornecedores'
+import {
+  normalizarRegimeComprador,
+  calcularResumoCarteiraFornecedores,
+} from '@/lib/calculoFornecedores'
+import { listarFornecedores, type FornecedorDiagnostico } from '@/services/fornecedores'
+import type { AnoBaseSimulacao } from '@/lib/reformaTributaria'
 import { BlocoVedacoesSimples } from '@/components/dadosEmpresa/BlocoVedacoesSimples'
 import { BlocoVedacoesRegimes } from '@/components/dadosEmpresa/BlocoVedacoesRegimes'
 import { IndicadorCompletudePerfil } from '@/components/dadosEmpresa/IndicadorCompletudePerfil'
@@ -195,6 +207,49 @@ export default function DadosEmpresa() {
   const [mensagemErro, setMensagemErro] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [modalNovoClienteAberto, setModalNovoClienteAberto] = useState(false)
+
+  // RELATÓRIO DE FORNECEDORES (visão somente leitura da carteira, aba Parâmetros)
+  const [modalRelatorioFornecedoresAberto, setModalRelatorioFornecedoresAberto] = useState(false)
+  const [fornecedoresRelatorio, setFornecedoresRelatorio] = useState<FornecedorDiagnostico[]>([])
+
+  const abrirRelatorioFornecedores = useCallback(async () => {
+    setModalRelatorioFornecedoresAberto(true)
+    try {
+      const lista = await listarFornecedores({
+        clienteId: empresaVinculadaId || null,
+        userId: user?.id || null,
+      })
+      setFornecedoresRelatorio(lista)
+    } catch (err) {
+      console.warn('Erro ao carregar fornecedores para o relatório:', err)
+      setFornecedoresRelatorio([])
+    }
+  }, [empresaVinculadaId, user?.id])
+
+  // Relatório montado a partir da carteira (Etapa 06) + parâmetros locais do formulário.
+  // Zero cálculo fiscal novo: reaproveita calcularResumoCarteiraFornecedores.
+  const relatorioFornecedores = useMemo<RelatorioFornecedoresDados | null>(() => {
+    if (fornecedoresRelatorio.length === 0) return null
+    const anoTransicao = (Number(formData.anoBaseTransicao) || 2027) as AnoBaseSimulacao
+    const regimeComprador = normalizarRegimeComprador(formData.regimeAtual)
+    const resumo = calcularResumoCarteiraFornecedores(
+      fornecedoresRelatorio,
+      anoTransicao,
+      regimeComprador,
+    )
+    const base = montarRelatorioFornecedores({
+      fornecedores: fornecedoresRelatorio,
+      resumo,
+      nomeEmpresa: formData.nomeEmpresa || '',
+      pctConfigurado: Number(formData.porcentagemComprasSimplesNacional || 0),
+      anoTransicao,
+    })
+    return marcarRiscoVedacaoSimples(base, {
+      vedacoesSimplesArt17: formData.vedacoesSimplesArt17,
+      vedacaoSimplesArt17Outra: formData.vedacaoSimplesArt17Outra,
+      regimeAtual: formData.regimeAtual,
+    })
+  }, [fornecedoresRelatorio, formData])
 
   // Abas do formulário: Identificação | Fiscal | Vedações | Parâmetros
   const ABAS_FORMULARIO = [
@@ -2838,9 +2893,21 @@ export default function DadosEmpresa() {
                         <ShoppingCart className="w-4 h-4 text-[#D4AF37]" />
                         6. Compras de Fornecedores do Simples Nacional (%)
                       </Label>
-                      <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                        0 a 100%
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                          0 a 100%
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={abrirRelatorioFornecedores}
+                          className="text-xs font-bold border-[#07132B] text-[#07132B] hover:bg-slate-100"
+                        >
+                          <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
+                          Relatório de Fornecedores
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-xs text-slate-500 leading-relaxed">
                       Parcela estimada das aquisições vindas de fornecedores optantes do Simples
@@ -3810,6 +3877,16 @@ export default function DadosEmpresa() {
           </div>
         </div>
       </div>
+
+      {/* RELATÓRIO DE FORNECEDORES (visão somente leitura da carteira) */}
+      <ModalRelatorioFornecedores
+        open={modalRelatorioFornecedoresAberto}
+        onOpenChange={setModalRelatorioFornecedoresAberto}
+        relatorio={relatorioFornecedores}
+        anoReferencia={Number(formData.anoBaseTransicao) || 2027}
+        regimeComprador={normalizarRegimeComprador(formData.regimeAtual)}
+        detalhamento={relatorioFornecedores?.detalhamento ?? []}
+      />
 
       {/* MODAL DE CADASTRO DE NOVO CLIENTE / OUTRA EMPRESA (ANALISTA / MASTER / ADMIN) */}
       <ModalCliente

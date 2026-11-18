@@ -36,6 +36,13 @@ import {
 } from '@/services/fornecedores'
 import { listarHistoricoCotacoes, type HistoricoCotacaoRecord } from '@/services/historicoCotacoes'
 import { gerarPdfParecerFornecedores } from '@/lib/pdfParecerFornecedores'
+import { ModalRelatorioFornecedores } from '@/components/ModalRelatorioFornecedores'
+import {
+  montarRelatorioFornecedores,
+  marcarRiscoVedacaoSimples,
+  type RelatorioFornecedoresDados,
+} from '@/lib/relatorioFornecedores'
+import { BarChart3 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 
 export default function DiagnosticoFornecedores() {
@@ -89,6 +96,7 @@ export default function DiagnosticoFornecedores() {
   const [modalEditarAberto, setModalEditarAberto] = useState(false)
   const [fornecedorEmEdicao, setFornecedorEmEdicao] = useState<FornecedorDiagnostico | null>(null)
   const [modalImportarAberto, setModalImportarAberto] = useState(false)
+  const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false)
   const [painelSucessoAberto, setPainelSucessoAberto] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
   const [resultadoComparador, setResultadoComparador] =
@@ -287,6 +295,24 @@ export default function DiagnosticoFornecedores() {
     return calcularRankingRiscoTroca(resumo.detalhamentoPorFornecedor)
   }, [resumo.detalhamentoPorFornecedor])
 
+  // Relatório de Fornecedores (visão somente leitura) montado a partir do
+  // mesmo resumo já calculado nesta etapa — zero cálculo fiscal novo.
+  const relatorioFornecedoresEtapa06 = useMemo<RelatorioFornecedoresDados | null>(() => {
+    if (fornecedores.length === 0) return null
+    const base = montarRelatorioFornecedores({
+      fornecedores,
+      resumo,
+      nomeEmpresa: dadosEmpresa.nomeEmpresa || '',
+      pctConfigurado: Number(dadosEmpresa.porcentagemComprasSimplesNacional || 0),
+      anoTransicao: anoLocal,
+    })
+    return marcarRiscoVedacaoSimples(base, {
+      vedacoesSimplesArt17: (dadosEmpresa as any)?.vedacoesSimplesArt17,
+      vedacaoSimplesArt17Outra: (dadosEmpresa as any)?.vedacaoSimplesArt17Outra,
+      regimeAtual: regimeLocal,
+    })
+  }, [fornecedores, resumo, dadosEmpresa, anoLocal, regimeLocal])
+
   // Filtragem da tabela
   const fornecedoresExibidos = useMemo(() => {
     return resumo.detalhamentoPorFornecedor.filter((item) => {
@@ -446,6 +472,16 @@ export default function DiagnosticoFornecedores() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setModalRelatorioAberto(true)}
+              className="text-xs font-bold border-[#07132B] text-[#07132B] hover:bg-slate-100"
+            >
+              <BarChart3 className="w-3.5 h-3.5 mr-1.5" />
+              Relatório de Fornecedores
+            </Button>
             <Button
               type="button"
               variant="outline"
@@ -1319,6 +1355,16 @@ export default function DiagnosticoFornecedores() {
           aberto={modalImportarAberto}
           onOpenChange={setModalImportarAberto}
           onImportarSucesso={handleImportacaoPlanilha}
+        />
+
+        {/* MODAL DO RELATÓRIO DE FORNECEDORES (visão somente leitura da carteira) */}
+        <ModalRelatorioFornecedores
+          open={modalRelatorioAberto}
+          onOpenChange={setModalRelatorioAberto}
+          relatorio={relatorioFornecedoresEtapa06}
+          anoReferencia={anoLocal}
+          regimeComprador={regimeLocal}
+          detalhamento={resumo.detalhamentoPorFornecedor}
         />
       </div>
     </div>
