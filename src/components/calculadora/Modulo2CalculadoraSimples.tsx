@@ -47,6 +47,8 @@ export interface Modulo2CalculadoraSimplesProps {
   onExportarDados?: () => void
   onImportarFaturamento?: () => void
   gerandoPdf?: boolean
+  /** Banner opcional (Notas Fiscais Reais) montado pela página pai. */
+  avisoNotasFiscais?: React.ReactNode
 }
 
 export default function Modulo2CalculadoraSimples({
@@ -56,6 +58,7 @@ export default function Modulo2CalculadoraSimples({
   onExportarDados,
   onImportarFaturamento,
   gerandoPdf = false,
+  avisoNotasFiscais,
 }: Modulo2CalculadoraSimplesProps = {}) {
   const {
     valorOperacao,
@@ -147,6 +150,9 @@ export default function Modulo2CalculadoraSimples({
           </p>
         </div>
       </div>
+
+      {/* AVISO NOTAS FISCAIS REAIS (fonte real vs estimada da base de compras) */}
+      {avisoNotasFiscais}
 
       {/* AVISO INFORMATIVO COM ATALHO PARA DADOS DA EMPRESA */}
       <div className="bg-slate-100 border border-slate-200 rounded-xl p-3 px-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-700">

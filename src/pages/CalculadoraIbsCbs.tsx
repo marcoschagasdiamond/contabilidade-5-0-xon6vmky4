@@ -50,6 +50,8 @@ import { PaywallModal } from '@/components/freemium/PaywallModal'
 import { SeletorClienteAtivo } from '@/components/clientes/SeletorClienteAtivo'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { Share2, X } from 'lucide-react'
+import AvisoNotasFiscaisReais from '@/components/calculadora/AvisoNotasFiscaisReais'
+import type { ResumoComprasNotasReais } from '@/services/notasFiscais'
 import Modulo1Configuracoes from '@/components/calculadora/Modulo1Configuracoes'
 import Modulo2CalculadoraSimples from '@/components/calculadora/Modulo2CalculadoraSimples'
 import Modulo3ComparativoRegimes from '@/components/calculadora/Modulo3ComparativoRegimes'
@@ -151,6 +153,32 @@ function CalculadoraConteudo() {
   const [modalPdfComparativoAberto, setModalPdfComparativoAberto] = useState(false)
   const [modalExportarDadosAberto, setModalExportarDadosAberto] = useState(false)
   const [modalImportarFaturamentoAberto, setModalImportarFaturamentoAberto] = useState(false)
+  // Fonte da base de compras: notas fiscais reais (notas_fiscais) vs estimativa interna.
+  // Persistida em localStorage para sobreviver a salvar → recarregar (mesma sessão do usuário).
+  const [fonteComprasNotasReais, setFonteComprasNotasReais] =
+    useState<ResumoComprasNotasReais | null>(() => {
+      try {
+        const raw = localStorage.getItem('c50_fonte_compras_notas_reais')
+        return raw ? (JSON.parse(raw) as ResumoComprasNotasReais) : null
+      } catch {
+        return null
+      }
+    })
+
+  React.useEffect(() => {
+    try {
+      if (fonteComprasNotasReais) {
+        localStorage.setItem(
+          'c50_fonte_compras_notas_reais',
+          JSON.stringify(fonteComprasNotasReais),
+        )
+      } else {
+        localStorage.removeItem('c50_fonte_compras_notas_reais')
+      }
+    } catch {
+      // localStorage indisponível: o indicador apenas não persiste
+    }
+  }, [fonteComprasNotasReais])
   const [gerandoPdfComparativo, setGerandoPdfComparativo] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
   const [paywallSimulacaoAberto, setPaywallSimulacaoAberto] = useState(false)
@@ -251,6 +279,8 @@ function CalculadoraConteudo() {
                 )
               }
               restaurarSimulacao(paramsRestaurados)
+              // Cenário compartilhado substitui os parâmetros: a fonte volta a ser a estimativa
+              setFonteComprasNotasReais(null)
               setSimulacaoCarregadaViaLink(true)
               setEmpresaLink(paramsRestaurados.empresa || 'Cenário Compartilhado')
               toast({
@@ -317,6 +347,8 @@ function CalculadoraConteudo() {
         setAvisoRamoLegado(null)
       }
       restaurarSimulacao(sim.parametros)
+      // Cenário restaurado substitui os parâmetros: a fonte volta a ser a estimativa interna
+      setFonteComprasNotasReais(null)
       toast({
         title: 'Cenário restaurado!',
         description: `Todos os parâmetros de "${sim.nome}" foram carregados nos 6 módulos.`,
@@ -336,6 +368,43 @@ function CalculadoraConteudo() {
       return
     }
     setModalSalvarAberto(true)
+  }
+
+  // "Usar notas fiscais reais": ajusta a base de compras da simulação atual pelos valores
+  // importados em /dados-empresa, pelo MESMO caminho do ModalImportarFaturamento
+  // (restaurarSimulacao com snapshot + updates). Nenhuma fórmula fiscal é alterada.
+  const aplicarNotasFiscaisReais = (resumo: ResumoComprasNotasReais) => {
+    const params = obterSnapshotParametros()
+    const faturamento = params.faturamentoMensal ?? 0
+    if (faturamento <= 0) {
+      // Sem faturamento informado não há como derivar a base de compras: nada é alterado
+      // e a fonte continua marcada como estimada (aviso permanece apenas informativo).
+      toast({
+        title: 'Informe o faturamento mensal primeiro',
+        description: `As notas importadas somam ${resumo.comprasMensal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/mês em compras, mas o faturamento mensal está em zero — preencha-o no Módulo 3 para calcular o percentual.`,
+        variant: 'destructive',
+      })
+      return
+    }
+
+    const pctCalculado = Math.min(100, Math.round((resumo.comprasMensal / faturamento) * 100))
+
+    restaurarSimulacao({
+      ...params,
+      percentualComprasVendasComparativo: pctCalculado,
+      percentualComprasVendasSimples: pctCalculado,
+      percentualComprasVendas: pctCalculado,
+      config: {
+        ...params.config,
+        percentualComprasVendas: pctCalculado,
+      },
+    })
+
+    setFonteComprasNotasReais(resumo)
+    toast({
+      title: 'Notas fiscais reais aplicadas!',
+      description: `Base de compras ajustada para ${pctCalculado}% do faturamento (${resumo.quantidadeNotas} nota(s), média ${resumo.comprasMensal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/mês).`,
+    })
   }
 
   const handleBaixarPdfAtual = () => {
@@ -745,7 +814,16 @@ function CalculadoraConteudo() {
           {/* ÁREA DE CONTEÚDO DO MÓDULO SELECIONADO */}
           <main className="flex-1 w-full min-w-0">
             {moduloAtivo === 'modulo1' && (
-              <Modulo1Configuracoes onNavegarModulo={(id) => setModuloAtivo(id)} />
+              <Modulo1Configuracoes
+                onNavegarModulo={(id) => setModuloAtivo(id)}
+                avisoNotasFiscais={
+                  <AvisoNotasFiscaisReais
+                    fonteAplicada={fonteComprasNotasReais}
+                    onAplicar={aplicarNotasFiscaisReais}
+                    onRemover={() => setFonteComprasNotasReais(null)}
+                  />
+                }
+              />
             )}
             {moduloAtivo === 'modulo2' && (
               <Modulo2CalculadoraSimples
@@ -755,6 +833,13 @@ function CalculadoraConteudo() {
                 onExportarDados={() => setModalExportarDadosAberto(true)}
                 onImportarFaturamento={() => setModalImportarFaturamentoAberto(true)}
                 gerandoPdf={gerandoPdf}
+                avisoNotasFiscais={
+                  <AvisoNotasFiscaisReais
+                    fonteAplicada={fonteComprasNotasReais}
+                    onAplicar={aplicarNotasFiscaisReais}
+                    onRemover={() => setFonteComprasNotasReais(null)}
+                  />
+                }
               />
             )}
             {moduloAtivo === 'modulo3' && (

@@ -56,9 +56,14 @@ import {
 
 export interface Modulo1ConfiguracoesProps {
   onNavegarModulo?: (moduloId: ModuloCalculadoraId) => void
+  /** Banner opcional (Notas Fiscais Reais) montado pela página pai. */
+  avisoNotasFiscais?: React.ReactNode
 }
 
-export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1ConfiguracoesProps = {}) {
+export default function Modulo1Configuracoes({
+  onNavegarModulo,
+  avisoNotasFiscais,
+}: Modulo1ConfiguracoesProps = {}) {
   const { config, updateConfig, resetConfig, aplicarAnoTransicao, aplicarPresetSetor } =
     useCalculadoraIbsCbs()
   const {
@@ -302,6 +307,9 @@ export default function Modulo1Configuracoes({ onNavegarModulo }: Modulo1Configu
           <span className="text-[10px] font-mono text-slate-400">Fase 3 • Informativo</span>
         </div>
       </div>
+
+      {/* AVISO NOTAS FISCAIS REAIS (fonte real vs estimada da base de compras) */}
+      {avisoNotasFiscais}
 
       {/* BLOCO DE PREENCHIMENTO ASSISTIDO (LC 214/2025) */}
       <Card className="border border-[#D4AF37]/50 shadow-md bg-gradient-to-br from-white via-slate-50 to-amber-50/20 overflow-hidden">

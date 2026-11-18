@@ -93,6 +93,49 @@ export async function limparNotasFiscaisPorCliente(params: {
   return count
 }
 
+export interface ResumoComprasNotasReais {
+  quantidadeNotas: number
+  valorTotal: number
+  comprasMensal: number
+  mesesConsiderados: number
+  periodo: string | null
+}
+
+// Resumo da base de compras real a partir das notas importadas: total e média mensal
+// (por mês-calendário distinto de emissão). Usado pelo aviso "Usar notas fiscais reais"
+// da Calculadora IBS/CBS — preenche apenas parâmetros, sem tocar em fórmulas fiscais.
+export function calcularResumoComprasMensal(
+  notas: NotaFiscalRecord[],
+): ResumoComprasNotasReais | null {
+  if (!notas || notas.length === 0) return null
+
+  const meses = new Set<string>()
+  let valorTotal = 0
+  for (const n of notas) {
+    valorTotal += Number(n.valor_total) || 0
+    if (n.data_emissao && n.data_emissao.length >= 7) meses.add(n.data_emissao.slice(0, 7))
+  }
+  if (valorTotal <= 0) return null
+
+  const mesesConsiderados = Math.max(1, meses.size)
+  const comprasMensal = valorTotal / mesesConsiderados
+
+  const datas = notas
+    .map((n) => n.data_emissao || '')
+    .filter((d) => d.length >= 10)
+    .sort()
+  const periodo =
+    datas.length > 0 ? `${datas[0].slice(0, 10)} a ${datas[datas.length - 1].slice(0, 10)}` : null
+
+  return {
+    quantidadeNotas: notas.length,
+    valorTotal,
+    comprasMensal: Math.round(comprasMensal * 100) / 100,
+    mesesConsiderados,
+    periodo,
+  }
+}
+
 export interface TotaisNotasFiscais {
   quantidade: number
   valorTotal: number
