@@ -212,6 +212,10 @@ export interface ResultadosSimulacaoCalculadora {
     aliquotaCreditoPresumido: number
     creditoTotalEstoque: number
     economiaAno1: number
+    /** Atividade mista: % de prestação de serviços descontada do estoque de mercadorias */
+    percentualServicoMistoAplicado?: number
+    /** Atividade mista: valor bruto de estoque informado antes da proporção de serviços */
+    valorEstoqueBrutoInformado?: number
   }
   resultadoSplitPayment?: {
     retencaoMensalNota: number

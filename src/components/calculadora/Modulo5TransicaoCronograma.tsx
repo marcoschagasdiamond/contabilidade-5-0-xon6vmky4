@@ -66,6 +66,9 @@ export default function Modulo5TransicaoCronograma({
     setSetorTransicao,
     valorEstoqueVirada,
     setValorEstoqueVirada,
+    faturamentoMensal,
+    percentualComprasVendasComparativo,
+    proporcaoServicoMisto,
     resultadoTransicao,
     resultadoEstoque,
     resultadoComparativo,
@@ -138,6 +141,13 @@ export default function Modulo5TransicaoCronograma({
     reducaoIbsCbsPct > 0
       ? `Redução de ${reducaoIbsCbsPct}% aplicada na curva (subatividade: ${subatividadeAtivaNome} — fator ${fatorReducaoCurvaLabel}; anos 2027–2033; atual/2026 mostram o sistema atual)`
       : 'Sem redução setorial aplicada'
+
+  // Transparência da base do Estoque Presumido de Transição (só texto — não altera cálculo).
+  // Mesma fórmula do default em calcularResultadosSimulacao: fat. mensal × % compras × 1,5 (giro).
+  const estoqueDefaultEstimado = Math.round(
+    (faturamentoMensal || 0) * ((percentualComprasVendasComparativo || 0) / 100) * 1.5,
+  )
+  const estoqueNaBaseEstimada = Math.abs(valorEstoqueVirada - estoqueDefaultEstimado) < 0.005
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -390,6 +400,17 @@ export default function Modulo5TransicaoCronograma({
                   Custo de aquisição do inventário físico apurado no balanço de encerramento de
                   2026.
                 </span>
+                {setorTransicao === 'misto' && (
+                  <span className="text-[11px] font-semibold text-blue-800 block leading-tight">
+                    Estoque considerando {proporcaoServicoMisto}% prestação de serviços
+                  </span>
+                )}
+                {estoqueNaBaseEstimada && (
+                  <span className="text-[11px] text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 block leading-snug">
+                    Base estimada automaticamente: faturamento mensal × % de compras × 1,5 (giro).
+                    Edite para o valor real do inventário de 2026.
+                  </span>
+                )}
               </div>
 
               {/* Alíquota de Crédito Presumido Aplicada */}

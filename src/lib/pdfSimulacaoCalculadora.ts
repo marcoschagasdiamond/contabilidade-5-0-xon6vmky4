@@ -999,6 +999,89 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
 
   currentY += 2
 
+  // ==========================================
+  // SEÇÃO ESTOQUE PRESUMIDO DE TRANSIÇÃO — transparência da base (espelha o Módulo 5)
+  // ==========================================
+  verificarQuebraPagina(24)
+
+  const estoqueBrutoPdf = Math.max(0, parametros.valorEstoqueVirada || 0)
+  const percentualComprasPdf =
+    parametros.percentualComprasVendasComparativo ??
+    parametros.percentualComprasVendas ??
+    parametros.config?.percentualComprasVendas ??
+    0
+  const estoqueBaseEstimadaPdf = Math.round(
+    (parametros.faturamentoMensal || 0) * (percentualComprasPdf / 100) * 1.5,
+  )
+  const estoqueNaBaseEstimadaPdf = Math.abs(estoqueBrutoPdf - estoqueBaseEstimadaPdf) < 0.005
+
+  const setorTransicaoPdf = String(
+    parametros.setorTransicao || parametros.config?.tipoAtividade || '',
+  )
+  const isServicoPdf = setorTransicaoPdf === 'servico'
+  const isMistoPdf = setorTransicaoPdf === 'misto'
+  const proporcaoServicoPdf = Math.max(
+    0,
+    Math.min(
+      100,
+      parametros.proporcaoServicoMisto ?? parametros.config?.proporcaoServicoMisto ?? 50,
+    ),
+  )
+  const estoqueEfetivoPdf = isServicoPdf
+    ? 0
+    : isMistoPdf
+      ? (estoqueBrutoPdf * (100 - proporcaoServicoPdf)) / 100
+      : estoqueBrutoPdf
+  const aliqCreditoEstoquePdf = parametros.config?.cbsPadrao ?? 8.8
+  const creditoEstoquePdf = (estoqueEfetivoPdf * aliqCreditoEstoquePdf) / 100
+
+  const linhasEstoquePdf: string[] = []
+  linhasEstoquePdf.push(
+    `Estoque na virada de 2026: ${formatarMoeda(estoqueBrutoPdf)}  |  Alíquota do crédito presumido (CBS): ${aliqCreditoEstoquePdf.toFixed(2)}%  |  Crédito presumido total: ${formatarMoeda(creditoEstoquePdf)} (abatido em 2027)`,
+  )
+  if (isMistoPdf) {
+    linhasEstoquePdf.push(
+      `Estoque considerando ${proporcaoServicoPdf}% prestação de serviços: base efetiva do crédito de ${formatarMoeda(estoqueEfetivoPdf)}.`,
+    )
+  }
+  if (estoqueNaBaseEstimadaPdf) {
+    linhasEstoquePdf.push(
+      'Base estimada automaticamente: faturamento mensal × % de compras × 1,5 (giro). Edite para o valor real do inventário de 2026.',
+    )
+  }
+
+  const margemInternaEstoquePdf = 3
+  const linhasQuebradasEstoquePdf = linhasEstoquePdf.flatMap(
+    (l) => doc.splitTextToSize(l, contentWidth - margemInternaEstoquePdf * 2 - 2) as string[],
+  )
+  const alturaBoxEstoquePdf = Math.max(10, linhasQuebradasEstoquePdf.length * 3.2 + 8)
+
+  verificarQuebraPagina(alturaBoxEstoquePdf)
+
+  doc.setFillColor(255, 251, 235) // âmbar claro (equivalente ao badge do Módulo 5)
+  doc.setDrawColor(217, 119, 6) // âmbar-600
+  doc.setLineWidth(0.2)
+  doc.roundedRect(margin, currentY, contentWidth, alturaBoxEstoquePdf, 1, 1, 'FD')
+
+  doc.setFillColor(7, 19, 43) // Navy #07132B
+  doc.rect(margin, currentY, 1.2, alturaBoxEstoquePdf, 'F')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(7.2)
+  doc.setTextColor(120, 53, 15) // âmbar-900
+  doc.text(
+    'ESTOQUE PRESUMIDO DE TRANSIÇÃO — CRÉDITO DE ABERTURA (LC 214/2025)',
+    margin + margemInternaEstoquePdf + 1,
+    currentY + 4,
+  )
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(6.4)
+  doc.setTextColor(69, 44, 8)
+  doc.text(linhasQuebradasEstoquePdf, margin + margemInternaEstoquePdf + 1, currentY + 8)
+
+  currentY += alturaBoxEstoquePdf + 4
+
   // Nota orientativa curta no rodapé do Bloco 5 (Cronograma da Transição)
   const hNotaBloco5 = desenharNotaCurtaPDF(doc, margin, currentY, contentWidth)
   currentY += hNotaBloco5 + 6

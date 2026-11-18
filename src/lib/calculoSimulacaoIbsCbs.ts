@@ -731,7 +731,12 @@ export function calcularResultadosSimulacao(
   // ETAPA 5: CRÉDITO PRESUMIDO DE ESTOQUE
   // ==========================================
   const isSetorServico = setorTransicao === 'servico'
-  const estoque = isSetorServico ? 0 : Math.max(0, valorEstoqueVirada)
+  // Atividade mista: a fração prestadora de serviços não guarda mercadoria em estoque,
+  // então o crédito presumido de abertura incide apenas sobre a parcela mercantil.
+  const fatorMercantilMisto =
+    setorTransicao === 'misto' ? Math.max(0, Math.min(100, 100 - proporcaoServicoMisto)) / 100 : 1
+  const estoqueBruto = Math.max(0, valorEstoqueVirada)
+  const estoque = isSetorServico ? 0 : estoqueBruto * fatorMercantilMisto
   const aliqCreditoEstoque = config.cbsPadrao
   const creditoTotalEstoque = (estoque * aliqCreditoEstoque) / 100
   const resultadoEstoque = {
@@ -739,6 +744,12 @@ export function calcularResultadosSimulacao(
     aliquotaCreditoPresumido: aliqCreditoEstoque,
     creditoTotalEstoque,
     economiaAno1: creditoTotalEstoque,
+    ...(setorTransicao === 'misto'
+      ? {
+          percentualServicoMistoAplicado: proporcaoServicoMisto,
+          valorEstoqueBrutoInformado: estoqueBruto,
+        }
+      : {}),
   }
 
   // ==========================================
