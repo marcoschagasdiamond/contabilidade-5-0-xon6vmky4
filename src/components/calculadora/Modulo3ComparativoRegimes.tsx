@@ -67,6 +67,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BotaoRetornarDadosIniciais } from '@/components/common/BotaoRetornarDadosIniciais'
+import { obterRotuloRegimeVencedor } from '@/lib/rotuloRegimeVencedor'
 import {
   RegimeEspecialAtual,
   PerfilRetencaoSplit,
@@ -1291,9 +1292,10 @@ export default function Modulo3ComparativoRegimes({
               </span>
             </div>
             <p className="text-3xl font-heading font-extrabold text-white">
-              {resultadoComparativo.regimeMaisVantajoso === 'IBS/CBS'
-                ? 'Regime Regular (IBS/CBS)'
-                : resultadoComparativo.regimeMaisVantajoso}
+              {obterRotuloRegimeVencedor(
+                resultadoComparativo.regimeMaisVantajoso,
+                config.regimeAtualEmpresa,
+              )}
             </p>
             <p className="text-xs text-slate-300">
               Apresenta a menor alíquota efetiva e o menor desembolso de impostos sobre o consumo.

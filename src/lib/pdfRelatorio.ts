@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf'
 import type { ResultadoDiagnosticoCompleto, DadosEntradaDiagnostico } from './regimes'
+import { obterRotuloRegimeVencedor } from './rotuloRegimeVencedor'
 
 interface GerarPdfOptions {
   dados: DadosEntradaDiagnostico
@@ -204,7 +205,11 @@ export function gerarRelatorioDiagnosticoPDF({ dados, resultado }: GerarPdfOptio
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(16)
   doc.setTextColor(255, 255, 255)
-  doc.text(resultado.regimeRecomendado, margin + 6, currentY + 16)
+  doc.text(
+    obterRotuloRegimeVencedor(resultado.regimeRecomendado, dados.regimeAtual),
+    margin + 6,
+    currentY + 16,
+  )
 
   if (resultado.empateTecnico && resultado.regimeEmpatado) {
     doc.setFontSize(8)

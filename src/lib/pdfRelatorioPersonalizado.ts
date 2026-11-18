@@ -11,6 +11,7 @@ import { renderizarRodapeEscritorioPdf } from '@/lib/pdfIdentidadeEscritorio'
 import { desenharLogoContabilidade50 } from '@/lib/pdfSimulacaoCalculadora'
 import { analisarVinculosSocietarios } from '@/lib/vinculosSocietarios'
 import { desenharBadgeConferenciaRtcPdf } from '@/lib/badgeConferenciaRtc'
+import { obterRotuloRegimeVencedor } from '@/lib/rotuloRegimeVencedor'
 
 export interface GerarRelatorioPersonalizadoOptions {
   configuracao: ConfiguracaoRelatorioPersonalizado
@@ -315,7 +316,10 @@ export function construirRelatorioPersonalizadoDoc(options: GerarRelatorioPerson
       doc.setFontSize(7.5)
       doc.setTextColor(COR_TEXTO[0], COR_TEXTO[1], COR_TEXTO[2])
       doc.text(
-        `• Regime mais vantajoso no modelo IBS/CBS: ${regimeVantajoso}`,
+        `• Regime mais vantajoso no modelo IBS/CBS: ${obterRotuloRegimeVencedor(
+          regimeVantajoso,
+          dadosEmpresa?.regimeAtual,
+        )}`,
         margin + 4,
         currentY + 12,
       )

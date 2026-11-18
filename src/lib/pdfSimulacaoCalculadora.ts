@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf'
+import { obterRotuloRegimeVencedor } from '@/lib/rotuloRegimeVencedor'
 import { desenharBadgeConferenciaRtcPdf } from '@/lib/badgeConferenciaRtc'
 import type {
   ParametrosSimulacaoCalculadora,
@@ -587,7 +588,10 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFontSize(14)
   doc.setTextColor(255, 255, 255)
   doc.text(
-    `Regime Recomendado: ${resultados.resultadoDashboard.regimeRecomendado}`,
+    `Regime Recomendado: ${obterRotuloRegimeVencedor(
+      resultados.resultadoDashboard.regimeRecomendado,
+      parametros.regimeAtualEmpresa || parametros.regimeAtualFiltro,
+    )}`,
     margin + 6,
     currentY + 16,
   )
