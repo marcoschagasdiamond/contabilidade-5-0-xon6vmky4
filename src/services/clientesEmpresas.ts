@@ -516,7 +516,9 @@ export async function getClienteEmpresaPorUsuario(
  * Localiza o registro de clientes_empresas do Cliente Ativo quando a sessão
  * do usuário logado não tem dados próprios (ex.: master visualizando cliente
  * cadastrado por outro técnico). A vinculação é feita por empresa_id, quando
- * existe, e cai para CNPJ e nome da empresa em sequência.
+ * existe, e cai para CNPJ e nome da empresa em sequência. O fallback por nome
+ * é sempre por IGUALDADE exata — nunca por contém (~), que misturava dados
+ * de empresas diferentes (ex.: editar a Neuvest e cair na Bravo).
  */
 export async function getClienteEmpresaPorClienteAtivo(
   cliente: Pick<Cliente, 'empresa_id' | 'cnpj_cpf' | 'nome'> | null | undefined,
@@ -542,7 +544,7 @@ export async function getClienteEmpresaPorClienteAtivo(
     try {
       const list = await pb
         .collection('clientes_empresas')
-        .getList<ClienteEmpresaRecord>(1, 1, { filter: `nome_empresa ~ "${limpo}"` })
+        .getList<ClienteEmpresaRecord>(1, 1, { filter: `nome_empresa = "${limpo}"` })
       return list.items[0] || null
     } catch (err) {
       console.warn('Registro de empresa não encontrado pelo nome do cliente:', err)
@@ -554,19 +556,42 @@ export async function getClienteEmpresaPorClienteAtivo(
 }
 
 /**
- * Salva ou atualiza os Dados da Empresa no banco vinculados ao usuário
+ * Salva ou atualiza os Dados da Empresa no banco.
+ *
+ * Quando o usuário tem mais de uma empresa (ex.: Bravo e Neuvest), NUNCA
+ * escolhemos arbitrariamente o "primeiro registro do user_id": o alvo do
+ * update é sempre o empresa_id explícito do cliente ativo, quando existir.
+ * Todo registro criado/atualizado nasce com estagio_funil preenchido
+ * (default 'diagnostico') para não quebrar a resolução de cliente ativo.
  */
 export async function salvarClienteEmpresaNoBanco(
   perfil: Partial<DadosEmpresaPerfil>,
   userId: string,
+  empresaId?: string,
 ): Promise<ClienteEmpresaRecord> {
   const payload = perfilToRecord(perfil, userId)
 
-  const existente = await getClienteEmpresaPorUsuario(userId)
-  if (existente) {
-    return await pb
-      .collection('clientes_empresas')
-      .update<ClienteEmpresaRecord>(existente.id, payload)
+  let alvoId: string | null = empresaId?.trim() || null
+
+  if (!alvoId) {
+    const existente = await getClienteEmpresaPorUsuario(userId)
+    if (existente) {
+      alvoId = existente.id
+      // Backfill defensivo: registro antigo sem estagio_funil
+      if (!(existente as any).estagio_funil) {
+        try {
+          await pb.collection('clientes_empresas').update(existente.id, {
+            estagio_funil: 'diagnostico',
+          })
+        } catch {
+          /* campo inexistente nesta instância — ignora */
+        }
+      }
+    }
+  }
+
+  if (alvoId) {
+    return await pb.collection('clientes_empresas').update<ClienteEmpresaRecord>(alvoId, payload)
   }
 
   // Se for criação, garante campos obrigatórios básicos
@@ -580,6 +605,7 @@ export async function salvarClienteEmpresaNoBanco(
     uf_origem: payload.uf_origem || 'SP',
     cidade: payload.cidade || 'sp-sao-paulo',
     segmento: payload.segmento || 'Serviços',
+    estagio_funil: 'diagnostico',
     ...payload,
   }
 
