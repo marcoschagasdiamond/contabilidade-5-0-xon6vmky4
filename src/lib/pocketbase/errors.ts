@@ -2,22 +2,6 @@ import { ClientResponseError } from 'pocketbase'
 
 export type FieldErrors = Record<string, string>
 
-/**
- * Log padronizado de erros do PocketBase: imprime contexto + corpo da resposta
- * (quando ClientResponseError) para facilitar o diagnóstico de 400/403.
- */
-export function logPocketBaseError(contexto: string, error: unknown): void {
-  if (error instanceof ClientResponseError) {
-    console.warn(
-      `[PocketBase] ${contexto} falhou (${error.status}):`,
-      typeof error.response === 'object' ? JSON.stringify(error.response) : error.response,
-      error,
-    )
-    return
-  }
-  console.warn(`[PocketBase] ${contexto} falhou:`, error)
-}
-
 export function extractFieldErrors(error: unknown): FieldErrors {
   if (!(error instanceof ClientResponseError)) return {}
   const data = error.response?.data

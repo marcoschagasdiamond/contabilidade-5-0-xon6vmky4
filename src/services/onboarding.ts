@@ -1,5 +1,5 @@
 import pb from '@/lib/pocketbase/client'
-import { logPocketBaseError } from '@/lib/pocketbase/errors'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
 import type { RecordModel } from 'pocketbase'
 import type { OnboardingProgressoModel } from '@/types/onboarding'
 
@@ -70,7 +70,6 @@ export async function salvarProgressoOnboarding(
       ...payload,
     })
   } catch (err) {
-    logPocketBaseError('OnboardingService', err)
     console.warn('[OnboardingService] Erro ao salvar progresso do onboarding:', err)
     throw err
   }
