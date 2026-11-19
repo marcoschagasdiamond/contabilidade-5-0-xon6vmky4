@@ -72,6 +72,16 @@ import {
   ParametroTributario,
   NotificacaoTributaria,
 } from '@/services/radarTributario'
+import {
+  montarPayloadConfiguracoes,
+  salvarConfiguracaoCalculadora,
+  carregarConfiguracaoCalculadora,
+  carregarConfiguracaoLocal,
+  salvarConfiguracaoLocal,
+  excluirConfiguracaoCalculadora,
+  type PayloadConfiguracoesCalculadora,
+} from '@/services/configuracoesCalculadora'
+import { toast } from '@/hooks/use-toast'
 
 // ============================================================
 // Rascunho persistido da Calculadora IBS/CBS
@@ -115,11 +125,12 @@ function carregarRascunhoCalculadora(
     if (!raw) return null
     const r = JSON.parse(raw) as RascunhoCalculadora
     if (!r || !r.identidade) return null
-    // Só restaura para o MESMO usuário e a MESMA empresa (Cliente Ativo):
-    // troca de cliente ou de usuário => descarta e volta ao comportamento padrão
+    // Só restaura para o MESMO usuário: troca de usuário => descarta.
+    // A empresa (cnpj/nome) NÃO é mais critério de descarte: uma correção no
+    // cadastro (ex.: CNPJ consertado em /dados-empresa) não pode apagar as
+    // seleções que o usuário deixou na última visita. `perfil` permanece na
+    // assinatura por compatibilidade com os chamadores.
     if (r.identidade.usuarioId !== usuarioId) return null
-    if ((r.identidade.cnpj || '') !== (perfil.cnpj || '')) return null
-    if ((r.identidade.nomeEmpresa || '') !== (perfil.nomeEmpresa || '')) return null
     return r
   } catch {
     return null
@@ -521,6 +532,18 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     isAuthenticated ? existeDadosEmpresaSalvos() : false,
   )
 
+  // Refs do autosave das Configurações (Módulo 1) — declarados cedo porque
+  // resetConfig e limparDashboard também precisam deles.
+  const configAutosaveRef = useRef<{
+    usuarioId: string
+    payload: PayloadConfiguracoesCalculadora
+  } | null>(null)
+  const configPendenteRef = useRef(false)
+  // Reset intencional (resetConfig/limparDashboard): faz o próximo ciclo do
+  // efeito de autosave pular a gravação — senão o reset regravaria um autosave
+  // com os padrões e recriaria o registro acabado de excluir na nuvem.
+  const configPularAutosaveRef = useRef(false)
+
   // Rascunho da última sessão da calculadora (mesmo usuário + mesma empresa).
   // Lido UMA vez na montagem do provider; restaurado nos estados iniciais abaixo.
   const rascunhoInicial = useMemo(
@@ -799,7 +822,26 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     }
   }, [])
 
-  const resetConfig = useCallback(() => setConfig(CONFIGURACOES_PADRAO), [])
+  const resetConfig = useCallback(() => {
+    setConfig(CONFIGURACOES_PADRAO)
+    // Reset intencional: descarta o autosave das Configurações (nuvem + local),
+    // o rascunho da calculadora e qualquer gravação pendente, para que
+    // seleções antigas não voltem ao trocar de menu ou recarregar a página
+    // depois do reset (aceite 4).
+    configAutosaveRef.current = null
+    configPendenteRef.current = false
+    configPularAutosaveRef.current = true
+    valoresRascunhoRef.current = null
+    rascunhoPendenteRef.current = false
+    try {
+      localStorage.removeItem(CHAVE_RASCUNHO_CALCULADORA)
+    } catch {
+      // localStorage indisponível: nada a remover
+    }
+    if (usuarioIdAtual) {
+      void excluirConfiguracaoCalculadora(usuarioIdAtual)
+    }
+  }, [usuarioIdAtual])
 
   // Aplica alíquota temporária do Radar Tributário (ex.: proposta TCU CBS 11,3468% em 2027)
   const aplicarAliquotaRadarTemporaria = useCallback(
@@ -971,15 +1013,22 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     setOrigemDadosEmpresa(false)
 
     // 9. Remove o rascunho persistido da calculadora (senão o preset/Fase 2
-    //    apagados voltariam ao recarregar a página ou trocar de menu)
+    //    apagados voltariam ao recarregar a página ou trocar de menu) e também
+    //    o autosave das Configurações (senão as seleções antigas voltariam)
     valoresRascunhoRef.current = null
     rascunhoPendenteRef.current = false
+    configAutosaveRef.current = null
+    configPendenteRef.current = false
+    configPularAutosaveRef.current = true
     try {
       localStorage.removeItem(CHAVE_RASCUNHO_CALCULADORA)
     } catch {
       // localStorage indisponível: nada a remover
     }
-  }, [])
+    if (usuarioIdAtual) {
+      void excluirConfiguracaoCalculadora(usuarioIdAtual)
+    }
+  }, [usuarioIdAtual])
 
   const limparEtiquetaOrigem = useCallback((campo: keyof OrigemCamposAliquota) => {
     setConfig((prev) => {
@@ -1297,6 +1346,13 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       return
     }
     if (!isAuthenticated || !usuarioIdAtual) return
+    // Pulo pós-reset (resetConfig/limparDashboard): não regrava o autosave
+    if (configPularAutosaveRef.current) {
+      configPularAutosaveRef.current = false
+      return
+    }
+    // Conta edições do usuário: guarda-corpo do restore em voo (ver abaixo)
+    configEditSeqRef.current += 1
 
     // Mantém os valores mais recentes disponíveis para gravação (debounce e unmount)
     valoresRascunhoRef.current = {
@@ -1321,6 +1377,18 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     }
     rascunhoPendenteRef.current = true
 
+    // Autosave das Configurações (Módulo 1): payload dedicado com identidade,
+    // gravado na nuvem (simulacoes_calculadora, registro marcador) com
+    // debounce próprio (~700ms). Fallback local por usuário se a nuvem falhar.
+    configAutosaveRef.current = {
+      usuarioId: usuarioIdAtual,
+      payload: montarPayloadConfiguracoes(config, {
+        cnpj: perfilInicial.cnpj || '',
+        nomeEmpresa: perfilInicial.nomeEmpresa || '',
+      }),
+    }
+    configPendenteRef.current = true
+
     const gravarRascunho = () => {
       rascunhoPendenteRef.current = false
       try {
@@ -1334,12 +1402,42 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
         // localStorage indisponível/cheio: a calculadora segue funcionando sem rascunho
       }
     }
+    // Gravação das Configurações. `porDescarte` = flush de unmount (troca de
+    // menu antes do debounce): grava o fallback local SINCRONAMENTE a partir
+    // da ref (garantia) e dispara a nuvem sem bloquear o descarregamento.
+    const gravarConfiguracoes = (porDescarte: boolean) => {
+      configPendenteRef.current = false
+      const pendente = configAutosaveRef.current
+      if (!pendente || !autenticadoRef.current) return
+      if (porDescarte) {
+        salvarConfiguracaoLocal(pendente.usuarioId, pendente.payload)
+      }
+      void (async () => {
+        const ok = await salvarConfiguracaoCalculadora(pendente.usuarioId, pendente.payload)
+        if (!ok && !porDescarte) {
+          const salvoLocal = salvarConfiguracaoLocal(pendente.usuarioId, pendente.payload)
+          if (salvoLocal) {
+            toast({
+              title: 'Configurações salvas neste dispositivo',
+              description:
+                'A nuvem não respondeu agora — suas seleções da Calculadora ficam guardadas localmente.',
+            })
+          }
+        }
+      })()
+    }
     const timer = window.setTimeout(gravarRascunho, 600)
+    const timerConfig = window.setTimeout(() => gravarConfiguracoes(false), 700)
     return () => {
       // Cancela o debounce; se havia rascunho pendente (troca de menu antes
       // do tempo do debounce), grava SINCRONAMENTE a partir da ref.
       window.clearTimeout(timer)
       gravarRascunho()
+      // Autosave das Configurações: mesmo padrão — flush síncrono por ref
+      window.clearTimeout(timerConfig)
+      if (configPendenteRef.current) {
+        gravarConfiguracoes(true)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -1355,6 +1453,47 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     usuarioIdAtual,
     perfilInicial,
   ])
+
+  // ============================================================
+  // Restore ÚNICO das Configurações salvas (Módulo 1)
+  // Mesmo padrão do rascunhoHidratadoRef: guarda de execução única por ref.
+  // Busca o autosave (nuvem primeiro, fallback local por usuário) UMA vez por
+  // montagem do provider e re-aplica via updateConfig — que cuida da mescla
+  // em config E da propagação para M2/M3/M5/Dashboard e dos estados soltos
+  // (aliquotaImpostoSeletivo, subatividades, proporcaoServicoMisto etc.).
+  // ============================================================
+  const restauracaoConcluidaRef = useRef(false)
+  // Sequência de edições do usuário nas Configurações (incrementada no efeito
+  // de autosave). Se o usuário editou enquanto o restore buscava a nuvem, a
+  // edição mais recente vence e o restore é descartado.
+  const configEditSeqRef = useRef(0)
+  useEffect(() => {
+    if (restauracaoConcluidaRef.current) return
+    if (!isAuthenticated || !usuarioIdAtual) return
+    restauracaoConcluidaRef.current = true
+    let descartado = false
+    const seqNaPartida = configEditSeqRef.current
+    void (async () => {
+      const daNuvem = await carregarConfiguracaoCalculadora(usuarioIdAtual)
+      if (descartado) return
+      if (configEditSeqRef.current !== seqNaPartida) return
+      const payload = daNuvem || carregarConfiguracaoLocal(usuarioIdAtual)
+      if (!payload || !payload.config) return
+      // Campos ausentes em payloads antigos NÃO podem virar undefined no
+      // estado (zeraria selects do Módulo 1): filtra antes de mesclar.
+      const campos = Object.fromEntries(
+        Object.entries(payload.config).filter(([, v]) => v !== undefined),
+      ) as Partial<ConfiguracoesGerais>
+      if (Object.keys(campos).length === 0) return
+      updateConfig(campos)
+    })()
+    return () => {
+      descartado = true
+      // Reabre o restore para a próxima execução do efeito (login de outro
+      // usuário, remontagem do StrictMode): a ref persiste entre montagens.
+      restauracaoConcluidaRef.current = false
+    }
+  }, [isAuthenticated, usuarioIdAtual, updateConfig])
 
   // Módulo 3: Comparativo por Regime (inicializado a partir dos Dados da Empresa / Módulo 1)
   const [faturamentoMensal, setFaturamentoMensalState] = useState<number>(

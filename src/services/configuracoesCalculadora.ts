@@ -43,6 +43,10 @@ function camposAutosave(config: ConfiguracoesGerais): Partial<ConfiguracoesGerai
     subatividadeServico: config.subatividadeServico,
     subatividadeIndustria: config.subatividadeIndustria,
     subatividadeComercio: config.subatividadeComercio,
+    subatividadeAgro: config.subatividadeAgro,
+    subatividadeConstrucao: config.subatividadeConstrucao,
+    subatividadeLocacao: config.subatividadeLocacao,
+    subatividadeFoodService: config.subatividadeFoodService,
     etiquetasOrigem: config.etiquetasOrigem,
   }
 }
