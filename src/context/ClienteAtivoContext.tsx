@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import type { Cliente } from '@/types/cliente'
 import { listarClientes, obterClientePorId } from '@/services/clientes'
+import { getClienteEmpresaPorId } from '@/services/clientesEmpresas'
+import { useAuth } from '@/context/AuthContext'
 import { toast } from '@/hooks/use-toast'
 
 const STORAGE_CLIENTE_ATIVO_ID_KEY = 'contabilidade50_cliente_ativo_id_v1'
@@ -17,6 +19,29 @@ interface ClienteAtivoContextType {
 }
 
 const ClienteAtivoContext = createContext<ClienteAtivoContextType | undefined>(undefined)
+
+/**
+ * Id salvo no localStorage é válido? Duas checagens:
+ * 1. está na lista já carregada (id direto, ou id de clientes_empresas
+ *    referenciado via empresa_id);
+ * 2. senão, existe como registro de clientes_empresas PERTENCENTE ao
+ *    usuário logado (id órfão ou de outro usuário → inválido).
+ */
+async function idPertenceAoUsuarioLogado(
+  idSalvo: string,
+  lista: Cliente[],
+  usuarioId: string,
+): Promise<boolean> {
+  const naLista = lista.some((c) => c.id === idSalvo || (c.empresa_id && c.empresa_id === idSalvo))
+  if (naLista) return true
+
+  try {
+    const emp = await getClienteEmpresaPorId(idSalvo)
+    return !!emp && emp.user_id === usuarioId
+  } catch {
+    return false
+  }
+}
 
 export function ClienteAtivoProvider({ children }: { children: React.ReactNode }) {
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -156,6 +181,46 @@ export function ClienteAtivoProvider({ children }: { children: React.ReactNode }
     if (!clienteAtivoId) return null
     return clientes.find((c) => c.id === clienteAtivoId) || null
   }, [clientes, clienteAtivoId])
+
+  // ------------------------------------------------------------------
+  // Revalidação anti-empresa-errada (criterio 3 da correção): o id salvo no
+  // localStorage pode estar órfão (registro excluído) ou pertencer a OUTRO
+  // usuário (conta trocada no mesmo navegador). Sem a checagem, o useMemo
+  // devolve null e as telas seguem exibindo os últimos dados carregados —
+  // de outra empresa. O id só sobrevive se existir e pertencer ao usuário
+  // logado; caso contrário o localStorage é limpo e o sistema segue SEM
+  // cliente ativo (nunca com dado alheio). Roda UMA vez por sessão, após a
+  // primeira carga da lista; a guarda por ref evita laço de atualização
+  // (o projeto já sofreu com "Maximum update depth").
+  // ------------------------------------------------------------------
+  const { user } = useAuth()
+  const usuarioId = user?.id || null
+  const revalidadoRef = useRef(false)
+  useEffect(() => {
+    if (revalidadoRef.current || carregando || !usuarioId) return
+    revalidadoRef.current = true
+
+    const idSalvo = clienteAtivoIdRef.current
+    if (!idSalvo) return
+
+    let cancelado = false
+    ;(async () => {
+      const valido = await idPertenceAoUsuarioLogado(idSalvo, clientes, usuarioId)
+      if (cancelado || valido) return
+
+      clienteAtivoIdRef.current = null
+      setClienteAtivoId(null)
+      try {
+        localStorage.removeItem(STORAGE_CLIENTE_ATIVO_ID_KEY)
+      } catch {
+        /* intentionally ignored */
+      }
+    })()
+
+    return () => {
+      cancelado = true
+    }
+  }, [clientes, carregando, usuarioId])
 
   return (
     <ClienteAtivoContext.Provider

@@ -218,6 +218,11 @@ export async function criarCliente(dados: ClienteInput): Promise<Cliente> {
     regime_atual: dados.regime_atual,
     email: dados.email?.trim() || '',
     telefone: dados.telefone?.trim() || '',
+    // Default do funil: todo cliente nasce com estágio válido (a resolução de
+    // cliente ativo depende disso). Nível explícito no payload é respeitado.
+    ...(dados.estagio_funil
+      ? { estagio_funil: dados.estagio_funil }
+      : { estagio_funil: 'diagnostico' as const }),
   }
 
   try {
