@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
+import { usePersistenciaVinculosSocietarios } from '@/hooks/usePersistenciaVinculosSocietarios'
+import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import {
   calcularDiffDadosEmpresa,
   registrarAuditoriaDadosEmpresa,
@@ -174,27 +176,30 @@ export default function DadosEmpresa() {
     restaurarPadrao,
     empresaVinculadaId,
   } = useDadosEmpresa()
+  const { clienteAtivo } = useClienteAtivo()
 
   const [historicoAuditoria, setHistoricoAuditoria] = useState<HistoricoDadosEmpresaRegistro[]>([])
   const [carregandoHistorico, setCarregandoHistorico] = useState(false)
 
-  // Estado local do formulário
-  const CHAVE_RASCUNHO = 'contabilidade50_rascunho_dados_empresa'
-  const [formData, setFormData] = useState<DadosEmpresaPerfil>(() => {
-    // Restaura rascunho salvo caso os campos principais estejam vazios
-    if (typeof window !== 'undefined') {
-      try {
-        const salvo = localStorage.getItem(CHAVE_RASCUNHO)
-        if (salvo) {
-          const rascunho = JSON.parse(salvo)
-          return { ...dadosEmpresa, ...rascunho }
-        }
-      } catch (err) {
-        console.warn('Erro ao restaurar rascunho de dados da empresa:', err)
-      }
-    }
-    return dadosEmpresa
-  })
+  // Estado local do formulário.
+  // RASCUNHO POR EMPRESA: a chave leva o id da empresa ativa
+  // (contabilidade50_rascunho_dados_empresa_<id>) para o rascunho digitado em
+  // uma empresa nunca aparecer em outra. O nome antigo, sem sufixo, permanece
+  // apenas como chave LEGADA para migração única na hidratação.
+  const CHAVE_RASCUNHO_LEGADO = 'contabilidade50_rascunho_dados_empresa'
+  const chaveRascunhoEmpresa = useCallback(
+    (empresaId: string | null | undefined) =>
+      empresaId ? `${CHAVE_RASCUNHO_LEGADO}_${empresaId}` : CHAVE_RASCUNHO_LEGADO,
+    [],
+  )
+  // Id da empresa para o rascunho: prioriza o cliente ativo (o que a tela
+  // exibe no seletor), caindo para o vínculo do usuário logado.
+  const empresaIdParaRascunho =
+    clienteAtivo?.empresa_id || clienteAtivo?.id || empresaVinculadaId || null
+  const [formData, setFormData] = useState<DadosEmpresaPerfil>(() => dadosEmpresa)
+  // Últimos vínculos societários vistos pelo efeito de hidratação — usado para
+  // distinguir "veio do banco/rascunho" de "editado pelo usuário".
+  const vinculosHidratadosRef = React.useRef<string>('')
 
   const [searchParams] = useSearchParams()
   const destinoParam = searchParams.get('destino') || ''
@@ -288,28 +293,104 @@ export default function DadosEmpresa() {
   // Rastreia o ID da empresa vinculado para detectar troca de cliente ativo
   const lastEmpresaIdRef = React.useRef<string | null>(empresaVinculadaId)
 
+  // Aplica os dados do BANCO (fonte da verdade) como base e sobrepõe o
+  // rascunho POR EMPRESA. Vínculos Societários vêm SEMPRE do banco — nunca do
+  // rascunho — porque passam a ser gravados imediatamente no registro da
+  // empresa ativa (clientes_empresas).
+  const aplicarBaseComRascunho = React.useCallback(
+    (empresaId: string | null | undefined, base: DadosEmpresaPerfil) => {
+      if (typeof window === 'undefined') return
+      let rascunho: any = null
+      try {
+        const legado = localStorage.getItem(CHAVE_RASCUNHO_LEGADO)
+        if (legado && empresaId) {
+          // Migração única do rascunho GLOBAL legado → chave por empresa.
+          // Só migra quando o rascunho pertence a esta empresa (CNPJ/nome);
+          // rascunho de outra empresa é descartado, nunca reaproveitado.
+          if (!localStorage.getItem(chaveRascunhoEmpresa(empresaId))) {
+            try {
+              const legadoParsed = JSON.parse(legado)
+              const cnpjNorm = (v: any) => String(v || '').replace(/\D/g, '')
+              const mesmoCnpj =
+                !cnpjNorm(legadoParsed?.cnpj) ||
+                !cnpjNorm(base.cnpj) ||
+                cnpjNorm(legadoParsed.cnpj) === cnpjNorm(base.cnpj)
+              const nomeA = String(legadoParsed?.nomeEmpresa || '')
+                .trim()
+                .toLowerCase()
+              const nomeB = String(base.nomeEmpresa || '')
+                .trim()
+                .toLowerCase()
+              const mesmoNome = !nomeA || !nomeB || nomeA === nomeB
+              if (mesmoCnpj && mesmoNome) {
+                localStorage.setItem(chaveRascunhoEmpresa(empresaId), legado)
+              }
+            } catch {
+              /* rascunho legado corrompido: apenas descarta */
+            }
+          }
+          localStorage.removeItem(CHAVE_RASCUNHO_LEGADO)
+        }
+        const salvo = localStorage.getItem(chaveRascunhoEmpresa(empresaId))
+        if (salvo) rascunho = JSON.parse(salvo)
+      } catch (err) {
+        console.warn('Erro ao ler rascunho por empresa:', err)
+      }
+      const rascunhoSemVinculos: Partial<DadosEmpresaPerfil> = rascunho ? { ...rascunho } : {}
+      delete (rascunhoSemVinculos as any).vinculosSocietarios
+      vinculosHidratadosRef.current = JSON.stringify(base.vinculosSocietarios || [])
+      setFormData({
+        ...base,
+        ...rascunhoSemVinculos,
+        vinculosSocietarios: base.vinculosSocietarios || [],
+      } as DadosEmpresaPerfil)
+    },
+    [chaveRascunhoEmpresa],
+  )
+
   // Sincroniza apenas no primeiro carregamento ou na troca de cliente ativo,
   // sem sobrescrever dados que o usuário já começou a digitar
   useEffect(() => {
-    const houveTrocaDeCliente = lastEmpresaIdRef.current !== empresaVinculadaId
+    const houveTrocaDeCliente = lastEmpresaIdRef.current !== empresaIdParaRascunho
     if (houveTrocaDeCliente) {
-      lastEmpresaIdRef.current = empresaVinculadaId
+      lastEmpresaIdRef.current = empresaIdParaRascunho
       hasEditedRef.current = false
       setErrors({})
       setMensagemErro(null)
-      try {
-        localStorage.removeItem(CHAVE_RASCUNHO)
-      } catch {
-        /* ignore */
-      }
-      setFormData(dadosEmpresa)
-      return
     }
 
     if (!hasEditedRef.current) {
-      setFormData(dadosEmpresa)
+      // Base do banco + rascunho DA EMPRESA ATIVA (nunca de outra empresa)
+      aplicarBaseComRascunho(empresaIdParaRascunho, dadosEmpresa)
     }
-  }, [dadosEmpresa, empresaVinculadaId])
+  }, [dadosEmpresa, empresaIdParaRascunho, aplicarBaseComRascunho])
+
+  // Persistência imediata dos Vínculos Societários: grava no registro da
+  // empresa ATIVA (clientes_empresas) com debounce curto assim que alterados,
+  // sem depender do submit do formulário inteiro. Falha → toast com o motivo
+  // e botão 'Tentar novamente' (nunca silêncio). Não altera regras de negócio.
+  const { gravando: gravandoVinculos, marcarHidratado } = usePersistenciaVinculosSocietarios(
+    formData.vinculosSocietarios,
+    empresaIdParaRascunho,
+  )
+  // Hidratação vinda do BANCO (fonte da verdade): quando o perfil sincronizado
+  // do contexto traz vínculos IGUAIS aos que a hidratação aplicou, marca como
+  // já gravados para o debounce não regravar o que já está no registro. Uma
+  // lista DIFERENTE da hidratada significa edição do usuário — grava normal.
+  const vinculosSerializadosRef = React.useRef<string>('')
+  useEffect(() => {
+    const serializado = JSON.stringify(formData.vinculosSocietarios || [])
+    if (
+      formData.vinculosSocietarios &&
+      formData.vinculosSocietarios.length > 0 &&
+      serializado === vinculosHidratadosRef.current &&
+      vinculosSerializadosRef.current !== serializado
+    ) {
+      vinculosSerializadosRef.current = serializado
+      marcarHidratado(serializado)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.vinculosSocietarios])
 
   // Helper para atualizar formData e marcar como editado pelo usuário
   const atualizarCampo = React.useCallback(
@@ -473,18 +554,18 @@ export default function DadosEmpresa() {
     setSegmentoPendenteCnaePrincipal(null)
   }
 
-  // Auto-save com debounce de 600ms no localStorage dedicado
+  // Auto-save com debounce de 600ms no rascunho POR EMPRESA (chave com o id)
   useEffect(() => {
     if (typeof window === 'undefined') return
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem(CHAVE_RASCUNHO, JSON.stringify(formData))
+        localStorage.setItem(chaveRascunhoEmpresa(empresaIdParaRascunho), JSON.stringify(formData))
       } catch (err) {
         console.warn('Erro ao salvar rascunho no localStorage:', err)
       }
     }, 600)
     return () => clearTimeout(timer)
-  }, [formData])
+  }, [formData, empresaIdParaRascunho, chaveRascunhoEmpresa])
 
   // Handlers monetários
   const handleFaturamentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -906,7 +987,8 @@ export default function DadosEmpresa() {
           })
         }
         try {
-          localStorage.removeItem(CHAVE_RASCUNHO)
+          localStorage.removeItem(chaveRascunhoEmpresa(empresaIdParaRascunho))
+          localStorage.removeItem(CHAVE_RASCUNHO_LEGADO)
         } catch {
           /* ignore */
         }
@@ -936,7 +1018,8 @@ export default function DadosEmpresa() {
     if (window.confirm('Deseja restaurar os valores padrão sugeridos pela Contabilidade 5.0?')) {
       restaurarPadrao()
       try {
-        localStorage.removeItem(CHAVE_RASCUNHO)
+        localStorage.removeItem(chaveRascunhoEmpresa(empresaIdParaRascunho))
+        localStorage.removeItem(CHAVE_RASCUNHO_LEGADO)
       } catch {
         /* ignore */
       }
@@ -1157,7 +1240,8 @@ export default function DadosEmpresa() {
       }
 
       try {
-        localStorage.removeItem(CHAVE_RASCUNHO)
+        localStorage.removeItem(chaveRascunhoEmpresa(empresaIdParaRascunho))
+        localStorage.removeItem(CHAVE_RASCUNHO_LEGADO)
       } catch {
         /* ignore */
       }
@@ -3750,6 +3834,12 @@ export default function DadosEmpresa() {
                   }))
                 }}
               />
+              {gravandoVinculos && (
+                <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#2ECC71] animate-pulse shrink-0" />
+                  Gravando vínculos no banco de dados da empresa ativa...
+                </p>
+              )}
 
               {/* VEDAÇÕES LEGAIS AO SIMPLES NACIONAL (art. 17 LC 123/2006) — apenas orientativo */}
               <BlocoVedacoesSimples
