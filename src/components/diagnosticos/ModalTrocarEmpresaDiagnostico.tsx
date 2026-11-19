@@ -15,6 +15,7 @@ import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { criarCliente } from '@/services/clientes'
 import { limparDadosEmpresa } from '@/types/dadosEmpresa'
 import { useToast } from '@/hooks/use-toast'
+import { ToastAction } from '@/components/ui/toast'
 import { Building2, FolderOpen, Search, UserPlus, X } from 'lucide-react'
 import type { Cliente } from '@/types/cliente'
 
@@ -114,10 +115,22 @@ export function ModalTrocarEmpresaDiagnostico({
       aplicarTroca(novo)
     } catch (err) {
       console.error('Erro ao criar novo cliente:', err)
+      const motivo = err instanceof Error ? err.message : 'Não foi possível criar o cliente novo.'
       toast({
         title: 'Erro ao criar cliente',
-        description: 'Não foi possível criar o cliente novo. Tente novamente.',
+        description: motivo,
         variant: 'destructive',
+        duration: 12000,
+        action: (
+          <ToastAction
+            altText="Tentar novamente"
+            onClick={() => {
+              void handleCriarNovo()
+            }}
+          >
+            Tentar novamente
+          </ToastAction>
+        ),
       })
     } finally {
       setProcessando(false)

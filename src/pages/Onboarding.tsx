@@ -25,6 +25,9 @@ import {
   salvarClienteEmpresaNoBanco,
 } from '@/services/clientesEmpresas'
 import { salvarProgressoOnboarding } from '@/services/onboarding'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
+import { useToast } from '@/hooks/use-toast'
+import { ToastAction } from '@/components/ui/toast'
 import { VEDACOES_SIMPLES_ART17, VEDACOES_PRESUMIDO, VEDACOES_MEI } from '@/lib/vedacoesRegimes'
 import type { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
 import { CHAVE_PREFILL_ONBOARDING as CHAVE_PREFILL } from '@/components/home/WidgetSimulacaoExpressa'
@@ -122,6 +125,7 @@ const formatarMoeda = (valor: number) =>
 export default function Onboarding() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
 
   const [passo, setPasso] = useState(0)
   const [carregando, setCarregando] = useState(true)
@@ -246,9 +250,26 @@ export default function Onboarding() {
       setEmpresaId(rec.id)
       await salvarProgressoOnboarding(user.id, { passo_empresa_concluido: true })
       return true
-    } catch (err: any) {
+    } catch (err) {
       console.error('[Onboarding] Erro ao salvar dados da empresa:', err)
-      setErro(err?.message || 'Não foi possível salvar os dados. Tente novamente.')
+      const motivo = getErrorMessage(err) || 'Não foi possível salvar os dados da empresa.'
+      setErro(motivo)
+      toast({
+        title: 'Erro ao salvar os dados da empresa',
+        description: motivo,
+        variant: 'destructive',
+        duration: 12000,
+        action: (
+          <ToastAction
+            altText="Tentar novamente"
+            onClick={() => {
+              void avancar()
+            }}
+          >
+            Tentar novamente
+          </ToastAction>
+        ),
+      })
       return false
     } finally {
       setSalvando(false)
@@ -273,9 +294,26 @@ export default function Onboarding() {
       await salvarClienteEmpresaNoBanco(perfil, user.id)
       await salvarProgressoOnboarding(user.id, { wizard_dispensado: true })
       return true
-    } catch (err: any) {
+    } catch (err) {
       console.error('[Onboarding] Erro ao salvar regime e vedações:', err)
-      setErro(err?.message || 'Não foi possível salvar o regime. Tente novamente.')
+      const motivo = getErrorMessage(err) || 'Não foi possível salvar o regime e as vedações.'
+      setErro(motivo)
+      toast({
+        title: 'Erro ao salvar o regime e as vedações',
+        description: motivo,
+        variant: 'destructive',
+        duration: 12000,
+        action: (
+          <ToastAction
+            altText="Tentar novamente"
+            onClick={() => {
+              void avancar()
+            }}
+          >
+            Tentar novamente
+          </ToastAction>
+        ),
+      })
       return false
     } finally {
       setSalvando(false)

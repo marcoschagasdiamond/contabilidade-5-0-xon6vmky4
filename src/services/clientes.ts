@@ -1,4 +1,5 @@
 import pb from '@/lib/pocketbase/client'
+import { logPocketBaseError, getErrorMessage } from '@/lib/pocketbase/errors'
 import type { Cliente, ClienteRecord, ClienteInput } from '@/types/cliente'
 
 const LOCAL_STORAGE_CLIENTES_KEY = 'contabilidade50_carteira_clientes_v1'
@@ -258,17 +259,10 @@ export async function criarCliente(dados: ClienteInput): Promise<Cliente> {
 
     return novoCli
   } catch (err) {
-    console.warn('Erro ao criar cliente no PocketBase, salvando local:', err)
-    const locais = carregarClientesLocais()
-    const novo: Cliente = {
-      id: 'local_cli_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
-      ...payload,
-      arquivado: false,
-      created: new Date().toISOString(),
-      updated: new Date().toISOString(),
-    }
-    salvarClientesLocais([novo, ...locais])
-    return novo
+    logPocketBaseError('criarCliente', err)
+    // Propaga o erro real: cadastro que falha NÃO pode parecer sucesso.
+    // (O chamador decide — ModalCliente mostra toast com motivo + Tentar novamente.)
+    throw new Error(getErrorMessage(err) || 'Falha ao cadastrar o cliente no servidor.')
   }
 }
 

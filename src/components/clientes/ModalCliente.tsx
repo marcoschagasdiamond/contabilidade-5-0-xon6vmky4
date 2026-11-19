@@ -178,11 +178,25 @@ export function ModalCliente({
 
       onSalvoComSucesso(salvo)
       onOpenChange(false)
-    } catch (err: any) {
+    } catch (err) {
+      // Falha no backend: o modal permanece aberto com os dados preenchidos,
+      // mostra o motivo real do erro e permite retry imediato.
+      const motivo = err instanceof Error ? err.message : 'Falha ao salvar dados do cliente.'
       toast({
         title: 'Erro ao salvar cliente',
-        description: err?.message || 'Falha ao salvar dados do cliente.',
+        description: motivo,
         variant: 'destructive',
+        duration: 12000,
+        action: (
+          <ToastAction
+            altText="Tentar novamente"
+            onClick={() => {
+              void handleSubmit(e)
+            }}
+          >
+            Tentar novamente
+          </ToastAction>
+        ),
       })
     } finally {
       setSalvando(false)
