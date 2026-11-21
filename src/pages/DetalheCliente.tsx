@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { obterClientePorId, excluirCliente } from '@/services/clientes'
+import { resolverClientePorIdOuEmpresa, excluirCliente } from '@/services/clientes'
 import {
   listarSimulacoesPorCliente,
   listarSimulacoes,
@@ -52,6 +52,9 @@ import type { SimulacaoCalculadora } from '@/types/simulacaoCalculadora'
  * 6) Botão para definir como "Cliente Ativo" na Calculadora e Diagnósticos.
  * Visual: Padrão Diamond Group (#07132B e #D4AF37).
  * Regra: SEM ÍCONES — texto, badges e marcadores de status.
+ * Resolução de id: o :id da URL pode ser o id do cliente OU o id da empresa
+ * (clientes_empresas) — ambos resolvem para o mesmo cliente da carteira do
+ * usuário logado; id que não pertence ao usuário segue mostrando o aviso.
  */
 export default function DetalheCliente() {
   const { id } = useParams<{ id: string }>()
@@ -107,31 +110,66 @@ export default function DetalheCliente() {
     texto: string
   } | null>(null)
 
+  // Ids que representam este cliente: o :id da URL (que pode ser o id da
+  // empresa em clientes_empresas) e o id canônico do cliente resolvido.
+  const idsDoCliente = React.useMemo(() => {
+    const set = new Set<string>()
+    if (id) set.add(id)
+    if (cliente?.id) set.add(cliente.id)
+    if (cliente?.empresa_id) set.add(cliente.empresa_id)
+    return Array.from(set)
+  }, [id, cliente?.id, cliente?.empresa_id])
+
+  // Id canônico para GRAVAR vínculos: sempre o id do cliente resolvido, para
+  // que a página volte a encontrá-lo tanto via id de cliente quanto via id de
+  // empresa na URL.
+  const idCanonico = cliente?.id || id || ''
+
+  const isAtivo = !!clienteAtivoId && idsDoCliente.includes(clienteAtivoId)
+
+  // Busca um histórico em várias chaves possíveis (id de cliente e de empresa),
+  // mesclando por id para não duplicar registros.
+  const carregarHistoricoPorIds = async <T extends { id: string }>(
+    chaves: string[],
+    fn: (chave: string) => Promise<T[]>,
+  ): Promise<T[]> => {
+    const resultados = await Promise.all(chaves.map((chave) => fn(chave).catch(() => [] as T[])))
+    const mapa = new Map<string, T>()
+    resultados.flat().forEach((item) => mapa.set(item.id, item))
+    return Array.from(mapa.values())
+  }
+
   const carregarConvitesDoCliente = React.useCallback(async () => {
-    if (!id) return
+    const chave = cliente?.id || id
+    if (!chave) return
     try {
-      const records = await listarConvitesAnalista(id)
+      const records = await listarConvitesAnalista(chave)
       setConvitesDoCliente(records)
     } catch (e) {
       console.warn('Erro ao carregar convites do cliente:', e)
     }
-  }, [id])
-
-  const isAtivo = clienteAtivoId === id
+  }, [id, cliente?.id])
 
   const carregarDados = async () => {
     if (!id) return
     try {
       setCarregando(true)
-      const cli = await obterClientePorId(id)
+      // O :id da URL pode ser tanto o id do cliente (coleção clientes) quanto o
+      // id da empresa correspondente (clientes_empresas) — a carteira lista os
+      // dois formatos. Resolver unificado evita "cliente não encontrado" para
+      // cliente existente da carteira.
+      const cli = await resolverClientePorIdOuEmpresa(id)
       setCliente(cli)
 
       if (cli) {
+        // O histórico pode estar vinculado ao id do cliente OU ao id da empresa
+        // (ambos já foram usados ao gravar vínculos) — busca nas duas chaves.
+        const chaves = Array.from(new Set([id, cli.id, cli.empresa_id].filter(Boolean) as string[]))
         const [sims, recups, diags, convs] = await Promise.all([
-          listarSimulacoesPorCliente(id),
-          listarSimulacoesRecuperadorPorCliente(id),
-          getDiagnosticosPorCliente(id),
-          listarConversasPorCliente(id),
+          carregarHistoricoPorIds(chaves, listarSimulacoesPorCliente),
+          carregarHistoricoPorIds(chaves, listarSimulacoesRecuperadorPorCliente),
+          carregarHistoricoPorIds(chaves, getDiagnosticosPorCliente),
+          carregarHistoricoPorIds(chaves, listarConversasPorCliente),
         ])
         setSimulacoes(sims)
         setRecuperadorSims(recups)
@@ -152,8 +190,12 @@ export default function DetalheCliente() {
 
   useEffect(() => {
     carregarDados()
+  }, [id])
+
+  // Convites dependem do cliente resolvido (id canônico)
+  useEffect(() => {
     carregarConvitesDoCliente()
-  }, [id, carregarConvitesDoCliente])
+  }, [carregarConvitesDoCliente])
 
   const abrirModalVincular = async () => {
     try {
@@ -163,9 +205,10 @@ export default function DetalheCliente() {
         getDiagnosticos(),
       ])
       // Filtra apenas as que não pertencem a este cliente (especialmente as sem cliente)
-      setTodasSimulacoes(todasS.filter((s) => s.cliente_id !== id))
-      setTodosRecuperador(todosR.filter((r) => r.cliente_id !== id))
-      setTodosDiagnosticos(todosD.filter((d) => d.cliente_id !== id))
+      const chaves = new Set(idsDoCliente)
+      setTodasSimulacoes(todasS.filter((s) => !chaves.has(s.cliente_id || '')))
+      setTodosRecuperador(todosR.filter((r) => !chaves.has(r.cliente_id || '')))
+      setTodosDiagnosticos(todosD.filter((d) => !chaves.has(d.cliente_id || '')))
       setModalVincularAberto(true)
     } catch (err) {
       console.error('Erro ao abrir lista para vinculação:', err)
@@ -173,8 +216,8 @@ export default function DetalheCliente() {
   }
 
   const handleVincularRecuperador = async (recupId: string) => {
-    if (!id) return
-    const ok = await vincularSimulacaoRecuperadorACliente(recupId, id)
+    if (!idCanonico) return
+    const ok = await vincularSimulacaoRecuperadorACliente(recupId, idCanonico)
     if (ok) {
       toast({
         title: 'Análise de Créditos vinculada',
@@ -197,8 +240,8 @@ export default function DetalheCliente() {
   }
 
   const handleVincularSimulacao = async (simId: string) => {
-    if (!id) return
-    const ok = await vincularSimulacaoACliente(simId, id)
+    if (!idCanonico) return
+    const ok = await vincularSimulacaoACliente(simId, idCanonico)
     if (ok) {
       toast({
         title: 'Simulação vinculada',
@@ -221,9 +264,9 @@ export default function DetalheCliente() {
   }
 
   const handleVincularDiagnostico = async (diagId: string) => {
-    if (!id) return
+    if (!idCanonico) return
     try {
-      await vincularDiagnosticoACliente(diagId, id)
+      await vincularDiagnosticoACliente(diagId, idCanonico)
       toast({
         title: 'Diagnóstico vinculado',
         description: 'O diagnóstico foi associado a este cliente.',
@@ -279,7 +322,7 @@ export default function DetalheCliente() {
 
   // Executa exclusão de uma etapa individual (Configurações, Autoavaliação, Transição, Comparação ou Enquadramento)
   const handleConfirmarExcluirEtapa = async () => {
-    if (!etapaParaExcluir || !id) return
+    if (!etapaParaExcluir || !idCanonico) return
     setIsExcluindoEtapa(true)
     try {
       const { identificador, titulo, diagnosticoId } = etapaParaExcluir
@@ -288,11 +331,11 @@ export default function DetalheCliente() {
       if (diagnosticoId) {
         await deleteDiagnostico(diagnosticoId)
       } else {
-        await excluirEtapaDiagnosticoPorCliente(id, identificador)
+        await excluirEtapaDiagnosticoPorCliente(idCanonico, identificador)
       }
 
       // Se foi a etapa de configurações e o cliente for o ativo, limpa dados locais da empresa
-      if (identificador === 'configuracoes' && clienteAtivoId === id) {
+      if (identificador === 'configuracoes' && isAtivo) {
         try {
           const { limparDadosEmpresa } = await import('@/types/dadosEmpresa')
           limparDadosEmpresa()
@@ -328,12 +371,12 @@ export default function DetalheCliente() {
     setIsExcluindoTrilhaCompleta(true)
     try {
       const resultado = await excluirDiagnosticoCompletoPorCliente({
-        clienteId: id,
+        clienteId: idCanonico,
         empresaNome: cliente.nome,
         clienteNome: cliente.nome,
       })
 
-      if (clienteAtivoId === id) {
+      if (isAtivo) {
         try {
           const { limparDadosEmpresa } = await import('@/types/dadosEmpresa')
           limparDadosEmpresa()

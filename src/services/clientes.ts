@@ -1,6 +1,7 @@
 import pb from '@/lib/pocketbase/client'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 import type { Cliente, ClienteRecord, ClienteInput } from '@/types/cliente'
+import { getClienteEmpresaPorId } from '@/services/clientesEmpresas'
 
 const LOCAL_STORAGE_CLIENTES_KEY = 'contabilidade50_carteira_clientes_v1'
 
@@ -174,6 +175,51 @@ export async function listarClientes(): Promise<Cliente[]> {
     console.warn('Erro ao carregar clientes do PocketBase, usando locais:', err)
     return locais
   }
+}
+
+/**
+ * Resolve o id da URL (/clientes/:id) para o cliente do usuário logado.
+ * Aceita TANTO o id de um registro da coleção `clientes` (ou crm_clientes)
+ * QUANTO o id de um registro de `clientes_empresas` — caso comum: a carteira
+ * lista a empresa com o id dela, e o detalhe recebia esse id como se fosse de
+ * cliente, mostrando "não encontrado" para um cliente que existe.
+ *
+ * Segurança: só devolve cliente cujo user_id é o do usuário logado (ou quando
+ * o próprio PocketBase já devolveu o registro sob as regras de acesso).
+ */
+export async function resolverClientePorIdOuEmpresa(id: string): Promise<Cliente | null> {
+  if (!id) return null
+
+  // 1. Caminho direto: id já é de um cliente (coleção clientes)
+  const direto = await obterClientePorId(id)
+  if (direto) return direto
+
+  // 2. Id pode ser de uma empresa em clientes_empresas
+  try {
+    const emp = await getClienteEmpresaPorId(id)
+    if (emp && (!emp.user_id || emp.user_id === pb.authStore.record?.id)) {
+      return {
+        id: emp.id || id,
+        user_id: emp.user_id || pb.authStore.record?.id || '',
+        nome: emp.nome_empresa || 'Cliente',
+        cnpj_cpf: emp.cnpj || '',
+        uf: emp.uf_origem || 'SP',
+        segmento: emp.segmento || 'Serviços',
+        regime_atual: emp.regime_atual || 'Simples Nacional',
+        email: emp.email || '',
+        telefone: emp.telefone || '',
+        arquivado: false,
+        created: (emp as any).created || '',
+        updated: (emp as any).updated || '',
+        empresa_id: emp.id || id,
+        origem_fonte: 'clientes_empresas',
+      }
+    }
+  } catch (e) {
+    console.warn('Aviso: id não corresponde a uma empresa de clientes_empresas:', e)
+  }
+
+  return null
 }
 
 /**
