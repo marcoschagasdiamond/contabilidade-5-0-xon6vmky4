@@ -192,8 +192,11 @@ export default function DadosEmpresa() {
       empresaId ? `${CHAVE_RASCUNHO_LEGADO}_${empresaId}` : CHAVE_RASCUNHO_LEGADO,
     [],
   )
-  // Id da empresa para o rascunho: prioriza o cliente ativo (o que a tela
-  // exibe no seletor), caindo para o vínculo do usuário logado.
+  // Id da empresa (clientes_empresas) para o rascunho E usado como candidato
+  // inicial na persistência dos vínculos societários. Quando este id é de
+  // outra coleção (cliente de `clientes` sem empresa_id, ex.: Jucana), o hook
+  // de persistência valida cada candidato e cai para o id resolvido pelo
+  // contexto (empresaVinculadaId) e para a busca por cliente ativo.
   const empresaIdParaRascunho =
     clienteAtivo?.empresa_id || clienteAtivo?.id || empresaVinculadaId || null
   const [formData, setFormData] = useState<DadosEmpresaPerfil>(() => dadosEmpresa)

@@ -124,6 +124,7 @@ export function SecaoVinculosSocietarios({
       dataCadastro: new Date().toISOString(),
     }
 
+    console.log('[VinculosSocietarios] item adicionado no clique de Salvar Vínculo', novo)
     onChangeVinculos([...vinculos, novo])
 
     // Reset formulário
