@@ -919,6 +919,11 @@ export default function DadosEmpresa() {
   const somaPerfilAtual = Math.round((cheiaAtual + monoAtual + reduzAtual) * 100) / 100
   const perfilInsumosDivergente = somaPerfilAtual !== 100
 
+  const formDataRef = React.useRef<DadosEmpresaPerfil>(formData)
+  useEffect(() => {
+    formDataRef.current = formData
+  }, [formData])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setMensagemErro(null)
@@ -934,9 +939,13 @@ export default function DadosEmpresa() {
       return
     }
 
-    // Normalização antes de salvar:
-    // Se todos os 3 percentuais estiverem zerados (0/0/0), aplica 100/0/0 como "não preenchido"
-    let dadosParaSalvar: DadosEmpresaPerfil = { ...formData }
+    // Fonte dos dados no submit: SEMPRE o ref (valor mais recente do estado),
+    // nunca a variável de render. O formulário interno de Vínculos Societários
+    // é aninhado neste form: o submit de "Salvar Vínculo" também dispara este
+    // handler no MESMO evento, quando `formData` da render ainda não contém o
+    // vínculo recém-adicionado (stale closure) — e o salvamento da página
+    // inteira sobrescrevia o registro sem o item, chegando ao banco como [].
+    let dadosParaSalvar: DadosEmpresaPerfil = { ...formDataRef.current }
     if (cheiaAtual === 0 && monoAtual === 0 && reduzAtual === 0) {
       dadosParaSalvar = {
         ...dadosParaSalvar,

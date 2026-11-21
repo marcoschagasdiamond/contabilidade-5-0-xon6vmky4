@@ -192,6 +192,51 @@ export function DadosEmpresaProvider({ children }: { children: React.ReactNode }
       if (empIdParaSalvar) {
         try {
           const rec = await salvarClienteEmpresaPorId(empIdParaSalvar, atualizado)
+          // Defesa anti perda silenciosa: o update da página inteira pode
+          // responder OK e ainda assim gravar vinculos_societarios vazio.
+          // Reenvia UMA vez; se persistir, falha (toast do chamador) em vez
+          // de reportar sucesso com o vínculo perdido.
+          const enviados = Array.isArray(atualizado.vinculosSocietarios)
+            ? atualizado.vinculosSocietarios
+            : []
+          let bruto = (rec as any)?.vinculos_societarios
+          let gravados = Array.isArray(bruto)
+            ? bruto
+            : typeof bruto === 'string'
+              ? (() => {
+                  try {
+                    const p = JSON.parse(bruto)
+                    return Array.isArray(p) ? p : []
+                  } catch {
+                    return []
+                  }
+                })()
+              : []
+          if (enviados.length > 0 && gravados.length < enviados.length) {
+            console.warn(
+              'vinculos_societarios não consolidado no update da página (regravando 1x):',
+              { enviados: enviados.length, gravados: gravados.length },
+            )
+            const rec2 = await salvarClienteEmpresaPorId(empIdParaSalvar, atualizado)
+            bruto = (rec2 as any)?.vinculos_societarios
+            gravados = Array.isArray(bruto)
+              ? bruto
+              : typeof bruto === 'string'
+                ? (() => {
+                    try {
+                      const p = JSON.parse(bruto)
+                      return Array.isArray(p) ? p : []
+                    } catch {
+                      return []
+                    }
+                  })()
+                : []
+            if (gravados.length < enviados.length) {
+              throw new Error(
+                `O registro respondeu OK, mas gravou ${gravados.length} de ${enviados.length} vínculo(s). Tente novamente.`,
+              )
+            }
+          }
           const perfilPersistido = recordToPerfil(rec)
           setDadosEmpresa(perfilPersistido)
           salvarNoStorage(perfilPersistido)

@@ -66,12 +66,47 @@ export function usePersistenciaVinculosSocietarios(
   const alvoRef = useRef<string | null>(null)
   const listaRef = useRef<any[]>([])
 
+  /** Lê a lista de vínculos que o banco de fato retornou após o update. */
+  const listaNoRegistro = (rec: any): any[] => {
+    const bruto = rec?.vinculos_societarios
+    if (Array.isArray(bruto)) return bruto
+    if (typeof bruto === 'string') {
+      try {
+        const parsed = JSON.parse(bruto)
+        return Array.isArray(parsed) ? parsed : []
+      } catch {
+        return []
+      }
+    }
+    return []
+  }
+
   const gravarAgora = useCallback(
     async (empresaIdAlvo: string, payload: Record<string, any>, serializado: string) => {
       setGravando(true)
       setErro(null)
       try {
-        await pb.collection('clientes_empresas').update(empresaIdAlvo, payload)
+        const rec = await pb.collection('clientes_empresas').update(empresaIdAlvo, payload)
+        // Verificação pós-gravação (anti perda silenciosa): o update pode
+        // responder 200 e ainda assim o campo não conter a lista enviada.
+        // Regrava uma vez; se persistir, trata como ERRO — nunca como sucesso.
+        const esperados = Array.isArray(payload?.vinculos_societarios)
+          ? payload.vinculos_societarios
+          : []
+        let gravados = listaNoRegistro(rec)
+        if (esperados.length > 0 && gravados.length < esperados.length) {
+          console.warn('Vínculos não consolidados no registro (tentativa 1). Regravando...', {
+            esperados: esperados.length,
+            gravados: gravados.length,
+          })
+          const rec2 = await pb.collection('clientes_empresas').update(empresaIdAlvo, payload)
+          gravados = listaNoRegistro(rec2)
+        }
+        if (esperados.length > 0 && gravados.length < esperados.length) {
+          throw new Error(
+            `O registro respondeu OK, mas gravou ${gravados.length} de ${esperados.length} vínculo(s). Tente novamente.`,
+          )
+        }
         ultimoGravadoRef.current = serializado
         pendenteRef.current = null
       } catch (err) {

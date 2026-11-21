@@ -102,6 +102,11 @@ export function SecaoVinculosSocietarios({
     val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 
   const handleAdicionar = (e: React.FormEvent) => {
+    // Este <form> é aninhado dentro do form de Dados da Empresa: sem stopPropagation,
+    // o submit também dispara o handleSubmit da página no MESMO evento, com o
+    // estado ainda sem o novo vínculo (stale closure) — a página gravava o perfil
+    // inteiro sem o item e o vínculo chegava ao banco como [].
+    e.stopPropagation()
     e.preventDefault()
     if (!nomeEmpresa.trim() && !cnpj.trim()) return
 
