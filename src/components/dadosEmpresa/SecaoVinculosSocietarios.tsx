@@ -379,7 +379,11 @@ export function SecaoVinculosSocietarios({
               <Button
                 type="button"
                 size="sm"
-                onClick={handleAdicionar}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleAdicionar()
+                }}
                 className="bg-[#07132B] hover:bg-[#0c244c] text-white font-bold text-xs px-5"
               >
                 Salvar Vínculo
