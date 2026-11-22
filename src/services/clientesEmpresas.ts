@@ -60,6 +60,7 @@ export interface ClienteEmpresaModel {
   ufs_operacao?: string[]
   documento_fiscal_importado?: any
   vinculos_societarios?: any
+  historico_vinculos?: any
   cnaes_secundarios?: any
   vedacoes_simples_art17?: any
   vedacao_simples_outra?: string

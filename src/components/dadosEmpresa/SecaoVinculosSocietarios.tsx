@@ -30,6 +30,7 @@ import { Network } from 'lucide-react'
 import { PainelGrupoEconomico } from '@/components/dadosEmpresa/PainelGrupoEconomico'
 import { VinculoSocietario, PapelClienteNoVinculo, RegimeOutraEmpresa } from '@/types/dadosEmpresa'
 import { analisarVinculosSocietarios, TETO_SIMPLES_NACIONAL } from '@/lib/vinculosSocietarios'
+import type { RegistroHistoricoVinculo } from '@/lib/historicoVinculos'
 
 interface SecaoVinculosSocietariosProps {
   vinculos: VinculoSocietario[]
@@ -38,6 +39,8 @@ interface SecaoVinculosSocietariosProps {
   /** Identificação da empresa ativa — usada na raiz da árvore do Grupo Econômico */
   empresaNome?: string
   empresaCnpj?: string
+  /** Histórico de alterações (auditoria) — bruto do banco (JSON na empresa). */
+  historicoVinculos?: RegistroHistoricoVinculo[] | string | null
   onChangeVinculos: (novosVinculos: VinculoSocietario[]) => void
 }
 
@@ -80,6 +83,7 @@ export function SecaoVinculosSocietarios({
   faturamentoMensalProprio,
   empresaNome,
   empresaCnpj,
+  historicoVinculos,
   onChangeVinculos,
 }: SecaoVinculosSocietariosProps) {
   const [formAberto, setFormAberto] = useState(false)
@@ -230,6 +234,7 @@ export function SecaoVinculosSocietarios({
             regimeAtual={regimeAtual}
             faturamentoMensalProprio={faturamentoMensalProprio}
             vinculos={vinculos}
+            historicoVinculos={historicoVinculos}
             onAdicionarEmpresa={() => {
               // Reutiliza o formulário de vínculo existente — nenhum fluxo novo de gravação.
               setPainelGeAberto(false)

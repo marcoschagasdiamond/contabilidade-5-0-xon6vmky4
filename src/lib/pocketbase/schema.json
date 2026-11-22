@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-22T20:35:56.065Z",
+  "generatedAt": "2026-11-22T20:56:38.835Z",
   "collections": [
     {
       "name": "users",
@@ -1062,6 +1062,12 @@
         {
           "name": "porcentagem_compras_simples_nacional",
           "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "historico_vinculos",
+          "type": "json",
           "required": false,
           "system": false
         }

@@ -118,6 +118,7 @@ export function ModalGrupoEconomico({ aberto, aoFechar, cliente }: ModalGrupoEco
               regimeAtual={registro.regime_atual || 'Simples Nacional'}
               faturamentoMensalProprio={Number(registro.faturamento_mensal) || 0}
               vinculos={vinculos}
+              historicoVinculos={registro.historico_vinculos ?? null}
             />
             <p className="text-[10px] text-slate-500 text-center">
               Visualização somente leitura — para adicionar ou remover vínculos, use{' '}

@@ -11,7 +11,11 @@ import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import type { VinculoSocietario } from '@/types/dadosEmpresa'
-
+import {
+  criarRegistroHistoricoVinculo,
+  anexarRegistroHistoricoVinculo,
+  normalizarHistoricoVinculos,
+} from '@/lib/historicoVinculos'
 /**
  * Persistência imediata dos Vínculos Societários em clientes_empresas.
  *
@@ -47,6 +51,37 @@ interface EstadoVinculos {
   marcarHidratado: (serializado: string) => void
 }
 
+/**
+ * Delta de auditoria entre a lista que o BANCO confirmou (antes) e a gravada
+ * (depois) — nunca entre estado local. Usa apenas dados validados do registro.
+ */
+function calcularAuditoria(
+  antes: any[],
+  depois: any[],
+  usuario: { id: string; nome: string },
+): any[] {
+  const porIdAntes = new Map(antes.map((v) => [String(v?.id), v]))
+  const porIdDepois = new Map(depois.map((v) => [String(v?.id), v]))
+  const registros: any[] = []
+
+  for (const [id, vinculo] of porIdDepois) {
+    if (!porIdAntes.has(id)) {
+      registros.push(criarRegistroHistoricoVinculo(vinculo, 'vinculo_adicionado', usuario))
+    }
+  }
+  for (const [id, vinculo] of porIdAntes) {
+    if (!porIdDepois.has(id)) {
+      registros.push(criarRegistroHistoricoVinculo(vinculo, 'vinculo_removido', usuario))
+    }
+  }
+  return registros
+}
+
+/** Nome de exibição do usuário logado (nome || email || id). */
+function nomeUsuario(user: any): string {
+  return user?.name || user?.nome || user?.email || user?.id || 'Desconhecido'
+}
+
 /** Lê a lista de vínculos que o banco de fato retornou no campo. */
 function listaNoRegistro(rec: any): any[] {
   const bruto = rec?.vinculos_societarios
@@ -70,6 +105,10 @@ export function usePersistenciaVinculosSocietarios(
   const { user, isAuthenticated, isMaster, isAdmin, nivelAcesso } = useAuth()
   const { empresaVinculadaId: ctxEmpresaId } = useDadosEmpresa()
   const { clienteAtivo } = useClienteAtivo()
+  const usuarioAuditoria = useMemo(
+    () => ({ id: user?.id || '', nome: nomeUsuario(user) }),
+    [user?.id, user],
+  )
 
   const [gravando, setGravando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -180,10 +219,13 @@ export function usePersistenciaVinculosSocietarios(
         // Verificação pós-gravação (anti perda silenciosa): o update pode
         // responder 200 e ainda assim o campo não conter a lista enviada.
         // Regrava uma vez; se persistir, trata como ERRO — nunca como sucesso.
+        // A AUDITORIA SÓ É REGISTRADA DEPOIS DESSA CONFIRMAÇÃO — operação
+        // falha nunca entra no histórico (requisito 5 do pedido).
         const esperados = Array.isArray(payload?.vinculos_societarios)
           ? payload.vinculos_societarios
           : []
-        let gravados = listaNoRegistro(rec)
+        const antesNoBanco = listaNoRegistro(rec)
+        let gravados = antesNoBanco
         if (esperados.length > 0 && gravados.length < esperados.length) {
           console.warn('Vínculos não consolidados no registro (tentativa 1). Regravando...', {
             esperados: esperados.length,
@@ -197,6 +239,27 @@ export function usePersistenciaVinculosSocietarios(
             `O registro respondeu OK, mas gravou ${gravados.length} de ${esperados.length} vínculo(s). Tente novamente.`,
           )
         }
+
+        // AUDITORIA (só chega aqui se a gravação foi 100% confirmada):
+        // acrescenta um registro por vínculo adicionado/removido nesta escrita.
+        if (usuarioAuditoria.id) {
+          try {
+            const novosRegistros = calcularAuditoria(antesNoBanco, gravados, usuarioAuditoria)
+            if (novosRegistros.length > 0) {
+              const historicoAtualizado = anexarRegistroHistoricoVinculo(
+                normalizarHistoricoVinculos(rec2?.historico_vinculos ?? rec?.historico_vinculos),
+                novosRegistros,
+              )
+              await pb
+                .collection('clientes_empresas')
+                .update(empresaIdAlvo, { historico_vinculos: historicoAtualizado })
+            }
+          } catch (errAud) {
+            // Auditoria nunca derruba o fluxo de negócio — mas fica visível no console.
+            console.error('Falha ao gravar auditoria de vínculos (não bloqueia):', errAud)
+          }
+        }
+
         ultimoGravadoRef.current = serializado
         pendenteRef.current = null
       } catch (err) {
@@ -231,7 +294,7 @@ export function usePersistenciaVinculosSocietarios(
         setGravando(false)
       }
     },
-    [toast],
+    [toast, usuarioAuditoria],
   )
 
   const tentarNovamente = useCallback(() => {

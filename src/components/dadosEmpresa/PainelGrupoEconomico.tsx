@@ -1,10 +1,12 @@
 import { useMemo } from 'react'
-import { Network, Plus, AlertTriangle, Building2, Landmark, Info } from 'lucide-react'
+import { Network, Plus, AlertTriangle, Building2, Landmark, Info, History } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { VinculoSocietario, PapelClienteNoVinculo } from '@/types/dadosEmpresa'
 import { TETO_SIMPLES_NACIONAL } from '@/lib/vinculosSocietarios'
+import { historicoParaExibicao, type RegistroHistoricoVinculo } from '@/lib/historicoVinculos'
 
 const LIMITE_ALERTA_GRUPO = 4000000 // R$ 4M — a partir daqui, risco de desenquadramento
+const LIMITE_EXIBICAO = 20 // máx. de registros no 'Histórico de alterações'
 
 interface PainelGrupoEconomicoProps {
   empresaNome?: string
@@ -16,6 +18,8 @@ interface PainelGrupoEconomicoProps {
    *  Opcional: quando omitido, o painel é SOMENTE LEITURA (ex.: modal de consulta
    *  rápida na /carteira — sem adicionar/remover vínculo por ali). */
   onAdicionarEmpresa?: () => void
+  /** Histórico de alterações (auditoria) dos vínculos do grupo — bruto do banco. */
+  historicoVinculos?: RegistroHistoricoVinculo[] | string | null
 }
 
 const ROTULOS_PAPEL: Record<PapelClienteNoVinculo, string> = {
@@ -34,6 +38,8 @@ type StatusBarra = 'verde' | 'amarelo' | 'vermelho'
  * Painel Grupo Econômico (GE) — visão consolidada da empresa ativa + vínculos
  * cadastrados em vinculos_societarios (fonte única, sem nova coleção).
  * Puramente informativo: não altera regras de gravação nem cálculos tributários.
+ * Inclui o "Histórico de alterações" (auditoria): mais recente primeiro,
+ * limitado aos 20 registros mais recentes.
  */
 export function PainelGrupoEconomico({
   empresaNome,
@@ -42,8 +48,14 @@ export function PainelGrupoEconomico({
   faturamentoMensalProprio,
   vinculos = [],
   onAdicionarEmpresa,
+  historicoVinculos,
 }: PainelGrupoEconomicoProps) {
   const proprioAnual = (faturamentoMensalProprio || 0) * 12
+
+  const historicoExibicao = useMemo(
+    () => historicoParaExibicao(historicoVinculos),
+    [historicoVinculos],
+  )
 
   const resumo = useMemo(() => {
     const somaVinculos = vinculos.reduce((acc, v) => acc + (Number(v.faturamentoAnual) || 0), 0)
@@ -284,6 +296,62 @@ export function PainelGrupoEconomico({
             teto excedido
           </span>
         </div>
+
+        {/* HISTÓRICO DE ALTERAÇÕES (AUDITORIA) — embaixo da árvore, mais recente primeiro */}
+        {historicoExibicao.length > 0 && (
+          <div
+            data-testid="historico-vinculos"
+            className="p-4 rounded-xl bg-white/95 border border-white/20 space-y-3"
+          >
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#07132B] flex items-center gap-1.5">
+                <History className="w-3.5 h-3.5 text-[#D4AF37]" />
+                Histórico de alterações
+              </span>
+              <span className="text-[10px] text-slate-500">
+                {historicoExibicao.length === LIMITE_EXIBICAO
+                  ? `Últimos ${LIMITE_EXIBICAO} registros`
+                  : `${historicoExibicao.length} registro(s)`}
+              </span>
+            </div>
+
+            <ul className="space-y-1.5">
+              {historicoExibicao.map((item) => (
+                <li
+                  key={item.chave}
+                  className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 p-2 rounded-lg bg-slate-50 border border-slate-100 text-[11px]"
+                >
+                  <span className="font-mono text-slate-500 shrink-0 sm:w-32">
+                    {item.dataFormatada}
+                  </span>
+                  <span
+                    className={`font-bold shrink-0 sm:w-36 ${
+                      item.removido ? 'text-rose-700' : 'text-emerald-700'
+                    }`}
+                  >
+                    {item.acaoFormatada}
+                  </span>
+                  <span className="text-slate-800 font-semibold flex-1">
+                    {item.empresaNome}
+                    {item.empresaCnpj ? (
+                      <span className="font-mono font-normal text-slate-500">
+                        {' '}
+                        · {item.empresaCnpj}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="text-slate-500 shrink-0 sm:text-right">
+                    por <strong className="text-slate-700">{item.usuarioNome}</strong>
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <p className="text-[10px] text-slate-400">
+              Registros gravados automaticamente a cada adição ou remoção de vínculo do grupo.
+            </p>
+          </div>
+        )}
 
         {/* ALERTA DE DESENQUADRAMENTO (> R$ 4M) */}
         {resumo.grupoAnual > LIMITE_ALERTA_GRUPO && (
