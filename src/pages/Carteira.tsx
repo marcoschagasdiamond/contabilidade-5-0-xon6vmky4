@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useCallback, useState, useMemo } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { ModalCliente } from '@/components/clientes/ModalCliente'
@@ -7,6 +7,14 @@ import {
   ListaConvitesPendentes,
 } from '@/components/clientes/ModalConvidarCliente'
 import { listarConvitesAnalista, ConviteCliente } from '@/services/planos'
+import {
+  useModoVisualizacaoCarteira,
+  TIPOS_TECNICOS,
+  TIPO_TODOS,
+  MODOS_ORDEM,
+  rotuloModo,
+} from '@/hooks/useAgrupamentoCarteira'
+import { AgrupamentoPorTecnico } from '@/components/carteira/AgrupamentoPorTecnico'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -74,6 +82,10 @@ export default function Carteira() {
   const [busca, setBusca] = useState('')
   const [filtroRegime, setFiltroRegime] = useState<string>('todos')
   const [filtroEstagio, setFiltroEstagio] = useState<string>('todos')
+  const { modo, setModo, tipoTecnico, setTipoTecnico, tecnicos } = useModoVisualizacaoCarteira(
+    useMemo(() => clientes.map((c) => c.user_id).filter(Boolean) as string[], [clientes]),
+  )
+
   const [modalAberto, setModalAberto] = useState(false)
   const [modalConviteAberto, setModalConviteAberto] = useState(false)
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null)
@@ -98,6 +110,9 @@ export default function Carteira() {
   const clientesFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase()
     return clientes.filter((c) => {
+      const atendeTecnico = tipoTecnico === TIPO_TODOS || c.user_id === tipoTecnico
+      if (!atendeTecnico) return false
+
       const atendeBusca =
         !termo ||
         c.nome.toLowerCase().includes(termo) ||
@@ -116,7 +131,7 @@ export default function Carteira() {
 
       return atendeBusca && atendeRegime && atendeEstagio
     })
-  }, [clientes, busca, filtroRegime, filtroEstagio])
+  }, [clientes, busca, filtroRegime, filtroEstagio, tipoTecnico])
 
   const handleNovoCliente = () => {
     setClienteEditando(null)
@@ -143,6 +158,152 @@ export default function Carteira() {
   const handleAbrirSuporte = (cliente: Cliente, e: React.MouseEvent) => {
     e.stopPropagation()
     setClienteSuporteAberto(cliente)
+  }
+
+  // Card do cliente — extraído como callback para ser reutilizado pelo
+  // componente de agrupamento por técnico (e pelo modo 'Todos').
+  const renderCard = (cliente: Cliente) => {
+    const isAtivo = clienteAtivoId === cliente.id
+    const estagio = cliente.estagio_funil ?? 'lead'
+    return (
+      <div
+        key={cliente.id}
+        className={`bg-white rounded-2xl border transition-all p-5 flex flex-col justify-between space-y-4 shadow-sm hover:shadow-md ${
+          isAtivo
+            ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30 bg-amber-50/20'
+            : 'border-slate-200 hover:border-slate-300'
+        }`}
+      >
+        <div className="space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span
+                className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                  isAtivo ? 'bg-[#D4AF37] animate-pulse' : 'bg-slate-300'
+                }`}
+              />
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                UF: {cliente.uf}
+              </span>
+            </div>
+            <Badge
+              variant="outline"
+              className={`text-[10px] font-bold px-2 py-0.5 ${classeBadgeEstagio(estagio)}`}
+            >
+              {ROTULO_ESTAGIO[estagio] ?? estagio}
+            </Badge>
+          </div>
+          <div className="flex items-start justify-between gap-2">
+            <h3
+              className="font-heading font-extrabold text-base text-[#07132B] leading-snug line-clamp-2 cursor-pointer hover:underline"
+              onClick={() => navigate(`/clientes/${cliente.id}`)}
+            >
+              {cliente.nome}
+            </h3>
+            {isAtivo && (
+              <Badge className="bg-[#D4AF37] text-[#07132B] hover:bg-[#D4AF37] text-[10px] font-bold px-2 py-0.5 shrink-0">
+                CLIENTE ATIVO
+              </Badge>
+            )}
+          </div>
+          <div className="text-xs font-mono text-slate-500">CNPJ/CPF: {cliente.cnpj_cpf}</div>
+        </div>
+        <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-500">Regime:</span>
+            <span className="font-semibold text-slate-800">{cliente.regime_atual}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-500">Segmento:</span>
+            <span className="font-semibold text-slate-800">{cliente.segmento}</span>
+          </div>
+          {cliente.email && (
+            <div className="flex items-center justify-between text-slate-600 truncate">
+              <span className="text-slate-500">E-mail:</span>
+              <span className="truncate max-w-[190px]" title={cliente.email}>
+                {cliente.email}
+              </span>
+            </div>
+          )}
+          {cliente.telefone && (
+            <div className="flex items-center justify-between text-slate-600">
+              <span className="text-slate-500">Telefone:</span>
+              <span>{cliente.telefone}</span>
+            </div>
+          )}
+        </div>
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
+          <Link
+            to={`/clientes/${cliente.id}`}
+            className="text-xs font-semibold text-[#07132B] hover:text-[#D4AF37] bg-white border border-slate-200 hover:border-[#07132B] px-2.5 py-1.5 rounded-lg transition-colors"
+          >
+            Dossiê →
+          </Link>
+          {isAtivo ? (
+            <button
+              type="button"
+              onClick={() => limparClienteAtivo()}
+              className="text-xs font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Desativar
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => selecionarClienteAtivo(cliente.id)}
+              className="text-xs font-bold text-[#07132B] bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 border border-[#D4AF37]/50 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Tornar Ativo
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={(e) => handleIrParaDiagnostico(cliente, e)}
+            className="text-xs font-bold text-white bg-[#07132B] hover:bg-[#0d2350] px-3 py-1.5 rounded-lg transition-colors"
+            title="Define como Cliente Ativo e abre o Diagnóstico"
+          >
+            Diagnóstico
+          </button>
+          <button
+            type="button"
+            onClick={(e) => handleAbrirGrupoEconomico(cliente, e)}
+            className="text-xs font-bold text-[#D4AF37] hover:text-white bg-[#07132B] hover:bg-[#0d2350] border border-[#D4AF37]/50 px-3 py-1.5 rounded-lg transition-colors"
+            title="Abre o Grupo Econômico do cliente (árvore + faturamento vs teto do Simples) — somente leitura"
+          >
+            GE
+          </button>
+          <button
+            type="button"
+            onClick={(e) => handleAbrirSuporte(cliente, e)}
+            className="text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-3 py-1.5 rounded-lg transition-colors"
+            title="Abre o Suporte com IA já contextualizado com os dados deste cliente (nome, CNPJ, regime e estágio do funil)"
+          >
+            Suporte
+          </button>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setClienteParaConvidar(cliente)
+                setModalConviteAberto(true)
+              }}
+              className="text-xs font-bold text-[#07132B] hover:text-[#D4AF37] bg-amber-50 hover:bg-amber-100 border border-[#D4AF37]/40 px-2.5 py-1.5 rounded-lg transition-colors"
+              title="Convidar empresário por e-mail"
+            >
+              Convidar
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleEditarCliente(cliente, e)}
+              className="text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded-lg font-medium transition-colors"
+            >
+              Editar
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -236,6 +397,42 @@ export default function Carteira() {
             </div>
           </div>
 
+          {/* Seletor de modo de visualização + filtro por técnico */}
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
+            <span className="text-xs font-semibold text-slate-500 mr-1">Visualização:</span>
+            {MODOS_ORDEM.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setModo(m.id)}
+                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                  modo === m.id
+                    ? 'bg-[#07132B] text-[#D4AF37] font-bold'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {rotuloModo(m.id)}
+              </button>
+            ))}
+            <span className="text-xs font-semibold text-slate-500 ml-2">Técnico:</span>
+            <select
+              value={tipoTecnico}
+              onChange={(e) => setTipoTecnico(e.target.value)}
+              className="text-xs px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-medium hover:border-slate-300 transition-colors"
+            >
+              {TIPOS_TECNICOS.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+              {Object.entries(tecnicos).map(([id, nome]) => (
+                <option key={id} value={id}>
+                  {nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Filtro por estágio do funil */}
           <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
             <span className="text-xs font-semibold text-slate-500 mr-1">Estágio do Funil:</span>
@@ -289,175 +486,13 @@ export default function Carteira() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {clientesFiltrados.map((cliente) => {
-              const isAtivo = clienteAtivoId === cliente.id
-              const estagio = cliente.estagio_funil ?? 'lead'
-
-              return (
-                <div
-                  key={cliente.id}
-                  className={`bg-white rounded-2xl border transition-all p-5 flex flex-col justify-between space-y-4 shadow-sm hover:shadow-md ${
-                    isAtivo
-                      ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30 bg-amber-50/20'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  {/* Cabeçalho do Card */}
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                            isAtivo ? 'bg-[#D4AF37] animate-pulse' : 'bg-slate-300'
-                          }`}
-                        />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          UF: {cliente.uf}
-                        </span>
-                      </div>
-
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] font-bold px-2 py-0.5 ${classeBadgeEstagio(estagio)}`}
-                      >
-                        {ROTULO_ESTAGIO[estagio] ?? estagio}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-start justify-between gap-2">
-                      <h3
-                        className="font-heading font-extrabold text-base text-[#07132B] leading-snug line-clamp-2 cursor-pointer hover:underline"
-                        onClick={() => navigate(`/clientes/${cliente.id}`)}
-                      >
-                        {cliente.nome}
-                      </h3>
-                      {isAtivo && (
-                        <Badge className="bg-[#D4AF37] text-[#07132B] hover:bg-[#D4AF37] text-[10px] font-bold px-2 py-0.5 shrink-0">
-                          CLIENTE ATIVO
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="text-xs font-mono text-slate-500">
-                      CNPJ/CPF: {cliente.cnpj_cpf}
-                    </div>
-                  </div>
-
-                  {/* Informações Fiscais e Cadastrais */}
-                  <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Regime:</span>
-                      <span className="font-semibold text-slate-800">{cliente.regime_atual}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Segmento:</span>
-                      <span className="font-semibold text-slate-800">{cliente.segmento}</span>
-                    </div>
-
-                    {cliente.email && (
-                      <div className="flex items-center justify-between text-slate-600 truncate">
-                        <span className="text-slate-500">E-mail:</span>
-                        <span className="truncate max-w-[190px]" title={cliente.email}>
-                          {cliente.email}
-                        </span>
-                      </div>
-                    )}
-
-                    {cliente.telefone && (
-                      <div className="flex items-center justify-between text-slate-600">
-                        <span className="text-slate-500">Telefone:</span>
-                        <span>{cliente.telefone}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Ações rápidas do Card */}
-                  <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
-                    {/* Dossiê */}
-                    <Link
-                      to={`/clientes/${cliente.id}`}
-                      className="text-xs font-semibold text-[#07132B] hover:text-[#D4AF37] bg-white border border-slate-200 hover:border-[#07132B] px-2.5 py-1.5 rounded-lg transition-colors"
-                    >
-                      Dossiê →
-                    </Link>
-
-                    {/* Definir como Cliente Ativo / Desativar */}
-                    {isAtivo ? (
-                      <button
-                        type="button"
-                        onClick={() => limparClienteAtivo()}
-                        className="text-xs font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition-colors"
-                      >
-                        Desativar
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => selecionarClienteAtivo(cliente.id)}
-                        className="text-xs font-bold text-[#07132B] bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 border border-[#D4AF37]/50 px-3 py-1.5 rounded-lg transition-colors"
-                      >
-                        Tornar Ativo
-                      </button>
-                    )}
-
-                    {/* Ir para Diagnóstico */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleIrParaDiagnostico(cliente, e)}
-                      className="text-xs font-bold text-white bg-[#07132B] hover:bg-[#0d2350] px-3 py-1.5 rounded-lg transition-colors"
-                      title="Define como Cliente Ativo e abre o Diagnóstico"
-                    >
-                      Diagnóstico
-                    </button>
-
-                    {/* Grupo Econômico (GE) — consulta rápida, somente leitura */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleAbrirGrupoEconomico(cliente, e)}
-                      className="text-xs font-bold text-[#D4AF37] hover:text-white bg-[#07132B] hover:bg-[#0d2350] border border-[#D4AF37]/50 px-3 py-1.5 rounded-lg transition-colors"
-                      title="Abre o Grupo Econômico do cliente (árvore + faturamento vs teto do Simples) — somente leitura"
-                    >
-                      GE
-                    </button>
-
-                    {/* Suporte com IA — abre o chat existente com o contexto deste cliente */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleAbrirSuporte(cliente, e)}
-                      className="text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-3 py-1.5 rounded-lg transition-colors"
-                      title="Abre o Suporte com IA já contextualizado com os dados deste cliente (nome, CNPJ, regime e estágio do funil)"
-                    >
-                      Suporte
-                    </button>
-
-                    <div className="flex items-center gap-1.5 ml-auto">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setClienteParaConvidar(cliente)
-                          setModalConviteAberto(true)
-                        }}
-                        className="text-xs font-bold text-[#07132B] hover:text-[#D4AF37] bg-amber-50 hover:bg-amber-100 border border-[#D4AF37]/40 px-2.5 py-1.5 rounded-lg transition-colors"
-                        title="Convidar empresário por e-mail"
-                      >
-                        Convidar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => handleEditarCliente(cliente, e)}
-                        className="text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded-lg font-medium transition-colors"
-                      >
-                        Editar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <AgrupamentoPorTecnico
+            modo={modo}
+            tipoTecnico={tipoTecnico}
+            tecnicos={tecnicos}
+            clientesFiltrados={clientesFiltrados}
+            renderCard={renderCard}
+          />
         )}
 
         {/* LISTA DE CONVITES PENDENTES & REENVIO */}
