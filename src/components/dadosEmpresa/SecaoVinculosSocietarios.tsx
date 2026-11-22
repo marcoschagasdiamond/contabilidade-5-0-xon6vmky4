@@ -26,6 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Network } from 'lucide-react'
+import { PainelGrupoEconomico } from '@/components/dadosEmpresa/PainelGrupoEconomico'
 import { VinculoSocietario, PapelClienteNoVinculo, RegimeOutraEmpresa } from '@/types/dadosEmpresa'
 import { analisarVinculosSocietarios, TETO_SIMPLES_NACIONAL } from '@/lib/vinculosSocietarios'
 
@@ -33,6 +35,9 @@ interface SecaoVinculosSocietariosProps {
   vinculos: VinculoSocietario[]
   regimeAtual?: string
   faturamentoMensalProprio: number
+  /** Identificação da empresa ativa — usada na raiz da árvore do Grupo Econômico */
+  empresaNome?: string
+  empresaCnpj?: string
   onChangeVinculos: (novosVinculos: VinculoSocietario[]) => void
 }
 
@@ -73,9 +78,12 @@ export function SecaoVinculosSocietarios({
   vinculos = [],
   regimeAtual = 'Simples Nacional',
   faturamentoMensalProprio,
+  empresaNome,
+  empresaCnpj,
   onChangeVinculos,
 }: SecaoVinculosSocietariosProps) {
   const [formAberto, setFormAberto] = useState(false)
+  const [painelGeAberto, setPainelGeAberto] = useState(false)
 
   // Form temporário de novo vínculo
   const [nomeEmpresa, setNomeEmpresa] = useState('')
@@ -174,10 +182,37 @@ export function SecaoVinculosSocietarios({
             <Plus className="w-4 h-4 mr-1.5" />
             {formAberto ? 'Fechar Formulário' : 'Adicionar Vínculo'}
           </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setPainelGeAberto((v) => !v)}
+            aria-expanded={painelGeAberto}
+            className="shrink-0 bg-white/10 hover:bg-white/20 text-white border-[#D4AF37]/50 hover:text-white text-xs font-bold h-9 px-4 rounded-xl"
+          >
+            <Network className="w-4 h-4 mr-1.5 text-[#D4AF37]" />
+            {painelGeAberto ? 'Fechar Grupo Econômico' : 'Grupo Econômico (GE)'}
+          </Button>
         </div>
       </div>
 
       <CardContent className="p-6 md:p-8 space-y-6">
+        {/* PAINEL GRUPO ECONÔMICO (GE): árvore + faturamento consolidado vs teto */}
+        {painelGeAberto && (
+          <PainelGrupoEconomico
+            empresaNome={empresaNome}
+            empresaCnpj={empresaCnpj}
+            regimeAtual={regimeAtual}
+            faturamentoMensalProprio={faturamentoMensalProprio}
+            vinculos={vinculos}
+            onAdicionarEmpresa={() => {
+              // Reutiliza o formulário de vínculo existente — nenhum fluxo novo de gravação.
+              setPainelGeAberto(false)
+              setFormAberto(true)
+            }}
+          />
+        )}
+
         {/* FORMULÁRIO DE CADASTRO EXPANSÍVEL */}
         {formAberto && (
           <div

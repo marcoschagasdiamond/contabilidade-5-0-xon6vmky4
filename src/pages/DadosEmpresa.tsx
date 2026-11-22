@@ -3839,6 +3839,10 @@ export default function DadosEmpresa() {
                 vinculos={formData.vinculosSocietarios || []}
                 regimeAtual={formData.regimeAtual}
                 faturamentoMensalProprio={formData.faturamentoMensal || 0}
+                empresaNome={
+                  formData.nomeEmpresa || formData.dadosCnpjConsulta?.razaoSocial || undefined
+                }
+                empresaCnpj={formData.cnpj || undefined}
                 onChangeVinculos={(novosVinculos: VinculoSocietario[]) => {
                   atualizarCampo((prev) => ({
                     ...prev,
