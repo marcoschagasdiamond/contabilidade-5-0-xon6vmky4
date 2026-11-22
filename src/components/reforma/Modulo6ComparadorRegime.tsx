@@ -23,6 +23,7 @@ import {
   VEDACOES_SIMPLES_ART17,
   temVedacaoSimples,
   construirMotivoVedacao,
+  ROTULO_INDISPONIVEL_VEDACAO,
   VEDACOES_PRESUMIDO,
   VEDACOES_MEI,
   ROTULO_INDISPONIVEL_VEDACOES_PRESUMIDO,
@@ -51,6 +52,7 @@ import {
 } from '@/lib/reformaTributaria'
 import { formatarMoeda } from '@/lib/calculadoraUtils'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
+import { TETO_SIMPLES_NACIONAL } from '@/lib/vinculosSocietarios'
 
 export interface Modulo6ComparadorRegimeProps {
   modo?: 'reforma' | 'trilha'
@@ -280,19 +282,75 @@ export function Modulo6ComparadorRegime({
   // CÁLCULO DOS 4 REGIMES
   const resultadosRegimes = useMemo(() => {
     // 1. Simples Nacional (Elegibilidade teto R$ 4,8 mi e sublimite R$ 3,6 mi)
-    const TETO_SIMPLES = 4800000
+    const TETO_SIMPLES = TETO_SIMPLES_NACIONAL
     const SUBLIMITE_SIMPLES = 3600000
     const FATOR_R_MINIMO = 0.28
+
+    // Grupo econômico: mesma fonte que o PainelGrupoEconomico usa —
+    // receitas anuais declaradas em vinculos_societarios da empresa ativa
+    // somadas ao faturamento próprio (LC 123/2006, art. 3º, §4º).
+    const vinculosGrupo = dadosEmpresa?.vinculosSocietarios || []
+    const somaReceitasGrupo = vinculosGrupo.reduce(
+      (acc, v) => acc + (Number(v.faturamentoAnual) || 0),
+      0,
+    )
+    const faturamentoGrupoAnual = faturamentoAnual + somaReceitasGrupo
+    const nomesGrupo = vinculosGrupo.map((v) => (v.nomeEmpresa || '').trim()).filter(Boolean)
+    const textoGrupo = nomesGrupo.length ? nomesGrupo.map((n) => n).join(', ') : ''
+    // Vínculos "societários" com vedação expressa (PJ sócia/holding ou participação sem
+    // exceção legal) já vedam o Simples por si só (LC 123/2006, art. 3º, §4º, I e VII).
+    const temVedacaoSocietariaGrupo = vinculosGrupo.some(
+      (v) =>
+        (v.papelCliente === 'pj_socia_holding' || v.papelCliente === 'empresa_participa_outra') &&
+        !(v.papelCliente === 'empresa_participa_outra' && v.excecaoLegal),
+    )
+    // True quando o grupo (e não a empresa isolada) é quem estoura o teto:
+    // a empresa própria está dentro do teto, mas a soma com os vínculos excede.
+    const grupoEstouraTetoSomente =
+      faturamentoAnual <= TETO_SIMPLES && faturamentoGrupoAnual > TETO_SIMPLES
 
     // Vedações legais ao Simples Nacional (art. 17, LC 123/2006) — apenas indicação
     const vedacoesMarcadas = dadosEmpresa?.vedacoesSimplesArt17 || []
     const vedacaoOutraTexto = (dadosEmpresa?.vedacaoSimplesArt17Outra || '').trim()
-    const vedadoSimples = temVedacaoSimples(dadosEmpresa)
-    const motivoVedacaoSimples = vedadoSimples
-      ? construirMotivoVedacao(vedacoesMarcadas, vedacaoOutraTexto)
-      : ''
+    const vedadoSimples = temVedacaoSimples(dadosEmpresa) || temVedacaoSocietariaGrupo
 
-    const elegivelSimples = faturamentoAnual <= TETO_SIMPLES && !vedadoSimples
+    // Motivo de inelegibilidade do Simples, citando o GRUPO ECONÔMICO quando houver
+    // vínculos societários (mesma agregação do PainelGrupoEconomico).
+    const nomesGrupoTexto = nomesGrupo.join(', ')
+    const motivoVedacaoArt17 = construirMotivoVedacao(vedacoesMarcadas, vedacaoOutraTexto)
+    let motivoVedacaoSimples = ''
+    if (vedadoSimples) {
+      if (temVedacaoSocietariaGrupo) {
+        const partes = []
+        if (vedacoesMarcadas.length > 0 || vedacaoOutraTexto) partes.push(motivoVedacaoArt17)
+        partes.push(
+          `vedação societária expressa (LC 123/2006, art. 3º, §4º) — grupo econômico: ${nomesGrupoTexto}`,
+        )
+        motivoVedacaoSimples = partes.join(' + ')
+      } else {
+        motivoVedacaoSimples = motivoVedacaoArt17
+      }
+    } else if (faturamentoGrupoAnual > TETO_SIMPLES && vinculosGrupo.length > 0) {
+      const detalheGrupo = `Receitas próprias (${formatarMoeda(faturamentoAnual)}) + vínculos societários (${nomesGrupoTexto}: ${formatarMoeda(somaReceitasGrupo)}) = ${formatarMoeda(faturamentoGrupoAnual)}, acima do teto de R$ 4.800.000 (LC 123/2006, art. 3º, §4º: a receita de todas as empresas do grupo é somada)`
+      motivoVedacaoSimples = grupoEstouraTetoSomente
+        ? `Grupo econômico (${nomesGrupoTexto}) excede o teto do Simples Nacional — a empresa isolada está dentro do teto, mas o grupo somado não. ${detalheGrupo}`
+        : detalheGrupo
+    }
+
+    // Rótulo do banner de indisponibilidade: distingue vedação legal (art. 17/societária)
+    // de teto excedido pelo grupo econômico.
+    const rotuloIndisponivelSimples = vedadoSimples
+      ? temVedacaoSocietariaGrupo
+        ? 'Indisponível — vedação societária do grupo econômico (LC 123/2006, art. 3º, §4º)'
+        : ROTULO_INDISPONIVEL_VEDACAO
+      : faturamentoGrupoAnual > TETO_SIMPLES && vinculosGrupo.length > 0
+        ? 'Indisponível — teto do Simples excedido pelo grupo econômico (LC 123/2006, art. 3º, §4º)'
+        : 'Indisponível — teto do Simples Nacional excedido (> R$ 4,8 mi/ano)'
+
+    // Teto do Simples aferido sobre o FATURAMENTO AGREGADO DO GRUPO (empresa + vínculos).
+    // Sem vínculos, grupoAnual === faturamentoAnual (comportamento isolado inalterado).
+    const elegivelSimples = faturamentoGrupoAnual <= TETO_SIMPLES && !vedadoSimples
+    // Sublimite estadual (R$ 3,6M) é aferido por CNPJ, NÃO pelo grupo (LC 123/2006, art. 3º, §5º)
     const estouraSublimite =
       faturamentoAnual > SUBLIMITE_SIMPLES && faturamentoAnual <= TETO_SIMPLES
     const fatorR = faturamentoAnual > 0 ? folhaAnual / faturamentoAnual : 0
@@ -371,8 +429,12 @@ export function Modulo6ComparadorRegime({
         motivoElegibilidade: vedadoSimples
           ? motivoVedacaoSimples
           : elegivelSimples
-            ? 'Faturamento dentro do teto de R$ 4,8 milhões/ano'
-            : 'Ultrapassa o teto anual de R$ 4,8 milhões',
+            ? vinculosGrupo.length > 0
+              ? `Faturamento do grupo (${textoGrupo}) dentro do teto de R$ 4,8 milhões/ano — grupo somado: ${formatarMoeda(faturamentoGrupoAnual)}`
+              : 'Faturamento dentro do teto de R$ 4,8 milhões/ano'
+            : grupoEstouraTetoSomente
+              ? `Grupo econômico (${textoGrupo}) excede o teto anual de R$ 4,8 milhões — receitas próprias (${formatarMoeda(faturamentoAnual)}) + vínculos societários (${formatarMoeda(somaReceitasGrupo)}) = ${formatarMoeda(faturamentoGrupoAnual)} (LC 123/2006, art. 3º, §4º)`
+              : 'Ultrapassa o teto anual de R$ 4,8 milhões',
         vantagens: ['Guia única (DAS)', 'Dispensa de contribuição patronal na maioria dos anexos'],
         desvantagens: ['Não gera créditos plenos de IBS/CBS a compradores no novo sistema'],
       },
@@ -454,6 +516,11 @@ export function Modulo6ComparadorRegime({
       TETO_SIMPLES,
       SUBLIMITE_SIMPLES,
       FATOR_R_MINIMO,
+      // Dados do grupo econômico (para textos de alerta citarem os vínculos)
+      faturamentoGrupoAnual,
+      vinculosGrupo,
+      rotuloIndisponivelSimples,
+      nomesGrupoTexto,
     }
   }, [faturamentoAnual, folhaAnual, despesasAnuais, segmentoEmpresa, anoBase, dadosEmpresa])
 
@@ -517,9 +584,16 @@ export function Modulo6ComparadorRegime({
     let limiarRompido = ''
 
     if (!convergem) {
-      if (fatAnual > resultadosRegimes.TETO_SIMPLES) {
+      if (resultadosRegimes.faturamentoGrupoAnual > resultadosRegimes.TETO_SIMPLES) {
+        const grupoTexto = resultadosRegimes.vinculosGrupo
+          .map((v) => (v.nomeEmpresa || '').trim())
+          .filter(Boolean)
+          .join(', ')
         limiarRompido = 'Teto do Simples Nacional rompido (> R$ 4,8 milhões/ano)'
-        motivoDivergencia = `Seu faturamento anual projetado de ${fatFormatado} excede o teto legal do Simples Nacional (R$ 4.800.000,00). Por determinação expressa da LC 123/2006, a permanência no Simples é legalmente vedada, prevalecendo os regimes normais (Lucro Presumido, Lucro Real ou Novo Sistema) independentemente do perfil das vendas.`
+        motivoDivergencia =
+          grupoTexto && resultadosRegimes.faturamentoGrupoAnual !== fatAnual
+            ? `O grupo econômico (sua empresa com receita anual de ${fatFormatado} + vínculos societários com ${grupoTexto}) soma ${formatarMoeda(resultadosRegimes.faturamentoGrupoAnual)}, excedendo o teto legal do Simples Nacional (R$ 4.800.000,00). Por determinação expressa da LC 123/2006 (art. 3º, §4º), a receita de todas as empresas do grupo é somada para aferir o teto, vedando a permanência no Simples. Prevalecem os regimes normais (Lucro Presumido, Lucro Real ou Novo Sistema) independentemente do perfil das vendas.`
+            : `Seu faturamento anual projetado de ${fatFormatado} excede o teto legal do Simples Nacional (R$ 4.800.000,00). Por determinação expressa da LC 123/2006, a permanência no Simples é legalmente vedada, prevalecendo os regimes normais (Lucro Presumido, Lucro Real ou Novo Sistema) independentemente do perfil das vendas.`
       } else if (fatAnual > resultadosRegimes.SUBLIMITE_SIMPLES && catQualitativa === 'simples') {
         limiarRompido = 'Sublimite estadual do Simples ultrapassado (> R$ 3,6 milhões/ano)'
         motivoDivergencia = `Com receita bruta de ${fatFormatado}, sua empresa superou o sublimite de R$ 3.600.000,00. Nessa faixa, o ICMS/ISS (e futuros IBS/CBS) são compulsoriamente recolhidos por fora do DAS no regime de débito e crédito, descaracterizando a vantagem do Simples Tradicional. Os números apontam ${melhorRegimeNome} como a opção que minimiza o desembolso real (economia estimada de ${economia}/ano).`
@@ -1149,16 +1223,18 @@ export function Modulo6ComparadorRegime({
                           <div className="mt-3 rounded-xl border border-rose-300 bg-rose-50 p-3 text-[11px] leading-relaxed text-rose-800">
                             <span className="font-extrabold uppercase tracking-wide block">
                               {regime.id === 'simples'
-                                ? 'Indisponível — vedação legal (art. 17, LC 123/2006)'
+                                ? resultadosRegimes.rotuloIndisponivelSimples
                                 : regime.id === 'presumido'
                                   ? ROTULO_INDISPONIVEL_VEDACOES_PRESUMIDO
                                   : ROTULO_INDISPONIVEL_VEDACOES_MEI}
                             </span>
                             <span className="mt-1 block">{regime.motivoElegibilidade}</span>
                             <span className="mt-1 block">
-                              Conforme registrado em Dados da Empresa, a empresa possui impedimento
-                              legal a este regime. A análise de regimes concentra-se nos regimes{' '}
-                              <strong>disponíveis</strong> restantes.
+                              {regime.id === 'simples' &&
+                              !regime.elegivel &&
+                              resultadosRegimes.nomesGrupoTexto
+                                ? 'Conforme registrado em Dados da Empresa, o grupo econômico (empresa + vínculos societários) possui impedimento legal a este regime: a receita de todas as empresas do grupo é somada (LC 123/2006, art. 3º, §4º). A análise de regimes concentra-se nos regimes disponíveis restantes.'
+                                : 'Conforme registrado em Dados da Empresa, a empresa possui impedimento legal a este regime. A análise de regimes concentra-se nos regimes disponíveis restantes.'}
                             </span>
                           </div>
                         )}
