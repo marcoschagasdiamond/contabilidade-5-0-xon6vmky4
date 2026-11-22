@@ -109,6 +109,13 @@ export function SecaoVinculosSocietarios({
   const formatarMoeda = (val: number) =>
     val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 
+  // Barreira anti-submit (recidivas v0.0.406/v0.0.411): qualquer clique dentro
+  // desta seção jamais borbulha para o <form> da página /dados-empresa.
+  const ePrevenirSubmissao = (e: { preventDefault: () => void; stopPropagation: () => void }) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
   // Sem <form>: o botão é type="button" e chama esta função diretamente. Assim o
   // clique nunca dispara um submit — o formulário de Dados da Empresa não é acionado
   // e a aba ativa não é resetada.
@@ -145,8 +152,26 @@ export function SecaoVinculosSocietarios({
     setFormAberto(false)
   }
 
-  const handleRemover = (id: string) => {
-    onChangeVinculos(vinculos.filter((v) => v.id !== id))
+  const [idPendenteRemocao, setIdPendenteRemocao] = useState<string | null>(null)
+
+  // Remoção em duas etapas (confirmação simples): 1º clique marca o item como
+  // "aguardando confirmação" (o botão vira ✓ Confirmar / ✗ Cancelar); 2º clique
+  // em Confirmar efetivamente remove. Sem window.confirm — nada bloqueia o
+  // navegador e o clique nunca submete o form da página (type="button" +
+  // preventDefault/stopPropagation em todos os botões da barra).
+  const handlePedirConfirmacao = (id: string) => {
+    setIdPendenteRemocao(id)
+  }
+
+  const handleConfirmarRemocao = (id: string) => {
+    if (idPendenteRemocao === id) {
+      onChangeVinculos(vinculos.filter((v) => v.id !== id))
+    }
+    setIdPendenteRemocao(null)
+  }
+
+  const handleCancelarRemocao = (id: string) => {
+    if (idPendenteRemocao === id) setIdPendenteRemocao(null)
   }
 
   return (
@@ -486,9 +511,13 @@ export function SecaoVinculosSocietarios({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleRemover(v.id)}
+                        onClick={(e) => {
+                          ePrevenirSubmissao(e)
+                          handlePedirConfirmacao(v.id)
+                        }}
                         className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-100 rounded-lg shrink-0"
                         title="Remover este vínculo"
+                        aria-label={`Remover vínculo ${v.nomeEmpresa}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
@@ -523,6 +552,45 @@ export function SecaoVinculosSocietarios({
                       <p className="text-[10px] text-slate-500 italic pt-1">
                         &quot;{v.observacoes}&quot;
                       </p>
+                    )}
+
+                    {/* CONFIRMAÇÃO DE REMOÇÃO (barra inline) — nunca submete o form da página */}
+                    {idPendenteRemocao === v.id && (
+                      <div
+                        data-testid={`confirmacao-remocao-${v.id}`}
+                        className="pt-2 border-t border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                      >
+                        <span className="text-[11px] font-semibold text-rose-800 leading-snug">
+                          Remover &quot;{v.nomeEmpresa}&quot; da lista e do grupo econômico?
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={(e) => {
+                              ePrevenirSubmissao(e)
+                              handleConfirmarRemocao(v.id)
+                            }}
+                            data-testid={`confirmar-remocao-${v.id}`}
+                            className="h-7 px-3 text-[11px] font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-lg"
+                          >
+                            ✓ Confirmar
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              ePrevenirSubmissao(e)
+                              handleCancelarRemocao(v.id)
+                            }}
+                            data-testid={`cancelar-remocao-${v.id}`}
+                            className="h-7 px-3 text-[11px] font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+                          >
+                            ✗ Cancelar
+                          </Button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 )

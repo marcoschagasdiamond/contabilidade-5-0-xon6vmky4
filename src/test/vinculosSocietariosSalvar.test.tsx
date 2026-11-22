@@ -157,6 +157,66 @@ describe('Vínculos Societários — submit aninhado e stale closure', () => {
 
     expect(screen.getByText('Trifour Holding SA')).toBeDefined()
     fireEvent.click(screen.getByTitle('Remover este vínculo'))
+
+    // 1º clique: só abre a confirmação — nada sai da lista ainda
+    expect(screen.getByText(/Remover "Trifour Holding SA" da lista/i)).toBeDefined()
+    expect(listaAtual).toHaveLength(1)
+
+    // Cancelar: a lista permanece intacta
+    fireEvent.click(screen.getByText(/Cancelar/))
+    expect(listaAtual).toHaveLength(1)
+
+    // 2º clique em Confirmar: remove o item do estado (e o hook persiste)
+    fireEvent.click(screen.getByTitle('Remover este vínculo'))
+    fireEvent.click(screen.getByText(/Confirmar/))
+    expect(listaAtual).toHaveLength(0)
+    expect(onSubmitPagina).not.toHaveBeenCalled()
+  })
+
+  it('lixo e botões de confirmação NÃO submetem o form da página (recidiva v0.0.406/v0.0.411)', () => {
+    const onSubmitPagina = vi.fn()
+    const vinculoExistente = {
+      id: 'vinc_2',
+      nomeEmpresa: 'Bravo IT',
+      papelCliente: 'socio_pf',
+      percentualParticipacao: 10,
+      exerceAdministracao: true,
+      regimeEmpresa: 'Simples Nacional',
+      faturamentoAnual: 100000,
+      excecaoLegal: false,
+      dataCadastro: new Date().toISOString(),
+    }
+    let listaAtual: any[] = [vinculoExistente]
+
+    const { rerender } = render(
+      <form data-testid="form-pagina" onSubmit={onSubmitPagina}>
+        <SecaoVinculosSocietarios
+          vinculos={listaAtual}
+          regimeAtual="Simples Nacional"
+          faturamentoMensalProprio={100000}
+          onChangeVinculos={(novos) => {
+            listaAtual = novos
+            rerender(
+              <form data-testid="form-pagina" onSubmit={onSubmitPagina}>
+                <SecaoVinculosSocietarios
+                  vinculos={listaAtual}
+                  regimeAtual="Simples Nacional"
+                  faturamentoMensalProprio={100000}
+                  onChangeVinculos={(n) => {
+                    listaAtual = n
+                  }}
+                />
+              </form>,
+            )
+          }}
+        />
+      </form>,
+    )
+
+    // Primeira confirmação: lixeira → Confirmar
+    fireEvent.click(screen.getByTitle('Remover este vínculo'))
+    fireEvent.click(screen.getByText(/Confirmar/))
+
     expect(listaAtual).toHaveLength(0)
     expect(onSubmitPagina).not.toHaveBeenCalled()
   })
