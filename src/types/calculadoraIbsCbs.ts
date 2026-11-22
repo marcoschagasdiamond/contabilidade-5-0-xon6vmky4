@@ -743,7 +743,23 @@ export const LISTA_UFS_ICMS: ItemUfIcms[] = [
   { uf: 'TO', nome: 'Tocantins', aliquotaInternaPadrao: 20 },
 ]
 
-export type AnoTransicaoIbsCbs = 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+export type AnoTransicaoIbsCbs =
+  | 'atual'
+  | 2026
+  | 2027
+  | 2028
+  | 2029
+  | 2030
+  | 2031
+  | 2032
+  | 2033
+  | 2034
+  | 2035
+  | 2036
+  | 2037
+  | 2038
+  | 2039
+  | 2040
 
 export type GrupoPresetSetor = 'geral' | 'reducao_60' | 'reducao_30' | 'aliquota_zero'
 
@@ -895,7 +911,47 @@ export const LISTA_ANOS_TRANSICAO: AnoTransicaoIbsCbs[] = [
   2031,
   2032,
   2033,
+  2034,
+  2035,
+  2036,
+  2037,
+  2038,
+  2039,
+  2040,
 ]
+
+/** Último ano com lógica de transição (fases intermediárias da LC 214/2025). */
+export const ANO_FIM_TRANSICAO = 2033
+
+/** A partir de 2034 a transição está concluída: IBS/CBS 100% das alíquotas definitivas e IS pleno. */
+export const isAnoPosTransicao = (ano: string | number | undefined | null): boolean =>
+  ano !== undefined && ano !== null && ano !== 'atual' && Number(ano) >= 2034
+
+/**
+ * Fases sintéticas para os anos pós-transição (2034–2040). A partir de 2034 a
+ * transição está CONCLUÍDA: mesma base de cálculo do ano 2033 (IVA Dual integral,
+ * CBS 8,80% + IBS 17,70%, IS pleno), sem fases intermediárias de redução.
+ * Gerado a partir do ano 2033 — NÃO substitui a entrada de 2033 no cronograma.
+ */
+export const obterFaseAnoPosTransicao = (ano: number): DadosFaseTransicao => {
+  const fase2033 = CRONOGRAMA_FASES_TRANSICAO[2033]
+  return {
+    ano: ano as AnoTransicaoIbsCbs,
+    fase: `Regime definitivo — 100% IBS/CBS (${ano})`,
+    subtitulo: fase2033.subtitulo,
+    aliquotaCbs: fase2033.aliquotaCbs,
+    aliquotaIbs: fase2033.aliquotaIbs,
+    totalIvaDual: fase2033.totalIvaDual,
+    etiquetaOrigem: `LC 214/2025 · regime definitivo · ${ano}`,
+    baseLegal: 'LC 214/2025 art. 130 (transição concluída — IVA Dual integral e IS pleno)',
+  }
+}
+
+/** Acesso unificado ao cronograma: 2026–2033 do mapa legal + 2034–2040 gerados. */
+export const obterFaseTransicaoPorAno = (ano: AnoTransicaoIbsCbs): DadosFaseTransicao | undefined =>
+  typeof ano === 'number' && ano >= 2034
+    ? obterFaseAnoPosTransicao(ano)
+    : CRONOGRAMA_FASES_TRANSICAO[ano]
 
 /**
  * Constante oficial do tratamento do ano 2026 — Fase de Teste Operacional

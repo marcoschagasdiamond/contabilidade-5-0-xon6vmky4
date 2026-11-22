@@ -19,6 +19,8 @@ import {
   PresetSetorIbsCbs,
   CRONOGRAMA_FASES_TRANSICAO,
   LISTA_ANOS_TRANSICAO,
+  obterFaseTransicaoPorAno,
+  isAnoPosTransicao,
   PRESETS_SETORES_LC214,
   RAMOS_PRINCIPAIS_ATIVOS,
   SUBATIVIDADES_AGRONEGOCIO,
@@ -446,7 +448,8 @@ export default function Modulo1Configuracoes({
                 </SelectTrigger>
                 <SelectContent className="max-h-80">
                   {LISTA_ANOS_TRANSICAO.map((ano) => {
-                    const dados = CRONOGRAMA_FASES_TRANSICAO[ano]
+                    const dados = obterFaseTransicaoPorAno(ano)
+                    if (!dados) return null
                     const rotuloPrincipal =
                       ano === 'atual'
                         ? 'Ano atual (sistema atual) • Pré-reforma (0,00% IBS/CBS)'
@@ -467,9 +470,14 @@ export default function Modulo1Configuracoes({
                 </SelectContent>
               </Select>
               <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
-                <span>Fase selecionada: {CRONOGRAMA_FASES_TRANSICAO[anoAtual]?.fase}</span>
+                <span>Fase selecionada: {obterFaseTransicaoPorAno(anoAtual)?.fase}</span>
+                {isAnoPosTransicao(anoAtual) && (
+                  <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-bold text-[10px] px-2 py-0.5 border-none shadow-sm">
+                    Regime definitivo — 100% IBS/CBS
+                  </Badge>
+                )}
                 <span className="font-mono font-bold text-[#07132B]">
-                  Total IBS/CBS: {CRONOGRAMA_FASES_TRANSICAO[anoAtual]?.totalIvaDual.toFixed(2)}%
+                  Total IBS/CBS: {obterFaseTransicaoPorAno(anoAtual)?.totalIvaDual.toFixed(2)}%
                 </span>
               </div>
             </div>

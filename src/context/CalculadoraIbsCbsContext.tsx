@@ -38,9 +38,12 @@ import {
   CRONOGRAMA_FASES_TRANSICAO,
   PRESETS_SETORES_LC214,
   obterGrupoRegimeOperacao,
+  obterFaseTransicaoPorAno,
+  LISTA_ANOS_TRANSICAO,
   TEXTO_FASE_TESTE_2026,
   isAno2026,
   isAno2026OuAtual,
+  isAnoPosTransicao,
 } from '@/types/calculadoraIbsCbs'
 
 export { TEXTO_FASE_TESTE_2026, isAno2026, isAno2026OuAtual }
@@ -1045,7 +1048,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   // Preenchimento Assistido: Ano da transição ('atual' | 2026–2033)
   const aplicarAnoTransicao = useCallback(
     (ano: AnoTransicaoIbsCbs) => {
-      const dadosAno = CRONOGRAMA_FASES_TRANSICAO[ano]
+      const dadosAno = obterFaseTransicaoPorAno(ano)
       if (!dadosAno) return
 
       // Se tiver alíquota oficial na coleção parametros_tributarios para o ano selecionado, integra como valor oficial/proposto
@@ -3321,10 +3324,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   }, [valorEstoqueVirada, config.cbsPadrao, setorTransicao])
 
   // ==========================================
-  // CÁLCULO MÓDULO 5 (Transição 2026 a 2033) COM CRÉDITO DE ESTOQUE
+  // CÁLCULO MÓDULO 5 (Transição 2026 a 2040 — 2033 é o último ano com fase
+  // intermediária; 2034+ é regime definitivo, IVA Dual integral) COM CRÉDITO DE ESTOQUE
   // ==========================================
   const resultadoTransicao = useMemo(() => {
-    const anos: AnoTransicaoIbsCbs[] = ['atual', 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
+    const anos: AnoTransicaoIbsCbs[] = LISTA_ANOS_TRANSICAO
     const fatAnual = Math.max(0, faturamentoAnualProjetado)
 
     const fatorReducaoTransicao = Math.max(
@@ -3343,161 +3347,171 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
             : config.lucroRealPis + config.lucroRealCofins + config.lucroRealIcms // ~27,25% nominal (comércio, agro, food, misto)
     const impostoAtual = (fatAnual * aliqAtualEstimada) / 100
 
-    return anos.map((ano) => {
-      const dadosFase = CRONOGRAMA_FASES_TRANSICAO[ano]
-      const fase = dadosFase.fase
-      const aliqCbsBase = dadosFase.aliquotaCbs
-      const aliqIbsBase = dadosFase.aliquotaIbs
+    return anos
+      .map((ano) => {
+        const dadosFase = obterFaseTransicaoPorAno(ano)
+        if (!dadosFase) return null
+        const fase = dadosFase.fase
+        const aliqCbsBase = dadosFase.aliquotaCbs
+        const aliqIbsBase = dadosFase.aliquotaIbs
 
-      let aliqCbs = aliqCbsBase
-      let aliqIbs = aliqIbsBase
-      let statusIcms = ''
-      let statusIss = ''
-      let statusIpi = ''
-      let statusPisCofins = ''
-      let alertaCritico: string | undefined = undefined
+        let aliqCbs = aliqCbsBase
+        let aliqIbs = aliqIbsBase
+        let statusIcms = ''
+        let statusIss = ''
+        let statusIpi = ''
+        let statusPisCofins = ''
+        let alertaCritico: string | undefined = undefined
 
-      if (ano === 'atual') {
-        statusIcms = '100% Vigente'
-        statusIss = '100% Vigente'
-        statusIpi = '100% Vigente'
-        statusPisCofins = '100% Vigente'
-      } else if (ano === 2026) {
-        statusIcms = '100% Vigente'
-        statusIss = '100% Vigente'
-        statusIpi = '100% Vigente'
-        statusPisCofins = '100% Vigente (CBS compensável)'
-      } else if (ano === 2027) {
-        statusIcms = '100% Vigente'
-        statusIss = '100% Vigente'
-        statusIpi = 'Alíquota Zero (exceto ZFM)'
-        statusPisCofins = 'EXTINTOS (Substituídos por CBS)'
-        alertaCritico =
-          'Ano Crítico: Extinção definitiva de PIS/COFINS e início da CBS com crédito amplo e Imposto Seletivo.'
-      } else if (ano === 2028) {
-        statusIcms = '100% Vigente'
-        statusIss = '100% Vigente'
-        statusIpi = 'Alíquota Zero'
-        statusPisCofins = 'Extintos'
-      } else if (ano === 2029) {
-        statusIcms = 'Reduzido para 90%'
-        statusIss = 'Reduzido para 90%'
-        statusIpi = 'Extinto'
-        statusPisCofins = 'Extintos'
-      } else if (ano === 2030) {
-        statusIcms = 'Reduzido para 80%'
-        statusIss = 'Reduzido para 80%'
-        statusIpi = 'Extinto'
-        statusPisCofins = 'Extintos'
-      } else if (ano === 2031) {
-        statusIcms = 'Reduzido para 70%'
-        statusIss = 'Reduzido para 70%'
-        statusIpi = 'Extinto'
-        statusPisCofins = 'Extintos'
-      } else if (ano === 2032) {
-        statusIcms = 'Reduzido para 60%'
-        statusIss = 'Reduzido para 60%'
-        statusIpi = 'Extinto'
-        statusPisCofins = 'Extintos'
-      } else {
-        // 2033
-        statusIcms = 'EXTINTO'
-        statusIss = 'EXTINTO'
-        statusIpi = 'EXTINTO'
-        statusPisCofins = 'EXTINTOS'
-        alertaCritico =
-          'Ano Crítico: Modelo pleno definitivo. ICMS e ISS 100% extintos; apuração e split payment 100% unificados.'
-      }
-
-      // Cálculo de alíquota efetiva ponderada da transição
-      let aliqEfetivaAno = aliqCbs + aliqIbs
-      if (ano === 'atual' || ano === 2026) {
-        aliqEfetivaAno = aliqAtualEstimada // Em 2026 o teste é compensável sem ônus; no atual é a própria carga vigente
-      } else if (ano === 2027 || ano === 2028) {
-        // CBS escalonada com redução do regime especial + ICMS/ISS integral remanescente
-        aliqCbs = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
-        aliqIbs = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
-        const remanescente =
-          setorTransicao === 'servico' || setorTransicao === 'construcao_civil'
-            ? config.lucroPresumidoIss
-            : setorTransicao === 'locacao_bens'
-              ? 0
-              : config.lucroRealIcms
-        aliqEfetivaAno = aliqCbs + remanescente
-      } else if (typeof ano === 'number' && ano >= 2029 && ano <= 2032) {
-        aliqCbs = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
-        aliqIbs = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
-        const fatorIbs = (ano - 2028) * 0.1 // 0.1, 0.2, 0.3, 0.4
-        const fatorAntigo = 1 - fatorIbs
-        const remanescente =
-          (setorTransicao === 'servico' || setorTransicao === 'construcao_civil'
-            ? config.lucroPresumidoIss
-            : setorTransicao === 'locacao_bens'
-              ? 0
-              : config.lucroRealIcms) * fatorAntigo
-        aliqEfetivaAno = (aliqCbsBase + aliqIbsBase) * fatorReducaoTransicao + remanescente
-      } else {
-        aliqCbs = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
-        aliqIbs = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
-        aliqEfetivaAno = config.totalIvaDual * fatorReducaoTransicao
-      }
-
-      // Fase 2: Modulação da trajetória conforme o Regime Especial Atual informado
-      // Regimes especiais (monofasico, st, zfm, ret):
-      // - monofasico / st: carga de PIS/COFINS e ICMS concentrada na origem; na transição há diluição gradual
-      //   (fator modulador suave: zfm desonera IPI/PIS/COFINS preservando incentivo regional; ret mantém alíquota unificada de 4%)
-      // Neutralidade: regimeEspecialAtual === 'nenhum' mantém exatamente 1.0 (idêntico ao legado)
-      if (regimeEspecialAtual === 'zona_franca_manaus') {
-        // Zona Franca de Manaus: manutenção do tratamento favorecido constitucional (art. 92-B)
-        // Reduz a alíquota em transição de IBS/CBS em 20% pela manutenção dos créditos de incentivo regional
-        if (typeof ano === 'number' && ano >= 2027) {
-          aliqEfetivaAno = Number((aliqEfetivaAno * 0.8).toFixed(2))
+        if (ano === 'atual') {
+          statusIcms = '100% Vigente'
+          statusIss = '100% Vigente'
+          statusIpi = '100% Vigente'
+          statusPisCofins = '100% Vigente'
+        } else if (ano === 2026) {
+          statusIcms = '100% Vigente'
+          statusIss = '100% Vigente'
+          statusIpi = '100% Vigente'
+          statusPisCofins = '100% Vigente (CBS compensável)'
+        } else if (ano === 2027) {
+          statusIcms = '100% Vigente'
+          statusIss = '100% Vigente'
+          statusIpi = 'Alíquota Zero (exceto ZFM)'
+          statusPisCofins = 'EXTINTOS (Substituídos por CBS)'
+          alertaCritico =
+            'Ano Crítico: Extinção definitiva de PIS/COFINS e início da CBS com crédito amplo e Imposto Seletivo.'
+        } else if (ano === 2028) {
+          statusIcms = '100% Vigente'
+          statusIss = '100% Vigente'
+          statusIpi = 'Alíquota Zero'
+          statusPisCofins = 'Extintos'
+        } else if (ano === 2029) {
+          statusIcms = 'Reduzido para 90%'
+          statusIss = 'Reduzido para 90%'
+          statusIpi = 'Extinto'
+          statusPisCofins = 'Extintos'
+        } else if (ano === 2030) {
+          statusIcms = 'Reduzido para 80%'
+          statusIss = 'Reduzido para 80%'
+          statusIpi = 'Extinto'
+          statusPisCofins = 'Extintos'
+        } else if (ano === 2031) {
+          statusIcms = 'Reduzido para 70%'
+          statusIss = 'Reduzido para 70%'
+          statusIpi = 'Extinto'
+          statusPisCofins = 'Extintos'
+        } else if (ano === 2032) {
+          statusIcms = 'Reduzido para 60%'
+          statusIss = 'Reduzido para 60%'
+          statusIpi = 'Extinto'
+          statusPisCofins = 'Extintos'
+        } else if (isAnoPosTransicao(ano)) {
+          // 2034–2040: transição CONCLUÍDA — modelo pleno definitivo, sem fases intermediárias.
+          statusIcms = 'EXTINTO'
+          statusIss = 'EXTINTO'
+          statusIpi = 'EXTINTO'
+          statusPisCofins = 'EXTINTOS'
+        } else {
+          // 2033
+          statusIcms = 'EXTINTO'
+          statusIss = 'EXTINTO'
+          statusIpi = 'EXTINTO'
+          statusPisCofins = 'EXTINTOS'
+          alertaCritico =
+            'Ano Crítico: Modelo pleno definitivo. ICMS e ISS 100% extintos; apuração e split payment 100% unificados.'
         }
-      } else if (regimeEspecialAtual === 'ret_permuta') {
-        // Regime Especial de Tributação (RET Construção Civil - 4% unificado)
+
+        // Cálculo de alíquota efetiva ponderada da transição
+        let aliqEfetivaAno = aliqCbs + aliqIbs
         if (ano === 'atual' || ano === 2026) {
-          aliqEfetivaAno = Math.min(aliqEfetivaAno, 4.0)
+          aliqEfetivaAno = aliqAtualEstimada // Em 2026 o teste é compensável sem ônus; no atual é a própria carga vigente
+        } else if (ano === 2027 || ano === 2028) {
+          // CBS escalonada com redução do regime especial + ICMS/ISS integral remanescente
+          aliqCbs = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
+          aliqIbs = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
+          const remanescente =
+            setorTransicao === 'servico' || setorTransicao === 'construcao_civil'
+              ? config.lucroPresumidoIss
+              : setorTransicao === 'locacao_bens'
+                ? 0
+                : config.lucroRealIcms
+          aliqEfetivaAno = aliqCbs + remanescente
+        } else if (typeof ano === 'number' && ano >= 2029 && ano <= 2032) {
+          aliqCbs = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
+          aliqIbs = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
+          const fatorIbs = (ano - 2028) * 0.1 // 0.1, 0.2, 0.3, 0.4
+          const fatorAntigo = 1 - fatorIbs
+          const remanescente =
+            (setorTransicao === 'servico' || setorTransicao === 'construcao_civil'
+              ? config.lucroPresumidoIss
+              : setorTransicao === 'locacao_bens'
+                ? 0
+                : config.lucroRealIcms) * fatorAntigo
+          aliqEfetivaAno = (aliqCbsBase + aliqIbsBase) * fatorReducaoTransicao + remanescente
+        } else {
+          // 2033 e 2034+ (regime definitivo): IVA Dual integral — mesma fórmula, sem fases intermediárias
+          aliqCbs = Number((aliqCbsBase * fatorReducaoTransicao).toFixed(2))
+          aliqIbs = Number((aliqIbsBase * fatorReducaoTransicao).toFixed(2))
+          aliqEfetivaAno = config.totalIvaDual * fatorReducaoTransicao
         }
-      } else if (
-        regimeEspecialAtual === 'monofasico' ||
-        regimeEspecialAtual === 'substituicao_tributaria'
-      ) {
-        // Monofásico / Substituição Tributária: alíquota concentrada na cadeia
-        // Durante a transição, a transição para CBS/IBS unificado é gradual
-        if (ano === 2027 || ano === 2028) {
-          aliqEfetivaAno = Number((aliqEfetivaAno * 0.95).toFixed(2))
+
+        // Fase 2: Modulação da trajetória conforme o Regime Especial Atual informado
+        // Regimes especiais (monofasico, st, zfm, ret):
+        // - monofasico / st: carga de PIS/COFINS e ICMS concentrada na origem; na transição há diluição gradual
+        //   (fator modulador suave: zfm desonera IPI/PIS/COFINS preservando incentivo regional; ret mantém alíquota unificada de 4%)
+        // Neutralidade: regimeEspecialAtual === 'nenhum' mantém exatamente 1.0 (idêntico ao legado)
+        if (regimeEspecialAtual === 'zona_franca_manaus') {
+          // Zona Franca de Manaus: manutenção do tratamento favorecido constitucional (art. 92-B)
+          // Reduz a alíquota em transição de IBS/CBS em 20% pela manutenção dos créditos de incentivo regional
+          if (typeof ano === 'number' && ano >= 2027) {
+            aliqEfetivaAno = Number((aliqEfetivaAno * 0.8).toFixed(2))
+          }
+        } else if (regimeEspecialAtual === 'ret_permuta') {
+          // Regime Especial de Tributação (RET Construção Civil - 4% unificado)
+          if (ano === 'atual' || ano === 2026) {
+            aliqEfetivaAno = Math.min(aliqEfetivaAno, 4.0)
+          }
+        } else if (
+          regimeEspecialAtual === 'monofasico' ||
+          regimeEspecialAtual === 'substituicao_tributaria'
+        ) {
+          // Monofásico / Substituição Tributária: alíquota concentrada na cadeia
+          // Durante a transição, a transição para CBS/IBS unificado é gradual
+          if (ano === 2027 || ano === 2028) {
+            aliqEfetivaAno = Number((aliqEfetivaAno * 0.95).toFixed(2))
+          }
         }
-      }
 
-      const impostoEstimado = (fatAnual * aliqEfetivaAno) / 100
-      const diferencaAno = ano === 'atual' ? 0 : impostoEstimado - impostoAtual
+        const impostoEstimado = (fatAnual * aliqEfetivaAno) / 100
+        const diferencaAno = ano === 'atual' ? 0 : impostoEstimado - impostoAtual
 
-      // Etapa 5: Crédito presumido de estoque abatido no primeiro ano de CBS plena (2027)
-      const creditoEstoqueAno =
-        ano === 2027 && setorTransicao !== 'servico' ? resultadoEstoque.economiaAno1 : 0
-      // Fase 2: Saldo credor acumulado também é abatido no primeiro ano de transição plena (2027)
-      const saldoCredorAno = ano === 2027 ? Math.max(0, saldoCredorAcumulado || 0) : 0
-      const abatimentoAno1 = creditoEstoqueAno + saldoCredorAno
-      const impostoComCreditoEstoque = Math.max(0, impostoEstimado - abatimentoAno1)
+        // Etapa 5: Crédito presumido de estoque abatido no primeiro ano de CBS plena (2027)
+        const creditoEstoqueAno =
+          ano === 2027 && setorTransicao !== 'servico' ? resultadoEstoque.economiaAno1 : 0
+        // Fase 2: Saldo credor acumulado também é abatido no primeiro ano de transição plena (2027)
+        const saldoCredorAno = ano === 2027 ? Math.max(0, saldoCredorAcumulado || 0) : 0
+        const abatimentoAno1 = creditoEstoqueAno + saldoCredorAno
+        const impostoComCreditoEstoque = Math.max(0, impostoEstimado - abatimentoAno1)
 
-      return {
-        ano,
-        fase,
-        aliquotaCbs: aliqCbs,
-        aliquotaIbs: aliqIbs,
-        statusIcms,
-        statusIss,
-        statusIpi,
-        statusPisCofins,
-        impostoEstimado,
-        aliquotaEfetivaTotal: Number(aliqEfetivaAno.toFixed(2)),
-        impostoCenarioAtual: impostoAtual,
-        diferencaAno,
-        creditoEstoqueAno,
-        impostoComCreditoEstoque,
-        alertaCritico,
-      }
-    })
+        return {
+          ano,
+          fase,
+          aliquotaCbs: aliqCbs,
+          aliquotaIbs: aliqIbs,
+          statusIcms,
+          statusIss,
+          statusIpi,
+          statusPisCofins,
+          impostoEstimado,
+          aliquotaEfetivaTotal: Number(aliqEfetivaAno.toFixed(2)),
+          impostoCenarioAtual: impostoAtual,
+          diferencaAno,
+          creditoEstoqueAno,
+          impostoComCreditoEstoque,
+          alertaCritico,
+        }
+      })
+      .filter((t): t is NonNullable<typeof t> => t !== null)
   }, [
     config,
     faturamentoAnualProjetado,

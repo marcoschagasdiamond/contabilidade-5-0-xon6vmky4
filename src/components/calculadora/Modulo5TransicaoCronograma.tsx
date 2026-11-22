@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
-import { TipoAtividade, PRESETS_SETORES_LC214 } from '@/types/calculadoraIbsCbs'
+import { TipoAtividade, PRESETS_SETORES_LC214, isAnoPosTransicao } from '@/types/calculadoraIbsCbs'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -469,6 +469,7 @@ export default function Modulo5TransicaoCronograma({
           {resultadoTransicao.map((item) => {
             const isSelected = item.ano === anoSelecionado
             const isCritical = item.ano === 2027 || item.ano === 2033
+            const isDefinitivo = isAnoPosTransicao(item.ano)
 
             return (
               <button
@@ -481,6 +482,11 @@ export default function Modulo5TransicaoCronograma({
                     : 'bg-white text-slate-700 border-slate-200 hover:border-[#D4AF37]/50 hover:bg-slate-50'
                 }`}
               >
+                {isDefinitivo && (
+                  <span className="absolute -top-2 px-1.5 py-0.2 text-[9px] font-bold uppercase rounded-full bg-emerald-600 text-white">
+                    Definitivo
+                  </span>
+                )}
                 {isCritical && (
                   <span className="absolute -top-2 px-1.5 py-0.2 text-[9px] font-bold uppercase rounded-full bg-amber-500 text-slate-950">
                     Crítico
@@ -501,6 +507,7 @@ export default function Modulo5TransicaoCronograma({
                   {item.ano === 2031 && 'IBS 30%'}
                   {item.ano === 2032 && 'IBS 40%'}
                   {item.ano === 2033 && 'Pleno 100%'}
+                  {isAnoPosTransicao(item.ano) && 'Definitivo 100%'}
                 </span>
                 <span
                   className={`text-xs font-mono font-bold mt-1 ${
@@ -543,6 +550,24 @@ export default function Modulo5TransicaoCronograma({
         </div>
 
         <CardContent className="p-6 space-y-6">
+          {/* Indicador de cenário pós-transição (2034–2040): regime definitivo */}
+          {isAnoPosTransicao(anoAtualDetalhe.ano) && (
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-sm font-bold text-emerald-950">
+                  Regime definitivo — 100% IBS/CBS ({anoAtualDetalhe.ano})
+                </strong>
+                <p className="text-xs mt-0.5 leading-relaxed">
+                  Cenário pós-transição: a Reforma Tributária está concluída. IBS e CBS incidem em
+                  100% das alíquotas definitivas (CBS{' '}
+                  {formatarPorcentagem(anoAtualDetalhe.aliquotaCbs)} + IBS{' '}
+                  {formatarPorcentagem(anoAtualDetalhe.aliquotaIbs)}), Imposto Seletivo pleno, sem
+                  fases intermediárias de redução. ICMS, ISS, IPI, PIS e COFINS permanecem extintos.
+                </p>
+              </div>
+            </div>
+          )}
           {/* Alerta de Anos Críticos Conforme Especificação */}
           {anoAtualDetalhe.alertaCritico && (
             <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 flex items-start gap-3">
@@ -637,7 +662,7 @@ export default function Modulo5TransicaoCronograma({
           <div>
             <h3 className="font-heading font-bold text-lg text-[#07132B] flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-[#D4AF37]" />
-              Evolução da Alíquota Efetiva na Transição (2026–2033)
+              Evolução da Alíquota Efetiva na Transição (2026–2040)
             </h3>
             <p className="text-xs text-slate-500">
               {isPerfilServico

@@ -6,6 +6,8 @@ import {
   AnoTransicaoIbsCbs,
   LISTA_ANOS_TRANSICAO,
   CRONOGRAMA_FASES_TRANSICAO,
+  obterFaseTransicaoPorAno,
+  isAnoPosTransicao,
   PRESETS_SETORES_LC214,
   obterInfoRegimeOperacao,
 } from '@/types/calculadoraIbsCbs'
@@ -22,6 +24,7 @@ import {
 import { Link } from 'react-router-dom'
 import { Calculator, RotateCcw, Sparkles, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { BadgeOrigemPropagada } from '@/components/calculadora/BadgeOrigemPropagada'
 import { BotaoRetornarDadosIniciais } from '@/components/common/BotaoRetornarDadosIniciais'
 import {
@@ -248,7 +251,8 @@ export default function Modulo2CalculadoraSimples({
             </SelectTrigger>
             <SelectContent className="max-h-80">
               {LISTA_ANOS_TRANSICAO.map((ano) => {
-                const dados = CRONOGRAMA_FASES_TRANSICAO[ano]
+                const dados = obterFaseTransicaoPorAno(ano)
+                if (!dados) return null
                 const rotulo =
                   ano === 'atual'
                     ? 'Ano atual (sistema atual) • Pré-reforma'
@@ -270,8 +274,13 @@ export default function Modulo2CalculadoraSimples({
             <span className="truncate">
               {anoOperacao === 'atual'
                 ? 'Regime atual (0,00% IBS/CBS)'
-                : `CBS ${CRONOGRAMA_FASES_TRANSICAO[anoOperacao]?.aliquotaCbs.toFixed(2)}% + IBS ${CRONOGRAMA_FASES_TRANSICAO[anoOperacao]?.aliquotaIbs.toFixed(2)}%`}
+                : `CBS ${obterFaseTransicaoPorAno(anoOperacao)?.aliquotaCbs.toFixed(2)}% + IBS ${obterFaseTransicaoPorAno(anoOperacao)?.aliquotaIbs.toFixed(2)}%`}
             </span>
+            {isAnoPosTransicao(anoOperacao) && (
+              <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-bold text-[10px] px-2 py-0.5 border-none shadow-sm">
+                Regime definitivo — 100% IBS/CBS
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -666,8 +675,8 @@ export default function Modulo2CalculadoraSimples({
         const aliquotaSimplesMediaModulo2 =
           obterAliquotasCreditoPorAno(anoNumModulo2).aliquotaSimplesMedia * 100
         const aliquotaCheiaModulo2 =
-          typeof anoOperacao === 'number' && CRONOGRAMA_FASES_TRANSICAO[anoOperacao]
-            ? CRONOGRAMA_FASES_TRANSICAO[anoOperacao].totalIvaDual
+          typeof anoOperacao === 'number'
+            ? (obterFaseTransicaoPorAno(anoOperacao)?.totalIvaDual ?? config.totalIvaDual)
             : config.totalIvaDual
 
         const pctFornecSimplesModulo2 = Math.min(
