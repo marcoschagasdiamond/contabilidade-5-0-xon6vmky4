@@ -372,10 +372,11 @@ export default function DadosEmpresa() {
   // empresa ATIVA (clientes_empresas) com debounce curto assim que alterados,
   // sem depender do submit do formulário inteiro. Falha → toast com o motivo
   // e botão 'Tentar novamente' (nunca silêncio). Não altera regras de negócio.
-  const { gravando: gravandoVinculos, marcarHidratado } = usePersistenciaVinculosSocietarios(
-    formData.vinculosSocietarios,
-    empresaIdParaRascunho,
-  )
+  const {
+    gravando: gravandoVinculos,
+    marcarHidratado,
+    historicoVinculos,
+  } = usePersistenciaVinculosSocietarios(formData.vinculosSocietarios, empresaIdParaRascunho)
   // Hidratação vinda do BANCO (fonte da verdade): quando o perfil sincronizado
   // do contexto traz vínculos IGUAIS aos que a hidratação aplicou, marca como
   // já gravados para o debounce não regravar o que já está no registro. Uma
@@ -3843,6 +3844,7 @@ export default function DadosEmpresa() {
                   formData.nomeEmpresa || formData.dadosCnpjConsulta?.razaoSocial || undefined
                 }
                 empresaCnpj={formData.cnpj || undefined}
+                historicoVinculos={historicoVinculos.length > 0 ? historicoVinculos : undefined}
                 onChangeVinculos={(novosVinculos: VinculoSocietario[]) => {
                   atualizarCampo((prev) => ({
                     ...prev,

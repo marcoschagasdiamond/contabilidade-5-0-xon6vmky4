@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import pb from '@/lib/pocketbase/client'
 import { useToast } from '@/hooks/use-toast'
 import { ToastAction } from '@/components/ui/toast'
@@ -11,11 +11,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useDadosEmpresa } from '@/context/DadosEmpresaContext'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import type { VinculoSocietario } from '@/types/dadosEmpresa'
-import {
-  criarRegistroHistoricoVinculo,
-  anexarRegistroHistoricoVinculo,
-  normalizarHistoricoVinculos,
-} from '@/lib/historicoVinculos'
+import { normalizarHistoricoVinculos } from '@/lib/historicoVinculos'
 /**
  * Persistência imediata dos Vínculos Societários em clientes_empresas.
  *
@@ -39,6 +35,14 @@ import {
  * Falha de gravação NUNCA é silenciosa: toast de erro com o motivo
  * (getErrorMessage) + ação "Tentar novamente". Não altera regras de negócio
  * dos vínculos — só persistência e feedback.
+ *
+ * AUDITORIA ('Histórico de alterações'): a entrada é gravada pelo pb_hook
+ * SERVIDOR (pocketbase/hooks/historico_vinculos.js), que compara o campo
+ * vinculos_societarios antes/depois no ONTO e appenda em historico_vinculos —
+ * cobre qualquer via de gravação e não conta duas vezes. Este hook NÃO grava
+ * auditoria no client: ele só devolve o histórico consolidado do banco
+ * (historicoVinculos) e um contador que muda a cada gravação confirmada
+ * (gravacoesCount) para a página refrescar o painel GE.
  */
 
 const DEBOUNCE_MS = 800
@@ -49,37 +53,10 @@ interface EstadoVinculos {
   tentarNovamente: () => void
   /** Marca a lista atual como já vinda do banco (hidratação) para não regravar. */
   marcarHidratado: (serializado: string) => void
-}
-
-/**
- * Delta de auditoria entre a lista que o BANCO confirmou (antes) e a gravada
- * (depois) — nunca entre estado local. Usa apenas dados validados do registro.
- */
-function calcularAuditoria(
-  antes: any[],
-  depois: any[],
-  usuario: { id: string; nome: string },
-): any[] {
-  const porIdAntes = new Map(antes.map((v) => [String(v?.id), v]))
-  const porIdDepois = new Map(depois.map((v) => [String(v?.id), v]))
-  const registros: any[] = []
-
-  for (const [id, vinculo] of porIdDepois) {
-    if (!porIdAntes.has(id)) {
-      registros.push(criarRegistroHistoricoVinculo(vinculo, 'vinculo_adicionado', usuario))
-    }
-  }
-  for (const [id, vinculo] of porIdAntes) {
-    if (!porIdDepois.has(id)) {
-      registros.push(criarRegistroHistoricoVinculo(vinculo, 'vinculo_removido', usuario))
-    }
-  }
-  return registros
-}
-
-/** Nome de exibição do usuário logado (nome || email || id). */
-function nomeUsuario(user: any): string {
-  return user?.name || user?.nome || user?.email || user?.id || 'Desconhecido'
+  /** Histórico de auditoria consolidado do banco (gravado pelo pb_hook server-side). */
+  historicoVinculos: any[]
+  /** Incrementa a cada gravação confirmada — sinal para a página refrescar o histórico. */
+  gravacoesCount: number
 }
 
 /** Lê a lista de vínculos que o banco de fato retornou no campo. */
@@ -105,13 +82,11 @@ export function usePersistenciaVinculosSocietarios(
   const { user, isAuthenticated, isMaster, isAdmin, nivelAcesso } = useAuth()
   const { empresaVinculadaId: ctxEmpresaId } = useDadosEmpresa()
   const { clienteAtivo } = useClienteAtivo()
-  const usuarioAuditoria = useMemo(
-    () => ({ id: user?.id || '', nome: nomeUsuario(user) }),
-    [user?.id, user],
-  )
 
   const [gravando, setGravando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [historicoVinculos, setHistoricoVinculos] = useState<any[]>([])
+  const [gravacoesCount, setGravacoesCount] = useState(0)
 
   const isAnalista =
     !!isMaster ||
@@ -240,24 +215,19 @@ export function usePersistenciaVinculosSocietarios(
           )
         }
 
-        // AUDITORIA (só chega aqui se a gravação foi 100% confirmada):
-        // acrescenta um registro por vínculo adicionado/removido nesta escrita.
-        if (usuarioAuditoria.id) {
-          try {
-            const novosRegistros = calcularAuditoria(antesNoBanco, gravados, usuarioAuditoria)
-            if (novosRegistros.length > 0) {
-              const historicoAtualizado = anexarRegistroHistoricoVinculo(
-                normalizarHistoricoVinculos(rec2?.historico_vinculos ?? rec?.historico_vinculos),
-                novosRegistros,
-              )
-              await pb
-                .collection('clientes_empresas')
-                .update(empresaIdAlvo, { historico_vinculos: historicoAtualizado })
-            }
-          } catch (errAud) {
-            // Auditoria nunca derruba o fluxo de negócio — mas fica visível no console.
-            console.error('Falha ao gravar auditoria de vínculos (não bloqueia):', errAud)
-          }
+        // Auditoria: NADA aqui no client — o pb_hook server-side
+        // (pocketbase/hooks/historico_vinculos.js) appendou a entrada em
+        // historico_vinculos no MESMO update, com o delta real antes/depois.
+        // Refrescar a leitura do histórico para o painel GE não mostrar dado
+        // velho (uma busca só, sem segunda gravação — sem dupla contagem).
+        try {
+          const recAtualizado = await pb
+            .collection('clientes_empresas')
+            .getOne(empresaIdAlvo, { fields: 'historico_vinculos' })
+          setHistoricoVinculos(normalizarHistoricoVinculos(recAtualizado.historico_vinculos))
+          setGravacoesCount((c) => c + 1)
+        } catch {
+          /* refresh do histórico é best-effort; gravação já confirmada */
         }
 
         ultimoGravadoRef.current = serializado
@@ -294,7 +264,7 @@ export function usePersistenciaVinculosSocietarios(
         setGravando(false)
       }
     },
-    [toast, usuarioAuditoria],
+    [toast],
   )
 
   const tentarNovamente = useCallback(() => {
@@ -391,5 +361,5 @@ export function usePersistenciaVinculosSocietarios(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vinculos, empresaId, ctxEmpresaId, clienteAtivo, isAuthenticated, user?.id, isAnalista])
 
-  return { gravando, erro, tentarNovamente, marcarHidratado }
+  return { gravando, erro, tentarNovamente, marcarHidratado, historicoVinculos, gravacoesCount }
 }
