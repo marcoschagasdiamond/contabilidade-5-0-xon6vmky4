@@ -470,7 +470,7 @@ export default function DetalheCliente() {
       <div className="min-h-screen bg-slate-50 pt-28 pb-20 text-center space-y-4">
         <h2 className="text-xl font-bold text-[#07132B]">Cliente não encontrado</h2>
         <p className="text-xs text-slate-500">O cliente solicitado não existe ou foi removido.</p>
-        <Link to="/clientes">
+        <Link to="/carteira">
           <Button variant="outline" size="sm" className="text-xs">
             ← Voltar para Carteira de Clientes
           </Button>
@@ -486,7 +486,7 @@ export default function DetalheCliente() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-2 mb-3">
             <Link
-              to="/clientes"
+              to="/carteira"
               className="text-xs text-slate-400 hover:text-[#D4AF37] transition-colors"
             >
               ← Carteira de Clientes

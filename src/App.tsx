@@ -41,9 +41,8 @@ import MinhaConta from './pages/MinhaConta'
 import DadosEscritorio from './pages/DadosEscritorio'
 import Admin from './pages/Admin'
 import ValidacaoRtc from './pages/ValidacaoRtc'
-import Clientes from './pages/Clientes'
+import Carteira, { RedirecionarParaCarteira } from './pages/Carteira'
 import DetalheCliente from './pages/DetalheCliente'
-import Carteira from './pages/Carteira'
 import Crm from './pages/Crm'
 import FichaClienteCrm from './pages/FichaClienteCrm'
 import Metas from './pages/Metas'
@@ -393,11 +392,12 @@ const App = () => (
                     </AnalistaRoute>
                   }
                 />
+                {/* Rota antiga "Meus Clientes" — redireciona para a Carteira unificada */}
                 <Route
                   path="/clientes"
                   element={
                     <AnalistaRoute>
-                      <Clientes />
+                      <RedirecionarParaCarteira />
                     </AnalistaRoute>
                   }
                 />

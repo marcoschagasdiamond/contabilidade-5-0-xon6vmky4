@@ -459,12 +459,12 @@ export default function MinhaConta() {
                 </Link>
 
                 <Link
-                  to="/clientes"
+                  to="/carteira"
                   className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200 hover:border-[#D4AF37] transition-all group"
                 >
                   <div className="flex flex-col">
                     <span className="font-semibold text-slate-800 group-hover:text-[#07132B]">
-                      Meus Clientes
+                      Carteira de Clientes
                     </span>
                     <span className="text-[11px] text-slate-500">Fichas e dados cadastrais</span>
                   </div>

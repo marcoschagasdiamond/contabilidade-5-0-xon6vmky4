@@ -101,7 +101,7 @@ export function SeletorClienteAtivo({
             </Link>
           )}
           <Link
-            to="/clientes"
+            to="/carteira"
             className="text-slate-300 hover:text-white underline font-medium text-[11px] transition-colors"
           >
             Gerenciar Carteira ({clientesAtivosDropdown.length})

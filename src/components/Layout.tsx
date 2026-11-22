@@ -426,13 +426,7 @@ export default function Layout() {
                         >
                           Carteira de Clientes
                         </Link>
-                        <Link
-                          to="/clientes"
-                          onClick={() => setIsUserMenuOpen(false)}
-                          className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
-                        >
-                          Meus Clientes
-                        </Link>
+
                         <Link
                           to="/mercado-creditos"
                           onClick={() => setIsUserMenuOpen(false)}
@@ -649,13 +643,7 @@ export default function Layout() {
                       >
                         Carteira de Clientes
                       </Link>
-                      <Link
-                        to="/clientes"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="block py-2 px-3 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors font-medium"
-                      >
-                        Meus Clientes
-                      </Link>
+
                       <Link
                         to="/mercado-creditos"
                         onClick={() => setIsMobileMenuOpen(false)}
@@ -1098,16 +1086,8 @@ export default function Layout() {
                         to="/carteira"
                         className="text-slate-400 hover:text-[#D4AF37] transition-colors underline"
                       >
-                        Carteira Consolidada
+                        Carteira de Clientes
                       </Link>
-                      <span>•</span>
-                      <Link
-                        to="/clientes"
-                        className="text-slate-400 hover:text-[#D4AF37] transition-colors underline"
-                      >
-                        Clientes
-                      </Link>
-                      <span>•</span>
                     </>
                   )}
                   <Link
