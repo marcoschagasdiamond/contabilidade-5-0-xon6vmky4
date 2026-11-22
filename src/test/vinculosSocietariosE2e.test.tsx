@@ -208,4 +208,67 @@ describe('Vínculos Societários — E2E do fluxo real de persistência', () => 
     })
     expect(updateOriginal === null || true).toBe(true)
   })
+
+  it('clicar em Salvar Vínculo NÃO submete o formulário da página (aba não é resetada)', async () => {
+    const onSubmitPagina = vi.fn((e: React.FormEvent) => e.preventDefault())
+    let lista: any[] = []
+    const setLista = (n: any[]) => {
+      lista = n
+    }
+    function PaginaComSubmit() {
+      return (
+        <form data-testid="form-pagina" onSubmit={onSubmitPagina}>
+          <SecaoVinculosSocietarios
+            vinculos={lista}
+            regimeAtual="Simples Nacional"
+            faturamentoMensalProprio={2500000}
+            onChangeVinculos={setLista}
+          />
+        </form>
+      )
+    }
+    const { rerender } = render(<PaginaComSubmit />)
+    fireEvent.click(screen.getByText('Adicionar Vínculo'))
+    fireEvent.change(screen.getByLabelText(/Razão Social/i), {
+      target: { value: 'Inove Participações LTDA' },
+    })
+    fireEvent.click(screen.getByText('Salvar Vínculo'))
+    rerender(<PaginaComSubmit />)
+
+    expect(onSubmitPagina).not.toHaveBeenCalled()
+    expect(lista).toHaveLength(1)
+  })
+
+  it('sair e voltar à tela: o vínculo gravado continua listado', async () => {
+    const { default: pb } = await import('@/lib/pocketbase/client')
+    const colecao = (pb as any).collection('clientes_empresas')
+    const update = colecao.update as ReturnType<typeof vi.fn>
+    update.mockClear()
+
+    let lista: any[] = []
+    const setLista = (n: any[]) => {
+      lista = n
+    }
+    const { rerender, unmount } = render(<PaginaReal lista={lista} setLista={setLista} />)
+    fireEvent.click(screen.getByText('Adicionar Vínculo'))
+    fireEvent.change(screen.getByLabelText(/Razão Social/i), {
+      target: { value: 'Inove Participações LTDA' },
+    })
+    fireEvent.click(screen.getByText('Salvar Vínculo'))
+    rerender(<PaginaReal lista={lista} setLista={setLista} />)
+
+    // Aguarda a gravação (debounce + update) terminar
+    await waitFor(() => expect(update).toHaveBeenCalled(), { timeout: 3000 })
+    await waitFor(() => {
+      const ultimo = update.mock.calls[update.mock.calls.length - 1][1]
+      expect(ultimo.vinculos_societarios).toHaveLength(1)
+    })
+    unmount()
+
+    // Volta à tela: a lista vem do banco (campo gravado, diferente de [])
+    const lidoDeVolta = await colecao.getOne('l3zjamzgu2cbt0j')
+    expect(lidoDeVolta.vinculos_societarios).not.toEqual([])
+    render(<PaginaReal lista={lidoDeVolta.vinculos_societarios} setLista={() => {}} />)
+    expect(screen.getByText('Inove Participações LTDA')).toBeTruthy()
+  })
 })

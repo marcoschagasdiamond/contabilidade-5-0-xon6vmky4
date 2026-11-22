@@ -101,13 +101,10 @@ export function SecaoVinculosSocietarios({
   const formatarMoeda = (val: number) =>
     val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 
-  const handleAdicionar = (e: React.FormEvent) => {
-    // Este <form> é aninhado dentro do form de Dados da Empresa: sem stopPropagation,
-    // o submit também dispara o handleSubmit da página no MESMO evento, com o
-    // estado ainda sem o novo vínculo (stale closure) — a página gravava o perfil
-    // inteiro sem o item e o vínculo chegava ao banco como [].
-    e.stopPropagation()
-    e.preventDefault()
+  // Sem <form>: o botão é type="button" e chama esta função diretamente. Assim o
+  // clique nunca dispara um submit — o formulário de Dados da Empresa não é acionado
+  // e a aba ativa não é resetada.
+  const handleAdicionar = () => {
     if (!nomeEmpresa.trim() && !cnpj.trim()) return
 
     const novo: VinculoSocietario = {
@@ -183,8 +180,15 @@ export function SecaoVinculosSocietarios({
       <CardContent className="p-6 md:p-8 space-y-6">
         {/* FORMULÁRIO DE CADASTRO EXPANSÍVEL */}
         {formAberto && (
-          <form
-            onSubmit={handleAdicionar}
+          <div
+            role="group"
+            aria-label="Cadastrar outra empresa ou vínculo"
+            onKeyDown={(e) => {
+              // Enter nos campos não pode submeter o formulário da página
+              if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+                e.preventDefault()
+              }
+            }}
             className="p-5 md:p-6 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-4 animate-in fade-in duration-200"
           >
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
@@ -373,14 +377,15 @@ export function SecaoVinculosSocietarios({
                 Cancelar
               </Button>
               <Button
-                type="submit"
+                type="button"
                 size="sm"
+                onClick={handleAdicionar}
                 className="bg-[#07132B] hover:bg-[#0c244c] text-white font-bold text-xs px-5"
               >
                 Salvar Vínculo
               </Button>
             </div>
-          </form>
+          </div>
         )}
 
         {/* LISTA DE VÍNCULOS CADASTRADOS */}
