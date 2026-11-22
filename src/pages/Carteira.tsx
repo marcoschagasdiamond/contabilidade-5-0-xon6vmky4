@@ -10,6 +10,7 @@ import { listarConvitesAnalista, ConviteCliente } from '@/services/planos'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ModalGrupoEconomico } from '@/components/carteira/ModalGrupoEconomico'
 import type { Cliente } from '@/types/cliente'
 
 /**
@@ -77,6 +78,7 @@ export default function Carteira() {
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null)
   const [clienteParaConvidar, setClienteParaConvidar] = useState<Cliente | null>(null)
   const [convites, setConvites] = useState<ConviteCliente[]>([])
+  const [clienteGeAberto, setClienteGeAberto] = useState<Cliente | null>(null)
 
   const carregarConvites = React.useCallback(async () => {
     try {
@@ -129,6 +131,11 @@ export default function Carteira() {
     e.stopPropagation()
     selecionarClienteAtivo(cliente.id)
     navigate('/diagnostico')
+  }
+
+  const handleAbrirGrupoEconomico = (cliente: Cliente, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setClienteGeAberto(cliente)
   }
 
   return (
@@ -398,6 +405,16 @@ export default function Carteira() {
                       Diagnóstico
                     </button>
 
+                    {/* Grupo Econômico (GE) — consulta rápida, somente leitura */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleAbrirGrupoEconomico(cliente, e)}
+                      className="text-xs font-bold text-[#D4AF37] hover:text-white bg-[#07132B] hover:bg-[#0d2350] border border-[#D4AF37]/50 px-3 py-1.5 rounded-lg transition-colors"
+                      title="Abre o Grupo Econômico do cliente (árvore + faturamento vs teto do Simples) — somente leitura"
+                    >
+                      GE
+                    </button>
+
                     <div className="flex items-center gap-1.5 ml-auto">
                       <button
                         type="button"
@@ -447,6 +464,13 @@ export default function Carteira() {
         onSalvoComSucesso={() => {
           recarregarClientes()
         }}
+      />
+
+      {/* MODAL GRUPO ECONÔMICO (GE) — consulta rápida, somente leitura */}
+      <ModalGrupoEconomico
+        aberto={clienteGeAberto !== null}
+        aoFechar={() => setClienteGeAberto(null)}
+        cliente={clienteGeAberto}
       />
     </div>
   )

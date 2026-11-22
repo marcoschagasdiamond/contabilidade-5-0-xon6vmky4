@@ -12,8 +12,10 @@ interface PainelGrupoEconomicoProps {
   regimeAtual?: string
   faturamentoMensalProprio: number
   vinculos: VinculoSocietario[]
-  /** Abre o formulário de vínculo existente da seção (sem novo fluxo de gravação) */
-  onAdicionarEmpresa: () => void
+  /** Abre o formulário de vínculo existente da seção (sem novo fluxo de gravação).
+   *  Opcional: quando omitido, o painel é SOMENTE LEITURA (ex.: modal de consulta
+   *  rápida na /carteira — sem adicionar/remover vínculo por ali). */
+  onAdicionarEmpresa?: () => void
 }
 
 const ROTULOS_PAPEL: Record<PapelClienteNoVinculo, string> = {
@@ -95,14 +97,16 @@ export function PainelGrupoEconomico({
           </div>
         </div>
 
-        <Button
-          type="button"
-          onClick={onAdicionarEmpresa}
-          className="shrink-0 bg-[#2ECC71] hover:bg-[#27AE60] text-[#0A1A13] font-bold text-xs h-9 px-4 rounded-xl shadow-sm"
-        >
-          <Plus className="w-4 h-4 mr-1.5" />
-          Adicionar empresa ao grupo
-        </Button>
+        {onAdicionarEmpresa && (
+          <Button
+            type="button"
+            onClick={onAdicionarEmpresa}
+            className="shrink-0 bg-[#2ECC71] hover:bg-[#27AE60] text-[#0A1A13] font-bold text-xs h-9 px-4 rounded-xl shadow-sm"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Adicionar empresa ao grupo
+          </Button>
+        )}
       </div>
 
       {/* ÁRVORE DO GRUPO */}
@@ -147,7 +151,9 @@ export function PainelGrupoEconomico({
               Nenhuma outra empresa vinculada ao grupo ainda.
             </p>
             <p className="text-[10px] text-slate-400 mt-0.5">
-              Use &quot;Adicionar empresa ao grupo&quot; para cadastrar o primeiro vínculo.
+              {onAdicionarEmpresa
+                ? 'Use "Adicionar empresa ao grupo" para cadastrar o primeiro vínculo.'
+                : 'Cadastre vínculos na aba Vedações em Dados da Empresa (/dados-empresa).'}
             </p>
           </div>
         ) : (
