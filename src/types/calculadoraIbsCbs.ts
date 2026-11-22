@@ -808,7 +808,16 @@ export interface DadosFaseTransicao {
  * Fonte única da verdade das alíquotas oficiais de transição (LC 214/2025 e EC 132/2023)
  * Compartilhada entre Módulo 1 (preenchimento assistido) e Módulo 5 (cronograma 2026–2033).
  */
-export const CRONOGRAMA_FASES_TRANSICAO: Record<AnoTransicaoIbsCbs, DadosFaseTransicao> = {
+/**
+ * Anos que possuem fase registrada no mapa legal (LC 214/2025).
+ * 2034+ não têm fase intermediária — usar obterFaseTransicaoPorAno/obterFaseAnoPosTransicao.
+ */
+export type AnosComFaseRegistrada = Extract<
+  AnoTransicaoIbsCbs,
+  'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+>
+
+export const CRONOGRAMA_FASES_TRANSICAO: Record<AnosComFaseRegistrada, DadosFaseTransicao> = {
   atual: {
     ano: 'atual',
     fase: 'Ano atual (sistema atual)',
