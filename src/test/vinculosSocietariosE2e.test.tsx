@@ -198,7 +198,7 @@ describe('Vínculos Societários — E2E do fluxo real de persistência', () => 
     setLista(lista)
 
     // O hook é acionado pelo efeito — a Sonda recria com a lista nova
-    render(<Sonda listaProp={undefined as any} />)
+    render(<Sonda />)
     // Aguarda o debounce
     await new Promise((r) => setTimeout(r, 950))
 

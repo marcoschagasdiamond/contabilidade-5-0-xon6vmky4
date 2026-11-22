@@ -271,29 +271,32 @@ export function usePersistenciaVinculosSocietarios(
       const alvo = await resolverAlvo()
       alvoRef.current = alvo && 'id' in alvo ? alvo.id : null
 
-      if (!alvo || 'erro' in alvo) {
+      if (!alvo) {
         pendenteRef.current = null
-        setErro(alvo?.erro ?? null)
-        if (alvo?.erro) {
-          // Sem permissão: nunca escreve em registro alheio — avisa.
-          toast({
-            title: 'Vínculos não gravados',
-            description: alvo.erro,
-            variant: 'destructive',
-            duration: 8000,
-          })
-        } else {
-          // Nenhum registro de empresa encontrado para o cliente ativo
-          // (nenhum candidato existiu em clientes_empresas): erro visível,
-          // nunca silêncio com campo vazio.
-          toast({
-            title: 'Vínculos não gravados',
-            description:
-              'Não encontramos o registro da empresa em clientes_empresas. Clique em "Salvar Dados da Empresa" para criá-lo e tente novamente.',
-            variant: 'destructive',
-            duration: 10000,
-          })
-        }
+        setErro(null)
+        // Nenhum registro de empresa encontrado para o cliente ativo
+        // (nenhum candidato existiu em clientes_empresas): erro visível,
+        // nunca silêncio com campo vazio.
+        toast({
+          title: 'Vínculos não gravados',
+          description:
+            'Não encontramos o registro da empresa em clientes_empresas. Clique em "Salvar Dados da Empresa" para criá-lo e tente novamente.',
+          variant: 'destructive',
+          duration: 10000,
+        })
+        return
+      }
+
+      if ('erro' in alvo) {
+        // Sem permissão: nunca escreve em registro alheio — avisa.
+        pendenteRef.current = null
+        setErro(alvo.erro)
+        toast({
+          title: 'Vínculos não gravados',
+          description: alvo.erro,
+          variant: 'destructive',
+          duration: 8000,
+        })
         return
       }
 
