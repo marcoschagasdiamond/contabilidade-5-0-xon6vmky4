@@ -2,6 +2,9 @@ import React, { useCallback, useState, useMemo } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useClienteAtivo } from '@/context/ClienteAtivoContext'
 import { ModalCliente } from '@/components/clientes/ModalCliente'
+import { useBuscaCarteira } from '@/hooks/useBuscaCarteira'
+import { useCarteiraPaginada } from '@/hooks/useCarteiraPaginada'
+import { limparCnpj } from '@/services/carteiraPaginada'
 import {
   ModalConvidarCliente,
   ListaConvitesPendentes,
@@ -31,6 +34,9 @@ import type { Cliente } from '@/types/cliente'
  * 4) A rota antiga /clientes redireciona para cá (ver App.tsx — RedirecionarParaCarteira).
  * 5) Proteção de acesso preservada: os clientes vêm do ClienteAtivoContext (listarClientes, com
  *    filtro por user_id/logado) — nenhum cliente de outro usuário aparece.
+ * 6) Fase 2: busca "Buscar empresa…" (nome/contato/CNPJ sem pontuação, debounce 300ms) +
+ *    paginação server-side (~30 por página, botão "Carregar mais"). As regras de acesso da
+ *    coleção ficam intocadas — o filtro por usuário/master é aplicado pelo servidor.
  * Visual: Padrão Diamond Group (#07132B e #D4AF37). Regra do usuário: SEM ÍCONES — apenas texto.
  */
 
@@ -71,15 +77,27 @@ function classeBadgeEstagio(estagio?: string): string {
 export default function Carteira() {
   const navigate = useNavigate()
   const {
-    clientes,
-    carregando,
+    carregando: carregandoContexto,
     clienteAtivoId,
     selecionarClienteAtivo,
     limparClienteAtivo,
     recarregarClientes,
   } = useClienteAtivo()
 
-  const [busca, setBusca] = useState('')
+  // Busca com debounce de 300ms (termo imediato no input, termo debounced na
+  // chamada server-side) e paginação server-side (page/perPage do PocketBase).
+  const { busca, setBusca, buscaDebounced } = useBuscaCarteira()
+  const {
+    clientes,
+    carregando: carregandoPaginado,
+    carregandoMais,
+    erro,
+    esgotado,
+    carregarMais,
+    recarregar,
+  } = useCarteiraPaginada(buscaDebounced)
+  const carregando = carregandoContexto || carregandoPaginado
+
   const [filtroRegime, setFiltroRegime] = useState<string>('todos')
   const [filtroEstagio, setFiltroEstagio] = useState<string>('todos')
   const { modo, setModo, tipoTecnico, setTipoTecnico, tecnicos } = useModoVisualizacaoCarteira(
@@ -108,7 +126,11 @@ export default function Carteira() {
   }, [carregarConvites])
 
   const clientesFiltrados = useMemo(() => {
-    const termo = busca.trim().toLowerCase()
+    // Busca: o servidor já devolveu registros que batem com o termo (nome, CNPJ
+    // sem pontuação, e-mail, telefone). Aqui repetimos o teste client-side para
+    // filtrar o que veio das três fontes — inclusive CNPJ sem pontuação.
+    const termo = buscaDebounced.trim().toLowerCase()
+    const termoCnpjLimpo = limparCnpj(termo)
     return clientes.filter((c) => {
       const atendeTecnico = tipoTecnico === TIPO_TODOS || c.user_id === tipoTecnico
       if (!atendeTecnico) return false
@@ -116,6 +138,7 @@ export default function Carteira() {
       const atendeBusca =
         !termo ||
         c.nome.toLowerCase().includes(termo) ||
+        (termoCnpjLimpo.length > 0 && limparCnpj(c.cnpj_cpf).includes(termoCnpjLimpo)) ||
         c.cnpj_cpf.toLowerCase().includes(termo) ||
         c.uf.toLowerCase().includes(termo) ||
         c.segmento.toLowerCase().includes(termo) ||
@@ -131,7 +154,7 @@ export default function Carteira() {
 
       return atendeBusca && atendeRegime && atendeEstagio
     })
-  }, [clientes, busca, filtroRegime, filtroEstagio, tipoTecnico])
+  }, [clientes, buscaDebounced, filtroRegime, filtroEstagio, tipoTecnico])
 
   const handleNovoCliente = () => {
     setClienteEditando(null)
@@ -355,11 +378,12 @@ export default function Carteira() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            {/* Campo de Busca */}
+            {/* Campo de Busca — filtra em tempo real (debounce 300ms) por
+                nome, contato/e-mail e CNPJ/CPF ignorando pontuação */}
             <div className="w-full md:w-96">
               <Input
                 type="text"
-                placeholder="Buscar por nome ou CNPJ/CPF..."
+                placeholder="Buscar empresa…"
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 className="text-xs h-10 border-slate-200"
@@ -394,6 +418,7 @@ export default function Carteira() {
             <div className="text-xs text-slate-500 font-medium">
               Exibindo <strong>{clientesFiltrados.length}</strong> de{' '}
               <strong>{clientes.length}</strong> clientes
+              {!esgotado && ' (carregue mais para ver o restante)'}
             </div>
           </div>
 
@@ -459,17 +484,38 @@ export default function Carteira() {
             <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
             Carregando carteira de clientes...
           </div>
+        ) : erro ? (
+          <div className="bg-white rounded-2xl border border-red-200 p-12 text-center space-y-3">
+            <span className="text-sm font-bold text-red-700 block">{erro}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void recarregar()}
+              className="text-xs"
+            >
+              Tentar novamente
+            </Button>
+          </div>
         ) : clientesFiltrados.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
-            <span className="text-sm font-bold text-[#07132B] block">
-              Nenhum cliente encontrado
-            </span>
+            {buscaDebounced ? (
+              <span className="text-sm font-bold text-[#07132B] block">
+                Nenhuma empresa encontrada para "{buscaDebounced}"
+              </span>
+            ) : (
+              <span className="text-sm font-bold text-[#07132B] block">
+                Nenhum cliente encontrado
+              </span>
+            )}
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              {busca || filtroEstagio !== 'todos' || filtroRegime !== 'todos'
-                ? 'Nenhum resultado para os filtros aplicados. Tente limpá-los.'
-                : 'Você ainda não cadastrou clientes na carteira. Clique no botão acima para adicionar o primeiro.'}
+              {buscaDebounced
+                ? 'Verifique o nome/CNPJ digitado ou limpe a busca para ver toda a carteira.'
+                : filtroEstagio !== 'todos' || filtroRegime !== 'todos'
+                  ? 'Nenhum resultado para os filtros aplicados. Tente limpá-los.'
+                  : 'Você ainda não cadastrou clientes na carteira. Clique no botão acima para adicionar o primeiro.'}
             </p>
-            {(busca || filtroEstagio !== 'todos' || filtroRegime !== 'todos') && (
+            {(buscaDebounced || filtroEstagio !== 'todos' || filtroRegime !== 'todos') && (
               <Button
                 type="button"
                 variant="outline"
@@ -481,18 +527,38 @@ export default function Carteira() {
                 }}
                 className="text-xs"
               >
-                Limpar Filtros
+                {buscaDebounced ? 'Limpar Busca' : 'Limpar Filtros'}
               </Button>
             )}
           </div>
         ) : (
-          <AgrupamentoPorTecnico
-            modo={modo}
-            tipoTecnico={tipoTecnico}
-            tecnicos={tecnicos}
-            clientesFiltrados={clientesFiltrados}
-            renderCard={renderCard}
-          />
+          <>
+            <AgrupamentoPorTecnico
+              modo={modo}
+              tipoTecnico={tipoTecnico}
+              tecnicos={tecnicos}
+              clientesFiltrados={clientesFiltrados}
+              renderCard={renderCard}
+            />
+
+            {/* Botão Carregar mais — próxima página server-side (page/perPage) */}
+            {!esgotado && (
+              <div className="flex flex-col items-center gap-2 pt-4 pb-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void carregarMais()}
+                  disabled={carregandoMais}
+                  className="text-xs font-bold border-[#07132B] text-[#07132B] hover:bg-[#07132B] hover:text-[#D4AF37] px-6 py-2.5 rounded-xl"
+                >
+                  {carregandoMais ? 'Carregando…' : 'Carregar mais'}
+                </Button>
+                <span className="text-[10px] text-slate-400 font-medium">
+                  Exibindo {clientesFiltrados.length} de {clientes.length} clientes carregados
+                </span>
+              </div>
+            )}
+          </>
         )}
 
         {/* LISTA DE CONVITES PENDENTES & REENVIO */}
@@ -514,6 +580,7 @@ export default function Carteira() {
         onOpenChange={setModalAberto}
         clienteParaEditar={clienteEditando}
         onSalvoComSucesso={() => {
+          recarregar()
           recarregarClientes()
         }}
       />
