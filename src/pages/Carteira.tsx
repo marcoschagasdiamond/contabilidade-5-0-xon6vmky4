@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ModalGrupoEconomico } from '@/components/carteira/ModalGrupoEconomico'
+import { ModalSuporteCliente } from '@/components/carteira/ModalSuporteCliente'
 import type { Cliente } from '@/types/cliente'
 
 /**
@@ -79,6 +80,7 @@ export default function Carteira() {
   const [clienteParaConvidar, setClienteParaConvidar] = useState<Cliente | null>(null)
   const [convites, setConvites] = useState<ConviteCliente[]>([])
   const [clienteGeAberto, setClienteGeAberto] = useState<Cliente | null>(null)
+  const [clienteSuporteAberto, setClienteSuporteAberto] = useState<Cliente | null>(null)
 
   const carregarConvites = React.useCallback(async () => {
     try {
@@ -136,6 +138,11 @@ export default function Carteira() {
   const handleAbrirGrupoEconomico = (cliente: Cliente, e: React.MouseEvent) => {
     e.stopPropagation()
     setClienteGeAberto(cliente)
+  }
+
+  const handleAbrirSuporte = (cliente: Cliente, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setClienteSuporteAberto(cliente)
   }
 
   return (
@@ -415,6 +422,16 @@ export default function Carteira() {
                       GE
                     </button>
 
+                    {/* Suporte com IA — abre o chat existente com o contexto deste cliente */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleAbrirSuporte(cliente, e)}
+                      className="text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-3 py-1.5 rounded-lg transition-colors"
+                      title="Abre o Suporte com IA já contextualizado com os dados deste cliente (nome, CNPJ, regime e estágio do funil)"
+                    >
+                      Suporte
+                    </button>
+
                     <div className="flex items-center gap-1.5 ml-auto">
                       <button
                         type="button"
@@ -471,6 +488,14 @@ export default function Carteira() {
         aberto={clienteGeAberto !== null}
         aoFechar={() => setClienteGeAberto(null)}
         cliente={clienteGeAberto}
+      />
+
+      {/* MODAL SUPORTE — resolve a empresa do cliente e abre o chat de suporte
+          existente (agente assistente-suporte-50) com o contexto do card */}
+      <ModalSuporteCliente
+        aberto={clienteSuporteAberto !== null}
+        aoFechar={() => setClienteSuporteAberto(null)}
+        cliente={clienteSuporteAberto}
       />
     </div>
   )

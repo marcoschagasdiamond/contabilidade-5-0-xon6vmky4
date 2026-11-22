@@ -10,9 +10,18 @@ import {
   carregarMensagensSuporte,
   listarConversasSuporte,
   type ConversaNativaSuporte,
+  type ContextoClienteSuporte,
 } from '@/services/suporte'
 
 const STORAGE_KEY_CONVERSA_ID = 'c50_suporte_conversation_id'
+
+/** Evento global para abrir o suporte a partir de uma tela (ex.: card da /carteira). */
+export const EVENTO_ABRIR_SUPORTE = 'c50:abrir-suporte'
+
+export interface ContextoSuporteCard extends ContextoClienteSuporte {
+  /** Nome de exibição curto (mesmo do card) — usado no banner do chat. */
+  rotulo?: string
+}
 
 const SUGESTOES_PERGUNTAS = [
   'Como cadastro um fornecedor na Etapa 06?',
@@ -39,6 +48,8 @@ export function BotaoEChatSuporte() {
   const { isAuthenticated, user, isEmpresario, isAdmin, isMaster } = useAuth()
   const [aberto, setAberto] = useState(false)
   const [conversaId, setConversaId] = useState<string | null>(null)
+  const [contextoCliente, setContextoCliente] = useState<ContextoSuporteCard | null>(null)
+  const [contextoPendente, setContextoPendente] = useState<ContextoSuporteCard | null>(null)
   const [mensagens, setMensagens] = useState<DisplayMessage[]>([])
   const [inputMensagem, setInputMensagem] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -61,12 +72,37 @@ export function BotaoEChatSuporte() {
     }
   }, [isAuthenticated])
 
+  // Aplica o contexto recebido via evento SOMENTE após o histórico ter carregado
+  // (statusAtividade de carregamento sai de tela), para nunca disputar o
+  // setMensagens da inicialização. O suporte aberto pelo card é a MESMA
+  // conversa persistente do suporte normal — nada paralelo é criado.
+  useEffect(() => {
+    if (!contextoPendente) return
+    if (statusAtividade === 'Recuperando histórico da conversa...') return
+    setContextoCliente(contextoPendente)
+    setContextoPendente(null)
+  }, [contextoPendente, statusAtividade])
+
   // Salva no localStorage quando o conversaId muda
   useEffect(() => {
     if (conversaId) {
       localStorage.setItem(STORAGE_KEY_CONVERSA_ID, conversaId)
     }
   }, [conversaId])
+
+  // Abre o suporte a partir de uma tela externa (ex.: botão "Suporte" do card
+  // na /carteira), com contexto opcional do cliente. Usa o MESMO chat, o MESMO
+  // agente e o MESMO histórico persistente — nada paralelo é criado.
+  useEffect(() => {
+    if (!isAuthenticated) return
+    const handler = (ev: Event) => {
+      const detalhe = (ev as CustomEvent<ContextoSuporteCard | null>).detail ?? null
+      setContextoPendente(detalhe && (detalhe.nome || detalhe.cnpj) ? detalhe : null)
+      setAberto(true)
+    }
+    window.addEventListener(EVENTO_ABRIR_SUPORTE, handler)
+    return () => window.removeEventListener(EVENTO_ABRIR_SUPORTE, handler)
+  }, [isAuthenticated])
 
   // Inicializa mensagens da conversa atual ou carrega histórico nativo
   useEffect(() => {
@@ -149,6 +185,7 @@ export function BotaoEChatSuporte() {
     setErro(null)
     setCitacoesAtivas(null)
     setMostrarHistorico(false)
+    setContextoCliente(null)
     const nome = user?.nome || user?.name
     setMensagens([criarMensagemBoasVindas(nome)])
   }
@@ -192,21 +229,26 @@ export function BotaoEChatSuporte() {
     abortControllerRef.current = abort
 
     try {
-      const resultado = await enviarMensagemSuporteStream(texto, conversaId, {
-        onChunk: (_delta, full) => {
-          setStatusAtividade('Elaborando resposta orientativa...')
-          setMensagens((prev) =>
-            prev.map((msg) => (msg.id === assistenteTempId ? { ...msg, content: full } : msg)),
-          )
+      const resultado = await enviarMensagemSuporteStream(
+        texto,
+        conversaId,
+        {
+          onChunk: (_delta, full) => {
+            setStatusAtividade('Elaborando resposta orientativa...')
+            setMensagens((prev) =>
+              prev.map((msg) => (msg.id === assistenteTempId ? { ...msg, content: full } : msg)),
+            )
+          },
+          onCitations: (items) => {
+            setCitacoesAtivas(items)
+          },
+          onError: (msg) => {
+            setErro(msg)
+          },
+          signal: abort.signal,
         },
-        onCitations: (items) => {
-          setCitacoesAtivas(items)
-        },
-        onError: (msg) => {
-          setErro(msg)
-        },
-        signal: abort.signal,
-      })
+        contextoCliente,
+      )
 
       if (resultado.conversation_id) {
         setConversaId(resultado.conversation_id)
@@ -348,6 +390,36 @@ export function BotaoEChatSuporte() {
                   <span>Online</span>
                 </div>
               </div>
+
+              {/* Banner de contexto do cliente (suporte aberto pelo card da /carteira) */}
+              {contextoCliente && (
+                <div className="pt-2.5 mt-2 border-t border-white/10">
+                  <div className="flex items-start justify-between gap-2 rounded-lg border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-2.5 py-2">
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#D4AF37]">
+                        Contexto do cliente
+                      </div>
+                      <div className="text-[11px] text-slate-200 truncate">
+                        {[contextoCliente.rotulo || contextoCliente.nome, contextoCliente.cnpj]
+                          .filter(Boolean)
+                          .join(' • ')}
+                        {contextoCliente.regime ? ` • ${contextoCliente.regime}` : ''}
+                        {contextoCliente.estagio_funil
+                          ? ` • Funil: ${contextoCliente.estagio_funil}`
+                          : ''}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setContextoCliente(null)}
+                      className="text-[10px] text-slate-400 hover:text-white shrink-0"
+                      title="Remover contexto do cliente (o suporte volta a ser geral)"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Sugestões Rápidas (quando não há muitas mensagens) */}
               {mensagens.length <= 2 && !mostrarHistorico && (

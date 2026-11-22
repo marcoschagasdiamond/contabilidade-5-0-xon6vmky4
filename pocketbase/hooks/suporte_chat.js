@@ -4,7 +4,10 @@
  * Hook de chat com o agente nativo "assistente-suporte-50" do sistema Contabilidade 5.0.
  * Atende usuários autenticados de todos os perfis (Empresário, Analista, Admin, Master).
  * Oferece:
- * 1) Streaming (SSE) via $ai.agent('assistente-suporte-50').chat({ stream: true })
+ * 1) Streaming (SSE) via $ai.agent('assistente-suporte-50').chat({ stream: true }),
+ *    com injeção opcional de CONTEXTO DO CLIENTE (aberto pelo card "Suporte" da
+ *    /carteira) — o agente e a conversa são os MESMOS do suporte normal, nada
+ *    paralelo é criado; o contexto só precede a pergunta do usuário.
  * 2) Listagem de mensagens de uma conversa nativa
  * 3) Listagem de conversas nativas do usuário autenticado
  */
@@ -24,6 +27,29 @@ routerAdd(
         return e.badRequestError('Mensagem é obrigatória.')
       }
 
+      // Contexto opcional do cliente (botão "Suporte" do card na /carteira).
+      // Não cria conversa nem agente novo: apenas prefixa a pergunta enviada
+      // ao MESMO agente assistente-suporte-50, na MESMA conversa.
+      const ctx = body.contexto_cliente || null
+      let promptParaAgente = message
+      if (ctx && (ctx.nome || ctx.cnpj)) {
+        const linhas = []
+        if (ctx.nome) linhas.push('Empresa/Cliente: "' + ctx.nome + '"')
+        if (ctx.cnpj) linhas.push('CNPJ/CPF: "' + ctx.cnpj + '"')
+        if (ctx.regime) linhas.push('Regime tributário atual: "' + ctx.regime + '"')
+        if (ctx.estagio_funil)
+          linhas.push('Estágio do funil de atendimento: "' + ctx.estagio_funil + '"')
+        if (ctx.segmento) linhas.push('Segmento: "' + ctx.segmento + '"')
+        if (ctx.uf) linhas.push('UF: "' + ctx.uf + '"')
+        promptParaAgente =
+          '[CONTEXTO DO CLIENTE (suporte aberto pelo técnico no card deste cliente na Carteira /carteira):\n' +
+          linhas.join('\n') +
+          '\nINSTRUÇÃO OBRIGATÓRIA: a dúvida abaixo se refere a ESTE cliente/empresa. ' +
+          'Use este contexto ao responder — o usuário não precisa reapresentar os dados do cliente.\n]\n\n' +
+          'Pergunta do Usuário:\n' +
+          message
+      }
+
       const agent = $ai.agent('assistente-suporte-50')
       const tituloConversa = 'Suporte Contabilidade 5.0'
 
@@ -36,7 +62,7 @@ routerAdd(
       const iter = agent.chat({
         user_id: userId,
         conversation_id: conv.id,
-        message: message,
+        message: promptParaAgente,
         stream: true,
       })
 

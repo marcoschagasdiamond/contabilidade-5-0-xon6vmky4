@@ -17,11 +17,25 @@ export interface ConversaNativaSuporte {
 
 /**
  * Envia mensagem para o agente nativo assistente-suporte-50 via SSE (streaming).
+ *
+ * Contexto opcional do cliente (botão "Suporte" do card na /carteira):
+ * Não cria conversa/agente novo — o hook injeta o contexto na MESMA conversa
+ * do MESMO agente assistente-suporte-50.
  */
+export interface ContextoClienteSuporte {
+  nome?: string
+  cnpj?: string
+  regime?: string
+  estagio_funil?: string
+  segmento?: string
+  uf?: string
+}
+
 export async function enviarMensagemSuporteStream(
   mensagem: string,
   conversationId: string | null,
   handlers: StreamAgentChatHandlers = {},
+  contextoCliente?: ContextoClienteSuporte | null,
 ): Promise<StreamAgentChatResult & { conversation_id: string }> {
   const baseUrl = import.meta.env.VITE_POCKETBASE_URL || ''
   const token = pb.authStore.token
@@ -39,6 +53,7 @@ export async function enviarMensagemSuporteStream(
     body: JSON.stringify({
       message: mensagem,
       conversation_id: conversationId || undefined,
+      contexto_cliente: contextoCliente || undefined,
     }),
     signal: handlers.signal,
   })
