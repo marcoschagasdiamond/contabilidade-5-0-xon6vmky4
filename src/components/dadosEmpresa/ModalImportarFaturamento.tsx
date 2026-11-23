@@ -1,6 +1,6 @@
 /**
  * Modal de importação de faturamento em /dados-empresa — DUAS FONTES:
- *  - aba "Arquivo": OFX/CSV/XLSX/TXT (fluxo original, intocado)
+ *  - aba "Arquivo": OFX/CSV/XLSX/TXT (fluxo original da v0.0.430, mesmo parser)
  *  - aba "Google Sheets": planilha online da PRÓPRIA conta Google do usuário
  *    (conector toolkit 'googlesheets' via ConnectorButton + execute()).
  *
@@ -8,7 +8,7 @@
  * ResultadoIngestaoFaturamento ao onConfirmarImportacao (a página grava via
  * DadosEmpresaContext.salvar()).
  */
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, CheckCircle2, FileSpreadsheet, Loader2, Table2, Upload } from 'lucide-react'
 import {
   Dialog,
@@ -32,12 +32,20 @@ import {
   importarFaturamentoGoogleSheets,
   type IngestaoSheetsIntermediaria,
 } from '@/lib/ingestaoFaturamentoSheets'
-import { parsePlanilhaCsvXlsx, type ResultadoIngestaoFaturamento } from '@/lib/ingestaoFaturamento'
-import type { LinhaPlanilhaBruta } from '@/lib/ingestaoFaturamento'
+import {
+  parseOfxConteudo,
+  parsePlanilhaCsvXlsx,
+  processarMapeamentoFaturamento,
+  sugerirMapeamentoColunas,
+  type LinhaPlanilhaBruta,
+  type MapeamentoColunasFaturamento,
+  type ResultadoIngestaoFaturamento,
+  type TransacaoOfx,
+} from '@/lib/ingestaoFaturamento'
 
 interface ModalImportarFaturamentoProps {
-  aberto: boolean
-  onFechar: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onConfirmarImportacao: (resumo: ResultadoIngestaoFaturamento) => void
   abaInicial?: 'arquivo' | 'sheets'
 }
@@ -45,79 +53,89 @@ interface ModalImportarFaturamentoProps {
 type AbaFonte = 'arquivo' | 'sheets'
 
 const FORMATOS_ACEITOS = '.ofx,.csv,.xlsx,.xls,.txt'
+const NENHUMA = '__nenhuma__'
 
 export function ModalImportarFaturamento({
-  aberto,
-  onFechar,
+  open,
+  onOpenChange,
   onConfirmarImportacao,
   abaInicial = 'arquivo',
 }: ModalImportarFaturamentoProps) {
   const [aba, setAba] = useState<AbaFonte>(abaInicial)
-  const [abaRestaurada, setAbaRestaurada] = useState(false)
 
   // ---- Estado compartilhado das duas fontes (pós-leitura) -----------------
   const [colunas, setColunas] = useState<string[]>([])
   const [linhas, setLinhas] = useState<LinhaPlanilhaBruta[]>([])
-  const [mapeamento, setMapeamento] = useState<Record<string, string>>({})
-  const [resultado, setResultado] = useState<ResultadoIngestaoFaturamento | null>(null)
+  const [mapeamento, setMapeamento] = useState<Partial<MapeamentoColunasFaturamento>>({})
   const [erroLeitura, setErroLeitura] = useState<string | null>(null)
   const [lendo, setLendo] = useState(false)
 
   // ---- Estado da aba arquivo ----------------------------------------------
   const [nomeArquivo, setNomeArquivo] = useState<string | null>(null)
+  const [resultadoOfx, setResultadoOfx] = useState<ResultadoIngestaoFaturamento | null>(null)
 
   // ---- Estado da aba sheets -----------------------------------------------
   const [linkPlanilha, setLinkPlanilha] = useState('')
   const [planilhaSheets, setPlanilhaSheets] = useState<IngestaoSheetsIntermediaria | null>(null)
 
-  // Restaura a aba pedida quando o modal (re)abre
-  if (aberto && !abaRestaurada) {
-    setAba(abaInicial)
-    setAbaRestaurada(true)
-  }
-  if (!aberto && abaRestaurada) {
-    setAbaRestaurada(false)
-  }
-
   const limparEstado = useCallback(() => {
     setColunas([])
     setLinhas([])
     setMapeamento({})
-    setResultado(null)
     setErroLeitura(null)
     setNomeArquivo(null)
+    setResultadoOfx(null)
     setPlanilhaSheets(null)
+    setLinkPlanilha('')
   }, [])
 
+  // Restaura a aba pedida e zera o estado quando o modal (re)abre
+  useEffect(() => {
+    if (open) {
+      setAba(abaInicial)
+      limparEstado()
+    }
+  }, [open, abaInicial, limparEstado])
+
+  /** Aplica colunas/linhas lidas de uma planilha (arquivo ou Sheets). */
   const aplicarDados = useCallback((dados: { colunas: string[]; linhas: LinhaPlanilhaBruta[] }) => {
     setColunas(dados.colunas)
     setLinhas(dados.linhas)
     setMapeamento(sugerirMapeamentoColunas(dados.colunas))
-    setResultado(null)
+    setResultadoOfx(null)
   }, [])
 
-  /** Aba arquivo: lê OFX/CSV/XLSX/TXT local. */
+  /** Aba arquivo: lê OFX (extrato) ou CSV/XLSX (planilha) local. */
   const aoSelecionarArquivo = useCallback(
     async (arquivo: File) => {
       setLendo(true)
       setErroLeitura(null)
       setPlanilhaSheets(null)
+      setColunas([])
+      setLinhas([])
+      setMapeamento({})
+      setResultadoOfx(null)
       setNomeArquivo(arquivo.name)
       try {
+        const ext = arquivo.name.split('.').pop()?.toLowerCase() || ''
+        if (ext === 'ofx') {
+          const texto = await arquivo.text()
+          const res = parseOfxConteudo(texto, arquivo.name)
+          if (!res.sucesso) {
+            setErroLeitura(res.erro || 'Não foi possível ler o arquivo OFX.')
+            return
+          }
+          setResultadoOfx(res)
+          return
+        }
         const intermediaria = await parsePlanilhaCsvXlsx(arquivo)
         if (!intermediaria.sucesso) {
           setErroLeitura(intermediaria.erro || 'Não foi possível ler o arquivo.')
-          setColunas([])
-          setLinhas([])
-          setResultado(null)
           return
         }
         aplicarDados(intermediaria)
       } catch (err) {
         setErroLeitura(err instanceof Error ? err.message : 'Não foi possível ler o arquivo.')
-        setColunas([])
-        setLinhas([])
-        setResultado(null)
       } finally {
         setLendo(false)
       }
@@ -130,65 +148,82 @@ export function ModalImportarFaturamento({
     setLendo(true)
     setErroLeitura(null)
     setNomeArquivo(null)
+    setColunas([])
+    setLinhas([])
+    setMapeamento({})
+    setResultadoOfx(null)
+    setPlanilhaSheets(null)
     try {
       const intermediaria = await importarFaturamentoGoogleSheets(linkPlanilha)
       setPlanilhaSheets(intermediaria)
       if (!intermediaria.sucesso) {
         setErroLeitura(intermediaria.erro || 'Não foi possível ler a planilha.')
-        setColunas([])
-        setLinhas([])
-        setResultado(null)
         return
       }
       aplicarDados(intermediaria)
     } catch (err) {
-      setPlanilhaSheets(null)
       setErroLeitura(err instanceof Error ? err.message : 'Não foi possível ler a planilha.')
-      setColunas([])
-      setLinhas([])
-      setResultado(null)
     } finally {
       setLendo(false)
     }
   }, [linkPlanilha, aplicarDados])
 
-  /** Recalcula a pré-visualização quando o mapeamento muda (fonte: colunas→valores). */
-  const recalcular = useCallback(
-    (novoMapeamento: Record<string, string>) => {
-      setMapeamento(novoMapeamento)
-      if (linhas.length === 0) {
-        setResultado(null)
-        return
-      }
-      const res = processarMapeamentoFaturamento({
-        colunas,
-        linhas,
-        mapeamento: novoMapeamento,
-        tipoFonte: aba === 'sheets' ? 'sheets' : 'arquivo',
-        nomeFonte:
-          aba === 'sheets'
-            ? planilhaSheets?.titulo || 'Planilha Google Sheets'
-            : nomeArquivo || undefined,
-      })
-      setResultado(res)
-    },
-    [linhas, colunas, aba, planilhaSheets, nomeArquivo],
-  )
+  // ---- Pré-visualização da planilha (CSV/XLSX/Sheets) ----------------------
+  const extraido = useMemo(() => {
+    if (linhas.length === 0) return null
+    const m: MapeamentoColunasFaturamento = {
+      colunaFaturamento: mapeamento.colunaFaturamento || '',
+      colunaPeriodo: mapeamento.colunaPeriodo || '',
+      colunaCompras: mapeamento.colunaCompras || '',
+      colunaFolha: mapeamento.colunaFolha || '',
+      tipoFaturamento: mapeamento.tipoFaturamento || 'auto',
+    }
+    return processarMapeamentoFaturamento(linhas, m)
+  }, [linhas, mapeamento])
 
-  const podeConfirmar = !!resultado && !resultado.erro && resultado.totalLinhas > 0
+  const resultadoPlanilha = useMemo<ResultadoIngestaoFaturamento | null>(() => {
+    if (!extraido || extraido.faturamentoMensal <= 0) return null
+    const periodoCol = mapeamento.colunaPeriodo || ''
+    const colFat = mapeamento.colunaFaturamento || ''
+    const periodos = (
+      periodoCol ? linhas.map((l) => l[periodoCol] || '').filter((p) => p.trim() !== '') : []
+    ).sort()
+    const lancamentos: TransacaoOfx[] = linhas.slice(0, 300).map((l) => ({
+      tipo: 'credito' as const,
+      valor: 0,
+      data: periodoCol ? l[periodoCol] || '' : '',
+      descricao: colFat ? l[colFat] || '' : '',
+    }))
+    return {
+      sucesso: true,
+      tipoFonte: aba === 'sheets' ? 'sheets' : 'csv',
+      nomeArquivo:
+        aba === 'sheets'
+          ? planilhaSheets?.titulo || planilhaSheets?.id || 'Planilha Google Sheets'
+          : nomeArquivo || 'planilha',
+      receitaTotal: extraido.faturamentoMensal,
+      qtdLancamentos: extraido.totalMesesIdentificados,
+      periodoInicio: periodos[0],
+      periodoFim: periodos[periodos.length - 1],
+      lancamentos,
+      avisos: extraido.avisos || [],
+    }
+  }, [extraido, linhas, mapeamento, aba, planilhaSheets, nomeArquivo])
+
+  const resumoFinal: ResultadoIngestaoFaturamento | null = resultadoOfx ?? resultadoPlanilha
+  const podeConfirmar = !!resumoFinal && resumoFinal.sucesso && resumoFinal.receitaTotal > 0
 
   const aoConfirmar = useCallback(() => {
-    if (!podeConfirmar || !resultado) return
-    onConfirmarImportacao(resultado)
-  }, [podeConfirmar, resultado, onConfirmarImportacao])
+    if (!podeConfirmar || !resumoFinal) return
+    onConfirmarImportacao(resumoFinal)
+  }, [podeConfirmar, resumoFinal, onConfirmarImportacao])
 
-  const resumoSheets = useMemo(() => {
-    if (aba !== 'sheets' || !planilhaSheets?.sucesso) return null
-    return planilhaSheets
-  }, [aba, planilhaSheets])
+  const resumoSheets = aba === 'sheets' && planilhaSheets?.sucesso ? planilhaSheets : null
+
+  const periodoColExibicao = mapeamento.colunaPeriodo || ''
 
   return (
-    <Dialog open={aberto} onOpenChange={(o) => !o && onFechar()}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Importar faturamento</DialogTitle>
@@ -299,28 +334,34 @@ export function ModalImportarFaturamento({
           </div>
         )}
 
-        {/* ------------------- MAPEAMENTO + PRÉ-VISUALIZAÇÃO ------------------ */}
-        {colunas.length > 0 && linhas.length > 0 && (
+        {/* --------------------- MAPEAMENTO DA PLANILHA ---------------------- */}
+        {aba !== 'arquivo' || resultadoOfx ? null : colunas.length > 0 && linhas.length > 0 ? (
           <div className="space-y-3 border-t pt-3">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {['data', 'valor', 'descricao'].map((campo) => (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {(
+                [
+                  ['colunaFaturamento', 'Coluna do faturamento (R$)'],
+                  ['colunaPeriodo', 'Coluna do período (opcional)'],
+                  ['colunaCompras', 'Coluna de compras (opcional)'],
+                  ['colunaFolha', 'Coluna da folha (opcional)'],
+                ] as const
+              ).map(([campo, rotulo]) => (
                 <div key={campo} className="space-y-1">
-                  <Label>
-                    Coluna{' '}
-                    {campo === 'data'
-                      ? 'da data'
-                      : campo === 'valor'
-                        ? 'do valor'
-                        : 'da descrição (opcional)'}
-                  </Label>
+                  <Label>{rotulo}</Label>
                   <Select
-                    value={mapeamento[campo] || ''}
-                    onValueChange={(v) => recalcular({ ...mapeamento, [campo]: v })}
+                    value={mapeamento[campo] || NENHUMA}
+                    onValueChange={(v) =>
+                      setMapeamento((atual) => ({
+                        ...atual,
+                        [campo]: v === NENHUMA ? '' : v,
+                      }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione…" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value={NENHUMA}>— Nenhuma —</SelectItem>
                       {colunas.map((c) => (
                         <SelectItem key={c} value={c}>
                           {c}
@@ -331,47 +372,65 @@ export function ModalImportarFaturamento({
                 </div>
               ))}
             </div>
+          </div>
+        ) : null}
 
-            {resultado?.erro && (
+        {/* ------------------------ PRÉ-VISUALIZAÇÃO ------------------------- */}
+        {resumoFinal && (
+          <div className="space-y-3 border-t pt-3">
+            {resumoFinal.avisos.length > 0 && (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{resultado.erro}</span>
+                <span>{resumoFinal.avisos.join(' ')}</span>
               </div>
             )}
-
-            {resultado && !resultado.erro && (
-              <div className="rounded-md border px-3 py-2 space-y-1">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  Pré-visualização
-                </div>
-                <div className="text-sm">
-                  Total: <span className="font-semibold">{formatarMoeda(resultado.total)}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {resultado.totalLinhas} lançamento(s) · período {resultado.periodoInicio || '—'} a{' '}
-                  {resultado.periodoFim || '—'}
-                </div>
-                <div className="max-h-40 overflow-y-auto text-xs">
-                  {resultado.lancamentos.slice(0, 20).map((l, i) => (
-                    <div
-                      key={i}
-                      className="flex justify-between gap-2 border-b py-0.5 last:border-b-0"
-                    >
-                      <span>
-                        {l.data || '—'} — {l.descricao || '(sem descrição)'}
-                      </span>
-                      <span className="whitespace-nowrap font-medium">
-                        {formatarMoeda(l.valor)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+            <div className="rounded-md border px-3 py-2 space-y-1">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                Pré-visualização
               </div>
-            )}
+              <div className="text-sm">
+                Total:{' '}
+                <span className="font-semibold">{formatarMoeda(resumoFinal.receitaTotal)}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {resumoFinal.qtdLancamentos} lançamento(s) · período{' '}
+                {resumoFinal.periodoInicio || '—'} a {resumoFinal.periodoFim || '—'}
+              </div>
+              <div className="max-h-40 overflow-y-auto text-xs">
+                {resultadoOfx
+                  ? resumoFinal.lancamentos.map((l, i) => (
+                      <div
+                        key={i}
+                        className="flex justify-between gap-2 border-b py-0.5 last:border-b-0"
+                      >
+                        <span>
+                          {l.data || '—'} — {l.descricao || '(sem descrição)'}
+                        </span>
+                        <span className="whitespace-nowrap font-medium">
+                          {formatarMoeda(l.valor)}
+                        </span>
+                      </div>
+                    ))
+                  : linhas.slice(0, 20).map((l, i) => (
+                      <div
+                        key={i}
+                        className="flex justify-between gap-2 border-b py-0.5 last:border-b-0"
+                      >
+                        <span>
+                          {(periodoColExibicao ? l[periodoColExibicao] || '' : `#${i + 1}`) || '—'}{' '}
+                          —{' '}
+                          {mapeamento.colunaFaturamento
+                            ? l[mapeamento.colunaFaturamento] || '(sem valor)'
+                            : '(sem descrição)'}
+                        </span>
+                      </div>
+                    ))}
+              </div>
+            </div>
 
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={onFechar}>
+              <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
               <Button type="button" size="sm" disabled={!podeConfirmar} onClick={aoConfirmar}>

@@ -381,8 +381,11 @@ export default function DadosEmpresa() {
     historicoVinculos,
     refrescarHistorico,
   } = usePersistenciaVinculosSocietarios(formData.vinculosSocietarios, empresaIdParaRascunho)
-  // Estado do modal de importação de faturamento por arquivo (OFX/CSV/XLSX)
+  // Estado do modal de importação de faturamento (OFX/CSV/XLSX ou Google Sheets)
   const [modalImportarFaturamentoAberto, setModalImportarFaturamentoAberto] = useState(false)
+  const [abaInicialImportacaoFaturamento, setAbaInicialImportacaoFaturamento] = useState<
+    'arquivo' | 'sheets'
+  >('arquivo')
   const [gravandoFaturamentoImportado, setGravandoFaturamentoImportado] = useState(false)
   // Hidratação vinda do BANCO (fonte da verdade): quando o perfil sincronizado
   // do contexto traz vínculos IGUAIS aos que a hidratação aplicou, marca como
@@ -1326,7 +1329,10 @@ export default function DadosEmpresa() {
             alteracoes,
             snapshotAnterior: dadosEmpresa,
             snapshotNovo: salvo,
-            descricao: `Importação de faturamento de arquivo: ${resumo.nomeArquivo || 'arquivo'} (total ${formatarMoeda(valor)})`,
+            descricao:
+              resumo.tipoFonte === 'sheets'
+                ? `Importação de faturamento de planilha: ${resumo.nomeArquivo || 'Google Sheets'} (total ${formatarMoeda(valor)})`
+                : `Importação de faturamento de arquivo: ${resumo.nomeArquivo || 'arquivo'} (total ${formatarMoeda(valor)})`,
           })
           listarAuditoriaDadosEmpresa({
             empresaId: empresaVinculadaId || undefined,
