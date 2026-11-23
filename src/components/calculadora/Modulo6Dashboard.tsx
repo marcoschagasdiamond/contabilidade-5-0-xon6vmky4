@@ -694,7 +694,8 @@ export default function Modulo6Dashboard({
 
       // Para os anos de 2027 a 2040:
       // Alíquotas oficiais da fase daquele ano (LC 214/2025) — 2034+ clonam a base de 2033
-      const faseAno = obterFaseTransicaoPorAno(ano) || CRONOGRAMA_FASES_TRANSICAO[2033]
+      const faseAno =
+        obterFaseTransicaoPorAno(ano as AnoTransicaoIbsCbs) || CRONOGRAMA_FASES_TRANSICAO[2033]
       const cbsAno = faseAno.aliquotaCbs
       const ibsAno = faseAno.aliquotaIbs
       const totalIvaDualAno = faseAno.totalIvaDual
