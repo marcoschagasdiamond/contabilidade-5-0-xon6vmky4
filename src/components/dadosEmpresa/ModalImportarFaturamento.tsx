@@ -29,17 +29,10 @@ import {
 } from '@/components/ui/select'
 import { ConnectorButton } from '@/components/skip/ConnectorButton'
 import {
-  sugerirMapeamentoColunas,
-  processarMapeamentoFaturamento,
-} from '@/lib/importacaoFaturamento'
-import {
   importarFaturamentoGoogleSheets,
   type IngestaoSheetsIntermediaria,
 } from '@/lib/ingestaoFaturamentoSheets'
-import {
-  parseArquivoFaturamento,
-  type ResultadoIngestaoFaturamento,
-} from '@/lib/ingestaoFaturamento'
+import { parsePlanilhaCsvXlsx, type ResultadoIngestaoFaturamento } from '@/lib/ingestaoFaturamento'
 import type { LinhaPlanilhaBruta } from '@/lib/ingestaoFaturamento'
 
 interface ModalImportarFaturamentoProps {
@@ -111,7 +104,7 @@ export function ModalImportarFaturamento({
       setPlanilhaSheets(null)
       setNomeArquivo(arquivo.name)
       try {
-        const intermediaria = await parseArquivoFaturamento(arquivo)
+        const intermediaria = await parsePlanilhaCsvXlsx(arquivo)
         if (!intermediaria.sucesso) {
           setErroLeitura(intermediaria.erro || 'Não foi possível ler o arquivo.')
           setColunas([])
@@ -122,7 +115,7 @@ export function ModalImportarFaturamento({
         aplicarDados(intermediaria)
       } catch (err) {
         setErroLeitura(err instanceof Error ? err.message : 'Não foi possível ler o arquivo.')
-        etColunas([])
+        setColunas([])
         setLinhas([])
         setResultado(null)
       } finally {
