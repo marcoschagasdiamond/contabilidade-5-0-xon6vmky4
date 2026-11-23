@@ -42,7 +42,11 @@ import { normalizarHistoricoVinculos } from '@/lib/historicoVinculos'
  * cobre qualquer via de gravação e não conta duas vezes. Este hook NÃO grava
  * auditoria no client: ele só devolve o histórico consolidado do banco
  * (historicoVinculos) e um contador que muda a cada gravação confirmada
- * (gravacoesCount) para a página refrescar o painel GE.
+ * (gravacoesCount) para a página refrescar o painel GE. O mesmos vale para a
+ * auditoria de FATURAMENTO IMPORTADO (pocketbase/hooks/historico_faturamento.js):
+ * quando a página grava o faturamento por fora (importação de arquivo via
+ * salvar()), ela chama refrescarHistorico() para o painel GE mostrar a
+ * entrada nova na hora, sem precisar de nova gravação de vínculo.
  */
 
 const DEBOUNCE_MS = 800
@@ -57,6 +61,8 @@ interface EstadoVinculos {
   historicoVinculos: any[]
   /** Incrementa a cada gravação confirmada — sinal para a página refrescar o histórico. */
   gravacoesCount: number
+  /** Recarrega o histórico do banco (ex.: após uma gravação feita fora deste hook). */
+  refrescarHistorico: () => Promise<void>
 }
 
 /** Lê a lista de vínculos que o banco de fato retornou no campo. */
@@ -361,5 +367,32 @@ export function usePersistenciaVinculosSocietarios(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vinculos, empresaId, ctxEmpresaId, clienteAtivo, isAuthenticated, user?.id, isAnalista])
 
-  return { gravando, erro, tentarNovamente, marcarHidratado, historicoVinculos, gravacoesCount }
+  /**
+   * Recarrega o histórico de auditoria do banco para o alvo atual. Best-effort
+   * (leitura): erro é logado e ignorado — nunca quebra o fluxo da página.
+   */
+  const refrescarHistorico = useCallback(async () => {
+    const alvo = await resolverAlvo()
+    const idAlvo = alvo && 'id' in alvo ? alvo.id : null
+    if (!idAlvo) return
+    try {
+      const rec = await pb
+        .collection('clientes_empresas')
+        .getOne(idAlvo, { fields: 'historico_vinculos' })
+      setHistoricoVinculos(normalizarHistoricoVinculos(rec.historico_vinculos))
+      setGravacoesCount((c) => c + 1)
+    } catch (err) {
+      console.warn('Erro ao refrescar histórico do Grupo Econômico:', err)
+    }
+  }, [resolverAlvo])
+
+  return {
+    gravando,
+    erro,
+    tentarNovamente,
+    marcarHidratado,
+    historicoVinculos,
+    gravacoesCount,
+    refrescarHistorico,
+  }
 }

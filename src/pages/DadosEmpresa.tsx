@@ -44,6 +44,8 @@ import { ModalCliente } from '@/components/clientes/ModalCliente'
 import { PainelAvisosCoerencia } from '@/components/dadosEmpresa/PainelAvisosCoerencia'
 import { SecaoImportacaoDocumentosFiscais } from '@/components/dadosEmpresa/SecaoImportacaoDocumentosFiscais'
 import { SecaoVinculosSocietarios } from '@/components/dadosEmpresa/SecaoVinculosSocietarios'
+import { ModalImportarFaturamento } from '@/components/dadosEmpresa/ModalImportarFaturamento'
+import type { ResultadoIngestaoFaturamento } from '@/lib/ingestaoFaturamento'
 import { CampoBuscaCnpj } from '@/components/dadosEmpresa/CampoBuscaCnpj'
 import { BadgeProvenienciaCnpj } from '@/components/dadosEmpresa/BadgeProvenienciaCnpj'
 import { BadgeProvenienciaQsa } from '@/components/dadosEmpresa/BadgeProvenienciaQsa'
@@ -131,6 +133,7 @@ import {
   Globe2,
   Receipt,
   CreditCard,
+  Upload,
   AlertTriangle,
   Info,
   LogIn,
@@ -376,7 +379,11 @@ export default function DadosEmpresa() {
     gravando: gravandoVinculos,
     marcarHidratado,
     historicoVinculos,
+    refrescarHistorico,
   } = usePersistenciaVinculosSocietarios(formData.vinculosSocietarios, empresaIdParaRascunho)
+  // Estado do modal de importação de faturamento por arquivo (OFX/CSV/XLSX)
+  const [modalImportarFaturamentoAberto, setModalImportarFaturamentoAberto] = useState(false)
+  const [gravandoFaturamentoImportado, setGravandoFaturamentoImportado] = useState(false)
   // Hidratação vinda do BANCO (fonte da verdade): quando o perfil sincronizado
   // do contexto traz vínculos IGUAIS aos que a hidratação aplicou, marca como
   // já gravados para o debounce não regravar o que já está no registro. Uma
@@ -1270,6 +1277,88 @@ export default function DadosEmpresa() {
           : 'Não foi possível gravar os dados importados no banco de dados. Tente novamente.')
       setMensagemErro(`Erro ao salvar dados importados no banco: ${msg}`)
       throw err
+    }
+  }
+
+  // Handler de Confirmação da Importação de Faturamento por arquivo
+  // (OFX/CSV/XLSX). Grava APENAS o faturamento mensal, com o spread explícito
+  // do formDataRef (fonte mais recente do estado — lição v0.0.406 de stale
+  // closure: nunca fechar sobre a variável de render). A auditoria no GE
+  // ('Faturamento importado de arquivo por ...') é gravada pelo pb_hook
+  // SERVIDOR (historico_faturamento.js) neste mesmo update — aqui só
+  // REFRESCAMOS a leitura do histórico para o painel GE não mostrar dado velho.
+  const handleConfirmarImportacaoFaturamento = async (resumo: ResultadoIngestaoFaturamento) => {
+    setMensagemErro(null)
+    const valor = resumo.receitaTotal
+    if (!Number.isFinite(valor) || valor <= 0) {
+      setMensagemErro(
+        'Importação de faturamento: total calculado a partir do arquivo é zero ou inválido — nada foi gravado.',
+      )
+      return
+    }
+
+    // Fonte da verdade: o ref atualizado por efeito (nunca stale closure)
+    const dadosParaSalvar: DadosEmpresaPerfil = {
+      ...formDataRef.current,
+      faturamentoMensal: valor,
+    }
+
+    // Estado local imediato (campo da página reflete o total importado)
+    setFormData(dadosParaSalvar)
+    hasEditedRef.current = false
+
+    const alteracoes = calcularDiffDadosEmpresa(dadosEmpresa, dadosParaSalvar)
+
+    setGravandoFaturamentoImportado(true)
+    try {
+      const salvo = await salvar(dadosParaSalvar)
+      setSalvoComSucesso(true)
+      setTimeout(() => setSalvoComSucesso(false), 4000)
+
+      if (alteracoes.length > 0) {
+        try {
+          await registrarAuditoriaDadosEmpresa({
+            empresaId: empresaVinculadaId,
+            userId: user?.id,
+            origemAjuste: 'pagina_dados_empresa',
+            nomeEmpresa: salvo.nomeEmpresa,
+            cnpj: salvo.cnpj,
+            alteracoes,
+            snapshotAnterior: dadosEmpresa,
+            snapshotNovo: salvo,
+            descricao: `Importação de faturamento de arquivo: ${resumo.nomeArquivo || 'arquivo'} (total ${formatarMoeda(valor)})`,
+          })
+          listarAuditoriaDadosEmpresa({
+            empresaId: empresaVinculadaId || undefined,
+            userId: user?.id || undefined,
+          }).then((h) => setHistoricoAuditoria(h))
+        } catch (e) {
+          console.warn('Erro ao gravar auditoria da importação de faturamento:', e)
+        }
+      }
+
+      try {
+        localStorage.removeItem(chaveRascunhoEmpresa(empresaIdParaRascunho))
+        localStorage.removeItem(CHAVE_RASCUNHO_LEGADO)
+      } catch {
+        /* ignore */
+      }
+
+      // Refresca o histórico do Grupo Econômico (entrada 'Faturamento
+      // importado de arquivo por [usuário]' gravada pelo pb_hook no ONTO)
+      void refrescarHistorico()
+    } catch (err: any) {
+      console.error('Erro ao salvar faturamento importado:', err)
+      setSalvoComSucesso(false)
+      const msg =
+        err?.message ||
+        (typeof err === 'string'
+          ? err
+          : 'Não foi possível gravar o faturamento importado no banco de dados. Tente novamente.')
+      setMensagemErro(`Erro ao salvar faturamento importado no banco: ${msg}`)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } finally {
+      setGravandoFaturamentoImportado(false)
     }
   }
 
@@ -2492,7 +2581,7 @@ export default function DadosEmpresa() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {/* Faturamento Mensal */}
+                    {/* Faturamento Mensal + Importar faturamento de arquivo */}
                     <div className="space-y-2">
                       <Label htmlFor="fatMensal" className="text-sm font-bold text-[#07132B]">
                         Faturamento Mensal (R$) *
@@ -2511,6 +2600,23 @@ export default function DadosEmpresa() {
                         Receita bruta mensal. RBT12 calculada:{' '}
                         <strong>{formatarMoeda(faturamentoAnual)}</strong>.
                       </span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setModalImportarFaturamentoAberto(true)}
+                          disabled={gravandoFaturamentoImportado || isSalvando}
+                          className="h-9 px-4 w-full sm:w-auto rounded-xl text-xs font-bold border-[#07132B]/25 text-[#07132B] hover:bg-slate-100 flex items-center justify-center gap-2 disabled:opacity-60"
+                        >
+                          <Upload className="w-4 h-4 text-[#D4AF37]" />
+                          {gravandoFaturamentoImportado
+                            ? 'Gravando faturamento importado...'
+                            : 'Importar faturamento'}
+                        </Button>
+                        <span className="text-[10px] text-slate-500">
+                          OFX, CSV, XLSX ou TXT — pré-visualiza antes de gravar
+                        </span>
+                      </div>
                     </div>
 
                     {/* Folha de Pagamento Mensal */}
@@ -4083,6 +4189,13 @@ export default function DadosEmpresa() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* MODAL: IMPORTAÇÃO DE FATURAMENTO POR ARQUIVO (OFX/CSV/XLSX) */}
+      <ModalImportarFaturamento
+        open={modalImportarFaturamentoAberto}
+        onOpenChange={setModalImportarFaturamentoAberto}
+        onConfirmarImportacao={handleConfirmarImportacaoFaturamento}
+      />
 
       {/* FOOTER CTA DIAMOND */}
       <DiamondFooterCTA
