@@ -1306,6 +1306,18 @@ export default function DadosEmpresa() {
       faturamentoMensal: valor,
     }
 
+    // Proveniência da importação: quando a fonte é Google Sheets, marca o
+    // perfil para o pb_hook de auditoria registrar 'faturamento_importado_planilha'.
+    // A coluna fonte_faturamento_importacao NÃO existe no schema de
+    // clientes_empresas: o PocketBase ignora campos desconhecidos no update,
+    // então o flag viaja só em memória (auditoria client) e o valor lido de
+    // volta (recordToPerfil) sai sem o campo — nunca persiste nem quebra.
+    if (resumo.tipoFonte === 'sheets') {
+      ;(
+        dadosParaSalvar as Partial<DadosEmpresaPerfil> & { fonteFaturamentoImportacao?: string }
+      ).fonteFaturamentoImportacao = 'google_sheets'
+    }
+
     // Estado local imediato (campo da página reflete o total importado)
     setFormData(dadosParaSalvar)
     hasEditedRef.current = false
@@ -2610,7 +2622,10 @@ export default function DadosEmpresa() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setModalImportarFaturamentoAberto(true)}
+                          onClick={() => {
+                            setAbaInicialImportacaoFaturamento('arquivo')
+                            setModalImportarFaturamentoAberto(true)
+                          }}
                           disabled={gravandoFaturamentoImportado || isSalvando}
                           className="h-9 px-4 w-full sm:w-auto rounded-xl text-xs font-bold border-[#07132B]/25 text-[#07132B] hover:bg-slate-100 flex items-center justify-center gap-2 disabled:opacity-60"
                         >
@@ -2619,8 +2634,21 @@ export default function DadosEmpresa() {
                             ? 'Gravando faturamento importado...'
                             : 'Importar faturamento'}
                         </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setAbaInicialImportacaoFaturamento('sheets')
+                            setModalImportarFaturamentoAberto(true)
+                          }}
+                          disabled={gravandoFaturamentoImportado || isSalvando}
+                          className="h-9 px-4 w-full sm:w-auto rounded-xl text-xs font-bold border-[#07132B]/25 text-[#07132B] hover:bg-slate-100 flex items-center justify-center gap-2 disabled:opacity-60"
+                        >
+                          <FileSpreadsheet className="w-4 h-4 text-[#D4AF37]" />
+                          Google Sheets
+                        </Button>
                         <span className="text-[10px] text-slate-500">
-                          OFX, CSV, XLSX ou TXT — pré-visualiza antes de gravar
+                          OFX, CSV, XLSX, TXT ou planilha Google — pré-visualiza antes de gravar
                         </span>
                       </div>
                     </div>
@@ -4196,11 +4224,12 @@ export default function DadosEmpresa() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL: IMPORTAÇÃO DE FATURAMENTO POR ARQUIVO (OFX/CSV/XLSX) */}
+      {/* MODAL: IMPORTAÇÃO DE FATURAMENTO (ARQUIVO OFX/CSV/XLSX OU GOOGLE SHEETS) */}
       <ModalImportarFaturamento
         open={modalImportarFaturamentoAberto}
         onOpenChange={setModalImportarFaturamentoAberto}
         onConfirmarImportacao={handleConfirmarImportacaoFaturamento}
+        abaInicial={abaInicialImportacaoFaturamento}
       />
 
       {/* FOOTER CTA DIAMOND */}

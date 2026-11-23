@@ -17,6 +17,7 @@ export type AcaoHistoricoVinculo =
   | 'vinculo_adicionado'
   | 'vinculo_removido'
   | 'faturamento_importado'
+  | 'faturamento_importado_planilha'
 
 export interface RegistroHistoricoVinculo {
   /** Data/hora ISO da operação bem-sucedida */
@@ -107,6 +108,7 @@ const ROTULO_ACAO: Record<AcaoHistoricoVinculo, string> = {
   vinculo_adicionado: 'Vínculo adicionado',
   vinculo_removido: 'Vínculo removido',
   faturamento_importado: 'Faturamento importado de arquivo',
+  faturamento_importado_planilha: 'Faturamento importado de planilha',
 }
 
 /** Histórico para exibição: mais recente primeiro, limitado aos 20 primeiros. */
@@ -125,7 +127,10 @@ export function historicoParaExibicao(
       empresaNome: r.empresa_nome || 'Empresa sem nome',
       empresaCnpj: r.empresa_cnpj || '',
       usuarioNome: r.usuario_nome || 'Desconhecido',
-      detalheFaturamento: r.acao === 'faturamento_importado' ? r.detalhe_faturamento : undefined,
+      detalheFaturamento:
+        r.acao === 'faturamento_importado' || r.acao === 'faturamento_importado_planilha'
+          ? r.detalhe_faturamento
+          : undefined,
     }))
 }
 

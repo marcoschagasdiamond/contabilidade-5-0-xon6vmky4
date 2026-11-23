@@ -52,11 +52,19 @@ onRecordUpdate((e) => {
       )
     }
 
+    // A fonte Google Sheets marca o perfil com o flag em memória
+    // `fonteFaturamentoImportacao = 'google_sheets'` (a coluna não existe no
+    // schema — o PocketBase ignora campos desconhecidos no update, mas o valor
+    // chega aqui no record em memória durante o ONTO). Sem o flag (arquivo,
+    // digitação manual, admin UI), mantém a ação histórica original.
+    const marcouPlanilha = record.get('fonteFaturamentoImportacao') === 'google_sheets'
+    const acao = marcouPlanilha ? 'faturamento_importado_planilha' : 'faturamento_importado'
+
     const registro = {
       data: agora,
       usuario_id: usuarioId,
       usuario_nome: usuarioNome,
-      acao: 'faturamento_importado',
+      acao,
       empresa_nome: String(record.get('nome_empresa') || ''),
       empresa_cnpj: String(record.get('cnpj') || ''),
       tipo_vinculo: '',
