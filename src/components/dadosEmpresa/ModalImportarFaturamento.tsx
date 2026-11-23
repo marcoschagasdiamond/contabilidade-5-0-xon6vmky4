@@ -1,14 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react'
+/**
+ * Modal de importação de faturamento em /dados-empresa — DUAS FONTES:
+ *  - aba "Arquivo": OFX/CSV/XLSX/TXT (fluxo original, intocado)
+ *  - aba "Google Sheets": planilha online da PRÓPRIA conta Google do usuário
+ *    (conector toolkit 'googlesheets' via ConnectorButton + execute()).
+ *
+ * O modal NUNCA grava nada: apenas pré-visualiza e devolve o
+ * ResultadoIngestaoFaturamento ao onConfirmarImportacao (a página grava via
+ * DadosEmpresaContext.salvar()).
+ */
+import { useCallback, useMemo, useState } from 'react'
+import { AlertTriangle, CheckCircle2, FileSpreadsheet, Loader2, Table2, Upload } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -16,328 +27,371 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ConnectorButton } from '@/components/skip/ConnectorButton'
 import {
-  detectarTipoFonte,
-  parseOfxConteudo,
-  parsePlanilhaCsvXlsx,
   sugerirMapeamentoColunas,
   processarMapeamentoFaturamento,
+} from '@/lib/importacaoFaturamento'
+import {
+  importarFaturamentoGoogleSheets,
+  type IngestaoSheetsIntermediaria,
+} from '@/lib/ingestaoFaturamentoSheets'
+import {
+  parseArquivoFaturamento,
   type ResultadoIngestaoFaturamento,
-  type TipoFonteFaturamento,
-  type IngestaoPlanilhaIntermediaria,
 } from '@/lib/ingestaoFaturamento'
+import type { LinhaPlanilhaBruta } from '@/lib/ingestaoFaturamento'
 
-export interface ModalImportarFaturamentoEmpresaProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  /** Chamado SOMENTE quando há um total válido pré-visualizado — nada é gravado aqui. */
-  onConfirmarImportacao: (resumo: ResultadoIngestaoFaturamento) => void | Promise<void>
+interface ModalImportarFaturamentoProps {
+  aberto: boolean
+  onFechar: () => void
+  onConfirmarImportacao: (resumo: ResultadoIngestaoFaturamento) => void
+  abaInicial?: 'arquivo' | 'sheets'
 }
 
-const FORMATOS_ACEITOS = '.ofx,.csv,.xlsx,.txt'
+type AbaFonte = 'arquivo' | 'sheets'
 
-function formatarBrl(valor: number): string {
-  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
+const FORMATOS_ACEITOS = '.ofx,.csv,.xlsx,.xls,.txt'
 
-function formatarDataIso(iso?: string): string {
-  if (!iso) return '—'
-  const d = new Date(`${iso}T00:00:00`)
-  if (isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('pt-BR')
-}
-
-/**
- * Modal de importação de faturamento por arquivo (OFX / CSV / XLSX) na página
- * Dados da Empresa. Segue o padrão do modal da Calculadora: seleção de
- * arquivo → pré-visualização (total, quantidade de lançamentos, período) →
- * confirmação. Arquivo inválido/vazio mostra mensagem clara em PT-BR e NADA é
- * gravado — a gravação acontece na página, via DadosEmpresaContext.salvar().
- */
 export function ModalImportarFaturamento({
-  open,
-  onOpenChange,
+  aberto,
+  onFechar,
   onConfirmarImportacao,
-}: ModalImportarFaturamentoEmpresaProps) {
-  const [carregando, setCarregando] = useState(false)
-  const [erro, setErro] = useState<string | null>(null)
-  const [nomeArquivo, setNomeArquivo] = useState('')
-  const [tipoFonte, setTipoFonte] = useState<TipoFonteFaturamento | null>(null)
-  const [ofxTexto, setOfxTexto] = useState<string | null>(null)
-  const [planilha, setPlanilha] = useState<IngestaoPlanilhaIntermediaria | null>(null)
-  const [colunaFaturamento, setColunaFaturamento] = useState('')
-  // Período opcional indicado pelo técnico (quando o arquivo não traz datas)
-  const [periodoInicio, setPeriodoInicio] = useState('')
-  const [periodoFim, setPeriodoFim] = useState('')
+  abaInicial = 'arquivo',
+}: ModalImportarFaturamentoProps) {
+  const [aba, setAba] = useState<AbaFonte>(abaInicial)
+  const [abaRestaurada, setAbaRestaurada] = useState(false)
 
-  // Reseta tudo ao abrir
-  useEffect(() => {
-    if (open) {
-      setCarregando(false)
-      setErro(null)
-      setNomeArquivo('')
-      setTipoFonte(null)
-      setOfxTexto(null)
-      setPlanilha(null)
-      setColunaFaturamento('')
-      setPeriodoInicio('')
-      setPeriodoFim('')
-    }
-  }, [open])
+  // ---- Estado compartilhado das duas fontes (pós-leitura) -----------------
+  const [colunas, setColunas] = useState<string[]>([])
+  const [linhas, setLinhas] = useState<LinhaPlanilhaBruta[]>([])
+  const [mapeamento, setMapeamento] = useState<Record<string, string>>({})
+  const [resultado, setResultado] = useState<ResultadoIngestaoFaturamento | null>(null)
+  const [erroLeitura, setErroLeitura] = useState<string | null>(null)
+  const [lendo, setLendo] = useState(false)
 
-  // Pré-visualização recalculada em tempo real (inclusive quando o técnico
-  // ajusta o filtro de período em um OFX)
-  const preview = useMemo<ResultadoIngestaoFaturamento | null>(() => {
-    if (tipoFonte === 'ofx' && ofxTexto !== null) {
-      return parseOfxConteudo(ofxTexto, nomeArquivo, {
-        inicio: periodoInicio || undefined,
-        fim: periodoFim || undefined,
-      })
-    }
-    if ((tipoFonte === 'csv' || tipoFonte === 'xlsx') && planilha?.sucesso && colunaFaturamento) {
-      const extraido = processarMapeamentoFaturamento(planilha.linhas, {
-        colunaFaturamento,
-        tipoFaturamento: 'auto',
-      })
-      if (extraido.faturamentoMensal <= 0) return null
-      return {
-        sucesso: true,
-        tipoFonte,
-        nomeArquivo,
-        receitaTotal: extraido.faturamentoMensal,
-        qtdLancamentos: extraido.totalMesesIdentificados,
-        periodoInicio: periodoInicio || undefined,
-        periodoFim: periodoFim || undefined,
-        lancamentos: [],
-        avisos: extraido.avisos,
-      }
-    }
-    return null
-  }, [tipoFonte, ofxTexto, planilha, colunaFaturamento, periodoInicio, periodoFim, nomeArquivo])
+  // ---- Estado da aba arquivo ----------------------------------------------
+  const [nomeArquivo, setNomeArquivo] = useState<string | null>(null)
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // ---- Estado da aba sheets -----------------------------------------------
+  const [linkPlanilha, setLinkPlanilha] = useState('')
+  const [planilhaSheets, setPlanilhaSheets] = useState<IngestaoSheetsIntermediaria | null>(null)
 
-    setErro(null)
-    setOfxTexto(null)
-    setPlanilha(null)
-    setPeriodoInicio('')
-    setPeriodoFim('')
-    setColunaFaturamento('')
+  // Restaura a aba pedida quando o modal (re)abre
+  if (aberto && !abaRestaurada) {
+    setAba(abaInicial)
+    setAbaRestaurada(true)
+  }
+  if (!aberto && abaRestaurada) {
+    setAbaRestaurada(false)
+  }
 
-    const tipo = detectarTipoFonte(file.name)
-    if (!tipo) {
-      setTipoFonte(null)
-      setErro(
-        'Formato de arquivo não suportado. Envie um extrato .ofx, uma planilha .csv/.xlsx ou um .txt delimitado.',
-      )
-      e.target.value = ''
-      return
-    }
+  const limparEstado = useCallback(() => {
+    setColunas([])
+    setLinhas([])
+    setMapeamento({})
+    setResultado(null)
+    setErroLeitura(null)
+    setNomeArquivo(null)
+    setPlanilhaSheets(null)
+  }, [])
 
-    setNomeArquivo(file.name)
-    setTipoFonte(tipo)
-    setCarregando(true)
-    try {
-      if (tipo === 'ofx') {
-        const texto = await file.text()
-        setOfxTexto(texto)
-      } else {
-        const res = await parsePlanilhaCsvXlsx(file)
-        if (!res.sucesso) {
-          setTipoFonte(null)
-          setErro(res.erro || 'Não foi possível ler a planilha enviada.')
-        } else {
-          setPlanilha(res)
-          const sugestao = sugerirMapeamentoColunas(res.colunas)
-          setColunaFaturamento(sugestao.colunaFaturamento || res.colunas[0] || '')
+  const aplicarDados = useCallback((dados: { colunas: string[]; linhas: LinhaPlanilhaBruta[] }) => {
+    setColunas(dados.colunas)
+    setLinhas(dados.linhas)
+    setMapeamento(sugerirMapeamentoColunas(dados.colunas))
+    setResultado(null)
+  }, [])
+
+  /** Aba arquivo: lê OFX/CSV/XLSX/TXT local. */
+  const aoSelecionarArquivo = useCallback(
+    async (arquivo: File) => {
+      setLendo(true)
+      setErroLeitura(null)
+      setPlanilhaSheets(null)
+      setNomeArquivo(arquivo.name)
+      try {
+        const intermediaria = await parseArquivoFaturamento(arquivo)
+        if (!intermediaria.sucesso) {
+          setErroLeitura(intermediaria.erro || 'Não foi possível ler o arquivo.')
+          setColunas([])
+          setLinhas([])
+          setResultado(null)
+          return
         }
+        aplicarDados(intermediaria)
+      } catch (err) {
+        setErroLeitura(err instanceof Error ? err.message : 'Não foi possível ler o arquivo.')
+        etColunas([])
+        setLinhas([])
+        setResultado(null)
+      } finally {
+        setLendo(false)
       }
-    } catch (err: any) {
-      setTipoFonte(null)
-      setErro(err?.message || 'Falha ao ler o arquivo. Verifique se ele não está corrompido.')
+    },
+    [aplicarDados],
+  )
+
+  /** Aba sheets: lê a planilha online pela conta Google conectada do usuário. */
+  const aoLerPlanilhaSheets = useCallback(async () => {
+    setLendo(true)
+    setErroLeitura(null)
+    setNomeArquivo(null)
+    try {
+      const intermediaria = await importarFaturamentoGoogleSheets(linkPlanilha)
+      setPlanilhaSheets(intermediaria)
+      if (!intermediaria.sucesso) {
+        setErroLeitura(intermediaria.erro || 'Não foi possível ler a planilha.')
+        setColunas([])
+        setLinhas([])
+        setResultado(null)
+        return
+      }
+      aplicarDados(intermediaria)
+    } catch (err) {
+      setPlanilhaSheets(null)
+      setErroLeitura(err instanceof Error ? err.message : 'Não foi possível ler a planilha.')
+      setColunas([])
+      setLinhas([])
+      setResultado(null)
     } finally {
-      setCarregando(false)
-      // Limpa o input para permitir reenviar o mesmo arquivo
-      e.target.value = ''
+      setLendo(false)
     }
-  }
+  }, [linkPlanilha, aplicarDados])
 
-  const handleConfirmar = () => {
-    if (!preview || !preview.sucesso || preview.receitaTotal <= 0) return
-    onConfirmarImportacao(preview)
-    onOpenChange(false)
-  }
+  /** Recalcula a pré-visualização quando o mapeamento muda (fonte: colunas→valores). */
+  const recalcular = useCallback(
+    (novoMapeamento: Record<string, string>) => {
+      setMapeamento(novoMapeamento)
+      if (linhas.length === 0) {
+        setResultado(null)
+        return
+      }
+      const res = processarMapeamentoFaturamento({
+        colunas,
+        linhas,
+        mapeamento: novoMapeamento,
+        tipoFonte: aba === 'sheets' ? 'sheets' : 'arquivo',
+        nomeFonte:
+          aba === 'sheets'
+            ? planilhaSheets?.titulo || 'Planilha Google Sheets'
+            : nomeArquivo || undefined,
+      })
+      setResultado(res)
+    },
+    [linhas, colunas, aba, planilhaSheets, nomeArquivo],
+  )
 
-  const erroExibicao = erro || (preview && !preview.sucesso ? preview.erro : null)
-  const podeConfirmar = !!preview && preview.sucesso && preview.receitaTotal > 0
+  const podeConfirmar = !!resultado && !resultado.erro && resultado.totalLinhas > 0
+
+  const aoConfirmar = useCallback(() => {
+    if (!podeConfirmar || !resultado) return
+    onConfirmarImportacao(resultado)
+  }, [podeConfirmar, resultado, onConfirmarImportacao])
+
+  const resumoSheets = useMemo(() => {
+    if (aba !== 'sheets' || !planilhaSheets?.sucesso) return null
+    return planilhaSheets
+  }, [aba, planilhaSheets])
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl border-slate-200">
+    <Dialog open={aberto} onOpenChange={(o) => !o && onFechar()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <div className="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#07132B] text-[#D4AF37] w-fit">
-            Contabilidade 5.0 • Importação de Faturamento
-          </div>
-          <DialogTitle className="text-base font-extrabold text-[#07132B] pt-1">
-            Importar Faturamento de Arquivo
-          </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500">
-            Suba um extrato bancário (.ofx) ou uma planilha (.csv / .xlsx / .txt) com a receita do
-            período. Nada é gravado antes de você revisar e confirmar os valores.
+          <DialogTitle>Importar faturamento</DialogTitle>
+          <DialogDescription>
+            OFX, CSV, XLSX, TXT ou Google Sheets — pré-visualiza antes de gravar.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 pt-1">
-          {/* Seleção de arquivo */}
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-[#07132B]">Arquivo de faturamento *</Label>
-            <label className="block">
-              <input
-                type="file"
-                accept={FORMATOS_ACEITOS}
-                onChange={handleUpload}
-                disabled={carregando}
-                className="hidden"
-              />
-              <div className="w-full h-10 rounded-xl bg-[#D4AF37] hover:bg-[#c49f2e] text-[#07132B] font-extrabold text-xs tracking-wide shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center cursor-pointer">
-                {carregando ? 'Lendo arquivo...' : 'Selecionar Arquivo (OFX / CSV / XLSX)'}
-              </div>
-            </label>
-            <span className="text-[10px] text-slate-400 block">
-              Formatos aceitos: .ofx (extrato bancário), .csv, .xlsx e .txt delimitado
-            </span>
-          </div>
-
-          {/* Erro: arquivo inválido/vazio — mensagem clara, nada gravado */}
-          {erroExibicao && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800">
-              <span className="font-bold block">Não foi possível importar:</span>
-              {erroExibicao}
-            </div>
-          )}
-
-          {/* Coluna de faturamento (apenas planilhas) */}
-          {(tipoFonte === 'csv' || tipoFonte === 'xlsx') && planilha?.sucesso && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-[#07132B]">
-                Coluna de Faturamento / Receita *
-              </Label>
-              <Select value={colunaFaturamento} onValueChange={setColunaFaturamento}>
-                <SelectTrigger className="h-9 text-xs border-slate-300">
-                  <SelectValue placeholder="Selecione a coluna..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {planilha.colunas.map((col) => (
-                    <SelectItem key={col} value={col} className="text-xs">
-                      {col}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="text-[10px] text-slate-500">
-                Ex: "Receita Bruta", "Faturamento", "Vendas" — {planilha.totalLinhas} linha(s)
-                lida(s) do arquivo "{nomeArquivo}"
-              </span>
-            </div>
-          )}
-
-          {/* Pré-visualização */}
-          {preview && preview.sucesso && (
-            <div className="p-4 rounded-xl border-2 border-[#D4AF37]/60 bg-gradient-to-br from-amber-50/40 via-white to-white space-y-3">
-              <span className="text-xs font-extrabold uppercase tracking-wide text-[#07132B] block">
-                Pré-visualização — revise antes de confirmar
-              </span>
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="p-2 rounded-lg bg-white border border-slate-200">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">
-                    Total calculado
-                  </span>
-                  <span className="text-sm font-mono font-extrabold text-[#07132B]">
-                    {formatarBrl(preview.receitaTotal)}
-                  </span>
-                </div>
-                <div className="p-2 rounded-lg bg-white border border-slate-200">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">
-                    Lançamentos
-                  </span>
-                  <span className="text-sm font-mono font-extrabold text-[#07132B]">
-                    {preview.qtdLancamentos}
-                  </span>
-                </div>
-                <div className="p-2 rounded-lg bg-white border border-slate-200">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">
-                    Período
-                  </span>
-                  <span className="text-[11px] font-bold text-[#07132B]">
-                    {preview.periodoInicio || preview.periodoFim
-                      ? `${formatarDataIso(preview.periodoInicio)} a ${formatarDataIso(preview.periodoFim)}`
-                      : 'Não identificado'}
-                  </span>
-                </div>
-              </div>
-              {preview.avisos.length > 0 && (
-                <div className="text-[11px] text-slate-600 space-y-0.5">
-                  {preview.avisos.map((aviso, idx) => (
-                    <p key={idx}>• {aviso}</p>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Período manual (opcional) — para OFX filtra os créditos do extrato */}
-          <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
-            <span className="text-xs font-bold text-[#07132B] block">
-              Período de referência (opcional)
-            </span>
-            <p className="text-[11px] text-slate-600">
-              Obrigatório apenas quando o arquivo não identificar datas. Em um OFX, informa o
-              intervalo dos créditos somados.
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[11px] font-semibold text-slate-700">Início</Label>
-                <Input
-                  type="date"
-                  value={periodoInicio}
-                  onChange={(e) => setPeriodoInicio(e.target.value)}
-                  className="h-9 text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[11px] font-semibold text-slate-700">Fim</Label>
-                <Input
-                  type="date"
-                  value={periodoFim}
-                  onChange={(e) => setPeriodoFim(e.target.value)}
-                  className="h-9 text-xs"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-1">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="text-xs h-9"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={handleConfirmar}
-              disabled={!podeConfirmar || carregando}
-              className="text-xs h-9 bg-[#07132B] hover:bg-[#0c1e40] text-[#D4AF37] border border-[#D4AF37] font-extrabold shadow-md disabled:opacity-50"
-            >
-              Confirmar Importação
-            </Button>
-          </div>
+        {/* Toggles de fonte */}
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant={aba === 'arquivo' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => {
+              setAba('arquivo')
+              limparEstado()
+            }}
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Arquivo
+          </Button>
+          <Button
+            type="button"
+            variant={aba === 'sheets' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => {
+              setAba('sheets')
+              limparEstado()
+            }}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Google Sheets
+          </Button>
         </div>
+
+        {erroLeitura && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {erroLeitura}
+          </div>
+        )}
+
+        {/* --------------------------- ABA ARQUIVO --------------------------- */}
+        {aba === 'arquivo' && (
+          <div className="space-y-3">
+            <Label htmlFor="importar-faturamento-arquivo" className="sr-only">
+              Arquivo de faturamento
+            </Label>
+            <Input
+              id="importar-faturamento-arquivo"
+              type="file"
+              accept={FORMATOS_ACEITOS}
+              disabled={lendo}
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void aoSelecionarArquivo(f)
+              }}
+            />
+            {lendo && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Lendo arquivo…
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ------------------------ ABA GOOGLE SHEETS ------------------------ */}
+        {aba === 'sheets' && (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <ConnectorButton toolkit="googlesheets" name="Google Sheets" />
+              <span className="text-xs text-muted-foreground">
+                Conecte a SUA conta Google para o app ler a planilha que você compartilhar.
+              </span>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="importar-faturamento-sheets-link">Link ou ID da planilha</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="importar-faturamento-sheets-link"
+                  placeholder="https://docs.google.com/spreadsheets/d/…"
+                  value={linkPlanilha}
+                  disabled={lendo}
+                  onChange={(e) => setLinkPlanilha(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={lendo || !linkPlanilha.trim()}
+                  onClick={() => void aoLerPlanilhaSheets()}
+                >
+                  {lendo ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Table2 className="h-4 w-4" />
+                  )}
+                  Ler planilha
+                </Button>
+              </div>
+            </div>
+            {resumoSheets && (
+              <p className="text-xs text-muted-foreground">
+                Planilha lida:{' '}
+                <span className="font-medium">{resumoSheets.titulo || resumoSheets.id}</span> —{' '}
+                {resumoSheets.totalLinhas} linha(s) de dados.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ------------------- MAPEAMENTO + PRÉ-VISUALIZAÇÃO ------------------ */}
+        {colunas.length > 0 && linhas.length > 0 && (
+          <div className="space-y-3 border-t pt-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {['data', 'valor', 'descricao'].map((campo) => (
+                <div key={campo} className="space-y-1">
+                  <Label>
+                    Coluna{' '}
+                    {campo === 'data'
+                      ? 'da data'
+                      : campo === 'valor'
+                        ? 'do valor'
+                        : 'da descrição (opcional)'}
+                  </Label>
+                  <Select
+                    value={mapeamento[campo] || ''}
+                    onValueChange={(v) => recalcular({ ...mapeamento, [campo]: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {colunas.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+
+            {resultado?.erro && (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{resultado.erro}</span>
+              </div>
+            )}
+
+            {resultado && !resultado.erro && (
+              <div className="rounded-md border px-3 py-2 space-y-1">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  Pré-visualização
+                </div>
+                <div className="text-sm">
+                  Total: <span className="font-semibold">{formatarMoeda(resultado.total)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {resultado.totalLinhas} lançamento(s) · período {resultado.periodoInicio || '—'} a{' '}
+                  {resultado.periodoFim || '—'}
+                </div>
+                <div className="max-h-40 overflow-y-auto text-xs">
+                  {resultado.lancamentos.slice(0, 20).map((l, i) => (
+                    <div
+                      key={i}
+                      className="flex justify-between gap-2 border-b py-0.5 last:border-b-0"
+                    >
+                      <span>
+                        {l.data || '—'} — {l.descricao || '(sem descrição)'}
+                      </span>
+                      <span className="whitespace-nowrap font-medium">
+                        {formatarMoeda(l.valor)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={onFechar}>
+                Cancelar
+              </Button>
+              <Button type="button" size="sm" disabled={!podeConfirmar} onClick={aoConfirmar}>
+                Confirmar importação
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )
+}
+
+function formatarMoeda(valor: number): string {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }

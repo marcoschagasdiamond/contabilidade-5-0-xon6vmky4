@@ -4,10 +4,11 @@
  * Fontes hoje suportadas:
  *  - arquivo OFX (extrato bancário) → soma dos lançamentos de crédito (receita) no período
  *  - arquivo CSV/XLSX → reutiliza o parser consolidado da Calculadora (importacaoFaturamento.ts)
+ *  - Google Sheets (planilha online via conector do usuário) → ingestaoFaturamentoSheets.ts
  *
- * Fontes futuras (planilha online via conector, API de ERP) entram aqui como novas
- * implementações de FonteFaturamento — os consumidores (GE, Fase 04, dossiê) continuam
- * lendo os mesmos campos gravados, sem alteração de comportamento.
+ * Fontes futuras (API de ERP) entram aqui como novas implementações de
+ * FonteFaturamento — os consumidores (GE, Fase 04, dossiê) continuam lendo os
+ * mesmos campos gravados, sem alteração de comportamento.
  */
 import {
   parseArquivoFaturamento,
@@ -17,7 +18,7 @@ import {
   type MapeamentoColunasFaturamento,
 } from '@/lib/importacaoFaturamento'
 
-export type TipoFonteFaturamento = 'ofx' | 'csv' | 'xlsx'
+export type TipoFonteFaturamento = 'ofx' | 'csv' | 'xlsx' | 'sheets'
 
 export interface TransacaoOfx {
   tipo: 'credito' | 'debito'
