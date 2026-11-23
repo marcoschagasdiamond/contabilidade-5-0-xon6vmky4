@@ -98,6 +98,62 @@ import { toast } from '@/hooks/use-toast'
 // ============================================================
 const CHAVE_RASCUNHO_CALCULADORA = 'contabilidade50_rascunho_calculadora_v1'
 
+interface RascunhoModulo2 {
+  valorOperacao: number
+  regimeOperacao: RegimeDiferenciadoTipo
+  anoOperacao: AnoTransicaoIbsCbs
+  percentualComprasVendasSimples: number
+  // Espelho das flags de edição manual na hora da gravação: na restauração,
+  // um campo que o usuário editou não é reapontado pela propagação do Módulo 1
+  // (o restore do autosave das Configurações usa updateConfig, que propaga).
+  editado: {
+    valorOperacao: boolean
+    regimeOperacao: boolean
+    anoOperacao: boolean
+    percentualCompras: boolean
+  }
+}
+
+interface RascunhoModulo3 {
+  faturamentoMensal: number
+  tipoAtividade: TipoAtividade
+  // Subatividade ativa por ramo (a ativa é a do tipoAtividade selecionado)
+  subatividadeServico: SubatividadeServico
+  subatividadeIndustria: SubatividadeIndustria
+  subatividadeComercio: SubatividadeComercio
+  subatividadeAgro: SubatividadeAgronegocio
+  subatividadeConstrucao: SubatividadeConstrucao
+  subatividadeLocacao: SubatividadeLocacao
+  subatividadeFoodService: SubatividadeFoodService
+  aliquotaImpostoSeletivo: number
+  proporcaoServicoMisto: number
+  percentualComprasVendasComparativo: number
+  folhaPagamentoMensal: number
+  margemLucroEstimada: number
+  despesasComCreditosMensais: number
+  percentualExportacao: number
+  ufOrigem: string
+  editado: {
+    faturamento: boolean
+    percentualCompras: boolean
+    tipoAtividade: boolean
+  }
+}
+
+interface RascunhoModulo4 {
+  despesasCreditos: CategoriaDespesaCredito[]
+}
+
+interface RascunhoModulo5 {
+  faturamentoAnualProjetado: number
+  setorTransicao: TipoAtividade
+  valorEstoqueVirada: number
+  editado: {
+    faturamento: boolean
+    setor: boolean
+  }
+}
+
 interface RascunhoCalculadora {
   identidade: {
     usuarioId: string
@@ -116,6 +172,11 @@ interface RascunhoCalculadora {
   perfilRetencaoSplit: import('@/types/dadosEmpresa').PerfilRetencaoSplit
   percentualRetencaoSplit: number
   etiquetasOrigem?: import('@/types/calculadoraIbsCbs').OrigemCamposAliquota
+  // Módulos 2 a 5: rascunhos opcionais (payloads antigos não os têm)
+  modulo2?: RascunhoModulo2
+  modulo3?: RascunhoModulo3
+  modulo4?: RascunhoModulo4
+  modulo5?: RascunhoModulo5
   salvoEm: string
 }
 
