@@ -37,6 +37,7 @@ import {
   REDUCAO_CBS_2027_2028,
   FATOR_TRANSICAO_IBS,
   FATOR_REMANESCENTE_ICMS_ISS,
+  isAnoPosTransicaoSimulacao,
 } from './reformaTributaria'
 import type {
   FornecedorDiagnostico,
@@ -54,8 +55,9 @@ export interface AliquotasCreditoAno {
 }
 
 /**
- * Retorna as alíquotas efetivas de crédito gerado por ano da transição (2026-2033)
+ * Retorna as alíquotas efetivas de crédito gerado por ano da transição (2026-2040)
  * para Regime Regular vs. Simples Nacional sob a LC 214/2025.
+ * A partir de 2034 a transição está concluída: mesmo tratamento do ano pleno 2033.
  */
 export function obterAliquotasCreditoPorAno(ano: AnoBaseSimulacao): AliquotasCreditoAno {
   if (ano === 2026) {
@@ -100,13 +102,15 @@ export function obterAliquotasCreditoPorAno(ano: AnoBaseSimulacao): AliquotasCre
     }
   }
 
-  // 2033 pleno: CBS (8,8%) + IBS (17,7%) = 26,5%
+  // 2033 pleno (e 2034+ regime definitivo — transição concluída): CBS (8,8%) + IBS (17,7%) = 26,5%
   // Simples Nacional no regime híbrido transfere cota de consumo (~6,5% a 7,0%)
   return {
     ano,
     aliquotaRegimeRegular: SOMA_IVA_DUAL_REFERENCIA, // 26,5%
     aliquotaSimplesMedia: 0.065, // ~6,5%
-    detalhesTexto: 'Ano 2033: Sistema Pleno IVA Dual (CBS 8,8% + IBS 17,7% = 26,5%).',
+    detalhesTexto: isAnoPosTransicaoSimulacao(ano)
+      ? `Ano ${ano}: Regime definitivo — 100% IBS/CBS (CBS 8,8% + IBS 17,7% = 26,5%), transição concluída.`
+      : 'Ano 2033: Sistema Pleno IVA Dual (CBS 8,8% + IBS 17,7% = 26,5%).',
   }
 }
 

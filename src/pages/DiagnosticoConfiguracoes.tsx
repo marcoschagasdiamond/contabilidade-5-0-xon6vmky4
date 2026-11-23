@@ -30,7 +30,7 @@ import {
   SubatividadeComercio,
   SubatividadeIndustria,
 } from '@/types/calculadoraIbsCbs'
-import { AnoBaseSimulacao } from '@/lib/reformaTributaria'
+import { AnoBaseSimulacao, ANOS_SIMULACAO_DISPONIVEIS } from '@/lib/reformaTributaria'
 import { salvarDadosEmpresa, carregarDadosEmpresa } from '@/types/dadosEmpresa'
 import { atualizarCliente } from '@/services/clientes'
 import pb from '@/lib/pocketbase/client'
@@ -681,17 +681,17 @@ export default function DiagnosticoConfiguracoes() {
                   Atividade Mista & Ano da Transição
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Calibração precisa da proporção Serviço × Comércio e linha do tempo 2026–2033.
+                  Calibração precisa da proporção Serviço × Comércio e linha do tempo 2026–2040.
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* ANO DA TRANSIÇÃO (2026-2033) */}
+              {/* ANO DA TRANSIÇÃO (2026-2040) */}
               <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-[#07132B] uppercase tracking-wider block">
-                    Ano da Transição (2026–2033)
+                    Ano da Transição (2026–2040)
                   </label>
                   <span className="text-xs font-mono font-bold text-[#D4AF37] bg-[#07132B] px-3 py-1 rounded-md">
                     Ano: {formData.anoBaseTransicao}
@@ -702,7 +702,7 @@ export default function DiagnosticoConfiguracoes() {
                   Operação" no Módulo 2).
                 </p>
                 <div className="grid grid-cols-4 gap-2 pt-1">
-                  {[2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033].map((ano) => {
+                  {ANOS_SIMULACAO_DISPONIVEIS.map((ano) => {
                     const isSel = formData.anoBaseTransicao === ano
                     return (
                       <button
@@ -721,10 +721,19 @@ export default function DiagnosticoConfiguracoes() {
                         }`}
                       >
                         {ano}
+                        {ano >= 2034 && (
+                          <span className="block text-[9px] font-semibold text-emerald-700">
+                            Definitivo
+                          </span>
+                        )}
                       </button>
                     )
                   })}
                 </div>
+                <p className="text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5">
+                  A partir de 2034 a transição está concluída: regime definitivo — CBS 8,80% e IBS
+                  17,70% em 100% das alíquotas, com IS pleno.
+                </p>
               </div>
 
               {/* TOGGLE & SLIDER DE ATIVIDADE MISTA */}

@@ -922,7 +922,7 @@ export function gerarRelatorioSimulacaoPDF(options: GerarPdfSimulacaoOptions): v
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9.5)
   doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
-  doc.text('MÓDULO 5 • CRONOGRAMA DA TRANSIÇÃO TRIBUTÁRIA (2026–2033)', margin, currentY + 3)
+  doc.text('MÓDULO 5 • CRONOGRAMA DA TRANSIÇÃO TRIBUTÁRIA (2026–2040)', margin, currentY + 3)
 
   currentY += 6
 
@@ -1796,7 +1796,7 @@ export function gerarRelatorioComparativoPDF(options: GerarPdfComparativoOptions
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
   doc.setTextColor(COR_VERDE_ESCURO[0], COR_VERDE_ESCURO[1], COR_VERDE_ESCURO[2])
-  doc.text('CRONOGRAMA DE TRANSIÇÃO (2026–2033) POR CENÁRIO', margin, currentY)
+  doc.text('CRONOGRAMA DE TRANSIÇÃO (2026–2040) POR CENÁRIO', margin, currentY)
 
   currentY += 6
 

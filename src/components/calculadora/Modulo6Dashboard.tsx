@@ -7,6 +7,8 @@ import {
   AnoTransicaoIbsCbs,
   LISTA_ANOS_TRANSICAO,
   CRONOGRAMA_FASES_TRANSICAO,
+  obterFaseTransicaoPorAno,
+  isAnoPosTransicao,
   PRESETS_SETORES_LC214,
 } from '@/types/calculadoraIbsCbs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -237,7 +239,8 @@ export default function Modulo6Dashboard({
   const dadosFaseAnoDashboard =
     anoSimulacaoSelecionado === 'atual'
       ? CRONOGRAMA_FASES_TRANSICAO['atual']
-      : CRONOGRAMA_FASES_TRANSICAO[anoSimulacaoSelecionado] || CRONOGRAMA_FASES_TRANSICAO[2033]
+      : obterFaseTransicaoPorAno(anoSimulacaoSelecionado as AnoTransicaoIbsCbs) ||
+        CRONOGRAMA_FASES_TRANSICAO[2033]
 
   const ehMesmoAnoDoModulo1 =
     config.anoTransicao !== undefined &&
@@ -689,9 +692,9 @@ export default function Modulo6Dashboard({
         return
       }
 
-      // Para os anos de 2027 a 2033:
-      // Alíquotas oficiais da fase daquele ano (LC 214/2025)
-      const faseAno = CRONOGRAMA_FASES_TRANSICAO[ano] || CRONOGRAMA_FASES_TRANSICAO[2033]
+      // Para os anos de 2027 a 2040:
+      // Alíquotas oficiais da fase daquele ano (LC 214/2025) — 2034+ clonam a base de 2033
+      const faseAno = obterFaseTransicaoPorAno(ano) || CRONOGRAMA_FASES_TRANSICAO[2033]
       const cbsAno = faseAno.aliquotaCbs
       const ibsAno = faseAno.aliquotaIbs
       const totalIvaDualAno = faseAno.totalIvaDual
@@ -966,7 +969,9 @@ export default function Modulo6Dashboard({
                 </SelectTrigger>
                 <SelectContent className="max-h-80">
                   {LISTA_ANOS_TRANSICAO.map((ano) => {
-                    const dados = CRONOGRAMA_FASES_TRANSICAO[ano]
+                    const dados = obterFaseTransicaoPorAno(ano)
+                    if (!dados) return null
+                    const posTransicao = isAnoPosTransicao(ano)
                     const rotuloPrincipal =
                       ano === 'atual' ? 'Ano atual (sistema atual)' : `${ano} • ${dados.fase}`
                     return (
@@ -979,6 +984,7 @@ export default function Modulo6Dashboard({
                             {ano === 'atual'
                               ? 'Pré-reforma · CBS e IBS 0,00%'
                               : `${dados.aliquotaCbs.toFixed(2)}% CBS + ${dados.aliquotaIbs.toFixed(2)}% IBS (${dados.totalIvaDual.toFixed(2)}%)`}
+                            {posTransicao ? ' · Regime definitivo — 100% IBS/CBS' : ''}
                           </span>
                         </div>
                       </SelectItem>
@@ -989,6 +995,11 @@ export default function Modulo6Dashboard({
               <p className="text-xs text-muted-foreground mt-1.5 leading-snug">
                 Define a fase da transição usada nos KPIs, gráficos e Split Payment
               </p>
+              {isAnoPosTransicao(anoTransicaoDashboard) && (
+                <Badge className="mt-2 bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-100">
+                  Regime definitivo — 100% IBS/CBS
+                </Badge>
+              )}
             </div>
 
             {/* Filtro: Setor (com BadgeOrigemPropagada quando propagado) */}

@@ -1,4 +1,5 @@
 import type {
+  AnoTransicaoIbsCbs,
   ConfiguracoesGerais,
   RegimeDiferenciadoTipo,
   TipoAtividade,
@@ -20,13 +21,14 @@ export interface ParametrosSimulacaoCalculadora {
   config: ConfiguracoesGerais
 
   // Preenchimento Assistido do Módulo 1
-  anoTransicao?: 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+  // AnoTransicaoIbsCbs cobre 2026–2040: a partir de 2034 a transição está concluída (regime definitivo).
+  anoTransicao?: AnoTransicaoIbsCbs
   presetSetor?: string
 
   // Módulo 2 - Calculadora Simples
   valorOperacao: number
   regimeOperacao: RegimeDiferenciadoTipo
-  anoOperacao?: 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+  anoOperacao?: AnoTransicaoIbsCbs
   percentualComprasVendasSimples: number
 
   // Módulo 3 - Comparativo por Regime
@@ -69,7 +71,7 @@ export interface ParametrosSimulacaoCalculadora {
   periodoDashboard: 'mensal' | 'anual'
   regimeAtualFiltro: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
   regimeAtualEmpresa?: 'Lucro Real' | 'Lucro Presumido' | 'Simples Nacional'
-  anoTransicaoDashboard?: 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+  anoTransicaoDashboard?: AnoTransicaoIbsCbs
 
   // Metadados opcionais da empresa
   empresa?: string
@@ -129,7 +131,7 @@ export interface ResultadosSimulacaoCalculadora {
     valorARecolher: number
     aliquotaEfetiva: number
     valorTotalNotaFiscal: number
-    anoOperacao?: 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+    anoOperacao?: AnoTransicaoIbsCbs
     etiquetaLegalExibida?: string
   }
   resultadoComparativo: {
@@ -192,7 +194,7 @@ export interface ResultadosSimulacaoCalculadora {
     adicionalGanho: number
     aumentoPercentual: number
     economiaAnual: number
-    anoOperacao?: 'atual' | 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+    anoOperacao?: AnoTransicaoIbsCbs
     aliquotaReferencia?: number
     regimeOperacao?: RegimeDiferenciadoTipo
     grupoRegime?: string

@@ -1034,7 +1034,7 @@ export function exportarPdfRelatorioConsolidado(dados: DadosRelatorioConsolidado
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9.5)
   doc.setTextColor(COR_NAVY[0], COR_NAVY[1], COR_NAVY[2])
-  doc.text('3. DIAGNÓSTICO DE TRANSIÇÃO FISCAL (REFORMA TRIBUTÁRIA 2026–2033)', margin, y + 4)
+  doc.text('3. DIAGNÓSTICO DE TRANSIÇÃO FISCAL (REFORMA TRIBUTÁRIA 2026–2040)', margin, y + 4)
   y += 7
 
   if (dados.diagnosticoTransicao?.dados_extra_json) {

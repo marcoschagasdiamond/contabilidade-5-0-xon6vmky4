@@ -330,9 +330,12 @@ export default function Diagnostico() {
   // Visualização ativa na tela de resultado: 'novo' (Reforma IBS/CBS), 'atual' (Legislação Atual) ou 'comparativo' (lado a lado)
   const [visaoSistema, setVisaoSistema] = useState<'novo' | 'comparativo' | 'atual'>('novo')
 
-  // Lista de anos para o seletor da transição na tela de resultado: 2027 a 2033 (inclui 2026 se for o ano base inicial/salvo)
+  // Lista de anos para o seletor da transição na tela de resultado: 2027 a 2040
+  // (inclui 2026 se for o ano base inicial/salvo). 2034+ = regime definitivo (transição concluída).
   const anosOpcoesSimulacao = React.useMemo<AnoBaseSimulacao[]>(() => {
-    const anosBase: AnoBaseSimulacao[] = [2027, 2028, 2029, 2030, 2031, 2032, 2033]
+    const anosBase: AnoBaseSimulacao[] = [
+      2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040,
+    ]
     if (formData.anoBase === 2026 || (resultado && resultado.anoBase === 2026)) {
       return [2026, ...anosBase]
     }
@@ -2014,7 +2017,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                       </span>
                     </div>
                     <label className="block text-sm font-heading font-extrabold text-slate-900 mt-1">
-                      Ano-base para a Simulação da Transição Fiscais (2026 a 2033) *
+                      Ano-base para a Simulação da Transição Fiscais (2026 a 2040) *
                     </label>
                   </div>
                   <span className="text-xs font-bold text-[#145A32] bg-white px-3 py-1 rounded-full border border-emerald-300 shrink-0 self-start sm:self-auto">
@@ -2054,6 +2057,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                           {ano === 2031 && 'IBS 30%'}
                           {ano === 2032 && 'IBS 40%'}
                           {ano === 2033 && 'IBS Pleno'}
+                          {ano >= 2034 && 'Definitivo'}
                         </div>
                       </button>
                     )
@@ -2073,6 +2077,8 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                       `No ano de ${formData.anoBase}, a transição federativa avança: o IBS absorve ${(formData.anoBase - 2028) * 10}% e o ICMS/ISS caem para ${100 - (formData.anoBase - 2028) * 10}%.`}
                     {formData.anoBase === 2033 &&
                       'Em 2033 o novo sistema opera em regime 100% pleno: ICMS e ISS totalmente extintos, com CBS e IBS definitivos.'}
+                    {formData.anoBase >= 2034 &&
+                      `A partir de 2034 a transição está concluída: ${formData.anoBase} opera no regime definitivo — CBS (8,80%) e IBS (17,70%) em 100% das alíquotas e Imposto Seletivo pleno.`}
                   </span>
                 </div>
               </div>
@@ -2723,7 +2729,14 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                 >
                   {ANOS_SIMULACAO_DISPONIVEIS.map((a) => (
                     <option key={a} value={a}>
-                      {a} {a === 2026 ? '(Teste 0,9%)' : a === 2033 ? '(Pleno)' : `(Transição)`}
+                      {a}{' '}
+                      {a === 2026
+                        ? '(Teste 0,9%)'
+                        : a === 2033
+                          ? '(Pleno)'
+                          : a >= 2034
+                            ? '(Regime definitivo — 100% IBS/CBS)'
+                            : '(Transição)'}
                     </option>
                   ))}
                 </select>
@@ -2766,6 +2779,8 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     `Em ${resultado.anoBase}, você vivencia a substituição gradual do ICMS e ISS pelo IBS estadual/municipal com redução progressiva dos tributos antigos.`}
                   {resultado.anoBase === 2033 &&
                     'A partir de 2033 o sistema opera pleno: ICMS, ISS, PIS e COFINS deixam de existir e sua empresa recolhe exclusivamente CBS + IBS com split payment automático.'}
+                  {resultado.anoBase >= 2034 &&
+                    `Em ${resultado.anoBase} a transição está concluída: sua empresa opera no regime definitivo — CBS (8,80%) e IBS (17,70%) em 100% das alíquotas, com split payment automático.`}
                 </span>
               </div>
 
@@ -2999,14 +3014,14 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
               </div>
             )}
 
-            {/* MINI SÉRIE TEMPORAL: PROJEÇÃO DA CARGA DE 2026 A 2033 */}
+            {/* MINI SÉRIE TEMPORAL: PROJEÇÃO DA CARGA DE 2026 A 2040 */}
             <div className="bg-white rounded-[24px] p-6 sm:p-8 shadow-xl border border-slate-200">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-100">
                 <div>
                   <div className="flex items-center gap-2">
                     <Zap className="w-5 h-5 text-[#145A32]" />
                     <h3 className="font-heading font-bold text-xl text-slate-900 tracking-tight">
-                      Curva de Transição Tributária (2026 até 2033)
+                      Curva de Transição Tributária (2026 até 2040)
                     </h3>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
@@ -3060,6 +3075,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                             {p.ano === 2031 && 'IBS 30% · ICMS/ISS 70%'}
                             {p.ano === 2032 && 'IBS 40% · ICMS/ISS 60%'}
                             {p.ano === 2033 && 'Sistema Pleno do IVA Dual'}
+                            {p.ano >= 2034 && 'Regime definitivo — 100% IBS/CBS'}
                           </td>
                           <td className="py-3 px-3 text-right text-slate-800">
                             {p.cargaSimples > 0
@@ -3187,7 +3203,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
                       <span className="text-xs font-bold uppercase tracking-wider text-[#D4AF37] block">
-                        Simular Ano da Transição IBS / CBS ({anosOpcoesSimulacao[0]} a 2033)
+                        Simular Ano da Transição IBS / CBS ({anosOpcoesSimulacao[0]} a 2040)
                       </span>
                     </div>
                     <span className="text-[11px] text-slate-300 block mt-0.5">
@@ -3224,6 +3240,13 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                               className={`text-[9px] font-semibold opacity-90 ${ativo ? 'text-[#07132B]' : 'text-[#D4AF37]'}`}
                             >
                               (Pleno)
+                            </span>
+                          )}
+                          {ano >= 2034 && (
+                            <span
+                              className={`text-[9px] font-semibold opacity-90 ${ativo ? 'text-[#07132B]' : 'text-[#2ECC71]'}`}
+                            >
+                              (Definitivo)
                             </span>
                           )}
                         </button>
@@ -3324,7 +3347,7 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                       </span>
                     </h3>
 
-                    {/* Seletor de Ano sincronizado (2027 a 2033) junto ao título do ranking */}
+                    {/* Seletor de Ano sincronizado (2027 a 2040) junto ao título do ranking */}
                     {(visaoSistema === 'novo' || visaoSistema === 'comparativo') && (
                       <div className="flex items-center gap-1 p-1 bg-[#07132B] rounded-xl border border-[#D4AF37]/40 shadow-sm overflow-x-auto max-w-full scrollbar-none">
                         {anosOpcoesSimulacao.map((ano) => {
@@ -3351,6 +3374,9 @@ Economia estimada: R$ ${resultado.economiaAnual.toLocaleString('pt-BR', { minimu
                               )}
                               {ano === 2033 && (
                                 <span className="text-[9px] opacity-80">(Pleno)</span>
+                              )}
+                              {ano >= 2034 && (
+                                <span className="text-[9px] opacity-80">(Definitivo)</span>
                               )}
                             </button>
                           )

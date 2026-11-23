@@ -16,11 +16,35 @@
 import type { SegmentoEmpresa } from './regimes'
 
 // Anos da transição suportados na simulação
-export type AnoBaseSimulacao = 2026 | 2027 | 2028 | 2029 | 2030 | 2031 | 2032 | 2033
+// 2026–2033: fases da transição (LC 214/2025). 2034–2040: regime definitivo (transição concluída —
+// mesma base de 2033, CBS 8,80% + IBS 17,70%, IS pleno). Nenhum valor de 2026–2033 foi alterado.
+export type AnoBaseSimulacao =
+  | 2026
+  | 2027
+  | 2028
+  | 2029
+  | 2030
+  | 2031
+  | 2032
+  | 2033
+  | 2034
+  | 2035
+  | 2036
+  | 2037
+  | 2038
+  | 2039
+  | 2040
 
 export const ANOS_SIMULACAO_DISPONIVEIS: AnoBaseSimulacao[] = [
-  2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033,
+  2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040,
 ]
+
+/** Último ano com fase de transição registrada (a partir de 2034 o regime é definitivo). */
+export const ANO_FIM_TRANSICAO_SIMULACAO = 2033
+
+/** A partir de 2034 a transição está concluída — regime definitivo (100% IBS/CBS). */
+export const isAnoPosTransicaoSimulacao = (ano: number | string | undefined | null): boolean =>
+  ano !== undefined && ano !== null && ano !== 'atual' && Number(ano) >= 2034
 
 /**
  * Alíquotas de referência projetadas para o IVA Dual (trava do ADCT art. 130 ~26,5% a 28%)
@@ -44,6 +68,14 @@ export const FATOR_TRANSICAO_IBS: Record<AnoBaseSimulacao, number> = {
   2031: 0.3, // 30% da alíquota de referência
   2032: 0.4, // 40% da alíquota de referência
   2033: 1.0, // 100% da alíquota de referência (pleno)
+  // 2034–2040: transição concluída — regime definitivo (100% da referência, igual a 2033)
+  2034: 1.0,
+  2035: 1.0,
+  2036: 1.0,
+  2037: 1.0,
+  2038: 1.0,
+  2039: 1.0,
+  2040: 1.0,
 }
 
 export const FATOR_REMANESCENTE_ICMS_ISS: Record<AnoBaseSimulacao, number> = {
@@ -55,6 +87,14 @@ export const FATOR_REMANESCENTE_ICMS_ISS: Record<AnoBaseSimulacao, number> = {
   2031: 0.7, // 70% das alíquotas de ICMS e ISS
   2032: 0.6, // 60% das alíquotas de ICMS e ISS
   2033: 0.0, // ICMS e ISS extintos
+  // 2034–2040: ICMS e ISS permanecem extintos (regime definitivo)
+  2034: 0.0,
+  2035: 0.0,
+  2036: 0.0,
+  2037: 0.0,
+  2038: 0.0,
+  2039: 0.0,
+  2040: 0.0,
 }
 
 /**
@@ -149,6 +189,7 @@ export function segmentoSusceptivelImpostoSeletivo(segmento: SegmentoEmpresa): {
  * - Em 2027–2028: CBS entra em substituição a PIS/COFINS (média de 15,33% da guia no comércio e 0,17% de IBS teste)
  * - Em 2029–2032: IBS entra progressivamente no DAS substituindo a cota de ICMS/ISS
  * - Em 2033: IBS e CBS representam a fatia consolidada de consumo dentro do DAS
+ * - 2034+: transição concluída — mesma partilha definitiva de 2033
  */
 export function obterPercentualConsumoSimplesPorAno(
   ano: AnoBaseSimulacao,
@@ -185,7 +226,7 @@ export function obterPercentualConsumoSimplesPorAno(
   if (ano === 2032) {
     return { percentualCBS: 15.33, percentualIBS: 13.6, percentualTotalNovosImpostos: 28.93 }
   }
-  // 2033 pleno
+  // 2033 pleno (e 2034+ regime definitivo — mesma partilha, transição concluída)
   return { percentualCBS: 15.33, percentualIBS: 34.0, percentualTotalNovosImpostos: 49.33 }
 }
 
@@ -254,6 +295,8 @@ export function calcularAliquotasEfetivasReforma(
     const pctIBS = Math.round(fatorIBS * 100)
     const pctAntigos = Math.round(fatorAntigos * 100)
     explicacaoTransicao = `Transição federativa (ADCT 128): IBS aplicado a ${pctIBS}% da referência e ICMS/ISS reduzidos para ${pctAntigos}%.`
+  } else if (isAnoPosTransicaoSimulacao(ano)) {
+    explicacaoTransicao = `Regime definitivo (${ano}): transição concluída — ICMS, ISS, PIS, COFINS e IPI extintos; CBS e IBS em 100% das alíquotas definitivas e IS pleno.`
   } else {
     explicacaoTransicao =
       'Sistema Pleno (2033): ICMS, ISS, PIS, COFINS e IPI totalmente extintos. CBS e IBS em alíquota cheia integral.'
@@ -426,6 +469,8 @@ export function calcularIbsCbsSimplesNacional(
   } else if (anoNum >= 2029 && anoNum <= 2032) {
     const pctIbs = Math.round(fatorIbs * 100)
     descricaoFase = `Transição Federativa (${anoNum}): CBS no DAS e IBS cobrado por fora a ${pctIbs}% da referência com crédito outorgado e desoneração progressiva de ICMS/ISS no DAS.`
+  } else if (isAnoPosTransicaoSimulacao(anoNum)) {
+    descricaoFase = `Regime definitivo (${anoNum}): transição concluída — CBS consolidada no DAS e IBS pleno por fora, nas alíquotas definitivas (igual a 2033).`
   } else {
     descricaoFase =
       'Sistema Pleno (2033): CBS consolidada no DAS e IBS pleno por fora com ampla transferência de créditos.'
@@ -516,5 +561,13 @@ export const CRONOGRAMA_REFORMA = [
       'ICMS e ISS totalmente extintos. O novo sistema opera em sua plenitude: CBS federal + IBS estadual/municipal com split payment automático.',
     impactoSimples: 'Partilha definitiva (CBS ~15,33% + IBS 34% da guia)',
     impactoGeral: 'IVA Dual plenamente implementado em todo o território nacional',
+  },
+  {
+    ano: 2034,
+    fase: 'Regime Definitivo — 100% IBS/CBS (Transição Concluída)',
+    descricao:
+      'A partir de 2034 a transição da Reforma está concluída: CBS 8,80% e IBS 17,70% em 100% das alíquotas definitivas, com Imposto Seletivo pleno. Os anos de 2034 a 2040 repetem as regras definitivas do ano pleno de 2033.',
+    impactoSimples: 'Partilha definitiva do Simples (CBS ~15,33% + IBS 34% da guia)',
+    impactoGeral: 'Regime definitivo vigente em todos os anos de 2034 a 2040',
   },
 ]
