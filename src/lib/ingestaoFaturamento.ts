@@ -67,9 +67,17 @@ function converterDataOfx(valor: string): string {
   return `${m[1]}-${m[2]}-${m[3]}`
 }
 
+export interface FiltroPeriodoOfx {
+  /** Data inicial (YYYY-MM-DD) — lançamentos anteriores são descartados */
+  inicio?: string
+  /** Data final (YYYY-MM-DD) — lançamentos posteriores são descartados */
+  fim?: string
+}
+
 export function parseOfxConteudo(
   conteudo: string,
   nomeArquivo: string,
+  filtroPeriodo?: FiltroPeriodoOfx,
 ): ResultadoIngestaoFaturamento {
   if (!conteudo || !conteudo.includes('<STMTTRN')) {
     return {
@@ -105,11 +113,34 @@ export function parseOfxConteudo(
       valor: Math.abs(valorNum),
       data: converterDataOfx(dataRaw),
       descricao,
-      ...(tipoRaw ? {} : {}),
     })
   }
 
-  const creditos = lancamentos.filter((l) => l.tipo === 'credito')
+  // FILTRO DE PERÍODO (opcional, indicado pelo técnico no modal quando o
+  // OFX cobre mais de um mês): descarta lançamentos fora da janela ANTES de
+  // somar, tanto receitas quanto despesas.
+  const dentroDoPeriodo = (data: string): boolean => {
+    if (!data) return true
+    if (filtroPeriodo?.inicio && data < filtroPeriodo.inicio) return false
+    if (filtroPeriodo?.fim && data > filtroPeriodo.fim) return false
+    return true
+  }
+  let foraDoPeriodo = 0
+  const lancamentosFiltrados =
+    filtroPeriodo?.inicio || filtroPeriodo?.fim
+      ? lancamentos.filter((l) => {
+          const ok = dentroDoPeriodo(l.data)
+          if (!ok) foraDoPeriodo++
+          return ok
+        })
+      : lancamentos
+  if (foraDoPeriodo > 0) {
+    avisos.push(
+      `${foraDoPeriodo} lançamento(s) fora do período indicado (${filtroPeriodo?.inicio || 'início'} a ${filtroPeriodo?.fim || 'fim'}) foram ignorados.`,
+    )
+  }
+
+  const creditos = lancamentosFiltrados.filter((l) => l.tipo === 'credito')
   const receitaTotal = Math.round(creditos.reduce((acc, l) => acc + l.valor, 0) * 100) / 100
 
   if (creditos.length === 0) {
@@ -120,7 +151,7 @@ export function parseOfxConteudo(
       nomeArquivo,
       receitaTotal: 0,
       qtdLancamentos: 0,
-      lancamentos,
+      lancamentos: lancamentosFiltrados.filter((l) => l.tipo === 'credito'),
       avisos,
     }
   }

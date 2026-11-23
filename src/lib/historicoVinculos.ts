@@ -13,7 +13,10 @@ import type { ClienteEmpresaRecord } from '@/services/clientesEmpresas'
 export const MAX_HISTORICO_VINCULOS_ARMAZENADO = 100
 export const LIMITE_EXIBICAO_HISTORICO_VINCULOS = 20
 
-export type AcaoHistoricoVinculo = 'vinculo_adicionado' | 'vinculo_removido'
+export type AcaoHistoricoVinculo =
+  | 'vinculo_adicionado'
+  | 'vinculo_removido'
+  | 'faturamento_importado'
 
 export interface RegistroHistoricoVinculo {
   /** Data/hora ISO da operação bem-sucedida */
@@ -30,6 +33,8 @@ export interface RegistroHistoricoVinculo {
   empresa_cnpj: string
   /** Tipo de vínculo societário */
   tipo_vinculo: string
+  /** Detalhe exclusivo do faturamento importado: "R$ X → R$ Y", quando acao = 'faturamento_importado' */
+  detalhe_faturamento?: string
 }
 
 /**
@@ -94,11 +99,14 @@ export interface ItemHistoricoVinculoExibicao {
   empresaNome: string
   empresaCnpj: string
   usuarioNome: string
+  /** Detalhe "R$ X → R$ Y" quando a ação é faturamento importado */
+  detalheFaturamento?: string
 }
 
 const ROTULO_ACAO: Record<AcaoHistoricoVinculo, string> = {
   vinculo_adicionado: 'Vínculo adicionado',
   vinculo_removido: 'Vínculo removido',
+  faturamento_importado: 'Faturamento importado de arquivo',
 }
 
 /** Histórico para exibição: mais recente primeiro, limitado aos 20 primeiros. */
@@ -117,6 +125,7 @@ export function historicoParaExibicao(
       empresaNome: r.empresa_nome || 'Empresa sem nome',
       empresaCnpj: r.empresa_cnpj || '',
       usuarioNome: r.usuario_nome || 'Desconhecido',
+      detalheFaturamento: r.acao === 'faturamento_importado' ? r.detalhe_faturamento : undefined,
     }))
 }
 
