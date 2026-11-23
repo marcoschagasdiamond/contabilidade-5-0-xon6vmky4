@@ -10,7 +10,9 @@
  *     - C100 / C170 / C180 / C190: Documentos de mercadorias
  *     - C170: CST_PIS (campo 25), CST_COFINS (campo 31), CFOP (campo 11), VL_ITEM (campo 7)
  *     - C181 / C185 / C191 / C195: totalizadores consolidados por CST
- *     - A100 / A170: Serviços (CSTs e valores)
+ *     - A100 / A170: Serviços — leiaute EFD Contribuições Guia Prático:
+ *       A100 campo 02 = IND_OPER, campo 12 = VL_DOC (índice 11 após o REG);
+ *       A170 campo 05 = VL_ITEM (índice 4) e campo 09 = CFOP (índice 8)
  *     - D100 / D101 / D105: Transportes
  *     - F100: Demais documentos e operações
  *  - Bloco M:
@@ -237,6 +239,12 @@ export function parseSpedConteudo(
   let temBlocoC = false
   let temBlocoE = false
 
+  // Situação (COD_SIT) e operação (IND_OPER) do documento A100 em leitura —
+  // os itens A170 seguintes pertencem a ele: documentos cancelados não somam
+  // receita e serviço contratado classifica em compras, não em receita
+  let a100SitAtual = '00'
+  let a100IndOperAtual = ''
+
   // Faturamento e Receitas
   let faturamentoTotal = 0
   let receitaEstadual = 0
@@ -416,16 +424,74 @@ export function parseSpedConteudo(
     // BLOCO C / D / A / F: DOCUMENTOS E OPERAÇÕES FISCAIS
     // -------------------------------------------------------------------------
 
-    // C100 / C190 / C170: Notas Fiscais
-    if (reg === 'C100' || reg === 'D100' || reg === 'A100') {
-      temBlocoC = true
-      const indOper = parts[1]?.trim() // 0 = Entrada/Aquisição, 1 = Saída/Prestação
-      const vlDoc = parseNumeroSped(parts[11] || parts[12])
+    // D100 / A100: Documentos (transportes e serviços).
+    // D100: IND_OPER campo 2, VL_DOC campo 10 (índice 9)
+    // A100: IND_OPER campo 2, VL_DOC campo 12 (índice 11) — Guia Prático EFD
+    // Contribuições (campo 11 é DT_EXE_SERV). Nos dois, 0 = entrada/compra,
+    // 1 = saída/prestação (receita).
+    if (reg === 'D100') {
+      const indOper = parts[1]?.trim()
+      const vlDoc = parseNumeroSped(parts[9] || parts[10])
 
       if (indOper === '1') {
         faturamentoTotal += vlDoc
       } else if (indOper === '0') {
         comprasTotais += vlDoc
+      }
+    }
+
+    if (reg === 'A100') {
+      temBlocoC = true
+      const indOper = parts[1]?.trim()
+      // Índice 11 = VL_DOC do A100; fallback tolerante para leiautes com
+      // DT_EXE_SERV omitido (aí VL_DOC escorrega para o índice 10)
+      const vlDoc = parseNumeroSped(parts[11] || parts[10])
+      // Leiaute oficial: |A100|IND_OPER(2)|IND_EMIS(3)|COD_PART(4)|COD_SIT(5)|
+      //   |SER(6)|SUB(7)|NUM_DOC(8)|CHV_NFSE(9)|DT_DOC(10)|DT_EXE_SERV(11)|VL_DOC(12)|
+      // COD_SIT correto fica em parts[4] (parts[2] é IND_EMIS, 0/1).
+      const sitCandidata = parts[4]?.trim() || ''
+      const sitFallback = parts[2]?.trim() || ''
+      const codSit = ['00', '01', '02', '03', '04', '05', '06', '07', '08'].includes(sitCandidata)
+        ? sitCandidata
+        : ['00', '01', '02', '03', '04', '05', '06', '07', '08'].includes(sitFallback)
+          ? sitFallback
+          : '00'
+      a100SitAtual = codSit
+      a100IndOperAtual = indOper || ''
+
+      // Documento cancelado (02) ou inutilizado/denegado não soma receita
+      if (codSit !== '02') {
+        if (indOper === '1') {
+          faturamentoTotal += vlDoc
+        } else if (indOper === '0') {
+          comprasTotais += vlDoc
+        }
+      }
+    }
+
+    // A170: Complemento do documento — itens/serviços da NF de serviço.
+    // Leiaute (Guia Prático EFD Contribuições, o A170 NÃO tem CFOP):
+    //   |A170|NUM_ITEM(2)|COD_ITEM(3)|DESCR_COMPL(4)|VL_ITEM(5)|VL_DESC(6)|
+    //   |NAT_BC_CRED(7)|IND_ORIG_CRED(8)|CST_PIS(9)|VL_BC_PIS(10)|ALIQ_PIS(11)|...
+    // Espelha o C170: NÃO soma em faturamentoTotal (o VL_DOC do A100 pai já
+    // cobre o documento — somar de novo dobraria). Aqui só classifica o item
+    // em insumos (cheia/monofásicos/reduzida) por CST_PIS, roteando compras
+    // quando o documento pai é serviço CONTRATADO (IND_OPER=0).
+    if (reg === 'A170') {
+      const vlItem = parseNumeroSped(parts[4]) // campo 05 VL_ITEM
+      const cstPis = parts[8]?.trim() || '' // campo 09 CST_PIS
+      const codSitDocPai = a100SitAtual?.trim() || '00'
+
+      if (codSitDocPai !== '02' && vlItem > 0 && cstPis) {
+        if (['01', '02', '03', '50', '51', '52'].includes(cstPis)) {
+          insumosCheia += vlItem
+          if (a100IndOperAtual === '0') comprasComCredito += vlItem
+        } else if (['04', '05'].includes(cstPis)) {
+          insumosMonofasicos += vlItem
+        } else if (['06', '07', '08', '09', '70', '71', '72', '73', '74', '75'].includes(cstPis)) {
+          insumosReduzidaIsenta += vlItem
+          if (a100IndOperAtual === '0') comprasSemCredito += vlItem
+        }
       }
     }
 

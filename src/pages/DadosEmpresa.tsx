@@ -4230,6 +4230,7 @@ export default function DadosEmpresa() {
         onOpenChange={setModalImportarFaturamentoAberto}
         onConfirmarImportacao={handleConfirmarImportacaoFaturamento}
         abaInicial={abaInicialImportacaoFaturamento}
+        perfilAtual={formDataRef.current}
       />
 
       {/* FOOTER CTA DIAMOND */}

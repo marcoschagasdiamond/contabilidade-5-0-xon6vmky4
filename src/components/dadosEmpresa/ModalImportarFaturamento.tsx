@@ -10,6 +10,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, CheckCircle2, FileSpreadsheet, Loader2, Table2, Upload } from 'lucide-react'
+import type { DadosEmpresaPerfil } from '@/types/dadosEmpresa'
 import {
   Dialog,
   DialogContent,
@@ -33,8 +34,10 @@ import {
   type IngestaoSheetsIntermediaria,
 } from '@/lib/ingestaoFaturamentoSheets'
 import {
+  isConteudoSped,
   parseOfxConteudo,
   parsePlanilhaCsvXlsx,
+  parseSpedFaturamento,
   processarMapeamentoFaturamento,
   sugerirMapeamentoColunas,
   type LinhaPlanilhaBruta,
@@ -48,6 +51,8 @@ interface ModalImportarFaturamentoProps {
   onOpenChange: (open: boolean) => void
   onConfirmarImportacao: (resumo: ResultadoIngestaoFaturamento) => void
   abaInicial?: 'arquivo' | 'sheets'
+  /** Perfil do formulário (fallback/aviso do parser SPED) — a página injeta o formDataRef.current */
+  perfilAtual?: DadosEmpresaPerfil
 }
 
 type AbaFonte = 'arquivo' | 'sheets'
@@ -60,6 +65,7 @@ export function ModalImportarFaturamento({
   onOpenChange,
   onConfirmarImportacao,
   abaInicial = 'arquivo',
+  perfilAtual,
 }: ModalImportarFaturamentoProps) {
   const [aba, setAba] = useState<AbaFonte>(abaInicial)
 
@@ -128,6 +134,29 @@ export function ModalImportarFaturamento({
           setResultadoOfx(res)
           return
         }
+        // SPED EFD (.txt): reconhecido pelo CONTEÚDO (linhas |0000|...), porque
+        // o mesmo .txt é o formato que antes caía no parser CSV e só extraía a
+        // razão social. Quando é SPED, roteia para o parser fiscal (Blocos A/C/D).
+        let isSped = false
+        if (ext === 'txt' || ext === 'csv' || ext === '') {
+          try {
+            isSped = isConteudoSped(await arquivo.slice(0, 512 * 1024).text())
+          } catch {
+            isSped = false
+          }
+        }
+        if (isSped) {
+          const texto = await arquivo.text()
+          const res = parseSpedFaturamento(texto, arquivo.name, perfilAtual)
+          if (!res.sucesso) {
+            // SPED lido mas sem receita extraível: mostra o aviso PT-BR e NÃO
+            // deixa confirmar (nada é gravado sem o usuário ver o valor)
+            setErroLeitura(res.erro || 'Não foi possível extrair receita deste SPED.')
+            return
+          }
+          setResultadoOfx(res)
+          return
+        }
         const intermediaria = await parsePlanilhaCsvXlsx(arquivo)
         if (!intermediaria.sucesso) {
           setErroLeitura(intermediaria.erro || 'Não foi possível ler o arquivo.')
@@ -140,7 +169,7 @@ export function ModalImportarFaturamento({
         setLendo(false)
       }
     },
-    [aplicarDados],
+    [aplicarDados, perfilAtual],
   )
 
   /** Aba sheets: lê a planilha online pela conta Google conectada do usuário. */
