@@ -56,11 +56,11 @@ cronAdd('radar-aliquotas-semanal', '0 6 * * 1', () => {
     console.log('[Radar Tributário] Aviso ao consultar API Senado:', errSenado)
   }
 
-  // 2. Ping de saúde: API de Normas Federais do Senado (mesmo acervo do LexML — o SRU do
-  // lexml.gov.br responde com página anti-robô "Verificação de segurança — Senado Federal")
+  // 2. Ping de saúde: API de Normas Federais do Senado (mesmo acervo que alimentava o LexML —
+  // o SRU do lexml.gov.br foi aposentado para máquinas, com challenge anti-robô do Senado)
   try {
     const resLexml = consultarComRetryCron(
-      'https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=LC&ano=2026&formato=json',
+      'https://legis.senado.leg.br/dadosabertos/legislacao/lista?sigla=LC&ano=2026&formato=json',
       10,
       3,
     )
@@ -752,10 +752,9 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
       fontesFalhadas.push('Câmara dos Deputados')
     }
 
-    // FONTE: LexML (acervo Senado) — o webservice SRU do lexml.gov.br foi aposentado para consultas
-    // de máquina e responde com a página "Verificação de segurança — Senado Federal" (anti-robô).
-    // A detecção usa a API de Normas Federais do Senado (legis.senado.leg.br), mesmo acervo que
-    // alimenta o LexML, filtrando leis sancionadas pertinentes à Reforma Tributária.
+    // FONTE: API de Normas Federais do Senado (legis.senado.leg.br/dadosabertos) — o webservice
+    // SRU do lexml.gov.br foi aposentado para consultas de máquina (challenge anti-robô do
+    // Senado). Lista normas LC/LEI do ano corrente e filtra as pertinentes à Reforma Tributária.
     try {
       const pertinenteNormaTexto = (texto) => {
         const t = String(texto || '').toUpperCase()
@@ -771,55 +770,130 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
           t.includes('REIDI')
         )
       }
+      // Envelope JSON tolerante às variações da API do Senado: a lista de legislação responde
+      // {"ListaDocumento":{"Metadados":{...},"Documentos":{"Documento":[...]}}} (cada Documento
+      // contém um objeto Norma); a pesquisa de matérias usa ListaMaterias/Materia.
+      const extrairNormasSenado = (dataNormas) => {
+        const envelope = dataNormas?.ListaDocumento || dataNormas || {}
+        const raizNormas =
+          envelope?.Documentos ||
+          envelope?.Metadados?.Normas ||
+          envelope?.Metadados?.ListaMaterias ||
+          envelope?.ListaMaterias ||
+          envelope?.Normas ||
+          envelope?.Norma ||
+          envelope?.Materias ||
+          {}
+        const listaNormas =
+          raizNormas.Documento ||
+          raizNormas.Normas ||
+          raizNormas.Norma ||
+          raizNormas.Materias ||
+          raizNormas.Materia ||
+          raizNormas
+        const arrBruta = Array.isArray(listaNormas) ? listaNormas : [listaNormas]
+        const saida = []
+        for (let nIdx = 0; nIdx < arrBruta.length; nIdx++) {
+          const itemN = arrBruta[nIdx]
+          const fN = itemN && (itemN.Norma || itemN.Materia) ? itemN.Norma || itemN.Materia : itemN
+          if (!fN || typeof fN !== 'object') continue
+          const temConteudo =
+            fN.Ementa || fN.EmentaMateria || fN.Numero || fN.NumeroMateria || fN.Sigla
+          if (!temConteudo) continue
+          const codigoMateria = String(fN.CodigoMateria || fN.CodigoNorma || '').trim()
+          saida.push({
+            sigla: String(fN.Sigla || fN.SiglaSubtipoMateria || fN.Tipo || '').trim(),
+            numero: String(fN.Numero || fN.NumeroMateria || '').trim(),
+            ano: String(fN.Ano || fN.AnoMateria || '2026').trim(),
+            ementa: String(fN.Ementa || fN.EmentaMateria || '').trim(),
+            dataAssinatura: String(fN.DataAssinatura || fN.Data || '').trim(),
+            url: String(
+              (fN.Urls && fN.Urls[0] && (fN.Urls[0].Url || fN.Urls[0].url)) ||
+                fN.UrlDocumento ||
+                (codigoMateria
+                  ? 'https://www25.senado.leg.br/web/atividade/materias/-/materia/' + codigoMateria
+                  : ''),
+            ).trim(),
+          })
+        }
+        return saida
+      }
       const tiposNormaSenado = ['LC', 'LEI']
       const registrosNormas = []
+      // A listagem de normas do Senado filtra por sigla do subtipo (param "sigla"); o param
+      // "tipo" é mantido como variação de compatibilidade — tenta "sigla" primeiro e só usa
+      // "tipo" se a listagem vier vazia.
       for (let tIdx = 0; tIdx < tiposNormaSenado.length; tIdx++) {
-        try {
-          const urlNormas =
-            'https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=' +
+        const urlsVariaveis = [
+          'https://legis.senado.leg.br/dadosabertos/legislacao/lista?sigla=' +
             tiposNormaSenado[tIdx] +
-            '&ano=2026&formato=json'
-          const resNormas = consultarComRetry(urlNormas, 20, 2)
-          const dataNormas = JSON.parse(String(resNormas.raw || '{}'))
-          // Envelope JSON tolerante às variações da API do Senado
-          const raizNormas =
-            dataNormas?.Metadados?.Normas || dataNormas?.Normas || dataNormas?.Norma || {}
-          const listaNormas = Array.isArray(raizNormas)
-            ? raizNormas
-            : raizNormas.Normas || raizNormas.Norma || []
-          const arrNormas = Array.isArray(listaNormas) ? listaNormas : [listaNormas]
-          for (let nIdx = 0; nIdx < arrNormas.length; nIdx++) {
-            const itemN = arrNormas[nIdx]
-            const fN = itemN && itemN.Norma ? itemN.Norma : itemN
-            if (!fN) continue
-            registrosNormas.push({
-              sigla: String(fN.Sigla || fN.Tipo || tiposNormaSenado[tIdx]).trim(),
-              numero: String(fN.Numero || '').trim(),
-              ano: String(fN.Ano || '2026').trim(),
-              ementa: String(fN.Ementa || '').trim(),
-              dataAssinatura: String(fN.DataAssinatura || fN.Data || '').trim(),
-              url: String(
-                (fN.Urls && fN.Urls[0] && (fN.Urls[0].Url || fN.Urls[0].url)) ||
-                  fN.UrlDocumento ||
-                  '',
-              ).trim(),
-            })
+            '&ano=2026&formato=json',
+          'https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=' +
+            tiposNormaSenado[tIdx] +
+            '&ano=2026&formato=json',
+        ]
+        for (let vIdx = 0; vIdx < urlsVariaveis.length; vIdx++) {
+          try {
+            const antesTipo = registrosNormas.length
+            const resNormas = consultarComRetry(urlsVariaveis[vIdx], 20, 2)
+            const dataNormas = JSON.parse(String(resNormas.raw || '{}'))
+            const arrNormas = extrairNormasSenado(dataNormas)
+            for (let nIdx = 0; nIdx < arrNormas.length; nIdx++) {
+              const itemN = arrNormas[nIdx]
+              if (!itemN || typeof itemN !== 'object') continue
+              if (
+                !registrosNormas.some((x) => x.sigla === itemN.sigla && x.numero === itemN.numero)
+              ) {
+                registrosNormas.push(itemN)
+              }
+            }
+          } catch (errNormasTipo) {
+            console.log(
+              '[Radar Tributário] Aviso: consulta de normas ' +
+                tiposNormaSenado[tIdx] +
+                ' do Senado falhou (' +
+                (vIdx === 0 ? 'param sigla' : 'param tipo') +
+                '):',
+              errNormasTipo,
+            )
           }
-        } catch (errNormasTipo) {
+          if (registrosNormas.length > antesTipo) break
+        }
+      }
+
+      // Fallback: se a listagem por tipo+ano não trouxe a LC 239/2026 (variação do endpoint),
+      // consulta a norma diretamente por sigla+numero+ano.
+      if (!registrosNormas.some((n) => n.sigla === 'LC' && n.numero === '239')) {
+        try {
+          const res239 = consultarComRetry(
+            'https://legis.senado.leg.br/dadosabertos/legislacao/lista?sigla=LC&numero=239&ano=2026&formato=json',
+            20,
+            2,
+          )
+          const arr239 = extrairNormasSenado(JSON.parse(String(res239.raw || '{}')))
+          for (let fIdx = 0; fIdx < arr239.length; fIdx++) {
+            const n239 = arr239[fIdx]
+            if (
+              n239 &&
+              n239.numero &&
+              !registrosNormas.some((x) => x.sigla === n239.sigla && x.numero === n239.numero)
+            ) {
+              registrosNormas.push(n239)
+            }
+          }
+        } catch (err239) {
           console.log(
-            '[Radar Tributário] Aviso: consulta de normas ' +
-              tiposNormaSenado[tIdx] +
-              ' do Senado falhou:',
-            errNormasTipo,
+            '[Radar Tributário] Fallback de consulta direta à LC 239/2026 falhou:',
+            err239,
           )
         }
       }
 
       if (registrosNormas.length > 0) {
-        fontesConsultadas.push('LexML (acervo Senado)')
+        fontesConsultadas.push('API de Normas do Senado')
       } else {
-        fontesFalhadas.push('LexML (acervo Senado)')
-        console.log('[Radar Tributário] Normas federais do Senado indisponíveis ou sem registros.')
+        fontesFalhadas.push('API de Normas do Senado')
+        console.log('[Radar Tributário] API de Normas do Senado indisponível ou sem registros.')
       }
 
       for (let lIdx = 0; lIdx < registrosNormas.length; lIdx++) {
@@ -843,12 +917,13 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
                 : 'Geral'
         const linkNorma = normaL.url || 'https://normas.leg.br/busca'
 
+        // Dedupe por título/mensagem (independente do rótulo da fonte, antigo ou novo)
         const filtroDedupe =
-          'fonte ~ "LexML" && (titulo ~ "' +
+          'titulo ~ "' +
           escaparFiltro(tituloDoc) +
           '" || mensagem ~ "' +
           escaparFiltro(normaL.ementa.slice(0, 80)) +
-          '")'
+          '"'
         let jaExisteLexml = null
         try {
           jaExisteLexml = $app.findFirstRecordByFilter('notificacoes_tributarias', filtroDedupe)
@@ -860,7 +935,7 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
           novaNotifLexml.set(
             'mensagem',
             (normaL.ementa ? normaL.ementa + ' ' : '') +
-              'Nova norma sancionada relacionada à Reforma Tributária, detectada no LexML/acervo do Senado (' +
+              'Nova norma sancionada relacionada à Reforma Tributária, detectada na API de Normas Federais do Senado (' +
               (normaL.dataAssinatura || 'sem data de assinatura') +
               '). Fonte Oficial: ' +
               linkNorma,
@@ -868,13 +943,13 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
           novaNotifLexml.set('tipo', 'legislacao_nova')
           novaNotifLexml.set('tributo', tributoLexml)
           novaNotifLexml.set('ano', anoDoc)
-          novaNotifLexml.set('fonte', 'LexML (acervo Senado)')
+          novaNotifLexml.set('fonte', 'API de Normas do Senado')
           novaNotifLexml.set('link_acao', '/legislacao')
           novaNotifLexml.set('lida', false)
           novaNotifLexml.set('email_enviado', false)
           $app.save(novaNotifLexml)
           novosEncontrados++
-          console.log('[Radar Tributário] Norma LexML (Senado) registrada: ' + tituloDoc)
+          console.log('[Radar Tributário] Norma federal (Senado) registrada: ' + tituloDoc)
         }
       }
     } catch (errLexml) {
@@ -1296,7 +1371,7 @@ cronAdd('radar-sonda-senado-temp', '* * * * *', () => {
   for (let i = 0; i < tiposSonda.length; i++) {
     try {
       const urlSonda =
-        'https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=' +
+        'https://legis.senado.leg.br/dadosabertos/legislacao/lista?sigla=' +
         tiposSonda[i] +
         '&ano=2026&formato=json'
       const resSonda = $http.send({
@@ -1309,15 +1384,27 @@ cronAdd('radar-sonda-senado-temp', '* * * * *', () => {
         },
       })
       const dataSonda = JSON.parse(String(resSonda.raw || '{}'))
-      const raizSonda = dataSonda?.Metadados?.Normas || dataSonda?.Normas || dataSonda?.Norma || {}
-      const listaSonda = Array.isArray(raizSonda)
-        ? raizSonda
-        : raizSonda.Normas || raizSonda.Norma || []
-      const arrSonda = Array.isArray(listaSonda) ? listaSonda : [listaSonda]
+      const envelopeS = dataSonda?.ListaDocumento || dataSonda || {}
+      console.log(
+        '[Sonda Senado] tipo=' +
+          tiposSonda[i] +
+          ' chavesEnvelope=' +
+          JSON.stringify(Object.keys(dataSonda || {})) +
+          ' totalRegistros=' +
+          String(
+            envelopeS?.Metadados?.NumeroTotalRegistros ??
+              envelopeS?.Metadados?.TotalRegistros ??
+              'n/d',
+          ),
+      )
+      const raizSonda =
+        envelopeS?.Documentos || envelopeS?.Metadados?.Normas || envelopeS?.Normas || {}
+      const listaSonda = raizSonda.Documento || raizSonda.Normas || raizSonda.Norma || []
+      const arrSonda = Array.isArray(listaSonda) ? listaSonda : listaSonda ? [listaSonda] : []
       for (let j = 0; j < arrSonda.length; j++) {
         const itemS = arrSonda[j]
         const fS = itemS && itemS.Norma ? itemS.Norma : itemS
-        if (!fS) continue
+        if (!fS || typeof fS !== 'object') continue
         registrosSonda.push({
           sigla: String(fS.Sigla || fS.Tipo || tiposSonda[i]).trim(),
           numero: String(fS.Numero || '').trim(),
@@ -1331,6 +1418,39 @@ cronAdd('radar-sonda-senado-temp', '* * * * *', () => {
       }
     } catch (errSonda) {
       console.log('[Sonda Senado] tipo=' + tiposSonda[i] + ' => ERRO: ' + String(errSonda))
+    }
+  }
+  // Fallback da sonda: consulta direta da LC 239/2026 (sigla+numero+ano) se a listagem não a trouxe
+  if (!registrosSonda.some((n) => n.sigla === 'LC' && n.numero === '239')) {
+    try {
+      const res239S = $http.send({
+        url: 'https://legis.senado.leg.br/dadosabertos/legislacao/lista?sigla=LC&numero=239&ano=2026&formato=json',
+        method: 'GET',
+        timeout: 20,
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'Contabilidade50-RadarTributario/1.0',
+        },
+      })
+      const data239S = JSON.parse(String(res239S.raw || '{}'))
+      console.log(
+        '[Sonda Senado] fallback LC239 chavesEnvelope=' +
+          JSON.stringify(Object.keys(data239S || {})) +
+          ' corpo=' +
+          String(res239S.raw || '').slice(0, 900),
+      )
+      const colDiag = $app.findCollectionByNameOrId('notificacoes_tributarias')
+      const recDiag = new Record(colDiag)
+      recDiag.set('titulo', 'SONDA LC239 diag')
+      recDiag.set('mensagem', String(res239S.raw || '').slice(0, 3000))
+      recDiag.set('tipo', 'alerta_senado')
+      recDiag.set('tributo', 'Geral')
+      recDiag.set('fonte', 'Sonda LC239 diag')
+      recDiag.set('lida', true)
+      recDiag.set('email_enviado', false)
+      $app.save(recDiag)
+    } catch (err239S) {
+      console.log('[Sonda Senado] fallback LC239 => ERRO: ' + String(err239S))
     }
   }
   const pertinentesSonda = registrosSonda.filter((n) =>
@@ -1361,11 +1481,11 @@ cronAdd('radar-sonda-senado-temp', '* * * * *', () => {
     if (!normaS.numero) continue
     const tituloS = normaS.sigla + ' nº ' + normaS.numero + '/' + normaS.ano
     const filtroS =
-      'fonte ~ "LexML" && (titulo ~ "' +
+      'titulo ~ "' +
       escaparFiltroSonda(tituloS) +
       '" || mensagem ~ "' +
       escaparFiltroSonda(normaS.ementa.slice(0, 80)) +
-      '")'
+      '"'
     let existeS = null
     try {
       existeS = $app.findFirstRecordByFilter('notificacoes_tributarias', filtroS)
@@ -1379,7 +1499,7 @@ cronAdd('radar-sonda-senado-temp', '* * * * *', () => {
     novaS.set(
       'mensagem',
       (normaS.ementa ? normaS.ementa + ' ' : '') +
-        'Nova norma sancionada relacionada à Reforma Tributária, detectada no LexML/acervo do Senado (' +
+        'Nova norma sancionada relacionada à Reforma Tributária, detectada na API de Normas Federais do Senado (' +
         (normaS.dataAssinatura || 'sem data de assinatura') +
         '). Fonte Oficial: ' +
         (normaS.url || 'https://normas.leg.br/busca'),
@@ -1387,7 +1507,7 @@ cronAdd('radar-sonda-senado-temp', '* * * * *', () => {
     novaS.set('tipo', 'legislacao_nova')
     novaS.set('tributo', 'Geral')
     novaS.set('ano', parseInt(normaS.ano, 10) || 2026)
-    novaS.set('fonte', 'LexML (acervo Senado)')
+    novaS.set('fonte', 'API de Normas do Senado')
     novaS.set('link_acao', '/legislacao')
     novaS.set('lida', false)
     novaS.set('email_enviado', false)
