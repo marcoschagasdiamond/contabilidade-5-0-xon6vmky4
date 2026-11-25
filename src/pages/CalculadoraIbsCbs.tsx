@@ -304,11 +304,14 @@ function CalculadoraConteudo() {
     setSearchParams(searchParams, { replace: true })
   }
 
-  // Carrega simulações do usuário ou locais
+  // Carrega APENAS as simulações do usuário logado — para todos os perfis,
+  // incluindo master/admin (cada usuário vê só as próprias simulações salvas).
+  // A visão de carteira (simulações de terceiros) continua existindo em
+  // MeusRelatorios e na vinculação de /clientes/:id, via escopo 'todos'.
   const recarregarSimulacoes = async () => {
     try {
       setCarregandoSimulacoes(true)
-      const lista = await listarSimulacoes(user?.id)
+      const lista = await listarSimulacoes(user?.id, 'proprio')
       setSimulacoes(lista)
     } finally {
       setCarregandoSimulacoes(false)

@@ -199,9 +199,11 @@ export default function DetalheCliente() {
 
   const abrirModalVincular = async () => {
     try {
+      // Vinculação manual: lista TODAS as simulações (escopo 'todos') para
+      // permitir vincular também as gravadas por outros usuários (ex. analista).
       const [todasS, todosR, todosD] = await Promise.all([
-        listarSimulacoes(),
-        listarSimulacoesRecuperador(),
+        listarSimulacoes(null, 'todos'),
+        listarSimulacoesRecuperador(null, 'todos'),
         getDiagnosticos(),
       ])
       // Filtra apenas as que não pertencem a este cliente (especialmente as sem cliente)

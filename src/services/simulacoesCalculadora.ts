@@ -349,7 +349,24 @@ export async function obterSimulacaoPorId(id: string): Promise<SimulacaoCalculad
   return encontrada || null
 }
 
-export async function listarSimulacoes(userId?: string | null): Promise<SimulacaoCalculadora[]> {
+export type EscopoListagemSimulacoes = 'proprio' | 'todos'
+
+/**
+ * Lista simulações da Calculadora.
+ * - escopo 'proprio' (padrão): somente as simulações do próprio usuário logado
+ *   (filtro user_id para TODOS os usuários, incluindo master/admin).
+ * - escopo 'todos': todas as simulações da nuvem (usado por telas que montam
+ *   visões de carteira/histórico de terceiros, ex. MeusRelatorios e a
+ *   vinculação manual de simulações em /clientes/:id).
+ * A listagem da própria Calculadora (/calculadora-ibs-cbs) usa o padrão:
+ * cada usuário — inclusive o master — vê apenas as próprias simulações salvas.
+ * A regra de supervisão da CARTEIRA (master vê todos os clientes) NÃO passa
+ * por aqui e permanece intocada.
+ */
+export async function listarSimulacoes(
+  userId?: string | null,
+  escopo: EscopoListagemSimulacoes = 'proprio',
+): Promise<SimulacaoCalculadora[]> {
   const authUser = pb.authStore.record
   const effectiveUserId = userId || authUser?.id
   const locais = carregarSimulacoesLocais()
@@ -359,10 +376,7 @@ export async function listarSimulacoes(userId?: string | null): Promise<Simulaca
   }
 
   try {
-    const isAdmin =
-      (authUser as any)?.role === 'admin' || authUser?.email === 'marcoschagasdiamond@icloud.com'
-
-    const filter = isAdmin ? '' : `user_id = "${effectiveUserId}"`
+    const filter = escopo === 'todos' ? '' : `user_id = "${effectiveUserId}"`
 
     const cloudRecords = await pb
       .collection('simulacoes_calculadora')
@@ -745,6 +759,20 @@ export async function listarSimulacoesPorCliente(
   clienteId: string,
 ): Promise<SimulacaoCalculadora[]> {
   if (!clienteId) return []
-  const todas = await listarSimulacoes()
-  return todas.filter((s) => s.cliente_id === clienteId)
+  // Consulta direta por cliente_id: o histórico do cliente em /clientes/:id
+  // deve mostrar as simulações dele mesmo quando gravadas por outro usuário
+  // (ex. analista) — não depende do comportamento admin de listarSimulacoes.
+  try {
+    const cloudRecords = await pb
+      .collection('simulacoes_calculadora')
+      .getFullList<PocketBaseSimulacaoRecord>({
+        filter: `cliente_id = "${clienteId}"`,
+        sort: '-created',
+      })
+    const locais = carregarSimulacoesLocais().filter((s) => s.cliente_id === clienteId)
+    return [...cloudRecords.map(recordToSimulacao), ...locais]
+  } catch (err) {
+    console.warn('Erro ao buscar simulações do cliente na nuvem, retornando apenas locais:', err)
+    return carregarSimulacoesLocais().filter((s) => s.cliente_id === clienteId)
+  }
 }

@@ -117,8 +117,10 @@ export default function MinhaConta() {
         })
         setMeusDiagnosticos(diagsFiltrados)
 
-        // 3. Carregar simulações da calculadora
-        const todasSimulacoes = await listarSimulacoes(userId)
+        // 3. Carregar simulações da calculadora — escopo 'todos' + filtro próprio
+        // abaixo: a tela é "Minha Conta", mostra apenas as do próprio usuário
+        // (o filtro por user_id/cliente_id/empresa já limita ao usuário logado).
+        const todasSimulacoes = await listarSimulacoes(userId, 'todos')
         const simsFiltradas = todasSimulacoes.filter((s) => {
           if (s.user_id && s.user_id === userId) return true
           if (clienteIdFinal && s.cliente_id === clienteIdFinal) return true

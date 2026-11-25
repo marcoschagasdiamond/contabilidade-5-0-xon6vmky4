@@ -449,14 +449,18 @@ export default function Diagnostico() {
   const [simulacoesCalculadora, setSimulacoesCalculadora] = useState<SimulacaoCalculadora[]>([])
   const [simulacoesRecuperador, setSimulacoesRecuperador] = useState<SimulacaoRecuperador[]>([])
 
-  // Carrega simulações da Calculadora IBS/CBS e do Recuperador de Créditos uma vez ao montar
+  // Carrega simulações da Calculadora IBS/CBS e do Recuperador de Créditos uma vez ao montar.
+  // Com cliente ativo (analista/master trabalhando na empresa do cliente) usa escopo
+  // 'todos' para enxergar as simulações do cliente gravadas por qualquer usuário;
+  // sem cliente ativo, apenas as do próprio usuário logado (inclusive master).
   useEffect(() => {
     let isMounted = true
     const carregarSimulacoes = async () => {
       try {
+        const escopo = clienteAtivoId ? 'todos' : 'proprio'
         const [listaCalc, listaRec] = await Promise.all([
-          listarSimulacoes(user?.id),
-          listarSimulacoesRecuperador(user?.id),
+          listarSimulacoes(user?.id, escopo),
+          listarSimulacoesRecuperador(user?.id, escopo),
         ])
         if (isMounted) {
           setSimulacoesCalculadora(listaCalc || [])
@@ -470,7 +474,7 @@ export default function Diagnostico() {
     return () => {
       isMounted = false
     }
-  }, [user?.id])
+  }, [user?.id, clienteAtivoId])
 
   // Computa a condição das 3 análises para o Diagnóstico Completo
   const temCalculadora = simulacoesCalculadora.length > 0

@@ -338,8 +338,18 @@ export async function obterSimulacaoRecuperadorPorId(
   return encontrada || null
 }
 
+export type EscopoListagemSimulacoesRecuperador = 'proprio' | 'todos'
+
+/**
+ * Lista simulações do Recuperador de Créditos.
+ * - escopo 'proprio' (padrão): somente as simulações do próprio usuário logado
+ *   (filtro user_id para TODOS os usuários, incluindo master/admin).
+ * - escopo 'todos': todas as simulações da nuvem (telas de visão de carteira,
+ *   ex. MeusRelatorios e vinculação manual em /clientes/:id).
+ */
 export async function listarSimulacoesRecuperador(
   userId?: string | null,
+  escopo: EscopoListagemSimulacoesRecuperador = 'proprio',
 ): Promise<SimulacaoRecuperador[]> {
   const authUser = pb.authStore.record
   const effectiveUserId = userId || authUser?.id
@@ -350,10 +360,7 @@ export async function listarSimulacoesRecuperador(
   }
 
   try {
-    const isAdmin =
-      (authUser as any)?.role === 'admin' || authUser?.email === 'marcoschagasdiamond@icloud.com'
-
-    const filter = isAdmin ? '' : `user_id = "${effectiveUserId}"`
+    const filter = escopo === 'todos' ? '' : `user_id = "${effectiveUserId}"`
 
     const cloudRecords = await pb
       .collection('simulacoes_recuperador')
@@ -685,6 +692,19 @@ export async function listarSimulacoesRecuperadorPorCliente(
   clienteId: string,
 ): Promise<SimulacaoRecuperador[]> {
   if (!clienteId) return []
-  const todas = await listarSimulacoesRecuperador()
-  return todas.filter((s) => s.cliente_id === clienteId)
+  // Consulta direta por cliente_id: histórico do cliente em /clientes/:id não
+  // depende do comportamento admin de listarSimulacoesRecuperador.
+  try {
+    const cloudRecords = await pb
+      .collection('simulacoes_recuperador')
+      .getFullList<PbSimulacaoRecuperadorRecord>({
+        filter: `cliente_id = "${clienteId}"`,
+        sort: '-created',
+      })
+    const locais = carregarSimulacoesRecuperadorLocais().filter((s) => s.cliente_id === clienteId)
+    return [...cloudRecords.map(recordToSimulacao), ...locais]
+  } catch (err) {
+    console.warn('Erro ao buscar simulações do cliente na nuvem, retornando apenas locais:', err)
+    return carregarSimulacoesRecuperadorLocais().filter((s) => s.cliente_id === clienteId)
+  }
 }

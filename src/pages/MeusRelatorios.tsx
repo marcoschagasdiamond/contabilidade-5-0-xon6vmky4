@@ -124,24 +124,30 @@ export default function MeusRelatorios() {
     if (!user?.id) return
     setCarregandoDados(true)
     try {
-      // 1. Simulações da Calculadora
+      // 1. Simulações da Calculadora — analista/master monta visão de carteira
+      // (escopo 'todos': simulações próprias + de clientes), depois filtra pelo
+      // cliente ativo; empresário vê só as dele (escopo padrão 'proprio').
       const calcs = isEmpresario
         ? await listarSimulacoes(user.id)
         : clienteAtivoId
-          ? (await listarSimulacoes()).filter((s) => s.cliente_id === clienteAtivoId)
-          : await listarSimulacoes()
+          ? (await listarSimulacoes(user.id, 'todos')).filter(
+              (s) => s.cliente_id === clienteAtivoId,
+            )
+          : await listarSimulacoes(user.id, 'todos')
 
       setSimulacoesCalc(calcs)
       if (calcs.length > 0 && !simulacaoCalcSelecionadaId) {
         setSimulacaoCalcSelecionadaId(calcs[0].id)
       }
 
-      // 2. Simulações do Recuperador
+      // 2. Simulações do Recuperador — mesma visão de carteira da Calculadora
       const recups = isEmpresario
         ? await listarSimulacoesRecuperador(user.id)
         : clienteAtivoId
-          ? (await listarSimulacoesRecuperador()).filter((s) => s.cliente_id === clienteAtivoId)
-          : await listarSimulacoesRecuperador()
+          ? (await listarSimulacoesRecuperador(user.id, 'todos')).filter(
+              (s) => s.cliente_id === clienteAtivoId,
+            )
+          : await listarSimulacoesRecuperador(user.id, 'todos')
 
       setSimulacoesRecup(recups)
       if (recups.length > 0 && !simulacaoRecupSelecionadaId) {
