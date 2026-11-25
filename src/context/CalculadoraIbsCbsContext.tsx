@@ -1437,6 +1437,55 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       perfilRetencaoSplit,
       percentualRetencaoSplit,
       etiquetasOrigem: config.etiquetasOrigem,
+      // Módulos 2 a 5: repõe os dados que o usuário deixou na última visita
+      modulo2: {
+        valorOperacao,
+        regimeOperacao,
+        anoOperacao,
+        percentualComprasVendasSimples,
+        editado: {
+          valorOperacao: editadoLocalmente.modulo2ValorOperacao,
+          regimeOperacao: editadoLocalmente.modulo2RegimeOperacao,
+          anoOperacao: editadoLocalmente.modulo2AnoOperacao,
+          percentualCompras: editadoLocalmente.modulo2PercentualCompras,
+        },
+      },
+      modulo3: {
+        faturamentoMensal,
+        tipoAtividade,
+        subatividadeServico,
+        subatividadeIndustria,
+        subatividadeComercio,
+        subatividadeAgro,
+        subatividadeConstrucao,
+        subatividadeLocacao,
+        subatividadeFoodService,
+        aliquotaImpostoSeletivo,
+        proporcaoServicoMisto,
+        percentualComprasVendasComparativo,
+        folhaPagamentoMensal,
+        margemLucroEstimada,
+        despesasComCreditosMensais,
+        percentualExportacao,
+        ufOrigem,
+        editado: {
+          faturamento: editadoLocalmente.modulo3Faturamento,
+          percentualCompras: editadoLocalmente.modulo3PercentualCompras,
+          tipoAtividade: editadoLocalmente.modulo3TipoAtividade,
+        },
+      },
+      modulo4: {
+        despesasCreditos,
+      },
+      modulo5: {
+        faturamentoAnualProjetado,
+        setorTransicao,
+        valorEstoqueVirada,
+        editado: {
+          faturamento: editadoLocalmente.modulo5Faturamento,
+          setor: editadoLocalmente.modulo5SetorTransicao,
+        },
+      },
       salvoEm: new Date().toISOString(),
     }
     rascunhoPendenteRef.current = true
