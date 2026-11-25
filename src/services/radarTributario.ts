@@ -283,12 +283,17 @@ export async function dispararVarreduraRadar(): Promise<{
   novosEncontrados?: number
   emailsEnviados?: number
   mensagem?: string
+  fontes_consultadas?: string[]
+  fontes_falhadas?: string[]
 }> {
   try {
-    const res = await pb.send<{ sucesso: boolean; novosEncontrados?: number; mensagem?: string }>(
-      '/backend/v1/radar/sincronizar',
-      { method: 'POST' },
-    )
+    const res = await pb.send<{
+      sucesso: boolean
+      novosEncontrados?: number
+      mensagem?: string
+      fontes_consultadas?: string[]
+      fontes_falhadas?: string[]
+    }>('/backend/v1/radar/sincronizar', { method: 'POST' })
     return res
   } catch (err) {
     console.warn('[Radar] Falha ao disparar sincronização manual:', err)

@@ -122,10 +122,23 @@ export default function Legislacao() {
       setSincronizando(true)
       const res = await dispararVarreduraRadar()
       if (res.sucesso) {
-        toast({
-          title: 'Varredura Concluída',
-          description: `Fontes oficiais consultadas. ${res.novosEncontrados || 0} novo(s) parâmetro(s) processados.`,
-        })
+        const falhadas = res.fontes_falhadas || []
+        if (falhadas.length > 0) {
+          const totalFontes = (res.fontes_consultadas?.length || 0) + falhadas.length
+          const consultadas = totalFontes - falhadas.length
+          toast({
+            variant: 'destructive',
+            title: 'Sincronização concluída com ressalvas',
+            description: `Consultadas ${consultadas} de ${totalFontes} fontes — ${falhadas.join(
+              ' e ',
+            )} indisponível(is). ${res.novosEncontrados || 0} novo(s) parâmetro(s) processados.`,
+          })
+        } else {
+          toast({
+            title: 'Varredura Concluída',
+            description: `Fontes oficiais consultadas. ${res.novosEncontrados || 0} novo(s) parâmetro(s) processados.`,
+          })
+        }
         carregarDados()
         carregarParametros()
         carregarNotificacoesEMarcarLidas()

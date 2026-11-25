@@ -14,38 +14,57 @@ cronAdd('radar-aliquotas-semanal', '0 6 * * 1', () => {
   console.log('[Radar Tributário] Iniciando varredura semanal de alíquotas CBS/IBS...')
   let novosEncontrados = 0
 
+  // Consulta HTTP com retry simples (3 tentativas) para tolerar falhas de rede transitórias
+  const consultarComRetryCron = (url, timeoutSeg, tentativas, acceptHeader) => {
+    const maxTentativas = tentativas || 3
+    let ultimoErro = null
+    for (let t = 0; t < maxTentativas; t++) {
+      try {
+        const res = $http.send({
+          url: url,
+          method: 'GET',
+          timeout: timeoutSeg || 12,
+          headers: {
+            Accept: acceptHeader || 'application/json',
+            'User-Agent': 'Contabilidade50-RadarTributario/1.0',
+          },
+        })
+        if (res && res.statusCode === 200) {
+          return res
+        }
+        ultimoErro = new Error('HTTP ' + (res ? res.statusCode : 'sem resposta'))
+      } catch (errHttp) {
+        ultimoErro = errHttp
+      }
+      console.log(
+        '[Radar Tributário] Tentativa ' + (t + 1) + ' falhou para ' + url + ':',
+        ultimoErro,
+      )
+    }
+    throw ultimoErro || new Error('Falha desconhecida na consulta: ' + url)
+  }
+
   // 1. Tentar consultar a API de Dados Abertos do Senado Federal
   try {
-    const resSenado = $http.send({
-      url: 'https://legis.senado.leg.br/dadosabertos/materia/pesquisa/lista?palavraChave=aliquota+referencia+CBS&ano=2026',
-      method: 'GET',
-      timeout: 10,
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': 'Contabilidade50-RadarTributario/1.0',
-      },
-    })
-    if (resSenado.statusCode === 200) {
-      console.log('[Radar Tributário] Consulta Senado retornou status 200.')
-    }
+    const resSenado = consultarComRetryCron(
+      'https://legis.senado.leg.br/dadosabertos/materia/pesquisa/lista?palavraChave=aliquota+referencia+CBS&ano=2026',
+      10,
+      3,
+    )
+    console.log('[Radar Tributário] Consulta Senado retornou status 200.')
   } catch (errSenado) {
     console.log('[Radar Tributário] Aviso ao consultar API Senado:', errSenado)
   }
 
   // 2. Tentar LexML Webservice SRU
   try {
-    const resLexml = $http.send({
-      url: 'https://www.lexml.gov.br/busca/SRU?operation=searchRetrieve&query=%22aliquota%20de%20referencia%22%20AND%20%28CBS%20OR%20IBS%29&maximumRecords=5',
-      method: 'GET',
-      timeout: 10,
-      headers: {
-        Accept: 'application/xml, text/xml',
-        'User-Agent': 'Contabilidade50-RadarTributario/1.0',
-      },
-    })
-    if (resLexml.statusCode === 200) {
-      console.log('[Radar Tributário] LexML SRU respondeu com sucesso.')
-    }
+    const resLexml = consultarComRetryCron(
+      'https://www.lexml.gov.br/busca/SRU?operation=searchRetrieve&query=%22aliquota%20de%20referencia%22%20AND%20%28CBS%20OR%20IBS%29&maximumRecords=5',
+      10,
+      3,
+      'application/xml, text/xml',
+    )
+    console.log('[Radar Tributário] LexML SRU respondeu com sucesso.')
   } catch (errLex) {
     console.log('[Radar Tributário] Aviso ao consultar LexML:', errLex)
   }
@@ -61,15 +80,7 @@ cronAdd('radar-aliquotas-semanal', '0 6 * * 1', () => {
     for (let uJobIdx = 0; uJobIdx < urlsCamaraJob.length; uJobIdx++) {
       const urlJobC = urlsCamaraJob[uJobIdx]
       try {
-        const resJobCamara = $http.send({
-          url: urlJobC,
-          method: 'GET',
-          timeout: 10,
-          headers: {
-            Accept: 'application/json',
-            'User-Agent': 'Contabilidade50-RadarTributario/1.0',
-          },
-        })
+        const resJobCamara = consultarComRetryCron(urlJobC, 10, 3)
 
         if (resJobCamara.statusCode === 200 && resJobCamara.raw) {
           const dataJobCamara = JSON.parse(resJobCamara.raw)
@@ -604,6 +615,45 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
     const paramCol = $app.findCollectionByNameOrId('parametros_tributarios')
     const notifCol = $app.findCollectionByNameOrId('notificacoes_tributarias')
 
+    // Controle de saúde das fontes consultadas (transparência na resposta do /radar/sincronizar)
+    const fontesConsultadas = []
+    const fontesFalhadas = []
+
+    // Consulta HTTP com retry simples (3 tentativas) para tolerar falhas de rede transitórias
+    const consultarComRetry = (url, timeoutSeg, tentativas) => {
+      const maxTentativas = tentativas || 3
+      let ultimoErro = null
+      for (let t = 0; t < maxTentativas; t++) {
+        try {
+          const res = $http.send({
+            url: url,
+            method: 'GET',
+            timeout: timeoutSeg || 12,
+            headers: {
+              Accept: 'application/json',
+              'User-Agent': 'Contabilidade50-RadarTributario/1.0',
+            },
+          })
+          if (res && res.statusCode === 200 && res.raw) {
+            return res
+          }
+          ultimoErro = new Error('HTTP ' + (res ? res.statusCode : 'sem resposta'))
+        } catch (errHttp) {
+          ultimoErro = errHttp
+        }
+        console.log(
+          '[Radar Tributário] Tentativa ' + (t + 1) + ' falhou para ' + url + ':',
+          ultimoErro,
+        )
+      }
+      throw ultimoErro || new Error('Falha desconhecida na consulta: ' + url)
+    }
+
+    const escaparFiltro = (s) =>
+      String(s || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+
     // Consultar API de Dados Abertos da Câmara dos Deputados (PL/PLP de CBS, IBS e Reforma Tributária)
     try {
       const urlsCamaraSync = [
@@ -611,20 +661,14 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
         'https://dadosabertos.camara.leg.br/api/v2/proposicoes?siglaTipo=PL,PLP&keywords=reforma+tributaria&ordem=DESC&ordenarPor=id&itens=8',
       ]
 
+      let camaraOk = false
       for (let uSyncIdx = 0; uSyncIdx < urlsCamaraSync.length; uSyncIdx++) {
         const urlSyncC = urlsCamaraSync[uSyncIdx]
         try {
-          const resSyncCamara = $http.send({
-            url: urlSyncC,
-            method: 'GET',
-            timeout: 10,
-            headers: {
-              Accept: 'application/json',
-              'User-Agent': 'Contabilidade50-RadarTributario/1.0',
-            },
-          })
+          const resSyncCamara = consultarComRetry(urlSyncC, 10, 3)
 
           if (resSyncCamara.statusCode === 200 && resSyncCamara.raw) {
+            camaraOk = true
             const dataSyncCamara = JSON.parse(resSyncCamara.raw)
             const listaSyncProps = dataSyncCamara?.dados || []
 
@@ -698,8 +742,98 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
           )
         }
       }
+      if (camaraOk) {
+        fontesConsultadas.push('Câmara dos Deputados')
+      } else {
+        fontesFalhadas.push('Câmara dos Deputados')
+      }
     } catch (errCamaraSync) {
       console.log('[Radar Tributário] Erro na varredura da Câmara no sync manual:', errCamaraSync)
+      fontesFalhadas.push('Câmara dos Deputados')
+    }
+
+    // NOVA FONTE: LexML — leis complementares/ordinárias novas relacionadas à Reforma Tributária
+    try {
+      const termoLexml =
+        '(tipo:"lei complementar" OR tipo:"lei ordinária") AND (IBS OR CBS OR "reforma tributária" OR "LC 214")'
+      const urlLexml =
+        'https://api.lexml.gov.br/lexml/json/pesquisar?termo=' +
+        encodeURIComponent(termoLexml) +
+        '&max=20'
+      const resLexml = consultarComRetry(urlLexml, 12, 3)
+      fontesConsultadas.push('LexML')
+      const dataLexml = JSON.parse(resLexml.raw)
+      const documentosLexml = (dataLexml && dataLexml.documento) || []
+      const listaLexml = Array.isArray(documentosLexml) ? documentosLexml : [documentosLexml]
+
+      for (let lIdx = 0; lIdx < listaLexml.length; lIdx++) {
+        const doc = listaLexml[lIdx]
+        if (!doc) continue
+        const urn = String(doc.urn || '')
+        const tituloDoc = String(doc.titulo || doc.descricao || '').trim()
+        if (!tituloDoc) continue
+
+        const tUpper = tituloDoc.toUpperCase()
+        const pertinente =
+          tUpper.includes('IBS') ||
+          tUpper.includes('CBS') ||
+          tUpper.includes('REFORMA TRIBUTÁRIA') ||
+          tUpper.includes('REFORMA TRIBUTARIA') ||
+          tUpper.includes('LC 214') ||
+          tUpper.includes('BENS E SERVIÇOS') ||
+          tUpper.includes('REIDI')
+        if (!pertinente) continue
+
+        // Filtro de ano: apenas normas novas (2026 em diante)
+        const mAno = tituloDoc.match(/\/(\d{4})/) || tituloDoc.match(/\b(20\d{2})\b/)
+        const anoDoc = mAno ? parseInt(mAno[1], 10) : 0
+        if (!anoDoc || anoDoc < 2026) continue
+
+        const tributoLexml =
+          tUpper.includes('CBS') && tUpper.includes('IBS')
+            ? 'CBS'
+            : tUpper.includes('CBS')
+              ? 'CBS'
+              : tUpper.includes('IBS')
+                ? 'IBS'
+                : 'Geral'
+        const linkLexml =
+          doc.url || (urn ? 'https://www.lexml.gov.br/urn/' + urn : 'https://www.lexml.gov.br')
+
+        const filtroDedupe =
+          'fonte ~ "LexML" && (mensagem ~ "' +
+          escaparFiltro(urn) +
+          '" || titulo ~ "' +
+          escaparFiltro(tituloDoc) +
+          '")'
+        let jaExisteLexml = null
+        try {
+          jaExisteLexml = $app.findFirstRecordByFilter('notificacoes_tributarias', filtroDedupe)
+        } catch (_) {}
+
+        if (!jaExisteLexml) {
+          const novaNotifLexml = new Record(notifCol)
+          novaNotifLexml.set('titulo', tituloDoc)
+          novaNotifLexml.set(
+            'mensagem',
+            'Nova norma sancionada relacionada à Reforma Tributária, detectada no LexML (lexml.gov.br). Fonte Oficial: ' +
+              linkLexml,
+          )
+          novaNotifLexml.set('tipo', 'legislacao_nova')
+          novaNotifLexml.set('tributo', tributoLexml)
+          novaNotifLexml.set('ano', anoDoc)
+          novaNotifLexml.set('fonte', 'LexML')
+          novaNotifLexml.set('link_acao', '/legislacao')
+          novaNotifLexml.set('lida', false)
+          novaNotifLexml.set('email_enviado', false)
+          $app.save(novaNotifLexml)
+          novosEncontrados++
+          console.log('[Radar Tributário] Norma LexML registrada: ' + tituloDoc)
+        }
+      }
+    } catch (errLexml) {
+      console.log('[Radar Tributário] Erro na consulta ao LexML:', errLexml)
+      fontesFalhadas.push('LexML')
     }
 
     // Monitoramento de decisões favoráveis dos Tribunais Superiores (Tema 118 / RE 592.616)
@@ -1080,6 +1214,8 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
       sucesso: true,
       novosEncontrados,
       emailsEnviados,
+      fontes_consultadas: fontesConsultadas,
+      fontes_falhadas: fontesFalhadas,
       mensagem: 'Varredura e sincronização de alíquotas oficiais concluídas com sucesso.',
     })
   } catch (err) {
