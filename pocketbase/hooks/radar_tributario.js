@@ -620,7 +620,7 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
     const fontesFalhadas = []
 
     // Consulta HTTP com retry simples (3 tentativas) para tolerar falhas de rede transitórias
-    const consultarComRetry = (url, timeoutSeg, tentativas) => {
+    const consultarComRetry = (url, timeoutSeg, tentativas, acceptHeader) => {
       const maxTentativas = tentativas || 3
       let ultimoErro = null
       for (let t = 0; t < maxTentativas; t++) {
@@ -630,7 +630,7 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
             method: 'GET',
             timeout: timeoutSeg || 12,
             headers: {
-              Accept: 'application/json',
+              Accept: acceptHeader || 'application/json',
               'User-Agent': 'Contabilidade50-RadarTributario/1.0',
             },
           })
@@ -752,25 +752,53 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
       fontesFalhadas.push('Câmara dos Deputados')
     }
 
-    // NOVA FONTE: LexML — leis complementares/ordinárias novas relacionadas à Reforma Tributária
+    // FONTE: LexML — Webservice SRU oficial (XML): leis complementares/ordinárias novas relacionadas à Reforma Tributária
     try {
-      const termoLexml =
-        '(tipo:"lei complementar" OR tipo:"lei ordinária") AND (IBS OR CBS OR "reforma tributária" OR "LC 214")'
+      const cqlLexml =
+        '(tipo:"lei complementar" OR tipo:"lei ordinária") AND (IBS OR CBS OR "reforma tributária" OR "LC 214" OR "REIDI")'
       const urlLexml =
-        'https://api.lexml.gov.br/lexml/json/pesquisar?termo=' +
-        encodeURIComponent(termoLexml) +
-        '&max=20'
-      const resLexml = consultarComRetry(urlLexml, 12, 3)
+        'https://www.lexml.gov.br/busca/SRU?operation=searchRetrieve&version=1.1&query=' +
+        encodeURIComponent(cqlLexml) +
+        '&maximumRecords=20&recordSchema=lexml'
+      const resLexml = consultarComRetry(urlLexml, 20, 3, 'application/xml, text/xml')
       fontesConsultadas.push('LexML')
-      const dataLexml = JSON.parse(resLexml.raw)
-      const documentosLexml = (dataLexml && dataLexml.documento) || []
-      const listaLexml = Array.isArray(documentosLexml) ? documentosLexml : [documentosLexml]
 
-      for (let lIdx = 0; lIdx < listaLexml.length; lIdx++) {
-        const doc = listaLexml[lIdx]
+      // Resposta é XML SRU: extrair os blocos <srw:record> ... <srw_dc:dc> ... </srw_dc:dc>
+      const xmlLexml = String(resLexml.raw || '')
+      const cabecalhoLexml = xmlLexml.match(/<srw:records>([\s\S]*?)<\/srw:records>/i)
+      const corpoRegistrosLexml = cabecalhoLexml ? cabecalhoLexml[1] : ''
+      // Cada registro SRU vem encapsulado; separar por <srw:recordData>
+      const blocosLexml = corpoRegistrosLexml.split(/<srw:recordData>/i).slice(1)
+
+      for (let lIdx = 0; lIdx < blocosLexml.length; lIdx++) {
+        const doc = blocosLexml[lIdx]
         if (!doc) continue
-        const urn = String(doc.urn || '')
-        const tituloDoc = String(doc.titulo || doc.descricao || '').trim()
+        const urn = (doc.match(/<urn>([\s\S]*?)<\/urn>/i) || [])[1] || ''
+        const dataEl = (doc.match(/<dc:date>([\s\S]*?)<\/dc:date>/i) || [])[1] || ''
+        const autoridadeDoc = (
+          (doc.match(/<jurisdicao>([\s\S]*?)<\/jurisdicao>/i) || [])[1] ||
+          (doc.match(/<autoridade>([\s\S]*?)<\/autoridade>/i) || [])[1] ||
+          ''
+        )
+          .trim()
+          .toLowerCase()
+        const tipoDoc = (
+          (doc.match(/<tipoDocumento>([\s\S]*?)<\/tipoDocumento>/i) || [])[1] || ''
+        ).trim()
+        // Apenas normas federais sancionadas (Leis federais): excluir projetos e normas de estados/municípios
+        const ehLeiFederal =
+          (autoridadeDoc === '' || autoridadeDoc === 'br' || autoridadeDoc === 'brasil') &&
+          /lei/i.test(tipoDoc)
+        if (!ehLeiFederal) continue
+        const tituloDoc = ((doc.match(/<dc:title>([\s\S]*?)<\/dc:title>/i) || [])[1] || '')
+          .trim()
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&apos;/g, "'")
+          .replace(/&#39;/g, "'")
+          .replace(/&#(\d+);/g, (m, code) => String.fromCharCode(parseInt(code, 10)))
         if (!tituloDoc) continue
 
         const tUpper = tituloDoc.toUpperCase()
@@ -784,10 +812,19 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
           tUpper.includes('REIDI')
         if (!pertinente) continue
 
-        // Filtro de ano: apenas normas novas (2026 em diante)
-        const mAno = tituloDoc.match(/\/(\d{4})/) || tituloDoc.match(/\b(20\d{2})\b/)
+        // Filtro de ano: apenas normas novas (2026 em diante) — usa a data oficial do documento (dc:date)
+        const mAnoData = dataEl.match(/(\d{4})/)
+        const mAno = tituloDoc.match(/\/(\d{4})/) || tituloDoc.match(/\b(20\d{2})\b/) || mAnoData
         const anoDoc = mAno ? parseInt(mAno[1], 10) : 0
         if (!anoDoc || anoDoc < 2026) continue
+        console.log(
+          '[Radar Tributário] Norma LexML pertinente (' +
+            tipoDoc +
+            ', ' +
+            dataEl +
+            '): ' +
+            tituloDoc,
+        )
 
         const tributoLexml =
           tUpper.includes('CBS') && tUpper.includes('IBS')
@@ -797,8 +834,7 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
               : tUpper.includes('IBS')
                 ? 'IBS'
                 : 'Geral'
-        const linkLexml =
-          doc.url || (urn ? 'https://www.lexml.gov.br/urn/' + urn : 'https://www.lexml.gov.br')
+        const linkLexml = urn ? 'https://www.lexml.gov.br/urn/' + urn : 'https://www.lexml.gov.br'
 
         const filtroDedupe =
           'fonte ~ "LexML" && (mensagem ~ "' +
@@ -1221,6 +1257,57 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
   } catch (err) {
     console.log('Erro na sincronização do radar:', err)
     return e.json(500, { erro: 'Falha ao sincronizar parâmetros tributários' })
+  }
+})
+
+// TEMPORÁRIO (diagnóstico, somente leitura): valida a consulta SRU do LexML sem gravar registros
+routerAdd('GET', '/backend/v1/radar/teste-lexml', (e) => {
+  try {
+    const cql =
+      '(tipo:"lei complementar" OR tipo:"lei ordinária") AND (IBS OR CBS OR "reforma tributária" OR "LC 214" OR "REIDI")'
+    const url =
+      'https://www.lexml.gov.br/busca/SRU?operation=searchRetrieve&version=1.1&query=' +
+      encodeURIComponent(cql) +
+      '&maximumRecords=20&recordSchema=lexml'
+    const res = $http.send({
+      url: url,
+      method: 'GET',
+      timeout: 20,
+      headers: {
+        Accept: 'application/xml, text/xml',
+        'User-Agent': 'Contabilidade50-RadarTributario/1.0',
+      },
+    })
+    const xml = String(res.raw || '')
+    const cabecalho = xml.match(/<srw:records>([\s\S]*?)<\/srw:records>/i)
+    const blocos = (cabecalho ? cabecalho[1] : '').split(/<srw:recordData>/i).slice(1)
+    const itens = []
+    for (let i = 0; i < blocos.length; i++) {
+      const doc = blocos[i]
+      if (!doc) continue
+      const urn = (doc.match(/<urn>([\s\S]*?)<\/urn>/i) || [])[1] || ''
+      const dataEl = (doc.match(/<dc:date>([\s\S]*?)<\/dc:date>/i) || [])[1] || ''
+      const autoridade = (
+        (doc.match(/<jurisdicao>([\s\S]*?)<\/jurisdicao>/i) || [])[1] ||
+        (doc.match(/<autoridade>([\s\S]*?)<\/autoridade>/i) || [])[1] ||
+        ''
+      )
+        .trim()
+        .toLowerCase()
+      const tipoDoc = (
+        (doc.match(/<tipoDocumento>([\s\S]*?)<\/tipoDocumento>/i) || [])[1] || ''
+      ).trim()
+      const titulo = ((doc.match(/<dc:title>([\s\S]*?)<\/dc:title>/i) || [])[1] || '').trim()
+      itens.push({ urn, data: dataEl, autoridade, tipoDoc, titulo })
+    }
+    return e.json(200, {
+      statusHttp: res.statusCode,
+      tamanhoXml: xml.length,
+      totalRegistros: blocos.length,
+      extraios: itens,
+    })
+  } catch (err) {
+    return e.json(500, { erro: String(err) })
   }
 })
 
