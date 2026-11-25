@@ -793,32 +793,39 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       }))
     }
 
-    // Se faturamentoMensal for alterado no Módulo 1, propaga para M2, M3, M5 e Dashboard
+    // Se faturamentoMensal for alterado no Módulo 1, propaga para M2, M3, M5 e Dashboard.
+    // Campos que o usuário editou manualmente (flag true, inclusive vinda do
+    // rascunho restaurado) NÃO são sobrescritos pela propagação.
     if (novas.faturamentoMensal !== undefined) {
       const fat = novas.faturamentoMensal
-      setValorOperacaoState(fat)
-      setFaturamentoMensalState(fat)
-      setFaturamentoAnualProjetadoState(fat * 12)
-      setEditadoLocalmente((prev) => ({
-        ...prev,
-        modulo2ValorOperacao: false,
-        modulo3Faturamento: false,
-        modulo5Faturamento: false,
-        dashboardFaturamento: false,
-      }))
+      setEditadoLocalmente((prev) => {
+        if (!prev.modulo2ValorOperacao) setValorOperacaoState(fat)
+        if (!prev.modulo3Faturamento) setFaturamentoMensalState(fat)
+        if (!prev.modulo5Faturamento) setFaturamentoAnualProjetadoState(fat * 12)
+        return {
+          ...prev,
+          modulo2ValorOperacao: false,
+          modulo3Faturamento: false,
+          modulo5Faturamento: false,
+          dashboardFaturamento: false,
+        }
+      })
     }
 
-    // Se percentualComprasVendas for alterado no Módulo 1, propaga para M2, M3 e Dashboard
+    // Se percentualComprasVendas for alterado no Módulo 1, propaga para M2, M3 e
+    // Dashboard. Respeita flag de edição manual (inclusive vinda do rascunho).
     if (novas.percentualComprasVendas !== undefined) {
       const pct = novas.percentualComprasVendas
-      setPercentualComprasVendasSimplesState(pct)
-      setPercentualComprasVendasComparativoState(pct)
-      setEditadoLocalmente((prev) => ({
-        ...prev,
-        modulo2PercentualCompras: false,
-        modulo3PercentualCompras: false,
-        dashboardPercentualCompras: false,
-      }))
+      setEditadoLocalmente((prev) => {
+        if (!prev.modulo2PercentualCompras) setPercentualComprasVendasSimplesState(pct)
+        if (!prev.modulo3PercentualCompras) setPercentualComprasVendasComparativoState(pct)
+        return {
+          ...prev,
+          modulo2PercentualCompras: false,
+          modulo3PercentualCompras: false,
+          dashboardPercentualCompras: false,
+        }
+      })
     }
 
     // Se anoTransicao for alterado no Módulo 1, propaga para anoOperacao do M2 e anoTransicaoDashboard do M6
@@ -836,24 +843,29 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     if (novas.presetSetor !== undefined) {
       const novoRegime: RegimeDiferenciadoTipo =
         novas.presetSetor === 'nenhum' ? 'padrao' : (novas.presetSetor as RegimeDiferenciadoTipo)
-      setRegimeOperacaoState(novoRegime)
-      setEditadoLocalmente((prev) => ({
-        ...prev,
-        modulo2RegimeOperacao: false,
-      }))
+      setEditadoLocalmente((prev) => {
+        if (!prev.modulo2RegimeOperacao) setRegimeOperacaoState(novoRegime)
+        return {
+          ...prev,
+          modulo2RegimeOperacao: false,
+        }
+      })
     }
 
-    // Se tipoAtividade (Ramo Principal) for alterado no Módulo 1, propaga para M3, M5 e Dashboard
+    // Se tipoAtividade (Ramo Principal) for alterado no Módulo 1, propaga para M3, M5 e
+    // Dashboard. Respeita flags de edição manual (inclusive vindas do rascunho).
     if (novas.tipoAtividade !== undefined) {
       const normTipo = normalizarTipoAtividade(novas.tipoAtividade)
-      setTipoAtividadeState(normTipo)
-      setSetorTransicaoState(normTipo)
-      setEditadoLocalmente((prev) => ({
-        ...prev,
-        modulo3TipoAtividade: false,
-        modulo5SetorTransicao: false,
-        dashboardSetor: false,
-      }))
+      setEditadoLocalmente((prev) => {
+        if (!prev.modulo3TipoAtividade) setTipoAtividadeState(normTipo)
+        if (!prev.modulo5SetorTransicao) setSetorTransicaoState(normTipo)
+        return {
+          ...prev,
+          modulo3TipoAtividade: false,
+          modulo5SetorTransicao: false,
+          dashboardSetor: false,
+        }
+      })
     }
 
     // Propaga subatividades e detalhes do ramo se alterados no Módulo 1
@@ -1273,17 +1285,25 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   // Flags para controle de edição manual local nos módulos downstream
   // Quando false, significa que o valor ainda é espelhado do Módulo 1 (ou foi atualizado por ele)
+  // Hidratação do rascunho: flags 'editado' gravadas na última visita voltam como
+  // estavam — um campo que o usuário editou no Módulo 2/3/5 NÃO é re-sobrescrito
+  // pela propagação do Módulo 1 (updateConfig do restore da nuvem) nem pelo sync
+  // da Fonte Mestra.
+  const rascunhoM2 = rascunhoInicial?.modulo2
+  const rascunhoM3 = rascunhoInicial?.modulo3
+  const rascunhoM4 = rascunhoInicial?.modulo4
+  const rascunhoM5 = rascunhoInicial?.modulo5
   const [editadoLocalmente, setEditadoLocalmente] = useState({
-    modulo2AnoOperacao: false,
-    modulo2RegimeOperacao: false,
-    modulo2ValorOperacao: false,
-    modulo2PercentualCompras: false,
-    modulo3Faturamento: false,
-    modulo3PercentualCompras: false,
-    modulo3TipoAtividade: false,
+    modulo2AnoOperacao: rascunhoM2?.editado?.anoOperacao ?? false,
+    modulo2RegimeOperacao: rascunhoM2?.editado?.regimeOperacao ?? false,
+    modulo2ValorOperacao: rascunhoM2?.editado?.valorOperacao ?? false,
+    modulo2PercentualCompras: rascunhoM2?.editado?.percentualCompras ?? false,
+    modulo3Faturamento: rascunhoM3?.editado?.faturamento ?? false,
+    modulo3PercentualCompras: rascunhoM3?.editado?.percentualCompras ?? false,
+    modulo3TipoAtividade: rascunhoM3?.editado?.tipoAtividade ?? false,
     modulo4Categorias: false,
-    modulo5Faturamento: false,
-    modulo5SetorTransicao: false,
+    modulo5Faturamento: rascunhoM5?.editado?.faturamento ?? false,
+    modulo5SetorTransicao: rascunhoM5?.editado?.setor ?? false,
     dashboardRegimeAtual: false,
     dashboardAnoTransicao: false,
     dashboardSetor: false,
@@ -1350,18 +1370,24 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   // Módulo 2: Calculadora Simples (inicializado a partir dos Dados da Empresa / Módulo 1)
   const [valorOperacao, setValorOperacaoState] = useState<number>(
-    () => config.faturamentoMensal || perfilInicial.faturamentoMensal || 0,
+    () =>
+      rascunhoM2?.valorOperacao ?? config.faturamentoMensal ?? perfilInicial.faturamentoMensal ?? 0,
   )
   const [regimeOperacao, setRegimeOperacaoState] = useState<RegimeDiferenciadoTipo>(() => {
     // Restaura o Regime Aplicado (Módulo 2) como o usuário deixou na última visita
+    if (rascunhoM2?.regimeOperacao) return rascunhoM2.regimeOperacao
     if (rascunhoInicial?.regimeOperacao) return rascunhoInicial.regimeOperacao
     return config.presetSetor && config.presetSetor !== 'nenhum' ? config.presetSetor : 'padrao'
   })
   const [anoOperacao, setAnoOperacaoState] = useState<AnoTransicaoIbsCbs>(
-    () => config.anoTransicao || 2033,
+    () => rascunhoM2?.anoOperacao ?? config.anoTransicao ?? 2033,
   )
   const [percentualComprasVendasSimples, setPercentualComprasVendasSimplesState] = useState<number>(
-    () => config.percentualComprasVendas ?? perfilInicial.percentualComprasVendas ?? 40,
+    () =>
+      rascunhoM2?.percentualComprasVendasSimples ??
+      config.percentualComprasVendas ??
+      perfilInicial.percentualComprasVendas ??
+      40,
   )
 
   // Setters instrumentados que marcam edição local
@@ -1608,9 +1634,13 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     }
   }, [isAuthenticated, usuarioIdAtual, updateConfig])
 
-  // Módulo 3: Comparativo por Regime (inicializado a partir dos Dados da Empresa / Módulo 1)
+  // Módulo 3: Comparativo por Regime (inicializado a partir do rascunho / Dados da Empresa / Módulo 1)
   const [faturamentoMensal, setFaturamentoMensalState] = useState<number>(
-    () => config.faturamentoMensal || perfilInicial.faturamentoMensal || 0,
+    () =>
+      rascunhoM3?.faturamentoMensal ??
+      config.faturamentoMensal ??
+      perfilInicial.faturamentoMensal ??
+      0,
   )
   const setFaturamentoMensal = useCallback((v: number) => {
     setEditadoLocalmente((prev) => ({
@@ -1621,7 +1651,9 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     setFaturamentoMensalState(v)
   }, [])
   const [tipoAtividade, setTipoAtividadeState] = useState<TipoAtividadePrincipal>(() =>
-    normalizarTipoAtividade(perfilInicial.tipoAtividade),
+    rascunhoM3
+      ? normalizarTipoAtividade(rascunhoM3.tipoAtividade)
+      : normalizarTipoAtividade(perfilInicial.tipoAtividade),
   )
 
   const setTipoAtividade = useCallback((novoTipo: TipoAtividade) => {
@@ -1634,32 +1666,41 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   }, [])
   // Subatividades por ramo
   const [subatividadeServico, setSubatividadeServico] = useState<SubatividadeServico>(
-    () => perfilInicial.subatividadeServico || 'servico_comum',
+    () => rascunhoM3?.subatividadeServico || perfilInicial.subatividadeServico || 'servico_comum',
   )
   const [subatividadeIndustria, setSubatividadeIndustria] = useState<SubatividadeIndustria>(
-    () => perfilInicial.subatividadeIndustria || 'industria_comum',
+    () =>
+      rascunhoM3?.subatividadeIndustria || perfilInicial.subatividadeIndustria || 'industria_comum',
   )
   const [subatividadeComercio, setSubatividadeComercio] = useState<SubatividadeComercio>(
-    () => perfilInicial.subatividadeComercio || 'varejo_comum',
+    () => rascunhoM3?.subatividadeComercio || perfilInicial.subatividadeComercio || 'varejo_comum',
   )
-  const [subatividadeAgro, setSubatividadeAgro] =
-    useState<SubatividadeAgronegocio>('producao_agricola_graos')
-  const [subatividadeConstrucao, setSubatividadeConstrucao] =
-    useState<SubatividadeConstrucao>('obras_edificacoes_ret')
+  const [subatividadeAgro, setSubatividadeAgro] = useState<SubatividadeAgronegocio>(
+    () => rascunhoM3?.subatividadeAgro || 'producao_agricola_graos',
+  )
+  const [subatividadeConstrucao, setSubatividadeConstrucao] = useState<SubatividadeConstrucao>(
+    () => rascunhoM3?.subatividadeConstrucao || 'obras_edificacoes_ret',
+  )
   const [subatividadeLocacao, setSubatividadeLocacao] = useState<SubatividadeLocacao>(
-    'locacao_veiculos_maquinas',
+    () => rascunhoM3?.subatividadeLocacao || 'locacao_veiculos_maquinas',
   )
   const [subatividadeFoodService, setSubatividadeFoodService] = useState<SubatividadeFoodService>(
-    'restaurante_a_la_carte_buffet',
+    () => rascunhoM3?.subatividadeFoodService || 'restaurante_a_la_carte_buffet',
   )
-  const [aliquotaImpostoSeletivo, setAliquotaImpostoSeletivo] = useState<number>(10)
+  const [aliquotaImpostoSeletivo, setAliquotaImpostoSeletivo] = useState<number>(
+    () => rascunhoM3?.aliquotaImpostoSeletivo ?? 10,
+  )
 
   const [proporcaoServicoMisto, setProporcaoServicoMisto] = useState<number>(
-    () => perfilInicial.proporcaoServicoMisto ?? 50,
+    () => rascunhoM3?.proporcaoServicoMisto ?? perfilInicial.proporcaoServicoMisto ?? 50,
   )
   const [percentualComprasVendasComparativo, setPercentualComprasVendasComparativoState] =
     useState<number>(
-      () => config.percentualComprasVendas ?? perfilInicial.percentualComprasVendas ?? 0,
+      () =>
+        rascunhoM3?.percentualComprasVendasComparativo ??
+        config.percentualComprasVendas ??
+        perfilInicial.percentualComprasVendas ??
+        0,
     )
   const setPercentualComprasVendasComparativo = useCallback((p: number) => {
     setEditadoLocalmente((prev) => ({
@@ -1671,18 +1712,20 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   }, [])
   // Campos refinados do Módulo 3
   const [folhaPagamentoMensal, setFolhaPagamentoMensal] = useState<number>(
-    () => perfilInicial.folhaPagamentoMensal || 0,
+    () => rascunhoM3?.folhaPagamentoMensal ?? perfilInicial.folhaPagamentoMensal ?? 0,
   )
   const [margemLucroEstimada, setMargemLucroEstimada] = useState<number>(
-    () => perfilInicial.margemLucroEstimada ?? 20,
+    () => rascunhoM3?.margemLucroEstimada ?? perfilInicial.margemLucroEstimada ?? 20,
   ) // %
   const [despesasComCreditosMensais, setDespesasComCreditosMensais] = useState<number>(
-    () => perfilInicial.despesasComCreditosMensais || 0,
+    () => rascunhoM3?.despesasComCreditosMensais ?? perfilInicial.despesasComCreditosMensais ?? 0,
   )
   const [percentualExportacao, setPercentualExportacao] = useState<number>(
-    () => perfilInicial.percentualExportacao ?? 0,
+    () => rascunhoM3?.percentualExportacao ?? perfilInicial.percentualExportacao ?? 0,
   )
-  const [ufOrigem, setUfOrigem] = useState<string>(() => perfilInicial.ufOrigem || 'SP')
+  const [ufOrigem, setUfOrigem] = useState<string>(
+    () => rascunhoM3?.ufOrigem || perfilInicial.ufOrigem || 'SP',
+  )
 
   // Módulo 4: Simulador de Créditos (proporcionaliza categorias quando houver perfil)
   const gerarCategoriasIniciais = (): CategoriaDespesaCredito[] => {
@@ -1730,8 +1773,11 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     setItensComposicao([])
   }, [])
 
-  const [despesasCreditos, setDespesasCreditos] =
-    useState<CategoriaDespesaCredito[]>(gerarCategoriasIniciais)
+  const [despesasCreditos, setDespesasCreditos] = useState<CategoriaDespesaCredito[]>(() =>
+    // Restaura as categorias editadas pelo usuário na última visita (rascunho
+    // do Módulo 4); sem rascunho, deriva proporcionalmente dos Dados da Empresa.
+    rascunhoM4?.despesasCreditos?.length ? rascunhoM4.despesasCreditos : gerarCategoriasIniciais(),
+  )
 
   const updateDespesaCredito = useCallback(
     (id: string, updates: Partial<CategoriaDespesaCredito>) => {
@@ -1750,14 +1796,18 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
 
   // Módulo 5: Transição (faturamento anual = faturamentoMensal * 12)
   const [faturamentoAnualProjetado, setFaturamentoAnualProjetadoState] = useState<number>(
-    () => (config.faturamentoMensal || perfilInicial.faturamentoMensal || 0) * 12,
+    () =>
+      rascunhoM5?.faturamentoAnualProjetado ??
+      (config.faturamentoMensal || perfilInicial.faturamentoMensal || 0) * 12,
   )
   const setFaturamentoAnualProjetado = useCallback((v: number) => {
     setEditadoLocalmente((prev) => ({ ...prev, modulo5Faturamento: true }))
     setFaturamentoAnualProjetadoState(v)
   }, [])
   const [setorTransicao, setSetorTransicaoState] = useState<TipoAtividadePrincipal>(() =>
-    normalizarTipoAtividade(perfilInicial.tipoAtividade),
+    rascunhoM5
+      ? normalizarTipoAtividade(rascunhoM5.setorTransicao)
+      : normalizarTipoAtividade(perfilInicial.tipoAtividade),
   )
 
   const setSetorTransicao = useCallback((novoSector: TipoAtividade) => {
@@ -1770,6 +1820,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
   }, [])
   // Etapa 5: Valor do estoque na virada (padrão estimado em ~1 a 2 meses de compras da empresa)
   const [valorEstoqueVirada, setValorEstoqueVirada] = useState<number>(() => {
+    if (rascunhoM5?.valorEstoqueVirada !== undefined) return rascunhoM5.valorEstoqueVirada
     const isServico = normalizarTipoAtividade(perfilInicial.tipoAtividade) === 'servico'
     if (isServico) return 0
     const fat = perfilInicial.faturamentoMensal || 0
