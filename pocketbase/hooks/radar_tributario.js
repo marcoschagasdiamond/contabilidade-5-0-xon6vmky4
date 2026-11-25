@@ -56,17 +56,17 @@ cronAdd('radar-aliquotas-semanal', '0 6 * * 1', () => {
     console.log('[Radar Tributário] Aviso ao consultar API Senado:', errSenado)
   }
 
-  // 2. Tentar LexML Webservice SRU
+  // 2. Ping de saúde: API de Normas Federais do Senado (mesmo acervo do LexML — o SRU do
+  // lexml.gov.br responde com página anti-robô "Verificação de segurança — Senado Federal")
   try {
     const resLexml = consultarComRetryCron(
-      'https://www.lexml.gov.br/busca/SRU?operation=searchRetrieve&query=%22aliquota%20de%20referencia%22%20AND%20%28CBS%20OR%20IBS%29&maximumRecords=5',
+      'https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=LC&ano=2026&formato=json',
       10,
       3,
-      'application/xml, text/xml',
     )
-    console.log('[Radar Tributário] LexML SRU respondeu com sucesso.')
+    console.log('[Radar Tributário] Ping API Normas Federais do Senado: 200 OK.')
   } catch (errLex) {
-    console.log('[Radar Tributário] Aviso ao consultar LexML:', errLex)
+    console.log('[Radar Tributário] Aviso ao consultar API Normas do Senado:', errLex)
   }
 
   // 2.1 Consultar API de Dados Abertos da Câmara dos Deputados (PL/PLP de CBS, IBS e Reforma Tributária)
@@ -752,80 +752,87 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
       fontesFalhadas.push('Câmara dos Deputados')
     }
 
-    // FONTE: LexML — Webservice SRU oficial (XML): leis complementares/ordinárias novas relacionadas à Reforma Tributária
+    // FONTE: LexML (acervo Senado) — o webservice SRU do lexml.gov.br foi aposentado para consultas
+    // de máquina e responde com a página "Verificação de segurança — Senado Federal" (anti-robô).
+    // A detecção usa a API de Normas Federais do Senado (legis.senado.leg.br), mesmo acervo que
+    // alimenta o LexML, filtrando leis sancionadas pertinentes à Reforma Tributária.
     try {
-      const cqlLexml =
-        '(tipo:"lei complementar" OR tipo:"lei ordinária") AND (IBS OR CBS OR "reforma tributária" OR "LC 214" OR "REIDI")'
-      const urlLexml =
-        'https://www.lexml.gov.br/busca/SRU?operation=searchRetrieve&version=1.1&query=' +
-        encodeURIComponent(cqlLexml) +
-        '&maximumRecords=20&recordSchema=lexml'
-      const resLexml = consultarComRetry(urlLexml, 20, 3, 'application/xml, text/xml')
-      fontesConsultadas.push('LexML')
-
-      // Resposta é XML SRU: extrair os blocos <srw:record> ... <srw_dc:dc> ... </srw_dc:dc>
-      const xmlLexml = String(resLexml.raw || '')
-      const cabecalhoLexml = xmlLexml.match(/<srw:records>([\s\S]*?)<\/srw:records>/i)
-      const corpoRegistrosLexml = cabecalhoLexml ? cabecalhoLexml[1] : ''
-      // Cada registro SRU vem encapsulado; separar por <srw:recordData>
-      const blocosLexml = corpoRegistrosLexml.split(/<srw:recordData>/i).slice(1)
-
-      for (let lIdx = 0; lIdx < blocosLexml.length; lIdx++) {
-        const doc = blocosLexml[lIdx]
-        if (!doc) continue
-        const urn = (doc.match(/<urn>([\s\S]*?)<\/urn>/i) || [])[1] || ''
-        const dataEl = (doc.match(/<dc:date>([\s\S]*?)<\/dc:date>/i) || [])[1] || ''
-        const autoridadeDoc = (
-          (doc.match(/<jurisdicao>([\s\S]*?)<\/jurisdicao>/i) || [])[1] ||
-          (doc.match(/<autoridade>([\s\S]*?)<\/autoridade>/i) || [])[1] ||
-          ''
+      const pertinenteNormaTexto = (texto) => {
+        const t = String(texto || '').toUpperCase()
+        return (
+          t.includes('IBS') ||
+          t.includes('CBS') ||
+          t.includes('REFORMA TRIBUTÁRIA') ||
+          t.includes('REFORMA TRIBUTARIA') ||
+          t.includes('LC 214') ||
+          // Ementas citam "Lei Complementar nº 214, de 2025" por extenso
+          /N[ºO°]?\s*214\b/.test(t) ||
+          t.includes('BENS E SERVIÇOS') ||
+          t.includes('REIDI')
         )
-          .trim()
-          .toLowerCase()
-        const tipoDoc = (
-          (doc.match(/<tipoDocumento>([\s\S]*?)<\/tipoDocumento>/i) || [])[1] || ''
-        ).trim()
-        // Apenas normas federais sancionadas (Leis federais): excluir projetos e normas de estados/municípios
-        const ehLeiFederal =
-          (autoridadeDoc === '' || autoridadeDoc === 'br' || autoridadeDoc === 'brasil') &&
-          /lei/i.test(tipoDoc)
-        if (!ehLeiFederal) continue
-        const tituloDoc = ((doc.match(/<dc:title>([\s\S]*?)<\/dc:title>/i) || [])[1] || '')
-          .trim()
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&apos;/g, "'")
-          .replace(/&#39;/g, "'")
-          .replace(/&#(\d+);/g, (m, code) => String.fromCharCode(parseInt(code, 10)))
-        if (!tituloDoc) continue
+      }
+      const tiposNormaSenado = ['LC', 'LEI']
+      const registrosNormas = []
+      for (let tIdx = 0; tIdx < tiposNormaSenado.length; tIdx++) {
+        try {
+          const urlNormas =
+            'https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=' +
+            tiposNormaSenado[tIdx] +
+            '&ano=2026&formato=json'
+          const resNormas = consultarComRetry(urlNormas, 20, 2)
+          const dataNormas = JSON.parse(String(resNormas.raw || '{}'))
+          // Envelope JSON tolerante às variações da API do Senado
+          const raizNormas =
+            dataNormas?.Metadados?.Normas || dataNormas?.Normas || dataNormas?.Norma || {}
+          const listaNormas = Array.isArray(raizNormas)
+            ? raizNormas
+            : raizNormas.Normas || raizNormas.Norma || []
+          const arrNormas = Array.isArray(listaNormas) ? listaNormas : [listaNormas]
+          for (let nIdx = 0; nIdx < arrNormas.length; nIdx++) {
+            const itemN = arrNormas[nIdx]
+            const fN = itemN && itemN.Norma ? itemN.Norma : itemN
+            if (!fN) continue
+            registrosNormas.push({
+              sigla: String(fN.Sigla || fN.Tipo || tiposNormaSenado[tIdx]).trim(),
+              numero: String(fN.Numero || '').trim(),
+              ano: String(fN.Ano || '2026').trim(),
+              ementa: String(fN.Ementa || '').trim(),
+              dataAssinatura: String(fN.DataAssinatura || fN.Data || '').trim(),
+              url: String(
+                (fN.Urls && fN.Urls[0] && (fN.Urls[0].Url || fN.Urls[0].url)) ||
+                  fN.UrlDocumento ||
+                  '',
+              ).trim(),
+            })
+          }
+        } catch (errNormasTipo) {
+          console.log(
+            '[Radar Tributário] Aviso: consulta de normas ' +
+              tiposNormaSenado[tIdx] +
+              ' do Senado falhou:',
+            errNormasTipo,
+          )
+        }
+      }
 
-        const tUpper = tituloDoc.toUpperCase()
-        const pertinente =
-          tUpper.includes('IBS') ||
-          tUpper.includes('CBS') ||
-          tUpper.includes('REFORMA TRIBUTÁRIA') ||
-          tUpper.includes('REFORMA TRIBUTARIA') ||
-          tUpper.includes('LC 214') ||
-          tUpper.includes('BENS E SERVIÇOS') ||
-          tUpper.includes('REIDI')
-        if (!pertinente) continue
+      if (registrosNormas.length > 0) {
+        fontesConsultadas.push('LexML (acervo Senado)')
+      } else {
+        fontesFalhadas.push('LexML (acervo Senado)')
+        console.log('[Radar Tributário] Normas federais do Senado indisponíveis ou sem registros.')
+      }
 
-        // Filtro de ano: apenas normas novas (2026 em diante) — usa a data oficial do documento (dc:date)
-        const mAnoData = dataEl.match(/(\d{4})/)
-        const mAno = tituloDoc.match(/\/(\d{4})/) || tituloDoc.match(/\b(20\d{2})\b/) || mAnoData
-        const anoDoc = mAno ? parseInt(mAno[1], 10) : 0
+      for (let lIdx = 0; lIdx < registrosNormas.length; lIdx++) {
+        const normaL = registrosNormas[lIdx]
+        if (!normaL.numero) continue
+        const tituloDoc = normaL.sigla + ' nº ' + normaL.numero + '/' + normaL.ano
+        const textoPertinencia = normaL.sigla + ' ' + normaL.numero + ' ' + normaL.ementa
+        if (!pertinenteNormaTexto(textoPertinencia)) continue
+        // Filtro de ano: apenas normas novas (2026 em diante)
+        const anoDoc = parseInt(normaL.ano, 10)
         if (!anoDoc || anoDoc < 2026) continue
-        console.log(
-          '[Radar Tributário] Norma LexML pertinente (' +
-            tipoDoc +
-            ', ' +
-            dataEl +
-            '): ' +
-            tituloDoc,
-        )
 
+        const tUpper = textoPertinencia.toUpperCase()
         const tributoLexml =
           tUpper.includes('CBS') && tUpper.includes('IBS')
             ? 'CBS'
@@ -834,13 +841,13 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
               : tUpper.includes('IBS')
                 ? 'IBS'
                 : 'Geral'
-        const linkLexml = urn ? 'https://www.lexml.gov.br/urn/' + urn : 'https://www.lexml.gov.br'
+        const linkNorma = normaL.url || 'https://normas.leg.br/busca'
 
         const filtroDedupe =
-          'fonte ~ "LexML" && (mensagem ~ "' +
-          escaparFiltro(urn) +
-          '" || titulo ~ "' +
+          'fonte ~ "LexML" && (titulo ~ "' +
           escaparFiltro(tituloDoc) +
+          '" || mensagem ~ "' +
+          escaparFiltro(normaL.ementa.slice(0, 80)) +
           '")'
         let jaExisteLexml = null
         try {
@@ -852,24 +859,27 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
           novaNotifLexml.set('titulo', tituloDoc)
           novaNotifLexml.set(
             'mensagem',
-            'Nova norma sancionada relacionada à Reforma Tributária, detectada no LexML (lexml.gov.br). Fonte Oficial: ' +
-              linkLexml,
+            (normaL.ementa ? normaL.ementa + ' ' : '') +
+              'Nova norma sancionada relacionada à Reforma Tributária, detectada no LexML/acervo do Senado (' +
+              (normaL.dataAssinatura || 'sem data de assinatura') +
+              '). Fonte Oficial: ' +
+              linkNorma,
           )
           novaNotifLexml.set('tipo', 'legislacao_nova')
           novaNotifLexml.set('tributo', tributoLexml)
           novaNotifLexml.set('ano', anoDoc)
-          novaNotifLexml.set('fonte', 'LexML')
+          novaNotifLexml.set('fonte', 'LexML (acervo Senado)')
           novaNotifLexml.set('link_acao', '/legislacao')
           novaNotifLexml.set('lida', false)
           novaNotifLexml.set('email_enviado', false)
           $app.save(novaNotifLexml)
           novosEncontrados++
-          console.log('[Radar Tributário] Norma LexML registrada: ' + tituloDoc)
+          console.log('[Radar Tributário] Norma LexML (Senado) registrada: ' + tituloDoc)
         }
       }
     } catch (errLexml) {
-      console.log('[Radar Tributário] Erro na consulta ao LexML:', errLexml)
-      fontesFalhadas.push('LexML')
+      console.log('[Radar Tributário] Erro na consulta ao LexML (Senado):', errLexml)
+      fontesFalhadas.push('LexML (acervo Senado)')
     }
 
     // Monitoramento de decisões favoráveis dos Tribunais Superiores (Tema 118 / RE 592.616)
@@ -1260,55 +1270,133 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
   }
 })
 
-// TEMPORÁRIO (diagnóstico, somente leitura): valida a consulta SRU do LexML sem gravar registros
-routerAdd('GET', '/backend/v1/radar/teste-lexml', (e) => {
+// TEMPORÁRIO (diagnóstico): cron de 1 execução que valida o fluxo REAL do Radar contra a
+// API de Normas Federais do Senado — consulta, pertinência e gravação da notificação da
+// LC 239/2026 — depois verifica o dedupe (2ª passada não pode duplicar).
+cronAdd('radar-sonda-senado-temp', '* * * * *', () => {
   try {
-    const cql =
-      '(tipo:"lei complementar" OR tipo:"lei ordinária") AND (IBS OR CBS OR "reforma tributária" OR "LC 214" OR "REIDI")'
-    const url =
-      'https://www.lexml.gov.br/busca/SRU?operation=searchRetrieve&version=1.1&query=' +
-      encodeURIComponent(cql) +
-      '&maximumRecords=20&recordSchema=lexml'
-    const res = $http.send({
-      url: url,
-      method: 'GET',
-      timeout: 20,
-      headers: {
-        Accept: 'application/xml, text/xml',
-        'User-Agent': 'Contabilidade50-RadarTributario/1.0',
-      },
-    })
-    const xml = String(res.raw || '')
-    const cabecalho = xml.match(/<srw:records>([\s\S]*?)<\/srw:records>/i)
-    const blocos = (cabecalho ? cabecalho[1] : '').split(/<srw:recordData>/i).slice(1)
-    const itens = []
-    for (let i = 0; i < blocos.length; i++) {
-      const doc = blocos[i]
-      if (!doc) continue
-      const urn = (doc.match(/<urn>([\s\S]*?)<\/urn>/i) || [])[1] || ''
-      const dataEl = (doc.match(/<dc:date>([\s\S]*?)<\/dc:date>/i) || [])[1] || ''
-      const autoridade = (
-        (doc.match(/<jurisdicao>([\s\S]*?)<\/jurisdicao>/i) || [])[1] ||
-        (doc.match(/<autoridade>([\s\S]*?)<\/autoridade>/i) || [])[1] ||
-        ''
-      )
-        .trim()
-        .toLowerCase()
-      const tipoDoc = (
-        (doc.match(/<tipoDocumento>([\s\S]*?)<\/tipoDocumento>/i) || [])[1] || ''
-      ).trim()
-      const titulo = ((doc.match(/<dc:title>([\s\S]*?)<\/dc:title>/i) || [])[1] || '').trim()
-      itens.push({ urn, data: dataEl, autoridade, tipoDoc, titulo })
-    }
-    return e.json(200, {
-      statusHttp: res.statusCode,
-      tamanhoXml: xml.length,
-      totalRegistros: blocos.length,
-      extraios: itens,
-    })
-  } catch (err) {
-    return e.json(500, { erro: String(err) })
+    cronRemove('radar-sonda-senado-temp')
+  } catch (_) {}
+  const escaparFiltroSonda = (valor) => String(valor || '').replace(/"/g, "'")
+  const pertinenteSonda = (texto) => {
+    const t = String(texto || '').toUpperCase()
+    return (
+      t.includes('IBS') ||
+      t.includes('CBS') ||
+      t.includes('REFORMA TRIBUTÁRIA') ||
+      t.includes('REFORMA TRIBUTARIA') ||
+      t.includes('LC 214') ||
+      /N[ºO°]?\s*214\b/.test(t) ||
+      t.includes('BENS E SERVIÇOS') ||
+      t.includes('REIDI')
+    )
   }
+  const tiposSonda = ['LC', 'LEI']
+  const registrosSonda = []
+  for (let i = 0; i < tiposSonda.length; i++) {
+    try {
+      const urlSonda =
+        'https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=' +
+        tiposSonda[i] +
+        '&ano=2026&formato=json'
+      const resSonda = $http.send({
+        url: urlSonda,
+        method: 'GET',
+        timeout: 20,
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'Contabilidade50-RadarTributario/1.0',
+        },
+      })
+      const dataSonda = JSON.parse(String(resSonda.raw || '{}'))
+      const raizSonda = dataSonda?.Metadados?.Normas || dataSonda?.Normas || dataSonda?.Norma || {}
+      const listaSonda = Array.isArray(raizSonda)
+        ? raizSonda
+        : raizSonda.Normas || raizSonda.Norma || []
+      const arrSonda = Array.isArray(listaSonda) ? listaSonda : [listaSonda]
+      for (let j = 0; j < arrSonda.length; j++) {
+        const itemS = arrSonda[j]
+        const fS = itemS && itemS.Norma ? itemS.Norma : itemS
+        if (!fS) continue
+        registrosSonda.push({
+          sigla: String(fS.Sigla || fS.Tipo || tiposSonda[i]).trim(),
+          numero: String(fS.Numero || '').trim(),
+          ano: String(fS.Ano || '2026').trim(),
+          ementa: String(fS.Ementa || '').trim(),
+          dataAssinatura: String(fS.DataAssinatura || fS.Data || '').trim(),
+          url: String(
+            (fS.Urls && fS.Urls[0] && (fS.Urls[0].Url || fS.Urls[0].url)) || fS.UrlDocumento || '',
+          ).trim(),
+        })
+      }
+    } catch (errSonda) {
+      console.log('[Sonda Senado] tipo=' + tiposSonda[i] + ' => ERRO: ' + String(errSonda))
+    }
+  }
+  const pertinentesSonda = registrosSonda.filter((n) =>
+    pertinenteSonda(n.sigla + ' ' + n.numero + ' ' + n.ementa),
+  )
+  const tem239 = pertinentesSonda.some((n) => n.sigla === 'LC' && n.numero === '239')
+  console.log(
+    '[Sonda Senado] registros=' +
+      registrosSonda.length +
+      ' pertinentes=' +
+      pertinentesSonda.length +
+      ' LC239presente=' +
+      tem239 +
+      (pertinentesSonda.length > 0
+        ? ' ementas=' +
+          pertinentesSonda
+            .map((n) => n.sigla + n.numero)
+            .join(',')
+            .slice(0, 200)
+        : ''),
+  )
+  // Fluxo de gravação idêntico ao do Radar (para provar criação + dedupe):
+  let criadasSonda = 0
+  let duplicadasSonda = 0
+  const notifColSonda = $app.findCollectionByNameOrId('notificacoes_tributarias')
+  for (let k = 0; k < pertinentesSonda.length; k++) {
+    const normaS = pertinentesSonda[k]
+    if (!normaS.numero) continue
+    const tituloS = normaS.sigla + ' nº ' + normaS.numero + '/' + normaS.ano
+    const filtroS =
+      'fonte ~ "LexML" && (titulo ~ "' +
+      escaparFiltroSonda(tituloS) +
+      '" || mensagem ~ "' +
+      escaparFiltroSonda(normaS.ementa.slice(0, 80)) +
+      '")'
+    let existeS = null
+    try {
+      existeS = $app.findFirstRecordByFilter('notificacoes_tributarias', filtroS)
+    } catch (_) {}
+    if (existeS) {
+      duplicadasSonda++
+      continue
+    }
+    const novaS = new Record(notifColSonda)
+    novaS.set('titulo', tituloS)
+    novaS.set(
+      'mensagem',
+      (normaS.ementa ? normaS.ementa + ' ' : '') +
+        'Nova norma sancionada relacionada à Reforma Tributária, detectada no LexML/acervo do Senado (' +
+        (normaS.dataAssinatura || 'sem data de assinatura') +
+        '). Fonte Oficial: ' +
+        (normaS.url || 'https://normas.leg.br/busca'),
+    )
+    novaS.set('tipo', 'legislacao_nova')
+    novaS.set('tributo', 'Geral')
+    novaS.set('ano', parseInt(normaS.ano, 10) || 2026)
+    novaS.set('fonte', 'LexML (acervo Senado)')
+    novaS.set('link_acao', '/legislacao')
+    novaS.set('lida', false)
+    novaS.set('email_enviado', false)
+    $app.save(novaS)
+    criadasSonda++
+  }
+  console.log(
+    '[Sonda Senado] gravação: criadas=' + criadasSonda + ' duplicadasIgnoradas=' + duplicadasSonda,
+  )
 })
 
 // 3. ENDPOINT DE BUSCA DE LEGISLAÇÃO TRIBUTÁRIA
