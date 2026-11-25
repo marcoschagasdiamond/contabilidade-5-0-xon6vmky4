@@ -73,6 +73,14 @@ export function ListaSimulacoes({
   const { toast } = useToast()
   const { clienteAtivo, clientes } = useClienteAtivo()
 
+  // Menu de 3 pontos CONTROLADO por id: o provider da Calculadora dispara
+  // re-renders em cadeia (autosave/restore do rascunho) e o DropdownMenu não
+  // controlado fechava sozinho entre pointerdown e a abertura — nenhum item
+  // aparecia. Com estado próprio, a abertura só muda via onOpenChange. Além
+  // disso modal={false} evita o lock de pointer-events do body do Radix, que
+  // deixava o card inteiro sem reação quando a limpeza do layer se perdia.
+  const [menuAbertoId, setMenuAbertoId] = useState<string | null>(null)
+
   // Estado para exclusão
   const [simulacaoExcluir, setSimulacaoExcluir] = useState<SimulacaoCalculadora | null>(null)
   const [excluindo, setExcluindo] = useState(false)
@@ -320,7 +328,11 @@ export function ListaSimulacoes({
                     Carregar
                   </Button>
 
-                  <DropdownMenu>
+                  <DropdownMenu
+                    open={menuAbertoId === sim.id}
+                    onOpenChange={(aberto) => setMenuAbertoId(aberto ? sim.id : null)}
+                    modal={false}
+                  >
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500">
                         <MoreVertical className="w-3.5 h-3.5" />
