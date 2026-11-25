@@ -833,8 +833,8 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
             '&ano=2026&formato=json',
         ]
         for (let vIdx = 0; vIdx < urlsVariaveis.length; vIdx++) {
+          const antesTipo = registrosNormas.length
           try {
-            const antesTipo = registrosNormas.length
             const resNormas = consultarComRetry(urlsVariaveis[vIdx], 20, 2)
             const dataNormas = JSON.parse(String(resNormas.raw || '{}'))
             const arrNormas = extrairNormasSenado(dataNormas)
@@ -1345,178 +1345,63 @@ routerAdd('POST', '/backend/v1/radar/sincronizar', (e) => {
   }
 })
 
-// TEMPORÁRIO (diagnóstico): cron de 1 execução que valida o fluxo REAL do Radar contra a
-// API de Normas Federais do Senado — consulta, pertinência e gravação da notificação da
-// LC 239/2026 — depois verifica o dedupe (2ª passada não pode duplicar).
-cronAdd('radar-sonda-senado-temp', '* * * * *', () => {
+// TEMPORÁRIO (validação de runtime da v0.0.446): dispara o POST /radar/sincronizar REAL
+// (mesmo código que o botão "Forçar varredura" da /legislacao executa), remove os registros
+// de diagnóstico da sonda antiga e devolve a resposta da varredura. Chamar duas vezes para
+// provar o dedupe. REMOVER após a validação.
+routerAdd('GET', '/backend/v1/radar/diag-senado', (e) => {
+  // 1. Cleanup dos registros de diagnóstico da sonda (SONDA LC239 diag)
+  let removidas = 0
   try {
-    cronRemove('radar-sonda-senado-temp')
+    const sonda = $app.findRecordsByFilter(
+      'notificacoes_tributarias',
+      'titulo = "SONDA LC239 diag" || fonte = "Sonda LC239 diag"',
+      '-created',
+      100,
+    )
+    for (let iS = 0; iS < sonda.length; iS++) {
+      try {
+        $app.delete(sonda[iS])
+        removidas++
+      } catch (_) {}
+    }
   } catch (_) {}
-  const escaparFiltroSonda = (valor) => String(valor || '').replace(/"/g, "'")
-  const pertinenteSonda = (texto) => {
-    const t = String(texto || '').toUpperCase()
-    return (
-      t.includes('IBS') ||
-      t.includes('CBS') ||
-      t.includes('REFORMA TRIBUTÁRIA') ||
-      t.includes('REFORMA TRIBUTARIA') ||
-      t.includes('LC 214') ||
-      /N[ºO°]?\s*214\b/.test(t) ||
-      t.includes('BENS E SERVIÇOS') ||
-      t.includes('REIDI')
+
+  // 2. Dispara a varredura REAL (POST interno ao próprio endpoint do Radar)
+  const base = 'https://contabilidade-50-81b74.shrd03.internal.goskip.dev'
+  let resposta = null
+  let bruto = ''
+  try {
+    const resSync = $http.send({
+      url: base + '/backend/v1/radar/sincronizar',
+      method: 'POST',
+      timeout: 120,
+      headers: { Accept: 'application/json', 'User-Agent': 'Contabilidade50-RadarDiag/1.0' },
+    })
+    bruto = String(resSync.raw || '')
+  } catch (errDiag) {
+    bruto = 'ERRO: ' + String(errDiag)
+  }
+  try {
+    resposta = JSON.parse(bruto)
+  } catch (_) {
+    resposta = bruto.slice(0, 4000)
+  }
+
+  // 3. Estado das notificações da LC 239 após a varredura (prova de detecção e dedupe)
+  let contagem239 = 0
+  try {
+    contagem239 = $app.countRecords(
+      'notificacoes_tributarias',
+      'titulo ~ "LC 239" && fonte = "API de Normas do Senado"',
     )
-  }
-  const tiposSonda = ['LC', 'LEI']
-  const registrosSonda = []
-  for (let i = 0; i < tiposSonda.length; i++) {
-    try {
-      const urlSonda =
-        'https://legis.senado.leg.br/dadosabertos/legislacao/lista?sigla=' +
-        tiposSonda[i] +
-        '&ano=2026&formato=json'
-      const resSonda = $http.send({
-        url: urlSonda,
-        method: 'GET',
-        timeout: 20,
-        headers: {
-          Accept: 'application/json',
-          'User-Agent': 'Contabilidade50-RadarTributario/1.0',
-        },
-      })
-      const dataSonda = JSON.parse(String(resSonda.raw || '{}'))
-      const envelopeS = dataSonda?.ListaDocumento || dataSonda || {}
-      console.log(
-        '[Sonda Senado] tipo=' +
-          tiposSonda[i] +
-          ' chavesEnvelope=' +
-          JSON.stringify(Object.keys(dataSonda || {})) +
-          ' totalRegistros=' +
-          String(
-            envelopeS?.Metadados?.NumeroTotalRegistros ??
-              envelopeS?.Metadados?.TotalRegistros ??
-              'n/d',
-          ),
-      )
-      const raizSonda =
-        envelopeS?.Documentos || envelopeS?.Metadados?.Normas || envelopeS?.Normas || {}
-      const listaSonda = raizSonda.Documento || raizSonda.Normas || raizSonda.Norma || []
-      const arrSonda = Array.isArray(listaSonda) ? listaSonda : listaSonda ? [listaSonda] : []
-      for (let j = 0; j < arrSonda.length; j++) {
-        const itemS = arrSonda[j]
-        const fS = itemS && itemS.Norma ? itemS.Norma : itemS
-        if (!fS || typeof fS !== 'object') continue
-        registrosSonda.push({
-          sigla: String(fS.Sigla || fS.Tipo || tiposSonda[i]).trim(),
-          numero: String(fS.Numero || '').trim(),
-          ano: String(fS.Ano || '2026').trim(),
-          ementa: String(fS.Ementa || '').trim(),
-          dataAssinatura: String(fS.DataAssinatura || fS.Data || '').trim(),
-          url: String(
-            (fS.Urls && fS.Urls[0] && (fS.Urls[0].Url || fS.Urls[0].url)) || fS.UrlDocumento || '',
-          ).trim(),
-        })
-      }
-    } catch (errSonda) {
-      console.log('[Sonda Senado] tipo=' + tiposSonda[i] + ' => ERRO: ' + String(errSonda))
-    }
-  }
-  // Fallback da sonda: consulta direta da LC 239/2026 (sigla+numero+ano) se a listagem não a trouxe
-  if (!registrosSonda.some((n) => n.sigla === 'LC' && n.numero === '239')) {
-    try {
-      const res239S = $http.send({
-        url: 'https://legis.senado.leg.br/dadosabertos/legislacao/lista?sigla=LC&numero=239&ano=2026&formato=json',
-        method: 'GET',
-        timeout: 20,
-        headers: {
-          Accept: 'application/json',
-          'User-Agent': 'Contabilidade50-RadarTributario/1.0',
-        },
-      })
-      const data239S = JSON.parse(String(res239S.raw || '{}'))
-      console.log(
-        '[Sonda Senado] fallback LC239 chavesEnvelope=' +
-          JSON.stringify(Object.keys(data239S || {})) +
-          ' corpo=' +
-          String(res239S.raw || '').slice(0, 900),
-      )
-      const colDiag = $app.findCollectionByNameOrId('notificacoes_tributarias')
-      const recDiag = new Record(colDiag)
-      recDiag.set('titulo', 'SONDA LC239 diag')
-      recDiag.set('mensagem', String(res239S.raw || '').slice(0, 3000))
-      recDiag.set('tipo', 'alerta_senado')
-      recDiag.set('tributo', 'Geral')
-      recDiag.set('fonte', 'Sonda LC239 diag')
-      recDiag.set('lida', true)
-      recDiag.set('email_enviado', false)
-      $app.save(recDiag)
-    } catch (err239S) {
-      console.log('[Sonda Senado] fallback LC239 => ERRO: ' + String(err239S))
-    }
-  }
-  const pertinentesSonda = registrosSonda.filter((n) =>
-    pertinenteSonda(n.sigla + ' ' + n.numero + ' ' + n.ementa),
-  )
-  const tem239 = pertinentesSonda.some((n) => n.sigla === 'LC' && n.numero === '239')
-  console.log(
-    '[Sonda Senado] registros=' +
-      registrosSonda.length +
-      ' pertinentes=' +
-      pertinentesSonda.length +
-      ' LC239presente=' +
-      tem239 +
-      (pertinentesSonda.length > 0
-        ? ' ementas=' +
-          pertinentesSonda
-            .map((n) => n.sigla + n.numero)
-            .join(',')
-            .slice(0, 200)
-        : ''),
-  )
-  // Fluxo de gravação idêntico ao do Radar (para provar criação + dedupe):
-  let criadasSonda = 0
-  let duplicadasSonda = 0
-  const notifColSonda = $app.findCollectionByNameOrId('notificacoes_tributarias')
-  for (let k = 0; k < pertinentesSonda.length; k++) {
-    const normaS = pertinentesSonda[k]
-    if (!normaS.numero) continue
-    const tituloS = normaS.sigla + ' nº ' + normaS.numero + '/' + normaS.ano
-    const filtroS =
-      'titulo ~ "' +
-      escaparFiltroSonda(tituloS) +
-      '" || mensagem ~ "' +
-      escaparFiltroSonda(normaS.ementa.slice(0, 80)) +
-      '"'
-    let existeS = null
-    try {
-      existeS = $app.findFirstRecordByFilter('notificacoes_tributarias', filtroS)
-    } catch (_) {}
-    if (existeS) {
-      duplicadasSonda++
-      continue
-    }
-    const novaS = new Record(notifColSonda)
-    novaS.set('titulo', tituloS)
-    novaS.set(
-      'mensagem',
-      (normaS.ementa ? normaS.ementa + ' ' : '') +
-        'Nova norma sancionada relacionada à Reforma Tributária, detectada na API de Normas Federais do Senado (' +
-        (normaS.dataAssinatura || 'sem data de assinatura') +
-        '). Fonte Oficial: ' +
-        (normaS.url || 'https://normas.leg.br/busca'),
-    )
-    novaS.set('tipo', 'legislacao_nova')
-    novaS.set('tributo', 'Geral')
-    novaS.set('ano', parseInt(normaS.ano, 10) || 2026)
-    novaS.set('fonte', 'API de Normas do Senado')
-    novaS.set('link_acao', '/legislacao')
-    novaS.set('lida', false)
-    novaS.set('email_enviado', false)
-    $app.save(novaS)
-    criadasSonda++
-  }
-  console.log(
-    '[Sonda Senado] gravação: criadas=' + criadasSonda + ' duplicadasIgnoradas=' + duplicadasSonda,
-  )
+  } catch (_) {}
+
+  return e.json(200, {
+    varredura: resposta,
+    notificacoesLC239: contagem239,
+    registrosSondaRemovidos: removidas,
+  })
 })
 
 // 3. ENDPOINT DE BUSCA DE LEGISLAÇÃO TRIBUTÁRIA
