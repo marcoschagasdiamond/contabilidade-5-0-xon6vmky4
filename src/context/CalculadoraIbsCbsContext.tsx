@@ -175,6 +175,8 @@ interface RascunhoCalculadora {
   etiquetasOrigem?: import('@/types/calculadoraIbsCbs').OrigemCamposAliquota
   // Ajuste da alíquota média do Simples (Módulo 1) — opcional (payloads antigos não o têm)
   ajusteAliquotaSimplesMedia?: import('@/lib/aliquotaSimplesMediaConfig').AjusteAliquotaSimplesMedia
+  // Ajuste do IVA Dual do Cenário Cheio (Módulo 2) — opcional (payloads antigos não o têm)
+  ajusteIvaDualCenarioCheio?: import('@/types/calculadoraIbsCbs').ConfiguracoesGerais['ajusteIvaDualCenarioCheio']
   // Módulos 2 a 5: rascunhos opcionais (payloads antigos não os têm)
   modulo2?: RascunhoModulo2
   modulo3?: RascunhoModulo3
@@ -715,6 +717,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
             perfilRetencaoSplit: rascunhoInicial.perfilRetencaoSplit,
             percentualRetencaoSplit: rascunhoInicial.percentualRetencaoSplit,
             ajusteAliquotaSimplesMedia: rascunhoInicial.ajusteAliquotaSimplesMedia,
+            ajusteIvaDualCenarioCheio: rascunhoInicial.ajusteIvaDualCenarioCheio,
             ...(rascunhoInicial.etiquetasOrigem
               ? { etiquetasOrigem: rascunhoInicial.etiquetasOrigem }
               : {}),
@@ -1468,6 +1471,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       percentualRetencaoSplit,
       etiquetasOrigem: config.etiquetasOrigem,
       ajusteAliquotaSimplesMedia: config.ajusteAliquotaSimplesMedia,
+      ajusteIvaDualCenarioCheio: config.ajusteIvaDualCenarioCheio,
       // Módulos 2 a 5: repõe os dados que o usuário deixou na última visita
       modulo2: {
         valorOperacao,

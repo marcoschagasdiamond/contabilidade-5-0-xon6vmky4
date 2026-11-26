@@ -1315,6 +1315,11 @@ export interface ConfiguracoesGerais {
   // em % — valor único aplicado a todos os anos, ou tabela por ano ('2026'...'2033'/'2040').
   // Sem ajuste, vale a estimativa padrão de obterAliquotasCreditoPorAno (calculoFornecedores.ts).
   ajusteAliquotaSimplesMedia?: import('@/lib/aliquotaSimplesMediaConfig').AjusteAliquotaSimplesMedia
+
+  // Ajuste do usuário para a alíquota do IVA Dual no Cenário Cheio do Módulo 2 (Calculadora
+  // Simples), em % — ex.: 11.3. Sem ajuste (ausente/0), vale a alíquota de referência legal
+  // da tabela de fases da transição (obterFaseTransicaoPorAno(...).totalIvaDual).
+  ajusteIvaDualCenarioCheio?: { valorUnico?: number | null }
 }
 
 export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {

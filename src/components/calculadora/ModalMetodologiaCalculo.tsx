@@ -536,6 +536,14 @@ export function ModalMetodologiaCalculo({
                       econômica apenas de <strong>2027 a 2033</strong>, período no qual o novo IVA
                       Dual entra em eficácia plena e substitui os tributos federais e subnacionais.
                     </p>
+                    <p className="text-[11px] text-slate-600 leading-relaxed border-t border-blue-100 pt-1.5">
+                      <strong>Origem do valor do Cenário Cheio:</strong> por padrão, a alíquota
+                      cheia do IVA Dual vem da tabela de fases da transição (CBS 8,80% em 2027;
+                      total 26,50% em 2033). Se o usuário definir o ajuste{' '}
+                      <strong>"IVA Dual — Cenário Cheio (%)"</strong> no Módulo 1 (Configurações
+                      Gerais), esse valor tem precedência sobre a tabela e passa a ser aplicado na
+                      Calculadora Simples (Módulo 2), inclusive nos créditos dela derivados.
+                    </p>
                   </div>
                 </CardContent>
               </Card>

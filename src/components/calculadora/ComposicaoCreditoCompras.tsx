@@ -4,6 +4,7 @@ import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import {
   FUNDAMENTO_ALIQUOTA_SIMPLES_MEDIA,
   temAjusteAliquotaSimplesMedia,
+  temAjusteIvaDualCenarioCheio,
   type AjusteAliquotaSimplesMedia,
 } from '@/lib/aliquotaSimplesMediaConfig'
 import { Scale, Info, TrendingDown, ShieldCheck, Layers, Percent } from 'lucide-react'
@@ -21,6 +22,8 @@ export interface ComposicaoCreditoComprasProps {
   isServico?: boolean
   /** Ajuste ativo do usuário — quando presente, sinaliza "ajustado" em vez de "estimativa". */
   ajusteAliquotaSimplesMedia?: AjusteAliquotaSimplesMedia | null
+  /** Ajuste do usuário para a alíquota do IVA Dual do Cenário Cheio (Módulo 1). */
+  ajusteIvaDualCenarioCheio?: { valorUnico?: number | null } | null
 }
 
 function ComposicaoCreditoComprasComponent({
@@ -35,8 +38,10 @@ function ComposicaoCreditoComprasComponent({
   className = '',
   isServico = false,
   ajusteAliquotaSimplesMedia = null,
+  ajusteIvaDualCenarioCheio = null,
 }: ComposicaoCreditoComprasProps) {
   const ajusteAtivo = temAjusteAliquotaSimplesMedia(ajusteAliquotaSimplesMedia)
+  const ivaDualAjustado = temAjusteIvaDualCenarioCheio(ajusteIvaDualCenarioCheio)
   const strCreditoCheio = formatarMoeda(creditoCheio)
   const strCreditoPonderado = formatarMoeda(creditoPonderado)
   const strDiferenca = diferenca > 0.005 ? `− ${formatarMoeda(diferenca)}` : 'R$ 0,00'
@@ -140,6 +145,17 @@ function ComposicaoCreditoComprasComponent({
                 ? 'Crédito caso 100% dos fornecedores/prestadores fossem do regime regular (não-cumulatividade plena).'
                 : 'Crédito caso 100% dos fornecedores fossem do regime regular (não-cumulatividade plena).'}
             </p>
+            {ivaDualAjustado && (
+              <>
+                <span className="text-[10px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full self-start">
+                  Alíquota ajustada pelo usuário
+                </span>
+                <p className="text-[10px] text-slate-500 leading-relaxed">
+                  Default = alíquota de referência legal (LC 214/2025, art. 348 — CBS 8,80% em 2027;
+                  total 26,50% em 2033) — ajustável no Módulo 1.
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 

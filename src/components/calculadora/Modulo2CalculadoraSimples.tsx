@@ -40,7 +40,10 @@ import {
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
 import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
 import { ComposicaoCreditoCompras } from '@/components/calculadora/ComposicaoCreditoCompras'
-import { obterAliquotaSimplesMediaEfectivaEm } from '@/lib/aliquotaSimplesMediaConfig'
+import {
+  obterAliquotaSimplesMediaEfectivaEm,
+  obterIvaDualCenarioCheioAjustado,
+} from '@/lib/aliquotaSimplesMediaConfig'
 import { type AnoBaseSimulacao } from '@/lib/reformaTributaria'
 import { obterCClasTribPorRegime } from '@/data/cClassTribCatalogo'
 
@@ -678,9 +681,11 @@ export default function Modulo2CalculadoraSimples({
           config.ajusteAliquotaSimplesMedia,
         )
         const aliquotaCheiaModulo2 =
-          typeof anoOperacao === 'number'
+          // Ajuste do usuário (Módulo 1) tem precedência sobre a tabela de fases
+          obterIvaDualCenarioCheioAjustado(anoNumModulo2, config.ajusteIvaDualCenarioCheio) ??
+          (typeof anoOperacao === 'number'
             ? (obterFaseTransicaoPorAno(anoOperacao)?.totalIvaDual ?? config.totalIvaDual)
-            : config.totalIvaDual
+            : config.totalIvaDual)
 
         const pctFornecSimplesModulo2 = Math.min(
           100,
@@ -901,6 +906,7 @@ export default function Modulo2CalculadoraSimples({
               origemModulo="modulo2"
               isServico={isPerfilServico}
               ajusteAliquotaSimplesMedia={config.ajusteAliquotaSimplesMedia}
+              ajusteIvaDualCenarioCheio={config.ajusteIvaDualCenarioCheio}
             />
           </div>
         )

@@ -8,8 +8,10 @@ import { useCalculadoraIbsCbs } from '@/context/CalculadoraIbsCbsContext'
 import { obterAliquotasCreditoPorAno } from '@/lib/calculoFornecedores'
 import {
   temAjusteAliquotaSimplesMedia,
+  temAjusteIvaDualCenarioCheio,
   type AjusteAliquotaSimplesMedia,
 } from '@/lib/aliquotaSimplesMediaConfig'
+import { obterFaseTransicaoPorAno } from '@/types/calculadoraIbsCbs'
 import { ANOS_SIMULACAO_DISPONIVEIS, type AnoBaseSimulacao } from '@/lib/reformaTributaria'
 
 /**
@@ -68,6 +70,28 @@ export function SecaoAjusteAliquotaSimplesMedia() {
 
   const restaurarPadrao = () => {
     updateConfig({ ajusteAliquotaSimplesMedia: { valorUnico: null, porAno: null } })
+  }
+
+  const restaurarPadraoIvaDual = () => {
+    updateConfig({ ajusteIvaDualCenarioCheio: { valorUnico: null } })
+  }
+
+  // IVA Dual — Cenário Cheio (Módulo 2): valor único (%), sem ajuste = tabela de fases
+  const ivaDualAjuste = config.ajusteIvaDualCenarioCheio
+  const temAjusteIvaDual = temAjusteIvaDualCenarioCheio(ivaDualAjuste)
+  const totalIvaDualTabela = useMemo(() => {
+    const ano =
+      typeof config.anoTransicao === 'number'
+        ? (config.anoTransicao as AnoBaseSimulacao)
+        : (2033 as AnoBaseSimulacao)
+    return obterFaseTransicaoPorAno(ano)?.totalIvaDual ?? null
+  }, [config.anoTransicao])
+
+  const definirIvaDualCenarioCheio = (raw: string) => {
+    const limpo = raw.replace(',', '.').trim()
+    const n = limpo === '' ? null : Number(limpo)
+    const v = n != null && Number.isFinite(n) && n > 0 ? Math.min(100, Math.max(0, n)) : null
+    updateConfig({ ajusteIvaDualCenarioCheio: { valorUnico: v } })
   }
 
   return (
@@ -180,6 +204,47 @@ export function SecaoAjusteAliquotaSimplesMedia() {
           </p>
         </div>
 
+        {/* IVA Dual — Cenário Cheio (Módulo 2): ajuste do usuário sobre a alíquota da tabela de fases */}
+        <div className="min-w-0 w-full border-t border-slate-100 pt-4">
+          <div className="flex justify-between items-center mb-1.5 flex-wrap gap-1">
+            <Label
+              htmlFor="ajusteIvaDualCenarioCheio"
+              className="text-xs sm:text-sm font-medium break-words leading-snug text-slate-700"
+            >
+              IVA Dual — Cenário Cheio (%)
+            </Label>
+            {temAjusteIvaDual && (
+              <span className="text-[10px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                Ajuste ativo
+              </span>
+            )}
+          </div>
+          <div className="relative">
+            <Input
+              id="ajusteIvaDualCenarioCheio"
+              type="number"
+              inputMode="decimal"
+              min="0"
+              max="100"
+              step="0.01"
+              value={ivaDualAjuste?.valorUnico ?? ''}
+              placeholder={(totalIvaDualTabela ?? config.totalIvaDual).toFixed(2).replace('.', ',')}
+              onChange={(e) => definirIvaDualCenarioCheio(e.target.value)}
+              className="pr-8 font-mono font-medium"
+              autoComplete="off"
+            />
+            <span className="absolute right-3 top-2.5 text-sm text-slate-400 font-semibold">%</span>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+            Substitui a alíquota cheia do IVA Dual do Cenário Cheio no Módulo 2 (Calculadora
+            Simples). Placeholder = total da tabela de fases para o ano selecionado
+            {totalIvaDualTabela != null
+              ? ` (${totalIvaDualTabela.toFixed(2).replace('.', ',')}%)`
+              : ''}
+            . Deixe vazio (ou 0) para voltar ao default legal.
+          </p>
+        </div>
+
         {/* Restaurar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
           <span className="text-[11px] text-slate-500 leading-relaxed">
@@ -187,17 +252,30 @@ export function SecaoAjusteAliquotaSimplesMedia() {
               ? 'Os cálculos estão usando o ajuste informado acima em vez da estimativa padrão.'
               : 'Sem ajuste: os cálculos usam a estimativa padrão por ano (nenhuma fórmula muda).'}
           </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={restaurarPadrao}
-            disabled={!temAjuste}
-            className="gap-1.5 shrink-0"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Restaurar estimativa padrão
-          </Button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={restaurarPadraoIvaDual}
+              disabled={!temAjusteIvaDual}
+              className="gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Restaurar IVA Dual legal
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={restaurarPadrao}
+              disabled={!temAjuste}
+              className="gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Restaurar estimativa padrão
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

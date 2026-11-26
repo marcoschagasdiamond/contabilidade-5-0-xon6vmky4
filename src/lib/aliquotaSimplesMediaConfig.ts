@@ -55,6 +55,38 @@ export function obterAliquotaSimplesMediaEfectivaEm(
   return obterAliquotaSimplesMediaAjustada(ano, ajuste) * 100
 }
 
+// ============================================================
+// Ajuste do IVA Dual do Cenário Cheio (Módulo 2 / Calculadora Simples)
+// Mesmo padrão do ajuste da alíquota média do Simples: o usuário pode
+// SUBSTITUIR a alíquota de referência legal da tabela de fases da
+// transição (obterFaseTransicaoPorAno(ano).totalIvaDual — CBS 8,80% em
+// 2027; total 26,50% em 2033) por um valor único (%) configurado no
+// Módulo 1. Nenhuma fórmula muda: apenas a fonte do valor.
+// ============================================================
+
+/**
+ * Retorna o IVA Dual do Cenário Cheio ajustado pelo usuário para o ano, em %
+ * (ex.: 11.3), ou null quando não há ajuste válido (ausente/0/NaN/negativo) —
+ * o chamador então usa o total da tabela de fases, como antes.
+ */
+export function obterIvaDualCenarioCheioAjustado(
+  ano: AnoBaseSimulacao,
+  ajuste?: { valorUnico?: number | null } | null,
+): number | null {
+  void ano
+  const v = ajuste?.valorUnico
+  const n = typeof v === 'string' ? Number(v) : v
+  if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) return null
+  return Math.min(100, Math.max(0, n))
+}
+
+/** Indica se o usuário ajustou o IVA Dual do Cenário Cheio (para o badge "ajustado" na UI). */
+export function temAjusteIvaDualCenarioCheio(
+  ajuste?: { valorUnico?: number | null } | null,
+): boolean {
+  return obterIvaDualCenarioCheioAjustado(2033, ajuste) != null
+}
+
 /** Indica se o usuário ajustou a alíquota (para sinalizar na UI, ex.: badge "ajustado"). */
 export function temAjusteAliquotaSimplesMedia(ajuste?: AjusteAliquotaSimplesMedia | null): boolean {
   const unico = ajuste?.valorUnico

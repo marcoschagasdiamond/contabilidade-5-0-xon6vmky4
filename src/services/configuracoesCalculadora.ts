@@ -49,6 +49,7 @@ function camposAutosave(config: ConfiguracoesGerais): Partial<ConfiguracoesGerai
     subatividadeFoodService: config.subatividadeFoodService,
     etiquetasOrigem: config.etiquetasOrigem,
     ajusteAliquotaSimplesMedia: config.ajusteAliquotaSimplesMedia,
+    ajusteIvaDualCenarioCheio: config.ajusteIvaDualCenarioCheio,
   }
 }
 
