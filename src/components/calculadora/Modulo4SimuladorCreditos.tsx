@@ -313,6 +313,7 @@ export default function Modulo4SimuladorCreditos({
         diferenca={diferencaCreditoModulo4}
         origemModulo="modulo4"
         isServico={isPerfilServico}
+        ajusteAliquotaSimplesMedia={config.ajusteAliquotaSimplesMedia}
       />
 
       {/* Cards de Resumo e Métricas Conforme Especificação */}

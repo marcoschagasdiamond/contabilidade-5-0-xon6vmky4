@@ -1959,6 +1959,7 @@ export default function Modulo3ComparativoRegimes({
         percentualComprasVendasComparativo={percentualComprasVendasComparativo}
         despesasComCreditosMensais={despesasComCreditosMensais}
         percentualComprasSemCredito={percentualComprasSemCredito}
+        ajusteAliquotaSimplesMedia={config.ajusteAliquotaSimplesMedia}
         resultadoComparativo={resultadoComparativo}
       />
 

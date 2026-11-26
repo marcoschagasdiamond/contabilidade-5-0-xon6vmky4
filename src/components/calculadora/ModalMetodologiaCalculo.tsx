@@ -11,7 +11,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
 import { obterAliquotasCreditoPorAno } from '@/lib/calculoFornecedores'
-import type { AnoBaseSimulacao } from '@/lib/reformaTributaria'
+import { ANOS_SIMULACAO_DISPONIVEIS, type AnoBaseSimulacao } from '@/lib/reformaTributaria'
+import {
+  FUNDAMENTO_ALIQUOTA_SIMPLES_MEDIA,
+  temAjusteAliquotaSimplesMedia,
+  obterAliquotaSimplesMediaEfectivaEm,
+} from '@/lib/aliquotaSimplesMediaConfig'
+import type { AjusteAliquotaSimplesMedia } from '@/lib/aliquotaSimplesMediaConfig'
 import {
   Calculator,
   BookOpen,
@@ -37,6 +43,8 @@ export interface ModalMetodologiaCalculoProps {
   percentualComprasVendasComparativo: number
   despesasComCreditosMensais: number
   percentualComprasSemCredito?: number
+  /** Ajuste ativo do usuário para a alíquota média do Simples (Módulo 1). */
+  ajusteAliquotaSimplesMedia?: AjusteAliquotaSimplesMedia | null
   resultadoComparativo: {
     lucroReal: {
       pisOuCbs: number
@@ -104,7 +112,8 @@ export function ModalMetodologiaCalculo({
   porcentagemComprasSimplesNacional,
   percentualComprasVendasComparativo,
   despesasComCreditosMensais,
-  percentualComprasSemCredito = 0,
+  percentualComprasSemCredito,
+  ajusteAliquotaSimplesMedia = null,
   resultadoComparativo,
 }: ModalMetodologiaCalculoProps) {
   const { lucroReal, lucroPresumido, simplesNacional, ibsCbs, dadosAdicionais } =
@@ -565,8 +574,74 @@ export function ModalMetodologiaCalculo({
                   <p className="text-xs text-slate-600 leading-relaxed">
                     O percentual de compras originado de fornecedores optantes pelo Simples Nacional
                     é parametrizado no <strong>Módulo 1 (Configurações Gerais)</strong> e reflete a
-                    proporção da cadeia de suprimentos da empresa.
+                    proporção da cadeia de suprimentos da empresa. A{' '}
+                    <strong>alíquota média do Simples</strong> também é ajustável no Módulo 1:{' '}
+                    {FUNDAMENTO_ALIQUOTA_SIMPLES_MEDIA}
+                    {ajusteAliquotaSimplesMedia &&
+                    temAjusteAliquotaSimplesMedia(ajusteAliquotaSimplesMedia)
+                      ? ' — nesta simulação, o valor aplicado foi ajustado manualmente pelo usuário no Módulo 1, não é a estimativa.'
+                      : '.'}
                   </p>
+
+                  {/* TABELA DA ALÍQUOTA MÉDIA DO SIMPLES POR ANO (2026–2040) */}
+                  <div className="pt-1">
+                    <span className="text-[11px] font-bold text-[#07132B] block mb-1.5">
+                      Alíquota média do Simples Nacional por ano (2026–2040):
+                    </span>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs border border-slate-200 rounded">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-700">
+                            <th className="text-left px-2 py-1 font-semibold border-b border-slate-200">
+                              Ano
+                            </th>
+                            <th className="text-right px-2 py-1 font-semibold border-b border-slate-200">
+                              Estimativa padrão
+                            </th>
+                            <th className="text-right px-2 py-1 font-semibold border-b border-slate-200">
+                              Valor aplicado nesta simulação
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ANOS_SIMULACAO_DISPONIVEIS.map((ano) => {
+                            const padrao = obterAliquotasCreditoPorAno(ano).aliquotaSimplesMedia
+                            const aplicado = obterAliquotaSimplesMediaEfectivaEm(
+                              ano,
+                              ajusteAliquotaSimplesMedia,
+                            )
+                            const difere = aplicado !== padrao
+                            return (
+                              <tr
+                                key={ano}
+                                className={
+                                  difere ? 'bg-amber-50/70 text-amber-900' : 'text-slate-600'
+                                }
+                              >
+                                <td className="px-2 py-1 border-b border-slate-100 font-mono">
+                                  {ano}
+                                </td>
+                                <td className="px-2 py-1 border-b border-slate-100 text-right font-mono">
+                                  {formatarPorcentagem(padrao)}
+                                </td>
+                                <td className="px-2 py-1 border-b border-slate-100 text-right font-mono font-semibold">
+                                  {formatarPorcentagem(aplicado)}
+                                  {difere && ' *'}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                      Estimativa padrão: 2026: 3,5%; 2027–2028: 4,5%; 2029+: 4,5% + 4 p.p. × fator
+                      IBS do ano (transição); 2033+: 6,5%.
+                      {ajusteAliquotaSimplesMedia &&
+                        temAjusteAliquotaSimplesMedia(ajusteAliquotaSimplesMedia) &&
+                        ' * ano com alíquota ajustada manualmente no Módulo 1 (precedência: valor por ano > valor único > estimativa padrão).'}
+                    </p>
+                  </div>
 
                   {/* PARÂMETROS E TAXAS DO ANO SELECIONADO */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">

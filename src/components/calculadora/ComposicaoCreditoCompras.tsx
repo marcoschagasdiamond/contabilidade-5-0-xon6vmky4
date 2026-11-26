@@ -1,6 +1,11 @@
 import React, { memo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatarMoeda, formatarPorcentagem } from '@/lib/calculadoraUtils'
+import {
+  FUNDAMENTO_ALIQUOTA_SIMPLES_MEDIA,
+  temAjusteAliquotaSimplesMedia,
+  type AjusteAliquotaSimplesMedia,
+} from '@/lib/aliquotaSimplesMediaConfig'
 import { Scale, Info, TrendingDown, ShieldCheck, Layers, Percent } from 'lucide-react'
 
 export interface ComposicaoCreditoComprasProps {
@@ -14,6 +19,8 @@ export interface ComposicaoCreditoComprasProps {
   origemModulo?: 'modulo2' | 'modulo4'
   className?: string
   isServico?: boolean
+  /** Ajuste ativo do usuário — quando presente, sinaliza "ajustado" em vez de "estimativa". */
+  ajusteAliquotaSimplesMedia?: AjusteAliquotaSimplesMedia | null
 }
 
 function ComposicaoCreditoComprasComponent({
@@ -27,7 +34,9 @@ function ComposicaoCreditoComprasComponent({
   origemModulo = 'modulo2',
   className = '',
   isServico = false,
+  ajusteAliquotaSimplesMedia = null,
 }: ComposicaoCreditoComprasProps) {
+  const ajusteAtivo = temAjusteAliquotaSimplesMedia(ajusteAliquotaSimplesMedia)
   const strCreditoCheio = formatarMoeda(creditoCheio)
   const strCreditoPonderado = formatarMoeda(creditoPonderado)
   const strDiferenca = diferenca > 0.005 ? `− ${formatarMoeda(diferenca)}` : 'R$ 0,00'
@@ -155,11 +164,19 @@ function ComposicaoCreditoComprasComponent({
               </p>
             </div>
 
-            <p className="text-[11px] text-slate-500 line-clamp-2">
+            <p className="text-[11px] text-slate-500 line-clamp-3">
               {isServico
                 ? `Crédito com ${porcentagemSimples}% dos insumos/serviços tributados pelo crédito presumido LC 214/2025.`
-                : `Crédito com ${porcentagemSimples}% das compras tributadas pelo crédito presumido LC 214/2025.`}
+                : `Crédito com ${porcentagemSimples}% das compras tributadas pelo crédito presumido LC 214/2025.`}{' '}
+              Usa a {FUNDAMENTO_ALIQUOTA_SIMPLES_MEDIA}.
+              {ajusteAtivo &&
+                ' Alíquota ajustada manualmente pelo usuário no Módulo 1 — não é a estimativa.'}
             </p>
+            {ajusteAtivo && (
+              <span className="text-[10px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full self-start">
+                Alíquota ajustada pelo usuário
+              </span>
+            )}
           </CardContent>
         </Card>
 
@@ -223,8 +240,10 @@ function ComposicaoCreditoComprasComponent({
             : 'As aquisições de fornecedores'}{' '}
           do Simples Nacional geram crédito presumido equivalente à alíquota média recolhida no DAS
           ({formatarPorcentagem(aliquotaSimplesMedia)} em {anoRotulo}), em vez da alíquota cheia (
-          {formatarPorcentagem(aliquotaCheia)}). O percentual pode ser ajustado no Módulo 1
-          (Configurações Gerais).
+          {formatarPorcentagem(aliquotaCheia)}). Utiliza a {FUNDAMENTO_ALIQUOTA_SIMPLES_MEDIA}
+          {ajusteAtivo
+            ? ' — valor atual ajustado manualmente pelo usuário no Módulo 1 (Configurações Gerais), não a estimativa.'
+            : ' — o percentual pode ser ajustado no Módulo 1 (Configurações Gerais).'}
         </span>
       </div>
     </div>

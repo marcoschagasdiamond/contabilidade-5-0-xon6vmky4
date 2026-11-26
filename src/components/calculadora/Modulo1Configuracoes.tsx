@@ -50,6 +50,7 @@ import {
   type DadosFaturamentoImportados,
 } from '@/components/calculadora/ModalImportarFaturamento'
 import { SecaoComposicaoItensNcm } from '@/components/calculadora/SecaoComposicaoItensNcm'
+import { SecaoAjusteAliquotaSimplesMedia } from '@/components/calculadora/SecaoAjusteAliquotaSimplesMedia'
 
 import {
   PainelProximosPassosCalculadora,
@@ -1483,6 +1484,9 @@ export default function Modulo1Configuracoes({
             </div>
           </CardContent>
         </Card>
+
+        {/* Ajuste da alíquota média do Simples Nacional (crédito presumido de compras — LC 214/2025) */}
+        <SecaoAjusteAliquotaSimplesMedia />
 
         {/* Card 2: Alíquotas Efetivas por Faixa Legal */}
         <Card className="border-slate-200 dark:border-slate-800 shadow-md hover:shadow-lg transition-shadow">

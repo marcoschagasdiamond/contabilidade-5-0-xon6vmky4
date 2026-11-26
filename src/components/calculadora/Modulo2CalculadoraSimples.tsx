@@ -900,6 +900,7 @@ export default function Modulo2CalculadoraSimples({
               diferenca={diferencaCreditoModulo2}
               origemModulo="modulo2"
               isServico={isPerfilServico}
+              ajusteAliquotaSimplesMedia={config.ajusteAliquotaSimplesMedia}
             />
           </div>
         )

@@ -53,10 +53,8 @@ import {
   type ResultadoCalculoSimplesReforma,
   type AnoBaseSimulacao,
 } from '@/lib/reformaTributaria'
-import {
-  obterAliquotasCreditoPorAno,
-  obterAliquotaSimplesMediaEfectivaEm,
-} from '@/lib/aliquotaSimplesMediaConfig'
+import { obterAliquotasCreditoPorAno } from '@/lib/calculoFornecedores'
+import { obterAliquotaSimplesMediaEfectivaEm } from '@/lib/aliquotaSimplesMediaConfig'
 import {
   carregarDadosEmpresa,
   salvarDadosEmpresa,
