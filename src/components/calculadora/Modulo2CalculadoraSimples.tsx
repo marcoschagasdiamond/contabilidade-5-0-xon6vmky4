@@ -40,7 +40,7 @@ import {
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
 import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
 import { ComposicaoCreditoCompras } from '@/components/calculadora/ComposicaoCreditoCompras'
-import { obterAliquotasCreditoPorAno } from '@/lib/calculoFornecedores'
+import { obterAliquotaSimplesMediaEfectivaEm } from '@/lib/aliquotaSimplesMediaConfig'
 import { type AnoBaseSimulacao } from '@/lib/reformaTributaria'
 import { obterCClasTribPorRegime } from '@/data/cClassTribCatalogo'
 
@@ -672,8 +672,11 @@ export default function Modulo2CalculadoraSimples({
         // Dados para a Seção de Composição do Crédito de Compras
         const anoNumModulo2: AnoBaseSimulacao =
           typeof anoOperacao === 'number' ? (anoOperacao as AnoBaseSimulacao) : 2033
-        const aliquotaSimplesMediaModulo2 =
-          obterAliquotasCreditoPorAno(anoNumModulo2).aliquotaSimplesMedia * 100
+        // Alíquota média do Simples: ajuste do Módulo 1 com fallback para a estimativa padrão
+        const aliquotaSimplesMediaModulo2 = obterAliquotaSimplesMediaEfectivaEm(
+          anoNumModulo2,
+          config.ajusteAliquotaSimplesMedia,
+        )
         const aliquotaCheiaModulo2 =
           typeof anoOperacao === 'number'
             ? (obterFaseTransicaoPorAno(anoOperacao)?.totalIvaDual ?? config.totalIvaDual)

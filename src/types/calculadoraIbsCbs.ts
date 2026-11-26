@@ -1310,6 +1310,11 @@ export interface ConfiguracoesGerais {
   regimeEspecialAtual?: import('./dadosEmpresa').RegimeEspecialAtual // 'nenhum' | 'monofasico' | ...
   perfilRetencaoSplit?: import('./dadosEmpresa').PerfilRetencaoSplit // 'nao' | 'parcial' | 'sim_todos'
   percentualRetencaoSplit?: number // 0 a 100%
+
+  // Ajuste da alíquota média efetiva do DAS de optantes do Simples (crédito presumido LC 214/2025)
+  // em % — valor único aplicado a todos os anos, ou tabela por ano ('2026'...'2033'/'2040').
+  // Sem ajuste, vale a estimativa padrão de obterAliquotasCreditoPorAno (calculoFornecedores.ts).
+  ajusteAliquotaSimplesMedia?: import('@/lib/aliquotaSimplesMediaConfig').AjusteAliquotaSimplesMedia
 }
 
 export const CONFIGURACOES_PADRAO: ConfiguracoesGerais = {

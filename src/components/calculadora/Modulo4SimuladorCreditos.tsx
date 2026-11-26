@@ -32,7 +32,7 @@ import {
 } from '@/components/calculadora/PainelProximosPassosCalculadora'
 import { BarraAcoesSimulacao } from '@/components/calculadora/BarraAcoesSimulacao'
 import { ComposicaoCreditoCompras } from '@/components/calculadora/ComposicaoCreditoCompras'
-import { obterAliquotasCreditoPorAno } from '@/lib/calculoFornecedores'
+import { obterAliquotaSimplesMediaEfectivaEm } from '@/lib/aliquotaSimplesMediaConfig'
 import { type AnoBaseSimulacao } from '@/lib/reformaTributaria'
 
 export interface Modulo4SimuladorCreditosProps {
@@ -110,8 +110,11 @@ export default function Modulo4SimuladorCreditos({
   // Dados para a Seção de Composição do Crédito de Compras (LC 214/2025 • Fornecedores Simples Nacional)
   const anoNumModulo4: AnoBaseSimulacao =
     typeof anoEfetivoCreditos === 'number' ? (anoEfetivoCreditos as AnoBaseSimulacao) : 2033
-  const aliquotaSimplesMediaModulo4 =
-    obterAliquotasCreditoPorAno(anoNumModulo4).aliquotaSimplesMedia * 100
+  // Alíquota média do Simples: ajuste do Módulo 1 com fallback para a estimativa padrão
+  const aliquotaSimplesMediaModulo4 = obterAliquotaSimplesMediaEfectivaEm(
+    anoNumModulo4,
+    config.ajusteAliquotaSimplesMedia,
+  )
   const aliquotaCheiaModulo4 = isAliquotaZero ? 0 : aliqRefCreditos
 
   const pctFornecSimplesModulo4 = Math.min(

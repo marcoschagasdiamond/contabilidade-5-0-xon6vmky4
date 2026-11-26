@@ -48,6 +48,7 @@ function camposAutosave(config: ConfiguracoesGerais): Partial<ConfiguracoesGerai
     subatividadeLocacao: config.subatividadeLocacao,
     subatividadeFoodService: config.subatividadeFoodService,
     etiquetasOrigem: config.etiquetasOrigem,
+    ajusteAliquotaSimplesMedia: config.ajusteAliquotaSimplesMedia,
   }
 }
 

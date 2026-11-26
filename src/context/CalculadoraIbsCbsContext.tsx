@@ -53,7 +53,10 @@ import {
   type ResultadoCalculoSimplesReforma,
   type AnoBaseSimulacao,
 } from '@/lib/reformaTributaria'
-import { obterAliquotasCreditoPorAno } from '@/lib/calculoFornecedores'
+import {
+  obterAliquotasCreditoPorAno,
+  obterAliquotaSimplesMediaEfectivaEm,
+} from '@/lib/aliquotaSimplesMediaConfig'
 import {
   carregarDadosEmpresa,
   salvarDadosEmpresa,
@@ -172,6 +175,8 @@ interface RascunhoCalculadora {
   perfilRetencaoSplit: import('@/types/dadosEmpresa').PerfilRetencaoSplit
   percentualRetencaoSplit: number
   etiquetasOrigem?: import('@/types/calculadoraIbsCbs').OrigemCamposAliquota
+  // Ajuste da alíquota média do Simples (Módulo 1) — opcional (payloads antigos não o têm)
+  ajusteAliquotaSimplesMedia?: import('@/lib/aliquotaSimplesMediaConfig').AjusteAliquotaSimplesMedia
   // Módulos 2 a 5: rascunhos opcionais (payloads antigos não os têm)
   modulo2?: RascunhoModulo2
   modulo3?: RascunhoModulo3
@@ -711,6 +716,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
             regimeEspecialAtual: rascunhoInicial.regimeEspecialAtual,
             perfilRetencaoSplit: rascunhoInicial.perfilRetencaoSplit,
             percentualRetencaoSplit: rascunhoInicial.percentualRetencaoSplit,
+            ajusteAliquotaSimplesMedia: rascunhoInicial.ajusteAliquotaSimplesMedia,
             ...(rascunhoInicial.etiquetasOrigem
               ? { etiquetasOrigem: rascunhoInicial.etiquetasOrigem }
               : {}),
@@ -1463,6 +1469,7 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       perfilRetencaoSplit,
       percentualRetencaoSplit,
       etiquetasOrigem: config.etiquetasOrigem,
+      ajusteAliquotaSimplesMedia: config.ajusteAliquotaSimplesMedia,
       // Módulos 2 a 5: repõe os dados que o usuário deixou na última visita
       modulo2: {
         valorOperacao,
@@ -2431,8 +2438,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
     )
     const anoSimplesNum =
       typeof ano === 'number' ? (ano as AnoBaseSimulacao) : (2033 as AnoBaseSimulacao)
-    const aliqSimplesCreditoModulo2 =
-      obterAliquotasCreditoPorAno(anoSimplesNum).aliquotaSimplesMedia * 100
+    // Alíquota média do Simples: ajuste do Módulo 1 (por ano/valor único) com
+    // fallback para a estimativa padrão — nenhuma fórmula muda.
+    const aliqSimplesCreditoModulo2 = obterAliquotaSimplesMediaEfectivaEm(
+      anoSimplesNum,
+      config.ajusteAliquotaSimplesMedia,
+    )
     const aliqEfetivaComprasModulo2 =
       pctFornecSimples > 0
         ? (1 - pctFornecSimples) * totalIvaBase + pctFornecSimples * aliqSimplesCreditoModulo2
@@ -3039,8 +3050,12 @@ export function CalculadoraProvider({ children }: { children: React.ReactNode })
       typeof config.anoTransicao === 'number'
         ? (config.anoTransicao as AnoBaseSimulacao)
         : (2033 as AnoBaseSimulacao)
-    const aliqSimplesCreditoModulo3 =
-      obterAliquotasCreditoPorAno(anoTransicaoComp).aliquotaSimplesMedia * 100
+    // Alíquota média do Simples: ajuste do Módulo 1 (por ano/valor único) com
+    // fallback para a estimativa padrão — nenhuma fórmula muda.
+    const aliqSimplesCreditoModulo3 = obterAliquotaSimplesMediaEfectivaEm(
+      anoTransicaoComp,
+      config.ajusteAliquotaSimplesMedia,
+    )
     const aliqEfetivaComprasModulo3 =
       pctFornecSimplesComp > 0
         ? (1 - pctFornecSimplesComp) * config.totalIvaDual +
